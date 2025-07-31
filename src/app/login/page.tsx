@@ -1,12 +1,8 @@
-import { Metadata } from 'next';
+'use client';
+
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
-
-export const metadata: Metadata = {
-  title: '로그인 - PWA Next.js App',
-  description: 'PWA Next.js 애플리케이션에 로그인하세요.',
-};
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
