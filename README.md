@@ -1,4 +1,4 @@
-# PWA Next.js 애플리케이션
+# LCA_final - PWA Next.js 애플리케이션
 
 React, Zustand, Axios, TypeScript로 구축된 Progressive Web App (PWA)입니다.
 
@@ -33,8 +33,8 @@ React, Zustand, Axios, TypeScript로 구축된 Progressive Web App (PWA)입니�
 
 1. **저장소 클론**
    ```bash
-   git clone <repository-url>
-   cd pwa-nextjs-app
+   git clone https://github.com/Microbe95/LCA_final.git
+   cd LCA_final
    ```
 
 2. **의존성 설치**
@@ -44,7 +44,7 @@ React, Zustand, Axios, TypeScript로 구축된 Progressive Web App (PWA)입니�
 
 3. **환경 변수 설정**
    ```bash
-   cp env.example .env.local
+   cp .env.example .env.local
    ```
    
    `.env.local` 파일을 편집하여 필요한 환경 변수를 설정하세요:
@@ -203,6 +203,6 @@ GitHub Actions를 통한 자동화된 CI/CD 파이프라인이 구성되어 있�
 
 ---
 
-**개발자**: [Your Name]  
+**개발자**: Microbe95  
 **버전**: 1.0.0  
-**최종 업데이트**: 2024년 1월 
+**최종 업데이트**: 2024년 1월
