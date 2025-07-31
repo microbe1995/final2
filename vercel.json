@@ -14,10 +14,6 @@
       }
     }
   ],
-  "env": {
-    "JWT_SECRET": "@jwt-secret",
-    "NEXT_PUBLIC_API_URL": "@next-public-api-url"
-  },
   "functions": {
     "src/app/api/**/*.ts": {
       "maxDuration": 10
