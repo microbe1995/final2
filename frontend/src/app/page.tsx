@@ -41,6 +41,14 @@ export default function Home() {
       {/* 상단 질문 */}
       <div className="text-center mb-8">
         <h1 className="text-2xl font-medium text-gray-900">무슨 작업을 하고 계세요?</h1>
+        <div className="mt-4 flex justify-center space-x-4">
+          <a 
+            href="/cbam" 
+            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+          >
+            🏭 CBAM 계산기
+          </a>
+        </div>
       </div>
 
       {/* 메인 입력 필드 */}
