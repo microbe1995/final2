@@ -87,11 +87,11 @@ class MessageService:
             async with httpx.AsyncClient(timeout=self.timeout) as client:
                 response = await client.post(
                     f"{self.service_url}/process",
-                    json={
-                        "message": message_request.message,
-                        "timestamp": message_request.timestamp.isoformat(),
-                        "user_id": message_request.user_id
-                    },
+                                    json={
+                    "message": message_request.message,
+                    "timestamp": message_request.timestamp.isoformat(),
+                    "user_id": message_request.user_id or "anonymous"
+                },
                     headers={"Content-Type": "application/json"}
                 )
                 

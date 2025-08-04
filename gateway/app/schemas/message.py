@@ -6,7 +6,7 @@ class MessageRequest(BaseModel):
     """메시지 요청 스키마"""
     message: str = Field(..., min_length=1, max_length=1000, description="전송할 메시지")
     timestamp: Optional[datetime] = Field(default_factory=datetime.now, description="메시지 생성 시간")
-    user_id: Optional[str] = Field(None, description="사용자 ID (선택사항)")
+    user_id: Optional[str] = Field(default="anonymous", description="사용자 ID (선택사항)")
     
     class Config:
         json_schema_extra = {
