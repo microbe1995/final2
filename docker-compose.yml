@@ -116,6 +116,23 @@ services:
     networks:
       - app-network
 
+  # Message Service
+  message-service:
+    build: ./service/message-service
+    container_name: message-service
+    ports:
+      - "8006:8006"
+    volumes:
+      - ./service/message-service:/app
+    environment:
+      - PYTHONUNBUFFERED=1
+      - REDIS_URL=redis://redis:6379
+    restart: always
+    depends_on:
+      - redis
+    networks:
+      - app-network
+
   # PostgreSQL Database
   postgres:
     image: postgres:15

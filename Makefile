@@ -113,6 +113,22 @@ logs-lca:
 restart-lca:
 	docker-compose stop lca-service && docker-compose up -d lca-service
 
+## message-service
+build-message:
+	docker-compose build message-service
+
+up-message:
+	docker-compose up -d message-service
+
+down-message:
+	docker-compose stop message-service
+
+logs-message:
+	docker-compose logs -f message-service
+
+restart-message:
+	docker-compose stop message-service && docker-compose up -d message-service
+
 ## frontend
 build-frontend:
 	docker-compose build frontend

@@ -1,0 +1,1 @@
+# auth-service domain package
