@@ -2,18 +2,18 @@ const withPWA = require('next-pwa')({
   dest: 'public',
   register: true,
   skipWaiting: true,
-  disable: false
+  disable: process.env.NODE_ENV === 'development'
 })
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  experimental: {
+    appDir: true,
+  },
   env: {
-    JWT_SECRET: process.env.JWT_SECRET || 'your-secret-key',
-    API_URL: process.env.API_URL || 'http://localhost:3000/api',
-  },
-  images: {
-    domains: ['localhost', 'vercel.app'],
-  },
+    GATEWAY_URL: process.env.GATEWAY_URL || 'http://localhost:8000',
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api'
+  }
 }
 
 module.exports = withPWA(nextConfig) 
