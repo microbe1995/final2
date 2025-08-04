@@ -1,13 +1,13 @@
 # Auth Service
 
 ## 개요
-GreenSteel MSA 시스템의 인증 및 리포트 서비스입니다. 사용자 인증과 리포트 업로드 기능을 제공합니다.
+GreenSteel MSA 시스템의 인증 서비스입니다. 사용자 인증 및 계정 관리를 제공합니다.
 
 ## 기능
 - 사용자 인증 (회원가입, 로그인, 로그아웃)
 - 사용자 정보 관리
-- 리포트 파일 업로드
 - ID 중복 확인
+- JWT 토큰 관리
 
 ## 기술 스택
 - FastAPI
@@ -27,19 +27,16 @@ python main.py
 ## API 엔드포인트
 
 ### 인증 관련
-- `POST /report-auth/auth/register/` - 회원가입
-- `POST /report-auth/auth/login/` - 로그인
-- `POST /report-auth/auth/logout/` - 로그아웃
-- `POST /report-auth/auth/check-id/` - ID 중복확인
+- `POST /auth/register/` - 회원가입
+- `POST /auth/login/` - 로그인
+- `POST /auth/logout/` - 로그아웃
+- `POST /auth/check-id/` - ID 중복확인
 
 ### 사용자 정보
-- `GET /report-auth/user/me/` - 내 정보 조회
-- `PUT /report-auth/user/update/` - 내 정보 수정
-- `GET /report-auth/user/info/` - 사용자 정보 조회
-- `GET /report-auth/user/{user_id}/` - 특정 사용자 정보 조회
-
-### 리포트
-- `POST /report-auth/report/` - 리포트 파일 업로드
+- `GET /user/me/` - 내 정보 조회
+- `PUT /user/update/` - 내 정보 수정
+- `GET /user/info/` - 사용자 정보 조회
+- `GET /user/{user_id}/` - 특정 사용자 정보 조회
 
 ### 헬스 체크
 - `GET /health` - 헬스 체크
