@@ -3,24 +3,5 @@
   "buildCommand": "cd frontend && npm install && npm run build",
   "outputDirectory": "frontend/.next",
   "installCommand": "cd frontend && npm install",
-  "framework": "nextjs",
-  "routes": [
-    {
-      "src": "/manifest.json",
-      "headers": {
-        "Content-Type": "application/manifest+json"
-      }
-    },
-    {
-      "src": "/sw.js",
-      "headers": {
-        "Content-Type": "application/javascript"
-      }
-    }
-  ],
-  "functions": {
-    "frontend/src/app/api/**/*.ts": {
-      "maxDuration": 10
-    }
-  }
+  "framework": "nextjs"
 } 
