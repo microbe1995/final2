@@ -22,8 +22,14 @@ python main.py
 ```
 
 ## API 엔드포인트
-- `POST /chat` - 챗봇 대화 처리
+- `POST /chatbot/generate/` - 챗봇 대화 처리
 - `GET /health` - 헬스 체크
 
 ## 포트
-- 기본 포트: 8002 
+- 기본 포트: 8002
+
+## Docker 실행
+```bash
+docker build -t chatbot-service .
+docker run -p 8002:8002 chatbot-service
+``` 
