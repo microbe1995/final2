@@ -1,67 +1,125 @@
-version: '3.8'
+name: greensteel
 
 services:
   # API Gateway
   gateway:
     build: ./gateway
+    container_name: gateway
     ports:
-      - "8000:8000"
+      - "8080:8080"
+    volumes:
+      - ./gateway:/app
+    env_file:
+      - ./gateway/.env
     environment:
-      - DEBUG=false
-      - PORT=8000
+      - PYTHONUNBUFFERED=1
+    restart: always
     depends_on:
       - auth-service
-      - user-service
-      - esg-service
+      - chatbot-service
+      - report-service
+      - cbam-service
+      - lca-service
+      - redis
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
     networks:
-      - greensteel-network
+      - app-network
 
   # Auth Service
   auth-service:
     build: ./service/auth-service
+    container_name: auth-service
     ports:
       - "8001:8001"
+    volumes:
+      - ./service/auth-service:/app
     environment:
+      - PYTHONUNBUFFERED=1
       - DATABASE_URL=postgresql://user:password@postgres:5432/auth_db
       - JWT_SECRET=your-secret-key
       - REDIS_URL=redis://redis:6379
+    restart: always
     depends_on:
       - postgres
       - redis
     networks:
-      - greensteel-network
+      - app-network
 
-  # User Service
-  user-service:
-    build: ./service/user-service
+  # Chatbot Service
+  chatbot-service:
+    build: ./service/chatbot-service
+    container_name: chatbot-service
     ports:
       - "8002:8002"
+    volumes:
+      - ./service/chatbot-service:/app
     environment:
-      - DATABASE_URL=postgresql://user:password@postgres:5432/user_db
+      - PYTHONUNBUFFERED=1
       - REDIS_URL=redis://redis:6379
+    restart: always
     depends_on:
-      - postgres
       - redis
     networks:
-      - greensteel-network
+      - app-network
 
-  # ESG Service
-  esg-service:
-    build: ./service/esg-service
+  # Report Service
+  report-service:
+    build: ./service/report-service
+    container_name: report-service
     ports:
       - "8003:8003"
+    volumes:
+      - ./service/report-service:/app
+      - ./reports:/app/public/reports
     environment:
-      - DATABASE_URL=postgresql://user:password@postgres:5432/esg_db
+      - PYTHONUNBUFFERED=1
       - REDIS_URL=redis://redis:6379
+    restart: always
     depends_on:
-      - postgres
       - redis
     networks:
-      - greensteel-network
+      - app-network
+
+  # CBAM Service
+  cbam-service:
+    build: ./service/cbam-service
+    container_name: cbam-service
+    ports:
+      - "8004:8004"
+    volumes:
+      - ./service/cbam-service:/app
+    environment:
+      - PYTHONUNBUFFERED=1
+      - REDIS_URL=redis://redis:6379
+    restart: always
+    depends_on:
+      - redis
+    networks:
+      - app-network
+
+  # LCA Service
+  lca-service:
+    build: ./service/lca-service
+    container_name: lca-service
+    ports:
+      - "8005:8005"
+    volumes:
+      - ./service/lca-service:/app
+    environment:
+      - PYTHONUNBUFFERED=1
+      - REDIS_URL=redis://redis:6379
+    restart: always
+    depends_on:
+      - redis
+    networks:
+      - app-network
 
   # PostgreSQL Database
   postgres:
     image: postgres:15
+    container_name: postgres
     environment:
       - POSTGRES_USER=user
       - POSTGRES_PASSWORD=password
@@ -70,23 +128,47 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    restart: always
     networks:
-      - greensteel-network
+      - app-network
 
   # Redis Cache
   redis:
     image: redis:7-alpine
+    container_name: redis
     ports:
       - "6379:6379"
     volumes:
       - redis_data:/data
+    restart: always
     networks:
-      - greensteel-network
+      - app-network
+
+  # Frontend (Next.js)
+  frontend:
+    build: ./frontend
+    container_name: frontend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_API_URL=http://localhost:8080
+    restart: always
+    depends_on:
+      - gateway
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.25.0.0/16
 
 volumes:
   postgres_data:
-  redis_data:
-
-networks:
-  greensteel-network:
-    driver: bridge 
+  redis_data: 

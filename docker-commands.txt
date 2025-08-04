@@ -1,0 +1,76 @@
+📌서비스 실행 관련
+docker-compose up --build        # 전체 서비스 빌드 후 실행
+docker-compose up -d            # 전체 서비스 백그라운드로 실행
+docker-compose down             # 전체 서비스 중지 및 컨테이너 제거
+docker-compose down --volumes   # 전체 서비스 중지 및 컨테이너, 볼륨 제거
+
+📌프로젝트 이미지 삭제 관련
+docker-compose down              # 먼저 실행 중인 컨테이너 중지
+docker rmi $(docker images 'esg-watchdog*' -q)  # 프로젝트 관련 이미지만 삭제
+docker system prune -f           # 사용하지 않는 리소스 정리 (이미지, 컨테이너, 네트워크)
+
+📌개별 서비스 관련
+docker-compose up -d gateway         # gateway 서비스만 백그라운드로 실행
+docker-compose up -d news-service    # news 서비스만 백그라운드로 실행
+
+📌로그 확인
+docker-compose logs --tail=500 -f gateway         # gateway 서비스 로그 확인
+docker-compose logs --tail=500 -f news-service    # news 서비스 로그 확인
+
+📌컨테이너 접속
+docker exec -it esg-watchdog-gateway-1 bash         # gateway 컨테이너 접속
+docker exec -it esg-watchdog-news-service-1 bash    # news 서비스 컨테이너 접속
+
+📌환경변수 확인
+docker exec -it esg-watchdog-gateway-1 env         # gateway 환경변수 확인
+docker exec -it esg-watchdog-news-service-1 env    # news 서비스 환경변수 확인
+
+📌특정 서비스 재빌드
+docker-compose build --no-cache gateway         # gateway 서비스 캐시 없이 재빌드
+docker-compose build --no-cache news-service    # news 서비스 캐시 없이 재빌드
+
+📌전체 재시작 절차
+✅1. 컨테이너 중지
+docker-compose down
+
+✅2. 특정 서비스 재빌드
+docker-compose build --no-cache [service-name]
+
+✅3. 서비스 재시작
+docker-compose up -d
+
+✅또는 간단히 재시작
+docker-compose restart
+
+✅특정 서비스 재시작
+docker compose -p news-service down 
+docker compose -p news-service build --no-cache
+docker compose -p news-service up -d
+
+✅특정 서비스 재시작
+docker compose -p gateway down 
+docker compose -p gateway build --no-cache
+docker compose -p gateway up -d
+
+✅전체 서비스 완전 재시작
+docker-compose down  
+docker rmi $(docker images 'news-service*' -q)  
+docker system prune -a 
+docker-compose build --no-cache  
+docker-compose up
+
+📌기존 컨테이너 확인
+docker ps | grep postgres
+
+📌쿠다 및 cuDNN 버전 확인
+python -c "import torch; print('CUDA available:', http://torch.cuda.is_available()); print('CUDA version:', torch.version.cuda); print('cuDNN version:', torch.backends.cudnn.version() if http://torch.backends.cudnn.is_available() else 'Not available')"
+
+📌게이트웨이 실행 명령어
+uvicorn app.main:app --port 8080 --reload
+
+📌포트 3000 실행중인 확인 명령어
+netstat -ano | findstr :3000
+
+📌포트 실행중인 명령어 죽이는 명령어
+taskkill /F /PID 40104
+taskkill /F /PID 37784
