@@ -1,0 +1,92 @@
+version: '3.8'
+
+services:
+  # API Gateway
+  gateway:
+    build: ./gateway
+    ports:
+      - "8000:8000"
+    environment:
+      - DEBUG=false
+      - PORT=8000
+    depends_on:
+      - auth-service
+      - user-service
+      - esg-service
+    networks:
+      - greensteel-network
+
+  # Auth Service
+  auth-service:
+    build: ./service/auth-service
+    ports:
+      - "8001:8001"
+    environment:
+      - DATABASE_URL=postgresql://user:password@postgres:5432/auth_db
+      - JWT_SECRET=your-secret-key
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - greensteel-network
+
+  # User Service
+  user-service:
+    build: ./service/user-service
+    ports:
+      - "8002:8002"
+    environment:
+      - DATABASE_URL=postgresql://user:password@postgres:5432/user_db
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - greensteel-network
+
+  # ESG Service
+  esg-service:
+    build: ./service/esg-service
+    ports:
+      - "8003:8003"
+    environment:
+      - DATABASE_URL=postgresql://user:password@postgres:5432/esg_db
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - greensteel-network
+
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=greensteel
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - greensteel-network
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - greensteel-network
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  greensteel-network:
+    driver: bridge 

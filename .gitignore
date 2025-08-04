@@ -2,9 +2,28 @@
 
 # dependencies
 /node_modules
+/frontend/node_modules
 /.pnp
 .pnp.js
 .yarn/install-state.gz
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Docker
+.dockerignore
 
 # testing
 /coverage

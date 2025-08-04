@@ -1,0 +1,5 @@
+[33m01ce675[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m Remove environment variables from vercel.json to fix deployment
+[33mae3d32c[m Remove builds property from vercel.json to fix Vercel deployment
+[33m5e51878[m Disable security features and use development environment variables for CI/CD
+[33mab08f4c[m Update README and trigger new workflow
+[33m24cbe1b[m Temporarily disable Vercel deployment to fix CI/CD pipeline

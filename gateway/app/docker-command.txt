@@ -1,0 +1,41 @@
+# Docker 명령어 모음
+
+## 이미지 빌드
+docker build -t greensteel-gateway .
+
+## 컨테이너 실행
+docker run -p 8000:8000 --name greensteel-gateway-container greensteel-gateway
+
+## 백그라운드에서 실행
+docker run -d -p 8000:8000 --name greensteel-gateway-container greensteel-gateway
+
+## 환경 변수 파일과 함께 실행
+docker run -d -p 8000:8000 --env-file .env --name greensteel-gateway-container greensteel-gateway
+
+## 볼륨 마운트와 함께 실행
+docker run -d -p 8000:8000 -v $(pwd):/app --name greensteel-gateway-container greensteel-gateway
+
+## 컨테이너 중지
+docker stop greensteel-gateway-container
+
+## 컨테이너 제거
+docker rm greensteel-gateway-container
+
+## 이미지 제거
+docker rmi greensteel-gateway
+
+## 실행 중인 컨테이너 확인
+docker ps
+
+## 모든 컨테이너 확인 (중지된 것 포함)
+docker ps -a
+
+## 컨테이너 로그 확인
+docker logs greensteel-gateway-container
+
+## 컨테이너 내부 접속
+docker exec -it greensteel-gateway-container /bin/bash
+
+## Docker Compose 사용 (docker-compose.yml이 있는 경우)
+docker-compose up -d
+docker-compose down 
