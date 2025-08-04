@@ -34,7 +34,7 @@ app.add_middleware(
 class MessageRequest(BaseModel):
     message: str = Field(..., min_length=1, max_length=1000)
     timestamp: str = Field(..., description="ISO 형식의 타임스탬프")
-    user_id: str = Field(None, description="사용자 ID")
+    user_id: str = Field(default="anonymous", description="사용자 ID")
 
 class MessageResponse(BaseModel):
     status: str = Field(..., description="처리 상태")

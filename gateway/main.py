@@ -369,3 +369,14 @@ async def shutdown_event():
     """애플리케이션 종료 시 실행"""
     logger.info("GreenSteel API Gateway shutting down...")
     await gateway.shutdown()
+
+# 게이트웨이 실행
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(
+        "main:app",
+        host="0.0.0.0",
+        port=8000,
+        reload=True,
+        log_level="info"
+    )
