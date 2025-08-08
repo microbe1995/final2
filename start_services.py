@@ -13,7 +13,7 @@ def main():
     os.environ["PYTHONUNBUFFERED"] = "1"
     os.environ["PYTHONPATH"] = "/app"
     
-    gateway_port = int(os.getenv("PORT", "8000"))
+    gateway_port = int(os.getenv("PORT", "8080"))
     print(f"📡 Gateway will run on port {gateway_port}")
     
     # Change to gateway directory
