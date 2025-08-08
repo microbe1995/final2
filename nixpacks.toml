@@ -1,0 +1,13 @@
+[phases.build]
+dependsOn = ["install"]
+cmds = ["cd frontend && npm run build"]
+
+[phases.install]
+cmds = ["cd frontend && npm install"]
+
+[start]
+cmd = "cd frontend && npm start"
+
+[variables]
+NODE_ENV = "production"
+NEXT_PUBLIC_API_URL = "https://lcafinal-production.up.railway.app/api"

@@ -1,0 +1,19 @@
+{
+  "name": "lca-final-monorepo",
+  "version": "1.0.0",
+  "description": "LCA Final Project - Monorepo with Next.js Frontend and FastAPI Gateway",
+  "scripts": {
+    "dev": "cd frontend && npm run dev",
+    "build": "cd frontend && npm install && npm run build",
+    "start": "cd frontend && npm start",
+    "install:frontend": "cd frontend && npm install",
+    "install:all": "npm run install:frontend"
+  },
+  "keywords": ["nextjs", "fastapi", "lca", "cbam"],
+  "author": "Microbe95",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  }
+}
