@@ -1,50 +1,38 @@
 #!/usr/bin/env python3
 """
-Railway deployment script for Gateway and Auth Service
+Railway deployment script for Gateway Service
 """
 import os
 import sys
-import subprocess
-import threading
-import time
-
-def start_gateway():
-    """Start Gateway service"""
-    print("🚀 Starting Gateway service...")
-    os.chdir("gateway/app")
-    subprocess.run([sys.executable, "main.py"])
-
-def start_auth_service():
-    """Start Auth service"""
-    print("🔐 Starting Auth service...")
-    os.chdir("service/auth-service/app")
-    subprocess.run([sys.executable, "main.py"])
 
 def main():
-    """Main function to start both services"""
-    print("🌟 LCA Final - Starting Multiple Services on Railway")
+    """Start Gateway service only"""
+    print("🚀 Starting Gateway Service on Railway...")
     
-    # Start Gateway in main thread (primary service)
-    gateway_thread = threading.Thread(target=start_gateway)
-    gateway_thread.daemon = True
-    gateway_thread.start()
+    # Set environment variables
+    os.environ["PYTHONUNBUFFERED"] = "1"
+    os.environ["PYTHONPATH"] = "/app"
     
-    # Wait a bit for gateway to start
-    time.sleep(2)
+    gateway_port = int(os.getenv("PORT", "8000"))
+    print(f"📡 Gateway will run on port {gateway_port}")
     
-    # Start Auth service in background
-    auth_thread = threading.Thread(target=start_auth_service)
-    auth_thread.daemon = True
-    auth_thread.start()
+    # Change to gateway directory
+    gateway_path = "gateway/app"
+    if os.path.exists(gateway_path):
+        os.chdir(gateway_path)
+        print(f"✅ Changed to directory: {os.getcwd()}")
+    else:
+        print(f"❌ Gateway directory not found: {gateway_path}")
+        sys.exit(1)
     
-    print("✅ Both services are starting...")
-    
-    # Keep main thread alive
+    # Start the FastAPI application directly using uvicorn
     try:
-        while True:
-            time.sleep(1)
-    except KeyboardInterrupt:
-        print("🛑 Shutting down services...")
+        import uvicorn
+        print("🌟 Starting FastAPI Gateway with uvicorn...")
+        uvicorn.run("main:app", host="0.0.0.0", port=gateway_port, log_level="info")
+    except ImportError:
+        print("❌ uvicorn not installed, trying python main.py...")
+        os.system(f"python main.py")
 
 if __name__ == "__main__":
     main()
