@@ -3,3 +3,28 @@
 [33m5e51878[m Disable security features and use development environment variables for CI/CD
 [33mab08f4c[m Update README and trigger new workflow
 [33m24cbe1b[m Temporarily disable Vercel deployment to fix CI/CD pipeline
+[33mcommit 25ae310e064bd86f3266a2ec038cbd350437ffef[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m
+Author: Microbe95 <nimbus1649@naver.com>
+Date:   Fri Aug 8 16:46:40 2025 +0900
+
+    fix: add complete Dockerfile for gateway service with Python 3.11 base image
+
+M	gateway/Dockerfile
+
+[33mcommit b05788a49a543f2367c1174c5e7651883ede779f[m
+Author: Microbe95 <nimbus1649@naver.com>
+Date:   Fri Aug 8 16:43:19 2025 +0900
+
+    docs: add development log for local environment setup
+
+A	DEVELOPMENT_LOG.md
+
+[33mcommit 9b20719ec25a0c3ea3e2ab0d573c1249948ded65[m
+Author: Microbe95 <nimbus1649@gmail.com>
+Date:   Mon Aug 4 18:24:25 2025 +0900
+
+    feat: CBAM 계산 기능 구현 - CBAM Service에 실제 계산 로직 추가 - 프론트엔드 CBAM 계산기 페이지 생성 - 메인 페이지에 CBAM 계산기 링크 추가 - 탄소 발자국 및 CBAM 세금 계산 기능
+
+A	frontend/src/app/cbam/page.tsx
+M	frontend/src/app/page.tsx
+M	service/cbam-service/app/main.py
