@@ -1,13 +1,14 @@
 [phases.build]
 dependsOn = ["install"]
-cmds = ["cd frontend && npm run build"]
+cmds = ["cd gateway && echo 'Build completed'"]
 
 [phases.install]
-cmds = ["cd frontend && npm install"]
+cmds = ["cd gateway && pip install -r requirements.txt"]
 
 [start]
-cmd = "cd frontend && npm start"
+cmd = "cd gateway/app && python main.py"
 
 [variables]
-NODE_ENV = "production"
-NEXT_PUBLIC_API_URL = "https://lcafinal-production.up.railway.app/api"
+PYTHONUNBUFFERED = "1"
+PYTHONPATH = "/app"
+PORT = "8000"

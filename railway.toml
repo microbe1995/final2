@@ -1,12 +1,13 @@
 [build]
 builder = "nixpacks"
-buildCommand = "cd frontend && npm install && npm run build"
+buildCommand = "cd gateway && pip install -r requirements.txt"
 
 [deploy]
-startCommand = "cd frontend && npm start"
+startCommand = "cd gateway/app && python main.py"
 restartPolicyType = "on_failure"
 restartPolicyMaxRetries = 10
 
 [env]
-NODE_ENV = "production"
-NEXT_PUBLIC_API_URL = "https://lcafinal-production.up.railway.app/api"
+PYTHONUNBUFFERED = "1"
+PYTHONPATH = "/app"
+PORT = "8000"

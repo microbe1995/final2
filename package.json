@@ -4,16 +4,21 @@
   "description": "LCA Final Project - Monorepo with Next.js Frontend and FastAPI Gateway",
   "scripts": {
     "dev": "cd frontend && npm run dev",
-    "build": "cd frontend && npm install && npm run build",
-    "start": "cd frontend && npm start",
+    "build": "echo 'Build completed - using Python Gateway'",
+    "start": "cd gateway/app && python main.py",
+    "dev:frontend": "cd frontend && npm run dev",
+    "build:frontend": "cd frontend && npm install && npm run build",
+    "start:frontend": "cd frontend && npm start",
     "install:frontend": "cd frontend && npm install",
-    "install:all": "npm run install:frontend"
+    "install:gateway": "cd gateway && pip install -r requirements.txt",
+    "install:all": "npm run install:frontend && npm run install:gateway"
   },
-  "keywords": ["nextjs", "fastapi", "lca", "cbam"],
+  "keywords": ["nextjs", "fastapi", "lca", "cbam", "gateway", "python"],
   "author": "Microbe95",
   "license": "MIT",
   "engines": {
     "node": ">=18.0.0",
-    "npm": ">=8.0.0"
+    "npm": ">=8.0.0",
+    "python": ">=3.11.0"
   }
 }
