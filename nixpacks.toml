@@ -1,5 +1,5 @@
 [start]
-cmd = "python start_services.py"
+cmd = "cd gateway/app && python main.py"
 
 [variables]
 PYTHONUNBUFFERED = "1"

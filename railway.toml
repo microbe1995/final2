@@ -3,7 +3,7 @@ builder = "nixpacks"
 nixpacksConfigPath = "nixpacks.toml"
 
 [deploy]
-startCommand = "python start_services.py"
+startCommand = "cd gateway/app && python main.py"
 restartPolicyType = "on_failure"
 restartPolicyMaxRetries = 10
 
