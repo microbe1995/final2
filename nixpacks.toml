@@ -3,7 +3,7 @@ cmd = "cd gateway/app && python main.py"
 
 [variables]
 PYTHONUNBUFFERED = "1"
-PYTHONPATH = "/app"
+PYTHONPATH = "/app/gateway/app"
 PORT = "8080"
 AUTH_SERVICE_PORT = "8001"
 PIP_NO_CACHE_DIR = "1"

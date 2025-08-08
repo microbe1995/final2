@@ -12,12 +12,12 @@ from dotenv import load_dotenv
 from contextlib import asynccontextmanager
 from fastapi import Request
 
-from app.router.auth_router import auth_router
-from app.www.google.jwt_auth_middleware import AuthMiddleware
-from app.domain.discovery.model.service_discovery import ServiceDiscovery
-from app.domain.discovery.model.service_type import ServiceType
-from app.common.utility.constant.settings import Settings
-from app.common.utility.factory.response_factory import ResponseFactory
+from router.auth_router import auth_router
+from www.google.jwt_auth_middleware import AuthMiddleware
+from domain.discovery.model.service_discovery import ServiceDiscovery
+from domain.discovery.model.service_type import ServiceType
+from common.utility.constant.settings import Settings
+from common.utility.factory.response_factory import ResponseFactory
 
 if os.getenv("RAILWAY_ENVIRONMENT") != "true":
     load_dotenv()
