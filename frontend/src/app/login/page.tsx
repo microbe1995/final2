@@ -9,6 +9,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [loginData, setLoginData] = useState<string>('');
   const router = useRouter();
   const { login } = useAuthStore();
 
@@ -16,6 +17,22 @@ export default function LoginPage() {
     e.preventDefault();
     setError('');
     setIsLoading(true);
+
+    // 입력한 값들을 객체로 구성
+    const loginDataObj = {
+      email: email,
+      password: password,
+      timestamp: new Date().toISOString()
+    };
+
+    // Alert 창으로 입력 값 표시
+    alert(`로그인 시도:\n이메일: ${email}\n비밀번호: ${password}`);
+
+    // JSON 형태로 콘솔에 출력
+    console.log('로그인 데이터 (JSON):', JSON.stringify(loginDataObj, null, 2));
+
+    // 화면에 JSON 데이터 표시
+    setLoginData(JSON.stringify(loginDataObj, null, 2));
 
     try {
       await login({ email, password });
@@ -82,6 +99,16 @@ export default function LoginPage() {
             {error && (
               <div className="text-red-600 text-sm">
                 {error}
+              </div>
+            )}
+
+            {/* JSON 데이터 표시 영역 */}
+            {loginData && (
+              <div className="mt-4 p-4 bg-gray-50 rounded-md">
+                <h3 className="text-sm font-medium text-gray-700 mb-2">입력된 데이터 (JSON):</h3>
+                <pre className="text-xs text-gray-600 bg-white p-3 rounded border overflow-x-auto">
+                  {loginData}
+                </pre>
               </div>
             )}
 
