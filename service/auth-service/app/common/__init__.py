@@ -1,1 +1,0 @@
-# auth-service common package

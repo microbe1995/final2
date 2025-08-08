@@ -1,2 +1,0 @@
-# k8s-commands.txt - Kubernetes 명령어 모음
-# 나중에 내용을 채워넣을 예정 

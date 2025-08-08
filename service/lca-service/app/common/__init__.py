@@ -1,1 +1,0 @@
-# lca-service common package

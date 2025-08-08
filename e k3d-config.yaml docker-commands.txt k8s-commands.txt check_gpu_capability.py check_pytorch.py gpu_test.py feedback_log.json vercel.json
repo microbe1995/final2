@@ -1,3 +1,0 @@
-[33m1314d0a[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m refactor: 서비스 구조 재정리 - auth-service는 순수 인증만, report-service에 리포트 기능 통합
-[33md2394b5[m feat: cbam 서비스 기능을 greensteel로 이전 - chatbot-service와 report-auth-service 기능 통합
-[33m7262171[m refactor: service 폴더 정리 - 불필요한 esg-service, user-service 삭제

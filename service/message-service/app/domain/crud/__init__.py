@@ -1,1 +1,0 @@
-# message-service crud package 
