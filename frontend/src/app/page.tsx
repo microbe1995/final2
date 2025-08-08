@@ -175,6 +175,7 @@ export default function Home() {
       <div className="mt-8 text-center text-xs text-gray-500">
         <p>💡 입력한 메시지는 터미널에서 실시간으로 확인할 수 있습니다</p>
         <p>🔧 프론트엔드: Next.js + TypeScript + Zustand | 백엔드: FastAPI Gateway + MSA</p>
+        <p className="mt-2 text-green-600">✅ 최신 업데이트: {new Date().toLocaleString('ko-KR')}</p>
       </div>
     </div>
   );
