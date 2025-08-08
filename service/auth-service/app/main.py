@@ -12,7 +12,6 @@ from dotenv import load_dotenv
 
 from models.user import User, UserCreate, UserLogin, UserResponse, Token
 from services.auth_service import AuthService
-from database.db import init_db
 
 # 환경 변수 로드
 if os.getenv("RAILWAY_ENVIRONMENT") != "true":
@@ -33,8 +32,6 @@ security = HTTPBearer()
 async def lifespan(app: FastAPI):
     """애플리케이션 생명주기 관리"""
     logger.info("🔐 Auth Service 시작")
-    # 데이터베이스 초기화
-    await init_db()
     yield
     logger.info("🛑 Auth Service 종료")
 

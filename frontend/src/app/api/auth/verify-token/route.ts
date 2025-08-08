@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const AUTH_SERVICE_URL = process.env.AUTH_SERVICE_URL || 'http://localhost:8001';
+const GATEWAY_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1';
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,8 +13,8 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    // Auth Service로 토큰 검증 요청 전달
-    const response = await fetch(`${AUTH_SERVICE_URL}/verify-token`, {
+    // Gateway를 통해 Auth Service로 토큰 검증 요청 전달
+    const response = await fetch(`${GATEWAY_URL}/auth/verify-token`, {
       method: 'POST',
       headers: {
         'Authorization': authHeader,
