@@ -1,14 +1,7 @@
-[phases.build]
-dependsOn = ["install"]
-cmds = ["cd gateway && echo 'Build completed'"]
-
-[phases.install]
-cmds = ["cd gateway && pip install -r requirements.txt"]
-
 [start]
 cmd = "cd gateway/app && python main.py"
 
 [variables]
 PYTHONUNBUFFERED = "1"
-PYTHONPATH = "/app"
+PYTHONPATH = "/app/gateway"
 PORT = "8000"

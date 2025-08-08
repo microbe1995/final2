@@ -1,6 +1,5 @@
 [build]
 builder = "nixpacks"
-buildCommand = "cd gateway && pip install -r requirements.txt"
 
 [deploy]
 startCommand = "cd gateway/app && python main.py"
@@ -9,5 +8,5 @@ restartPolicyMaxRetries = 10
 
 [env]
 PYTHONUNBUFFERED = "1"
-PYTHONPATH = "/app"
+PYTHONPATH = "/app/gateway"
 PORT = "8000"
