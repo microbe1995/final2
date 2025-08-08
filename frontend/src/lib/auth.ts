@@ -1,40 +1,158 @@
-import jwt from 'jsonwebtoken';
-import { JwtPayload, User } from '@/types';
+import { apiClient } from './api';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+export interface LoginCredentials {
+  email: string;
+  password: string;
+}
 
-export const generateToken = (user: User): string => {
-  return jwt.sign(
-    {
-      userId: user.id,
-      email: user.email,
-      role: user.role,
-    },
-    JWT_SECRET,
-    { expiresIn: '7d' }
-  );
-};
+export interface RegisterData {
+  email: string;
+  username: string;
+  password: string;
+}
 
-export const verifyToken = (token: string): JwtPayload | null => {
-  try {
-    return jwt.verify(token, JWT_SECRET) as JwtPayload;
-  } catch (error) {
+export interface AuthUser {
+  id: string;
+  email: string;
+  username: string;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface TokenResponse {
+  access_token: string;
+  token_type: string;
+}
+
+// Auth Service API 함수들
+export const authApi = {
+  // 회원가입
+  async register(userData: RegisterData): Promise<AuthUser> {
+    try {
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(userData),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || '회원가입에 실패했습니다.');
+      }
+      
+      return await response.json();
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  // 로그인
+  async login(credentials: LoginCredentials): Promise<TokenResponse> {
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(credentials),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || '로그인에 실패했습니다.');
+      }
+      
+      const tokenData = await response.json();
+      
+      // 토큰을 localStorage에 저장
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('token', tokenData.access_token);
+      }
+      
+      return tokenData;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  // 현재 사용자 정보 조회
+  async getCurrentUser(): Promise<AuthUser> {
+    try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+      
+      if (!token) {
+        throw new Error('토큰이 없습니다.');
+      }
+      
+      const response = await fetch('/api/auth/me', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (!response.ok) {
+        if (response.status === 401) {
+          this.logout();
+        }
+        const errorData = await response.json();
+        throw new Error(errorData.detail || '사용자 정보를 가져올 수 없습니다.');
+      }
+      
+      return await response.json();
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  // 토큰 검증
+  async verifyToken(): Promise<boolean> {
+    try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+      
+      if (!token) {
+        return false;
+      }
+      
+      const response = await fetch('/api/auth/verify-token', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      return response.ok;
+    } catch (error) {
+      return false;
+    }
+  },
+
+  // 로그아웃
+  logout(): void {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('token');
+      window.location.href = '/login';
+    }
+  },
+
+  // 토큰 존재 여부 확인
+  isAuthenticated(): boolean {
+    if (typeof window !== 'undefined') {
+      const token = localStorage.getItem('token');
+      return !!token;
+    }
+    return false;
+  },
+
+  // 토큰 가져오기
+  getToken(): string | null {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('token');
+    }
     return null;
   }
-};
-
-export const decodeToken = (token: string): JwtPayload | null => {
-  try {
-    return jwt.decode(token) as JwtPayload;
-  } catch (error) {
-    return null;
-  }
-};
-
-export const isTokenExpired = (token: string): boolean => {
-  const decoded = decodeToken(token);
-  if (!decoded) return true;
-  
-  const currentTime = Math.floor(Date.now() / 1000);
-  return decoded.exp < currentTime;
 }; 

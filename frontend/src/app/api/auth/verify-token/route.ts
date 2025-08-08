@@ -4,29 +4,36 @@ const AUTH_SERVICE_URL = process.env.AUTH_SERVICE_URL || 'http://localhost:8001'
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    const authHeader = request.headers.get('authorization');
     
-    // Auth Service로 로그인 요청 전달
-    const response = await fetch(`${AUTH_SERVICE_URL}/login`, {
+    if (!authHeader) {
+      return NextResponse.json(
+        { error: '인증 토큰이 필요합니다.' },
+        { status: 401 }
+      );
+    }
+    
+    // Auth Service로 토큰 검증 요청 전달
+    const response = await fetch(`${AUTH_SERVICE_URL}/verify-token`, {
       method: 'POST',
       headers: {
+        'Authorization': authHeader,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(body),
     });
     
     const data = await response.json();
     
     if (!response.ok) {
       return NextResponse.json(
-        { error: data.detail || '로그인에 실패했습니다.' },
+        { error: data.detail || '토큰 검증에 실패했습니다.' },
         { status: response.status }
       );
     }
     
     return NextResponse.json(data);
   } catch (error) {
-    console.error('Login API error:', error);
+    console.error('Verify token API error:', error);
     return NextResponse.json(
       { error: '서버 오류가 발생했습니다.' },
       { status: 500 }

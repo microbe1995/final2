@@ -1,13 +1,19 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { AuthState, User, LoginCredentials, RegisterData } from '@/types';
-import { apiClient } from '@/lib/api';
+import { authApi, AuthUser, LoginCredentials, RegisterData, TokenResponse } from '@/lib/auth';
+
+interface AuthState {
+  user: AuthUser | null;
+  token: string | null;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+}
 
 interface AuthStore extends AuthState {
   login: (credentials: LoginCredentials) => Promise<boolean>;
   register: (data: RegisterData) => Promise<boolean>;
   logout: () => void;
-  setUser: (user: User) => void;
+  setUser: (user: AuthUser) => void;
   setToken: (token: string) => void;
   clearAuth: () => void;
   checkAuth: () => Promise<boolean>;
@@ -24,55 +30,44 @@ export const useAuthStore = create<AuthStore>()(
       login: async (credentials: LoginCredentials) => {
         set({ isLoading: true });
         try {
-          const response = await apiClient.post<{ user: User; token: string }>('/auth/login', credentials);
+          const tokenResponse = await authApi.login(credentials);
+          const user = await authApi.getCurrentUser();
           
-          if (response.success && response.data) {
-            const { user, token } = response.data;
-            apiClient.setAuthToken(token);
-            
-            set({
-              user,
-              token,
-              isAuthenticated: true,
-              isLoading: false,
-            });
-            return true;
-          }
-          return false;
+          set({
+            user,
+            token: tokenResponse.access_token,
+            isAuthenticated: true,
+            isLoading: false,
+          });
+          return true;
         } catch (error) {
           set({ isLoading: false });
           console.error('Login error:', error);
-          return false;
+          throw error;
         }
       },
 
       register: async (data: RegisterData) => {
         set({ isLoading: true });
         try {
-          const response = await apiClient.post<{ user: User; token: string }>('/auth/register', data);
+          const user = await authApi.register(data);
           
-          if (response.success && response.data) {
-            const { user, token } = response.data;
-            apiClient.setAuthToken(token);
-            
-            set({
-              user,
-              token,
-              isAuthenticated: true,
-              isLoading: false,
-            });
-            return true;
-          }
-          return false;
+          set({
+            user,
+            token: null,
+            isAuthenticated: false,
+            isLoading: false,
+          });
+          return true;
         } catch (error) {
           set({ isLoading: false });
           console.error('Register error:', error);
-          return false;
+          throw error;
         }
       },
 
       logout: () => {
-        apiClient.clearAuthToken();
+        authApi.logout();
         set({
           user: null,
           token: null,
@@ -81,17 +76,16 @@ export const useAuthStore = create<AuthStore>()(
         });
       },
 
-      setUser: (user: User) => {
+      setUser: (user: AuthUser) => {
         set({ user });
       },
 
       setToken: (token: string) => {
-        apiClient.setAuthToken(token);
         set({ token, isAuthenticated: true });
       },
 
       clearAuth: () => {
-        apiClient.clearAuthToken();
+        authApi.logout();
         set({
           user: null,
           token: null,
@@ -101,16 +95,14 @@ export const useAuthStore = create<AuthStore>()(
       },
 
       checkAuth: async () => {
-        const { token } = get();
-        if (!token) return false;
-
         try {
-          const response = await apiClient.get<User>('/auth/me');
-          if (response.success && response.data) {
-            set({ user: response.data, isAuthenticated: true });
-            return true;
+          if (!authApi.isAuthenticated()) {
+            return false;
           }
-          return false;
+
+          const user = await authApi.getCurrentUser();
+          set({ user, isAuthenticated: true });
+          return true;
         } catch (error) {
           get().clearAuth();
           return false;
