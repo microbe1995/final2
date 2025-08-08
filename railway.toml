@@ -2,11 +2,12 @@
 builder = "nixpacks"
 
 [deploy]
-startCommand = "cd gateway/app && python main.py"
+startCommand = "python start_services.py"
 restartPolicyType = "on_failure"
 restartPolicyMaxRetries = 10
 
 [env]
 PYTHONUNBUFFERED = "1"
-PYTHONPATH = "/app/gateway"
+PYTHONPATH = "/app"
 PORT = "8000"
+AUTH_SERVICE_PORT = "8001"

@@ -1,7 +1,8 @@
 [start]
-cmd = "cd gateway/app && python main.py"
+cmd = "python start_services.py"
 
 [variables]
 PYTHONUNBUFFERED = "1"
-PYTHONPATH = "/app/gateway"
+PYTHONPATH = "/app"
 PORT = "8000"
+AUTH_SERVICE_PORT = "8001"

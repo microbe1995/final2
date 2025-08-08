@@ -1,1 +1,1 @@
-web: cd gateway/app && python main.py
+web: python start_services.py
