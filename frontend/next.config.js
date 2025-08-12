@@ -31,6 +31,11 @@ const nextConfig = {
   // 이미지 도메인 설정
   images: {
     domains: ['localhost', 'lca-final.vercel.app'],
+  },
+
+  // Vercel Analytics 비활성화
+  experimental: {
+    instrumentationHook: false
   }
 }
 
