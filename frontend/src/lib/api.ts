@@ -5,6 +5,8 @@ import { getApiConfig } from './config';
 const createApiClient = (): AxiosInstance => {
   const config = getApiConfig();
   
+  console.log('🔧 API 클라이언트 생성:', config);
+  
   const apiClient = axios.create({
     baseURL: config.apiBaseURL,
     timeout: 10000,
@@ -16,7 +18,7 @@ const createApiClient = (): AxiosInstance => {
   // 요청 인터셉터
   apiClient.interceptors.request.use(
     (config) => {
-      console.log(`🚀 API 요청: ${config.method?.toUpperCase()} ${config.url}`);
+      console.log(`🚀 API 요청: ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`);
       if (config.data) {
         console.log('📤 요청 데이터:', config.data);
       }
@@ -42,6 +44,13 @@ const createApiClient = (): AxiosInstance => {
           status: error.response.status,
           data: error.response.data,
           headers: error.response.headers,
+          url: error.config?.url,
+          baseURL: error.config?.baseURL,
+        });
+      } else if (error.request) {
+        console.error('🌐 네트워크 오류:', {
+          message: error.message,
+          code: error.code,
         });
       }
       return Promise.reject(error);
