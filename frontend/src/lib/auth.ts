@@ -1,5 +1,5 @@
-import { api } from './api.js';
-import { API_ENDPOINTS } from './config.js';
+import { api } from './api';
+import { API_ENDPOINTS } from './config';
 
 export interface LoginCredentials {
   email: string;

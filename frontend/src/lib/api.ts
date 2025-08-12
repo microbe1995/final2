@@ -1,5 +1,5 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
-import { getApiConfig } from './config.js';
+import { getApiConfig } from './config';
 
 // axios 인스턴스 생성
 const createApiClient = (): AxiosInstance => {
