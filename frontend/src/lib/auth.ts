@@ -34,7 +34,7 @@ export const authApi = {
     try {
       console.log('🚀 회원가입 API 호출:', userData);
       
-      const response = await api.post<AuthUser>(API_ENDPOINTS.auth.register, userData);
+      const response = await api.post<AuthUser>(API_ENDPOINTS.AUTH.REGISTER, userData);
       
       console.log('✅ 회원가입 성공:', response);
       return response;
@@ -58,7 +58,7 @@ export const authApi = {
     try {
       console.log('🚀 로그인 API 호출:', credentials);
       
-      const response = await api.post<LoginResponse>(API_ENDPOINTS.auth.login, credentials);
+      const response = await api.post<LoginResponse>(API_ENDPOINTS.AUTH.LOGIN, credentials);
       
       console.log('✅ 로그인 성공:', response);
       return { 
