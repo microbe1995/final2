@@ -11,10 +11,7 @@ const nextConfig = {
     // API Gateway 설정
     GATEWAY_URL: process.env.GATEWAY_URL || 'http://localhost:8080',
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080',
-    NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080/api/v1',
-    
-    // 환경별 설정
-    NODE_ENV: process.env.NODE_ENV || 'development'
+    NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080/api/v1'
   },
   
   // 로컬 개발용 설정
