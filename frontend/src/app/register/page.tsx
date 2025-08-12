@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
+import axios from 'axios';
 
 export default function RegisterPage() {
   const [formData, setFormData] = useState({
@@ -52,18 +53,32 @@ export default function RegisterPage() {
       return;
     }
 
+    // 입력된 정보를 JSON 형태로 alert 창에 표시
+    const registerData = {
+      name: formData.name,
+      email: formData.email,
+      password: formData.password
+    };
+    
+    alert('회원가입 정보:\n' + JSON.stringify(registerData, null, 2));
+
     setIsLoading(true);
 
     try {
-      await register({
-        name: formData.name,
-        email: formData.email,
-        password: formData.password
-      });
-      router.push('/dashboard');
+      // axios를 사용하여 회원가입 API 호출
+      const response = await axios.post('/api/auth/register', registerData);
+      
+      if (response.status === 200 || response.status === 201) {
+        // 성공 시 기존 register 함수도 호출 (상태 관리용)
+        await register(registerData);
+        alert('회원가입이 성공했습니다!');
+        router.push('/dashboard');
+      }
     } catch (error: any) {
+      const errorMessage = error.response?.data?.error || '회원가입 중 오류가 발생했습니다.';
+      alert('회원가입 실패: ' + errorMessage);
       setErrors({
-        submit: error.response?.data?.error || '회원가입 중 오류가 발생했습니다.'
+        submit: errorMessage
       });
     } finally {
       setIsLoading(false);
@@ -200,7 +215,7 @@ export default function RegisterPage() {
                 disabled={isLoading}
                 className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isLoading ? '회원가입 중...' : '회원가입'}
+                {isLoading ? '회원가입 중...' : '회원가입 (JSON 확인)'}
               </button>
             </div>
           </form>
