@@ -11,7 +11,7 @@ const nextConfig = {
     GATEWAY_URL: process.env.GATEWAY_URL || 'http://localhost:8080',
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
   },
-  // Vercel 배포를 위한 설정
+  // 로컬 개발용 설정
   experimental: {
     esmExternals: false
   }

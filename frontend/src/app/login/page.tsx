@@ -38,7 +38,7 @@ export default function LoginPage() {
       await login({ email, password });
       router.push('/dashboard');
     } catch (error: any) {
-      setError(error.response?.data?.error || '로그인 중 오류가 발생했습니다.');
+      setError('로그인 중 오류가 발생했습니다.');
     } finally {
       setIsLoading(false);
     }
