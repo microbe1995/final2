@@ -1,5 +1,17 @@
 import { api } from './api';
-import { API_ENDPOINTS } from '@/lib/config';
+
+// 하드코딩된 API 엔드포인트
+const API_ENDPOINTS = {
+  AUTH: {
+    LOGIN: '/auth/login',
+    REGISTER: '/auth/register',
+    LOGOUT: '/auth/logout'
+  },
+  USER: {
+    PROFILE: '/user/profile',
+    UPDATE: '/user/update'
+  }
+};
 
 export interface LoginCredentials {
   email: string;

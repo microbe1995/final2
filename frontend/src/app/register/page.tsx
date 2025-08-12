@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter } from 'next/router';
 import axios from 'axios';
 
 export default function RegisterPage() {
@@ -75,7 +75,7 @@ export default function RegisterPage() {
       alert(`🎉 회원가입이 성공적으로 완료되었습니다!\n\n사용자명: ${response.data.username}\n이메일: ${response.data.email}\n사용자 ID: ${response.data.id}`);
       
       // 대시보드로 이동
-      router.push('/dashboard');
+      router.replace('/dashboard');
     })
     .catch(error => {
       console.error('❌ 회원가입 실패:', error);
@@ -93,7 +93,7 @@ export default function RegisterPage() {
 
   // Go back to login page
   const handleBackToLogin = () => {
-    router.push('/login');
+    router.replace('/login');
   };
 
   return (

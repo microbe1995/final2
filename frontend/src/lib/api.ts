@@ -1,14 +1,17 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
-import { getApiConfig } from '@/lib/config';
+
+// 하드코딩된 API 설정
+const API_CONFIG = {
+  baseURL: 'http://localhost:8080',
+  apiBaseURL: 'http://localhost:8080/api/v1'
+};
 
 // axios 인스턴스 생성
 const createApiClient = (): AxiosInstance => {
-  const config = getApiConfig();
-  
-  console.log('🔧 API 클라이언트 생성:', config);
+  console.log('🔧 API 클라이언트 생성:', API_CONFIG);
   
   const apiClient = axios.create({
-    baseURL: config.apiBaseURL,
+    baseURL: API_CONFIG.apiBaseURL,
     timeout: 10000,
     headers: {
       'Content-Type': 'application/json',

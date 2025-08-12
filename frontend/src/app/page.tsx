@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter } from 'next/router';
 import { useAuthStore } from '@/store/authStore';
 
 export default function Home() {
@@ -19,7 +19,7 @@ export default function Home() {
 
     try {
       await login({ email, password });
-      router.push('/dashboard');
+      router.replace('/dashboard');
     } catch (error: any) {
       setError(error.response?.data?.error || '로그인 중 오류가 발생했습니다.');
     } finally {
@@ -106,7 +106,7 @@ export default function Home() {
             <div>
               <button
                 type="button"
-                onClick={() => router.push('/register')}
+                onClick={() => router.replace('/register')}
                 className="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
               >
                 Sign Up

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter } from 'next/router';
 import { useAuthStore } from '@/store/authStore';
 
 export default function LoginPage() {
@@ -38,7 +38,7 @@ export default function LoginPage() {
         alert('🎉 로그인이 성공했습니다!');
         
         // 대시보드로 이동
-        router.push('/dashboard');
+        router.replace('/dashboard');
       } else {
         // 오류는 이미 store에서 처리됨
         console.error('로그인 실패');
