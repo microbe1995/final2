@@ -13,7 +13,7 @@ from contextlib import asynccontextmanager
 from fastapi import Request
 
 from router.auth_router import auth_router
-from www.google.jwt_auth_middleware import AuthMiddleware
+
 from domain.discovery.model.service_discovery import ServiceDiscovery
 from domain.discovery.model.service_type import ServiceType
 from common.utility.constant.settings import Settings
@@ -58,7 +58,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.add_middleware(AuthMiddleware)
+
 
 gateway_router = APIRouter(prefix="/api/v1", tags=["Gateway API"])
 gateway_router.include_router(auth_router)
@@ -68,9 +68,13 @@ app.include_router(gateway_router)
 # 🪡🪡🪡 파일이 필요한 서비스 목록 (현재는 없음)
 FILE_REQUIRED_SERVICES = set()
 
-@gateway_router.get("/health", summary="테스트 엔드포인트")
+@app.get("/health", summary="테스트 엔드포인트")
 async def health_check():
     return {"status": "healthy!"}
+
+@gateway_router.get("/health", summary="테스트 엔드포인트")
+async def gateway_health_check():
+    return {"status": "gateway healthy!"}
 
 @gateway_router.get("/{service}/{path:path}", summary="GET 프록시")
 async def proxy_get(
@@ -81,7 +85,7 @@ async def proxy_get(
     try:
         factory = ServiceDiscovery(service_type=service)
         
-        # 헤더 전달 (JWT 및 사용자 ID - 미들웨어에서 이미 X-User-Id 헤더가 추가됨)
+        # 헤더 전달
         headers = dict(request.headers)
         
         response = await factory.request(
@@ -121,7 +125,7 @@ async def proxy_post(
         body = None
         data = None
         
-        # 헤더 전달 (JWT 및 사용자 ID - 미들웨어에서 이미 X-User-Id 헤더가 추가됨)
+        # 헤더 전달
         headers = dict(request.headers)
         
         # 파일이 필요한 서비스 처리
@@ -187,7 +191,7 @@ async def proxy_put(service: ServiceType, path: str, request: Request):
     try:
         factory = ServiceDiscovery(service_type=service)
         
-        # 헤더 전달 (JWT 및 사용자 ID - 미들웨어에서 이미 X-User-Id 헤더가 추가됨)
+        # 헤더 전달
         headers = dict(request.headers)
         
         response = await factory.request(
@@ -210,7 +214,7 @@ async def proxy_delete(service: ServiceType, path: str, request: Request):
     try:
         factory = ServiceDiscovery(service_type=service)
         
-        # 헤더 전달 (JWT 및 사용자 ID - 미들웨어에서 이미 X-User-Id 헤더가 추가됨)
+        # 헤더 전달
         headers = dict(request.headers)
         
         response = await factory.request(
@@ -233,7 +237,7 @@ async def proxy_patch(service: ServiceType, path: str, request: Request):
     try:
         factory = ServiceDiscovery(service_type=service)
         
-        # 헤더 전달 (JWT 및 사용자 ID - 미들웨어에서 이미 X-User-Id 헤더가 추가됨)
+        # 헤더 전달
         headers = dict(request.headers)
         
         response = await factory.request(

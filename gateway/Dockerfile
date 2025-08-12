@@ -21,16 +21,16 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY app/ .
 
 # 포트 노출 (Gateway 서비스)
-EXPOSE 8080
+EXPOSE 8000
 
 # 환경 변수 설정
 ENV PYTHONPATH=/app
 ENV PYTHONUNBUFFERED=1
-ENV PORT=8080
+ENV PORT=8000
 
 # 헬스 체크
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD curl -f http://localhost:8080/health || exit 1
+    CMD curl -f http://localhost:8000/health || exit 1
 
 # Gateway 서비스 실행
-CMD ["python", "main.py"]
+CMD ["python", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]

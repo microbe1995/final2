@@ -9,7 +9,7 @@ class ServiceDiscovery:
     def __init__(self, service_type: ServiceType):
         self.service_type = service_type
         self.service_urls = {
-            ServiceType.AUTH: "http://localhost:8001",
+            ServiceType.AUTH: "http://auth-service:8001",
             ServiceType.USER: "http://user-service:8002",
             ServiceType.CHATBOT: "http://chatbot-service:8002",
             ServiceType.REPORT: "http://report-service:8003",

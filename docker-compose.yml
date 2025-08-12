@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  # API Gateway 서비스
+  gateway:
+    build: ./gateway
+    ports:
+      - "8080:8000"
+    environment:
+      - AUTH_SERVICE_URL=http://auth-service:8001
+      - USER_SERVICE_URL=http://user-service:8002
+    depends_on:
+      - auth-service
+    networks:
+      - greensteel-network
+
+  # 인증 서비스
+  auth-service:
+    build: ./service/auth-service
+    ports:
+      - "8001:8000"
+    networks:
+      - greensteel-network
+
+  # 사용자 서비스 (향후 추가 예정)
+  # user-service:
+  #   build: ./service/user-service
+  #   ports:
+  #     - "8002:8000"
+  #   networks:
+  #     - greensteel-network
+
+  # Frontend 서비스 (개발용)
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8080
+    depends_on:
+      - gateway
+    networks:
+      - greensteel-network
+
+networks:
+  greensteel-network:
+    driver: bridge
