@@ -65,8 +65,9 @@ export default function RegisterPage() {
     setIsLoading(true);
 
     try {
-      // axios를 사용하여 회원가입 API 호출
-      const response = await axios.post('/api/auth/register', registerData);
+      // Gateway로 직접 요청 (CORS는 Gateway에서 처리)
+      const GATEWAY_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+      const response = await axios.post(`${GATEWAY_URL}/api/v1/auth/register`, registerData);
       
       if (response.status === 200 || response.status === 201) {
         // 성공 시 기존 register 함수도 호출 (상태 관리용)

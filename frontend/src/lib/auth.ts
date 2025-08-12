@@ -7,14 +7,14 @@ export interface LoginCredentials {
 
 export interface RegisterData {
   email: string;
-  username: string;
+  name: string;
   password: string;
 }
 
 export interface AuthUser {
   id: string;
   email: string;
-  username: string;
+  name: string;
   is_active: boolean;
   created_at: string;
 }
@@ -29,7 +29,8 @@ export const authApi = {
   // 회원가입
   async register(userData: RegisterData): Promise<AuthUser> {
     try {
-      const response = await fetch('/api/auth/register', {
+      const GATEWAY_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+      const response = await fetch(`${GATEWAY_URL}/api/v1/auth/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -51,7 +52,8 @@ export const authApi = {
   // 로그인
   async login(credentials: LoginCredentials): Promise<TokenResponse> {
     try {
-      const response = await fetch('/api/auth/login', {
+      const GATEWAY_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+      const response = await fetch(`${GATEWAY_URL}/api/v1/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -86,7 +88,8 @@ export const authApi = {
         throw new Error('토큰이 없습니다.');
       }
       
-      const response = await fetch('/api/auth/me', {
+      const GATEWAY_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+      const response = await fetch(`${GATEWAY_URL}/api/v1/auth/me`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -117,7 +120,8 @@ export const authApi = {
         return false;
       }
       
-      const response = await fetch('/api/auth/verify-token', {
+      const GATEWAY_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+      const response = await fetch(`${GATEWAY_URL}/api/v1/auth/verify-token`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
