@@ -12,7 +12,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "vercel-build": "next build",
+    "postinstall": "next telemetry disable"
   },
   "dependencies": {
     "next": "14.1.0",

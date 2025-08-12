@@ -45,7 +45,19 @@ const nextConfig = {
   dynamicParams: true,
   
   // Vercel 배포 최적화
-  swcMinify: true
+  swcMinify: true,
+  
+  // Vercel 자동 감지 최적화
+  distDir: '.next',
+  
+  // 빌드 최적화
+  compress: true,
+  
+  // 이미지 최적화
+  images: {
+    unoptimized: false,
+    domains: ['localhost', 'lca-final.vercel.app'],
+  }
 }
 
 module.exports = withPWA(nextConfig) 
