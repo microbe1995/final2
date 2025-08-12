@@ -8,6 +8,8 @@ from fastapi.responses import JSONResponse
 import os
 import logging
 import sys
+import json
+from datetime import datetime
 from dotenv import load_dotenv
 from contextlib import asynccontextmanager
 from fastapi import Request
@@ -22,20 +24,51 @@ from common.utility.factory.response_factory import ResponseFactory
 if os.getenv("RAILWAY_ENVIRONMENT") != "true":
     load_dotenv()
 
+# JSON 형태의 로그 포맷터 클래스
+class JSONFormatter(logging.Formatter):
+    def format(self, record):
+        log_entry = {
+            "timestamp": datetime.utcnow().isoformat(),
+            "level": record.levelname,
+            "logger": record.name,
+            "message": record.getMessage(),
+            "module": record.module,
+            "function": record.funcName,
+            "line": record.lineno
+        }
+        
+        # 추가 필드가 있는 경우 포함
+        if hasattr(record, 'extra_fields'):
+            log_entry.update(record.extra_fields)
+            
+        return json.dumps(log_entry, ensure_ascii=False)
+
+# 로깅 설정
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[logging.StreamHandler(sys.stdout)]
 )
+
+# 루트 로거 설정
+root_logger = logging.getLogger()
+root_logger.handlers.clear()
+
+# JSON 포맷터 적용
+json_formatter = JSONFormatter()
+console_handler = logging.StreamHandler(sys.stdout)
+console_handler.setFormatter(json_formatter)
+root_logger.addHandler(console_handler)
+root_logger.setLevel(logging.INFO)
+
 logger = logging.getLogger("gateway_api")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info("🚀 Gateway API 서비스 시작")
+    logger.info("🚀 Gateway API 서비스 시작", extra={"extra_fields": {"service": "gateway", "action": "start"}})
     # Settings 초기화 및 앱 state에 등록
     app.state.settings = Settings()
     yield
-    logger.info("🛑 Gateway API 서비스 종료")
+    logger.info("🛑 Gateway API 서비스 종료", extra={"extra_fields": {"service": "gateway", "action": "stop"}})
 
 app = FastAPI(
     title="Gateway API",

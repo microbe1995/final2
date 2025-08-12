@@ -1,107 +1,113 @@
-# GreenSteel MSA 프로젝트
+# Gateway Service
 
-GreenSteel은 Next.js + TypeScript + React + Zustand + Axios + PWA + JWT 인증을 기반으로 한 마이크로서비스 아키텍처 프로젝트입니다.
+API Gateway 서비스로, 모든 마이크로서비스에 대한 진입점 역할을 합니다.
 
-## 🏗️ 프로젝트 구조
+## 주요 기능
 
+### 1. 인증 (Authentication)
+- **회원가입**: `/api/v1/auth/register` - 사용자 회원가입
+- **로그인**: `/api/v1/auth/login` - 사용자 로그인
+- **로컬 테스트**: `/api/v1/auth/register/local`, `/api/v1/auth/login/local`
+
+### 2. 로깅 시스템
+- **JSON 형태 로그**: 모든 로그가 JSON 형태로 출력되어 도커 로그에서 쉽게 확인 가능
+- **구조화된 로깅**: 요청/응답 데이터, 오류 정보 등이 체계적으로 기록
+- **도커 로그 통합**: `docker logs` 명령어로 모든 로그 확인 가능
+
+### 3. 프록시 기능
+- 동적 라우팅을 통한 마이크로서비스 프록시
+- GET, POST, PUT, PATCH, DELETE 메서드 지원
+- 파일 업로드 지원
+
+## API 엔드포인트
+
+### 인증 관련
 ```
-greensteel/
-├── frontend/              # Next.js 프론트엔드 애플리케이션
-│   ├── src/               # 소스 코드
-│   ├── public/            # 정적 파일 (PWA 매니페스트, 아이콘 등)
-│   ├── package.json       # 프론트엔드 의존성
-│   └── ...
-├── gateway/               # FastAPI API Gateway
-│   ├── app/               # 게이트웨이 애플리케이션 코드
-│   ├── main.py            # 게이트웨이 메인 파일
-│   └── docker-compose.yml # 게이트웨이 도커 설정
-├── service/               # 마이크로서비스들
-│   ├── auth-service/      # 인증 서비스
-│   ├── user-service/      # 사용자 관리 서비스
-│   └── esg-service/       # ESG 데이터 서비스
-├── document/              # 프로젝트 문서
-│   └── README.md          # 상세 문서
-├── .github/               # GitHub Actions CI/CD
-│   └── workflows/
-└── vercel.json            # Vercel 배포 설정
+POST /api/v1/auth/register      # 외부 서비스 회원가입
+POST /api/v1/auth/login         # 외부 서비스 로그인
+POST /api/v1/auth/register/local # 로컬 회원가입 (테스트용)
+POST /api/v1/auth/login/local   # 로컬 로그인 (테스트용)
+GET  /api/v1/auth/health        # 인증 서비스 상태 확인
 ```
 
-## 🚀 기술 스택
+### 프록시
+```
+GET  /api/v1/{service}/{path}   # GET 요청 프록시
+POST /api/v1/{service}/{path}   # POST 요청 프록시
+PUT  /api/v1/{service}/{path}   # PUT 요청 프록시
+PATCH /api/v1/{service}/{path}  # PATCH 요청 프록시
+DELETE /api/v1/{service}/{path} # DELETE 요청 프록시
+```
 
-### Frontend
-- **Next.js 14** - React 프레임워크
-- **TypeScript** - 타입 안전성
-- **React 18** - UI 라이브러리
-- **Zustand** - 상태 관리
-- **Axios** - HTTP 클라이언트
-- **Tailwind CSS** - 스타일링
-- **PWA** - Progressive Web App
+## 로깅 예시
 
-### Backend
-- **FastAPI** - API Gateway
-- **Python** - 백엔드 언어
-- **JWT** - 인증 토큰
-- **Docker** - 컨테이너화
+### 회원가입 요청 로그
+```json
+{
+  "timestamp": "2024-01-01T00:00:00.000Z",
+  "level": "INFO",
+  "logger": "gateway.app.router.auth_router",
+  "message": "라우터 회원가입 요청: {\"email\": \"test@example.com\", \"username\": \"testuser\", \"full_name\": \"테스트 사용자\"}",
+  "module": "auth_router",
+  "function": "register",
+  "line": 45
+}
+```
 
-### DevOps
-- **GitHub Actions** - CI/CD
-- **Vercel** - 프론트엔드 배포
-- **Docker Compose** - 로컬 개발 환경
+### 회원가입 성공 응답 로그
+```json
+{
+  "timestamp": "2024-01-01T00:00:01.000Z",
+  "level": "INFO",
+  "logger": "gateway.app.domain.auth.service.auth_service",
+  "message": "회원가입 성공: {\"id\": \"uuid-here\", \"email\": \"test@example.com\", \"username\": \"testuser\", \"full_name\": \"테스트 사용자\", \"created_at\": \"2024-01-01T00:00:01.000Z\", \"message\": \"회원가입이 성공적으로 완료되었습니다.\"}",
+  "module": "auth_service",
+  "function": "register_user",
+  "line": 78
+}
+```
 
-## 🛠️ 개발 환경 설정
+## 실행 방법
 
-### 1. 프론트엔드 실행
+### 도커로 실행
 ```bash
-cd frontend
-npm install
-npm run dev
+docker-compose up gateway
 ```
 
-### 2. 게이트웨이 실행
+### 로컬 실행
 ```bash
 cd gateway
 pip install -r requirements.txt
-python main.py
+python -m uvicorn app.main:app --host 0.0.0.0 --port 8080 --reload
 ```
 
-### 3. 서비스 실행
-```bash
-# 각 서비스 디렉토리에서 실행
-cd service/auth-service
-python main.py
-```
+## 테스트
 
-## 📦 배포
-
-### Frontend (Vercel)
-- GitHub main 브랜치에 푸시하면 자동 배포
-- Vercel 대시보드에서 환경 변수 설정
-
-### Backend (Docker)
+### 테스트 스크립트 실행
 ```bash
 cd gateway
-docker-compose up -d
+python test_auth.py
 ```
 
-## 🔄 CI/CD 파이프라인
+### API 문서 확인
+- Swagger UI: http://localhost:8080/docs
+- ReDoc: http://localhost:8080/redoc
 
-1. **코드 푸시** → GitHub
-2. **자동 테스트** → GitHub Actions
-3. **빌드 검증** → TypeScript, ESLint
-4. **자동 배포** → Vercel (Frontend)
+## 도커 로그 확인
 
-## 📚 문서
+```bash
+# 전체 로그 확인
+docker-compose logs gateway
 
-자세한 문서는 `document/` 폴더를 참조하세요.
+# 실시간 로그 확인
+docker-compose logs -f gateway
 
-## 🤝 기여하기
+# 특정 서비스 로그만 확인
+docker logs greensteel-gateway-1
+```
 
-1. Fork the Project
-2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the Branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+## 환경 변수
 
-## 📄 라이선스
-
-이 프로젝트는 MIT 라이선스 하에 배포됩니다. 
+- `PORT`: 서비스 포트 (기본값: 8080)
+- `AUTH_SERVICE_URL`: 인증 서비스 URL
+- `USER_SERVICE_URL`: 사용자 서비스 URL 
