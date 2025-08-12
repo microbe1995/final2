@@ -1,0 +1,28 @@
+{
+  "buildCommand": "cd frontend && pnpm run build",
+  "installCommand": "cd frontend && pnpm install",
+  "framework": "nextjs",
+  "outputDirectory": "frontend/.next",
+  "functions": {
+    "frontend/app/**/*.tsx": {
+      "maxDuration": 30
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/sw.js",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=0, must-revalidate"
+        }
+      ]
+    }
+  ]
+}

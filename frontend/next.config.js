@@ -36,7 +36,16 @@ const nextConfig = {
   // Vercel Analytics 비활성화
   experimental: {
     instrumentationHook: false
-  }
+  },
+  
+  // 빌드 시 정적 페이지 생성 문제 해결
+  trailingSlash: false,
+  
+  // 동적 라우팅 활성화
+  dynamicParams: true,
+  
+  // Vercel 배포 최적화
+  swcMinify: true
 }
 
 module.exports = withPWA(nextConfig) 
