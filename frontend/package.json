@@ -15,11 +15,7 @@
     "react-dom": "^18.2.0",
     "zustand": "^4.4.7",
     "axios": "^1.6.2",
-    "jsonwebtoken": "^9.0.2",
-    "bcryptjs": "^2.4.3",
-    "next-pwa": "^5.6.0",
-    "@types/jsonwebtoken": "^9.0.5",
-    "@types/bcryptjs": "^2.4.6"
+    "next-pwa": "^5.6.0"
   },
   "devDependencies": {
     "@types/node": "^20.10.4",

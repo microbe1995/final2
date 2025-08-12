@@ -48,11 +48,11 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://localhost:3000",  # 로컬 접근
+        "http://localhost:3000",  # 로컬 프론트엔드
         "http://127.0.0.1:3000",  # 로컬 IP 접근
         "http://frontend:3000",   # Docker 내부 네트워크
-
-    ], # 프론트엔드 주소 명시
+        "https://lca-final.vercel.app",  # Vercel 프론트엔드
+    ],
     allow_credentials=True,  # HttpOnly 쿠키 사용을 위해 필수
     allow_methods=["*"],
     allow_headers=["*"],

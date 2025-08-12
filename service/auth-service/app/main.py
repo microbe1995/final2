@@ -44,7 +44,8 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:3000",  # 로컬 프론트엔드
-        "http://127.0.0.1:3000",
+        "http://127.0.0.1:3000",  # 로컬 IP 접근
+        "http://frontend:3000",   # Docker 내부 네트워크
         "https://lca-final.vercel.app",  # Vercel 프론트엔드
         "http://gateway:8080",  # Gateway 서비스
         "http://localhost:8080",  # 로컬 Gateway
