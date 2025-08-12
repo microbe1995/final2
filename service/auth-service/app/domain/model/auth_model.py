@@ -52,20 +52,4 @@ class UserResponseModel(BaseModel):
             }
         }
 
-class TokenModel(BaseModel):
-    """토큰 모델"""
-    access_token: str = Field(..., description="액세스 토큰")
-    token_type: str = Field("bearer", description="토큰 타입")
-    
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-                "token_type": "bearer"
-            }
-        }
 
-class TokenDataModel(BaseModel):
-    """토큰 데이터 모델"""
-    email: Optional[str] = None
-    user_id: Optional[str] = None

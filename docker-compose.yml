@@ -1,4 +1,4 @@
-version: '3.8'
+name: greensteel
 
 services:
   # API Gateway 서비스
@@ -7,7 +7,7 @@ services:
     ports:
       - "8080:8000"
     environment:
-      - AUTH_SERVICE_URL=http://auth-service:8001
+      - AUTH_SERVICE_URL=http://auth-service:8000
       - USER_SERVICE_URL=http://user-service:8002
     depends_on:
       - auth-service
@@ -18,7 +18,7 @@ services:
   auth-service:
     build: ./service/auth-service
     ports:
-      - "8001:8000"
+      - "8000:8000"
     networks:
       - greensteel-network
 

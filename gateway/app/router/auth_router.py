@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 auth_router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 # Auth Service URL
-AUTH_SERVICE_URL = "http://auth-service:8001"
+AUTH_SERVICE_URL = "http://auth-service:8000"
 
 @auth_router.get("/health")
 async def auth_health():

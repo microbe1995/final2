@@ -20,14 +20,11 @@ class UserRepository:
         self._initialize_test_data()
     
     def _initialize_test_data(self):
-        """테스트 데이터 초기화"""
-        from passlib.context import CryptContext
-        pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-        
+        """테스트 데이터 초기화 (JWT 제거)"""
         test_user = UserEntity(
             email="test@example.com",
             username="testuser",
-            hashed_password=pwd_context.hash("test123"),
+            hashed_password="test123",  # 개발용으로 평문 저장
             is_active=True
         )
         
