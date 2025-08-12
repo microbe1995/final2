@@ -48,6 +48,9 @@ export default function RegisterPage() {
     // JSON을 보기 좋게 포맷팅하여 alert에 표시
     alert(JSON.stringify(registerData, null, 2));
     
+    // 프론트엔드 로그: 입력값들을 JSON 형태로 출력
+    console.log('📝 프론트엔드 회원가입 입력값:', JSON.stringify(registerData, null, 2));
+    
     // API Gateway로 요청 (로컬 환경)
     const apiGatewayUrl = 'http://localhost:8080/api/v1/auth/register/local';
     
