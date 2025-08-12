@@ -14,7 +14,11 @@ from dotenv import load_dotenv
 from contextlib import asynccontextmanager
 
 # 기본 라우터만 import (나머지는 나중에 추가)
-from .router.auth_router import auth_router
+try:
+    from .router.auth_router import auth_router
+except ImportError:
+    # Docker 환경에서 절대 경로로 import 시도
+    from app.router.auth_router import auth_router
 
 if os.getenv("RAILWAY_ENVIRONMENT") != "true":
     load_dotenv()

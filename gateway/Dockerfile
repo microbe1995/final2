@@ -13,6 +13,8 @@ RUN apt-get update && apt-get install -y \
 
 # Python 환경 변수 설정
 ENV PYTHONUNBUFFERED=1
+ENV PYTHONPATH=/app
+ENV RAILWAY_ENVIRONMENT=true
 
 # Gateway 애플리케이션 요구사항 복사
 COPY requirements.txt .
@@ -21,7 +23,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Gateway 애플리케이션 코드 복사
+# Gateway 애플리케이션 코드 복사 (전체 디렉토리)
 COPY . .
 
 # 포트 설정
@@ -32,5 +34,5 @@ ENV PORT=8080
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8080/health || exit 1
 
-# 실행 명령어 - uvicorn으로 실행
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080"]
+# 실행 명령어 - uvicorn으로 실행 (Railway 환경에 최적화)
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080", "--reload"]

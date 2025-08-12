@@ -1,20 +1,26 @@
 """
 Auth Router - Gateway Service
 """
+import os
 import logging
 import json
 from fastapi import APIRouter, HTTPException
 from typing import Dict, Any
 import httpx
 
-from ..domain.auth.controller.auth_controller import AuthController
-from ..domain.auth.model.auth_model import UserRegisterRequest, UserRegisterResponse, UserLoginRequest
+try:
+    from ..domain.auth.controller.auth_controller import AuthController
+    from ..domain.auth.model.auth_model import UserRegisterRequest, UserRegisterResponse, UserLoginRequest
+except ImportError:
+    # Docker 환경에서 절대 경로로 import 시도
+    from app.domain.auth.controller.auth_controller import AuthController
+    from app.domain.auth.model.auth_model import UserRegisterRequest, UserRegisterResponse, UserLoginRequest
 
 logger = logging.getLogger(__name__)
 auth_router = APIRouter(prefix="/auth", tags=["Authentication"])
 
-# Auth Service URL
-AUTH_SERVICE_URL = "http://auth-service:8000"
+# Auth Service URL - Railway 환경에 맞게 수정
+AUTH_SERVICE_URL = os.getenv("AUTH_SERVICE_URL", "http://localhost:8000")
 
 # 로컬 인증 컨트롤러 (테스트용)
 auth_controller = AuthController()
@@ -74,6 +80,11 @@ async def login(credentials: UserLoginRequest):
 
 @auth_router.post("/register")
 async def register(user_data: UserRegisterRequest):
+    """사용자 회원가입"""
+    return await register_local(user_data)
+
+@auth_router.post("/register/local")
+async def register_local(user_data: UserRegisterRequest):
     """사용자 회원가입"""
     try:
         # 로깅: 라우터에서 받은 회원가입 요청
