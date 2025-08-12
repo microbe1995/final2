@@ -1,48 +1,57 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [loginData, setLoginData] = useState<string>('');
   const router = useRouter();
-  const { login } = useAuthStore();
+  const { login, isLoading: authLoading, error: authError, clearError } = useAuthStore();
+
+  // 인증 오류가 있으면 폼 오류에 추가
+  useEffect(() => {
+    if (authError) {
+      clearError();
+    }
+  }, [authError, clearError]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+    
+    if (!email.trim() || !password.trim()) {
+      return;
+    }
+
     setIsLoading(true);
 
-    // 입력한 값들을 객체로 구성
-    const loginDataObj = {
-      email: email,
-      password: password,
-      timestamp: new Date().toISOString()
-    };
-
-    // Alert 창으로 입력 값 표시
-    alert(`로그인 시도:\n이메일: ${email}\n비밀번호: ${password}`);
-
-    // JSON 형태로 콘솔에 출력
-    console.log('로그인 데이터 (JSON):', JSON.stringify(loginDataObj, null, 2));
-
-    // 화면에 JSON 데이터 표시
-    setLoginData(JSON.stringify(loginDataObj, null, 2));
-
     try {
-      await login({ email, password });
-      router.push('/dashboard');
+      console.log('🚀 로그인 요청:', { email, password: '***' });
+      
+      // 로그인 API 호출
+      const success = await login({ email, password });
+      
+      if (success) {
+        // 성공 메시지 표시
+        alert('🎉 로그인이 성공했습니다!');
+        
+        // 대시보드로 이동
+        router.push('/dashboard');
+      } else {
+        // 오류는 이미 store에서 처리됨
+        console.error('로그인 실패');
+      }
+      
     } catch (error: any) {
-      setError('로그인 중 오류가 발생했습니다.');
+      console.error('로그인 에러:', error);
     } finally {
       setIsLoading(false);
     }
   };
+
+  const isFormLoading = isLoading || authLoading;
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
@@ -60,7 +69,7 @@ export default function LoginPage() {
           <form className="space-y-6" onSubmit={handleSubmit}>
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                이메일
+                이메일 *
               </label>
               <div className="mt-1">
                 <input
@@ -79,7 +88,7 @@ export default function LoginPage() {
 
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                비밀번호
+                비밀번호 *
               </label>
               <div className="mt-1">
                 <input
@@ -96,29 +105,19 @@ export default function LoginPage() {
               </div>
             </div>
 
-            {error && (
-              <div className="text-red-600 text-sm">
-                {error}
-              </div>
-            )}
-
-            {/* JSON 데이터 표시 영역 */}
-            {loginData && (
-              <div className="mt-4 p-4 bg-gray-50 rounded-md">
-                <h3 className="text-sm font-medium text-gray-700 mb-2">입력된 데이터 (JSON):</h3>
-                <pre className="text-xs text-gray-600 bg-white p-3 rounded border overflow-x-auto">
-                  {loginData}
-                </pre>
+            {authError && (
+              <div className="text-red-600 text-sm bg-red-50 p-3 rounded-md">
+                {authError}
               </div>
             )}
 
             <div>
               <button
                 type="submit"
-                disabled={isLoading}
+                disabled={isFormLoading}
                 className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isLoading ? '로그인 중...' : '로그인'}
+                {isFormLoading ? '로그인 중...' : '로그인'}
               </button>
             </div>
           </form>

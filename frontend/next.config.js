@@ -8,12 +8,37 @@ const withPWA = require('next-pwa')({
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   env: {
+    // API Gateway 설정
     GATEWAY_URL: process.env.GATEWAY_URL || 'http://localhost:8080',
-    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080',
+    NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080/api/v1',
+    
+    // 환경별 설정
+    NODE_ENV: process.env.NODE_ENV || 'development'
   },
+  
   // 로컬 개발용 설정
   experimental: {
     esmExternals: false
+  },
+  
+  // CORS 설정 (개발용)
+  async headers() {
+    return [
+      {
+        source: '/api/:path*',
+        headers: [
+          { key: 'Access-Control-Allow-Origin', value: '*' },
+          { key: 'Access-Control-Allow-Methods', value: 'GET, POST, PUT, DELETE, OPTIONS' },
+          { key: 'Access-Control-Allow-Headers', value: 'Content-Type, Authorization' },
+        ],
+      },
+    ]
+  },
+  
+  // 이미지 도메인 설정
+  images: {
+    domains: ['localhost', 'lca-final.vercel.app'],
   }
 }
 

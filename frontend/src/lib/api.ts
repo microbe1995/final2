@@ -1,93 +1,95 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
-import { ApiResponse } from '@/types';
+import { getApiConfig } from './config';
 
-class ApiClient {
-  private client: AxiosInstance;
+// axios 인스턴스 생성
+const createApiClient = (): AxiosInstance => {
+  const config = getApiConfig();
+  
+  const apiClient = axios.create({
+    baseURL: config.apiBaseURL,
+    timeout: 10000,
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
 
-  constructor() {
-    this.client = axios.create({
-      baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1',
-      timeout: 10000,
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-
-    // Request interceptor
-    this.client.interceptors.request.use(
-      (config) => {
-        const token = this.getToken();
-        if (token) {
-          config.headers.Authorization = `Bearer ${token}`;
-        }
-        return config;
-      },
-      (error) => {
-        return Promise.reject(error);
+  // 요청 인터셉터
+  apiClient.interceptors.request.use(
+    (config) => {
+      console.log(`🚀 API 요청: ${config.method?.toUpperCase()} ${config.url}`);
+      if (config.data) {
+        console.log('📤 요청 데이터:', config.data);
       }
-    );
+      return config;
+    },
+    (error) => {
+      console.error('❌ 요청 인터셉터 오류:', error);
+      return Promise.reject(error);
+    }
+  );
 
-    // Response interceptor
-    this.client.interceptors.response.use(
-      (response: AxiosResponse) => {
-        return response;
-      },
-      (error) => {
-        if (error.response?.status === 401) {
-          this.removeToken();
-          window.location.href = '/login';
-        }
-        return Promise.reject(error);
+  // 응답 인터셉터
+  apiClient.interceptors.response.use(
+    (response: AxiosResponse) => {
+      console.log(`✅ API 응답: ${response.status} ${response.config.url}`);
+      console.log('📥 응답 데이터:', response.data);
+      return response;
+    },
+    (error) => {
+      console.error('❌ 응답 인터셉터 오류:', error);
+      if (error.response) {
+        console.error('📊 오류 응답:', {
+          status: error.response.status,
+          data: error.response.data,
+          headers: error.response.headers,
+        });
       }
-    );
-  }
-
-  private getToken(): string | null {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('token');
+      return Promise.reject(error);
     }
-    return null;
-  }
+  );
 
-  private setToken(token: string): void {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('token', token);
-    }
-  }
+  return apiClient;
+};
 
-  private removeToken(): void {
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('token');
-    }
-  }
+// API 클라이언트 인스턴스
+export const apiClient = createApiClient();
 
-  async get<T>(url: string, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
-    const response = await this.client.get(url, config);
-    return response.data;
-  }
-
-  async post<T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
-    const response = await this.client.post(url, data, config);
-    return response.data;
-  }
-
-  async put<T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
-    const response = await this.client.put(url, data, config);
-    return response.data;
-  }
-
-  async delete<T>(url: string, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
-    const response = await this.client.delete(url, config);
-    return response.data;
-  }
-
-  setAuthToken(token: string): void {
-    this.setToken(token);
-  }
-
-  clearAuthToken(): void {
-    this.removeToken();
-  }
+// API 응답 타입
+export interface ApiResponse<T = any> {
+  success: boolean;
+  data?: T;
+  message?: string;
+  error?: string;
 }
 
-export const apiClient = new ApiClient(); 
+// API 오류 타입
+export interface ApiError {
+  status: number;
+  message: string;
+  details?: any;
+}
+
+// API 클라이언트 래퍼 함수들
+export const api = {
+  // GET 요청
+  get: <T = any>(url: string, config?: AxiosRequestConfig) =>
+    apiClient.get<T>(url, config).then(response => response.data),
+
+  // POST 요청
+  post: <T = any>(url: string, data?: any, config?: AxiosRequestConfig) =>
+    apiClient.post<T>(url, data, config).then(response => response.data),
+
+  // PUT 요청
+  put: <T = any>(url: string, data?: any, config?: AxiosRequestConfig) =>
+    apiClient.put<T>(url, data, config).then(response => response.data),
+
+  // PATCH 요청
+  patch: <T = any>(url: string, data?: any, config?: AxiosRequestConfig) =>
+    apiClient.patch<T>(url, data, config).then(response => response.data),
+
+  // DELETE 요청
+  delete: <T = any>(url: string, config?: AxiosRequestConfig) =>
+    apiClient.delete<T>(url, config).then(response => response.data),
+};
+
+export default apiClient; 
