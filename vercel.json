@@ -1,10 +1,11 @@
 {
-  "buildCommand": "cd frontend && pnpm run build",
-  "installCommand": "cd frontend && pnpm install",
+  "rootDirectory": "frontend",
+  "buildCommand": "pnpm run build",
+  "installCommand": "pnpm install",
   "framework": "nextjs",
-  "outputDirectory": "frontend/.next",
+  "outputDirectory": ".next",
   "functions": {
-    "frontend/app/**/*.tsx": {
+    "app/**/*.tsx": {
       "maxDuration": 30
     }
   },
