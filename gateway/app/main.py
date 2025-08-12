@@ -83,6 +83,7 @@ app.add_middleware(
         "http://127.0.0.1:3000",  # 로컬 IP 접근
         "http://frontend:3000",   # Docker 내부 네트워크
         "https://lca-final.vercel.app",  # Vercel 프론트엔드
+        "https://*.vercel.app",   # 모든 Vercel 도메인
         "*",  # 모든 프론트엔드 도메인 허용 (개발용)
     ],
     allow_credentials=True,  # HttpOnly 쿠키 사용을 위해 필수

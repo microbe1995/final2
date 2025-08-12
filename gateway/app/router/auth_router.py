@@ -36,6 +36,8 @@ async def auth_health():
         logger.error(f"Auth service health check failed: {e}")
         raise HTTPException(status_code=503, detail="Auth service unavailable")
 
+
+
 @auth_router.post("/login")
 async def login(credentials: UserLoginRequest):
     """사용자 로그인"""
@@ -81,22 +83,28 @@ async def login(credentials: UserLoginRequest):
 @auth_router.post("/register")
 async def register(user_data: UserRegisterRequest):
     """사용자 회원가입"""
+    logger.info(f"🔵 /register 엔드포인트 호출됨")
     return await register_local(user_data)
 
 @auth_router.post("/register/local")
 async def register_local(user_data: UserRegisterRequest):
-    """사용자 회원가입"""
+    """사용자 회원가입 (로컬)"""
+    logger.info(f"🔵 /register/local 엔드포인트 호출됨")
     try:
         # 로깅: 라우터에서 받은 회원가입 요청
         logger.info(f"라우터 회원가입 요청: {json.dumps(user_data.dict(), ensure_ascii=False)}")
         
         # 로컬 컨트롤러 사용 (테스트용)
         try:
+            logger.info(f"🔵 로컬 컨트롤러로 회원가입 시도")
             result = await auth_controller.register_user(user_data)
-            logger.info(f"로컬 회원가입 성공: {user_data.email}")
+            logger.info(f"✅ 로컬 회원가입 성공: {user_data.email}")
             return result
         except Exception as local_error:
-            logger.warning(f"로컬 회원가입 실패, 외부 서비스 시도: {local_error}")
+            logger.error(f"❌ 로컬 회원가입 실패: {str(local_error)}")
+            logger.error(f"❌ 에러 타입: {type(local_error).__name__}")
+            logger.error(f"❌ 에러 상세: {local_error}")
+            raise HTTPException(status_code=500, detail=f"로컬 회원가입 실패: {str(local_error)}")
         
         # 외부 Auth Service 사용
         async with httpx.AsyncClient() as client:

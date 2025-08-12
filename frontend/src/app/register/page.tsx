@@ -51,8 +51,10 @@ export default function RegisterPage() {
     // 프론트엔드 로그: 입력값들을 JSON 형태로 출력
     console.log('📝 프론트엔드 회원가입 입력값:', JSON.stringify(registerData, null, 2));
     
-    // API Gateway로 요청 (로컬 환경)
-    const apiGatewayUrl = 'http://localhost:8080/api/v1/auth/register';
+    // API Gateway로 요청 (환경변수 사용)
+    const apiGatewayUrl = process.env.NEXT_PUBLIC_API_URL 
+      ? `${process.env.NEXT_PUBLIC_API_URL}/api/v1/auth/register`
+      : 'http://localhost:8080/api/v1/auth/register';
     
     console.log('🚀 API Gateway 요청 시작:', apiGatewayUrl);
     console.log('📤 전송 데이터:', {
