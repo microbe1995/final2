@@ -14,9 +14,9 @@ const nextConfig = {
     NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080/api/v1'
   },
   
-  // 로컬 개발용 설정
+  // ESM 모듈 해결 개선
   experimental: {
-    esmExternals: false
+    esmExternals: true
   },
   
   // CORS 설정 (개발용)
