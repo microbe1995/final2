@@ -60,6 +60,11 @@ export default function RegisterPage() {
       password: formData.password
     };
     
+    // 디버깅을 위한 상세 정보
+    console.log('회원가입 시도:', registerData);
+    console.log('환경변수 NEXT_PUBLIC_API_URL:', process.env.NEXT_PUBLIC_API_URL);
+    
+    // 무조건 alert 표시 (테스트용)
     alert('회원가입 정보:\n' + JSON.stringify(registerData, null, 2));
 
     setIsLoading(true);
@@ -67,7 +72,11 @@ export default function RegisterPage() {
     try {
       // Gateway로 직접 요청 (CORS는 Gateway에서 처리)
       const GATEWAY_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+      console.log('Gateway URL:', GATEWAY_URL);
+      
+      // API 요청 시도
       const response = await axios.post(`${GATEWAY_URL}/api/v1/auth/register`, registerData);
+      console.log('API 응답:', response);
       
       if (response.status === 200 || response.status === 201) {
         // 성공 시 기존 register 함수도 호출 (상태 관리용)
@@ -76,6 +85,9 @@ export default function RegisterPage() {
         router.push('/dashboard');
       }
     } catch (error: any) {
+      console.error('회원가입 에러:', error);
+      console.error('에러 응답:', error.response);
+      
       const errorMessage = error.response?.data?.error || '회원가입 중 오류가 발생했습니다.';
       alert('회원가입 실패: ' + errorMessage);
       setErrors({
@@ -115,7 +127,16 @@ export default function RegisterPage() {
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-          <form className="space-y-6" onSubmit={handleSubmit}>
+          <form 
+            className="space-y-6" 
+            onSubmit={handleSubmit}
+            onKeyPress={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                handleSubmit(e as any);
+              }
+            }}
+          >
             <div>
               <label htmlFor="name" className="block text-sm font-medium text-gray-700">
                 이름
@@ -210,10 +231,29 @@ export default function RegisterPage() {
               </div>
             )}
 
+            {/* 디버깅용 테스트 버튼 */}
+            <div className="text-center">
+              <button
+                type="button"
+                onClick={() => {
+                  console.log('테스트 버튼 클릭됨');
+                  alert('테스트: 폼 데이터\n' + JSON.stringify(formData, null, 2));
+                }}
+                className="text-sm text-blue-600 hover:text-blue-800 underline"
+              >
+                테스트: 폼 데이터 확인
+              </button>
+            </div>
+
             <div>
               <button
                 type="submit"
                 disabled={isLoading}
+                onClick={(e) => {
+                  e.preventDefault();
+                  console.log('버튼 클릭됨');
+                  handleSubmit(e as any);
+                }}
                 className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isLoading ? '회원가입 중...' : '회원가입 (JSON 확인)'}
