@@ -1,9 +1,15 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 
+// 환경변수 타입 안전성을 위한 헬퍼 함수
+const getEnvVar = (key: string, defaultValue: string): string => {
+  const value = process.env[key];
+  return value || defaultValue;
+};
+
 // 환경변수 기반 API 설정
 const API_CONFIG = {
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080',
-  apiBaseURL: process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080/api/v1'
+  baseURL: getEnvVar('NEXT_PUBLIC_API_URL', 'http://localhost:8080'),
+  apiBaseURL: getEnvVar('NEXT_PUBLIC_API_BASE_URL', 'http://localhost:8080/api/v1')
 };
 
 // Railway 배포 환경 확인
@@ -11,7 +17,7 @@ const isRailwayDeployed = process.env.NEXT_PUBLIC_RAILWAY_API_URL &&
                           process.env.NEXT_PUBLIC_RAILWAY_API_URL !== 'http://localhost:8080';
 
 // Railway 환경에서는 Railway URL 사용
-if (isRailwayDeployed) {
+if (isRailwayDeployed && process.env.NEXT_PUBLIC_RAILWAY_API_URL) {
   API_CONFIG.baseURL = process.env.NEXT_PUBLIC_RAILWAY_API_URL;
   API_CONFIG.apiBaseURL = process.env.NEXT_PUBLIC_RAILWAY_API_BASE_URL || 
                           `${process.env.NEXT_PUBLIC_RAILWAY_API_URL}/api/v1`;

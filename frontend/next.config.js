@@ -38,6 +38,7 @@ const nextConfig = {
   // 이미지 도메인 설정
   images: {
     domains: ['localhost', 'lca-final.vercel.app'],
+    unoptimized: false,
   },
 
   // Vercel Analytics 비활성화
@@ -48,9 +49,6 @@ const nextConfig = {
   // 빌드 시 정적 페이지 생성 문제 해결
   trailingSlash: false,
   
-  // 동적 라우팅 활성화
-  dynamicParams: true,
-  
   // Vercel 배포 최적화
   swcMinify: true,
   
@@ -59,12 +57,6 @@ const nextConfig = {
   
   // 빌드 최적화
   compress: true,
-  
-  // 이미지 최적화
-  images: {
-    unoptimized: false,
-    domains: ['localhost', 'lca-final.vercel.app'],
-  }
 }
 
 module.exports = withPWA(nextConfig) 
