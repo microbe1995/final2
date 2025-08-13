@@ -4,7 +4,7 @@ gateway-router 메인 파일
 from typing import Optional, List
 from fastapi import APIRouter, FastAPI, Request, UploadFile, File, Query, HTTPException, Form, Depends
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 import os
 import logging
 import sys
@@ -13,14 +13,7 @@ from datetime import datetime
 from dotenv import load_dotenv
 from contextlib import asynccontextmanager
 
-# Gateway API 서비스
-import os
-import logging
-from fastapi import FastAPI, HTTPException, Request
-from fastapi.middleware.cors import CORSMiddleware
-from dotenv import load_dotenv
-
-# 🚨 강력한 테스트 로그 추가
+# 🚨 간단한 테스트 로그 추가
 print("=" * 60)
 print("🚀 Gateway API 서비스 시작 - Railway 디버깅 모드")
 print("=" * 60)
@@ -29,8 +22,18 @@ print(f"Python 경로: {os.environ.get('PYTHONPATH', '설정되지 않음')}")
 print(f"현재 시간: {os.popen('date').read().strip()}")
 print("=" * 60)
 
-# 로깅 설정
-logging.basicConfig(level=logging.INFO)
+# 🚨 간단한 테스트 로그 추가
+print("🔧 간단한 테스트 로그:")
+print("  - 이 로그가 보이면 코드가 실행되고 있습니다")
+print("  - 이 로그가 안 보이면 코드가 실행되지 않고 있습니다")
+print("=" * 60)
+
+# 로깅 설정 (한 번만)
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[logging.StreamHandler(sys.stdout)]
+)
 logger = logging.getLogger("gateway_api")
 
 # 🚨 모든 환경변수 출력 (Railway 디버깅용)
@@ -40,7 +43,7 @@ for key, value in os.environ.items():
         print(f"  - {key}: {value}")
 print("=" * 60)
 
-# 환경변수 로드 (Railway 환경이 아닐 때만)
+# 환경변수 로드 (한 번만)
 if not os.getenv("RAILWAY_ENVIRONMENT"):
     load_dotenv()
     print("📁 .env 파일에서 환경변수 로드됨")
@@ -101,9 +104,7 @@ def get_auth_router():
 # auth_router 가져오기
 auth_router = get_auth_router()
 
-# Railway 환경이 아닐 때만 .env 파일 로드
-if os.getenv("RAILWAY_ENVIRONMENT") != "true":
-    load_dotenv()
+# 이미 위에서 로드했으므로 여기서는 제거
 
 # JSON 형태의 로그 포맷터 클래스
 class JSONFormatter(logging.Formatter):
@@ -124,12 +125,13 @@ class JSONFormatter(logging.Formatter):
             
         return json.dumps(log_entry, ensure_ascii=False)
 
-# 로깅 설정
+# 로깅 설정 (한 번만)
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[logging.StreamHandler(sys.stdout)]
 )
+logger = logging.getLogger("gateway_api")
 
 # 루트 로거 설정
 root_logger = logging.getLogger()
@@ -194,7 +196,6 @@ async def auth_register_options():
     logger.info(f"🌐 회원가입 OPTIONS 요청 처리")
     
     # 환경변수 기반 CORS 헤더 설정
-    from fastapi.responses import Response
     response = Response(content="OK", status_code=200)
     
     # CORS 헤더 설정 전 환경변수 확인
@@ -225,7 +226,6 @@ async def auth_login_options():
     logger.info(f"🌐 로그인 OPTIONS 요청 처리")
     
     # 환경변수 기반 CORS 헤더 설정
-    from fastapi.responses import Response
     response = Response(content="OK", status_code=200)
     
     # CORS 헤더 설정 전 환경변수 확인
@@ -257,7 +257,6 @@ async def api_options(full_path: str):
     logger.info(f"🌐 API OPTIONS 요청 처리: /api/{full_path}")
     
     # 환경변수 기반 CORS 헤더 설정
-    from fastapi.responses import Response
     response = Response(content="OK", status_code=200)
     
     # CORS 헤더 설정 전 환경변수 확인
@@ -288,7 +287,6 @@ async def root_options():
     """루트 경로에 대한 OPTIONS 요청 처리"""
     logger.info(f"🌐 루트 OPTIONS 요청 처리")
     
-    from fastapi.responses import Response
     response = Response(content="OK", status_code=200)
     
     # CORS 헤더 설정 전 환경변수 확인
