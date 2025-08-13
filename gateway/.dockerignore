@@ -64,7 +64,3 @@ tmp/
 temp/
 *.tmp
 *.temp
-
-# Docker 관련
-Dockerfile
-.dockerignore
