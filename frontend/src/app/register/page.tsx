@@ -56,6 +56,12 @@ export default function RegisterPage() {
       ? `${process.env.NEXT_PUBLIC_API_URL}/api/v1/auth/register`
       : 'http://localhost:8080/api/v1/auth/register';
     
+    console.log('🔧 환경변수 확인:', {
+      NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
+      NEXT_PUBLIC_RAILWAY_API_URL: process.env.NEXT_PUBLIC_RAILWAY_API_URL,
+      NODE_ENV: process.env.NODE_ENV
+    });
+    
     console.log('🚀 API Gateway 요청 시작:', apiGatewayUrl);
     console.log('📤 전송 데이터:', {
       username: formData.username,
