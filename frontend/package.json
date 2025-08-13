@@ -2,7 +2,6 @@
   "name": "pwa-nextjs-app",
   "version": "0.1.0",
   "private": true,
-  "packageManager": "pnpm@8.15.0",
   "engines": {
     "node": "22.x"
   },
@@ -12,7 +11,7 @@
     "start": "next start",
     "lint": "next lint",
     "type-check": "tsc --noEmit",
-    "vercel-build": "pnpm run build",
+    "vercel-build": "next build",
     "postinstall": "next telemetry disable"
   },
   "dependencies": {
