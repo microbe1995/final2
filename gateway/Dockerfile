@@ -26,7 +26,13 @@ RUN echo "=== 1. 현재 작업 디렉토리 ===" && pwd && \
     echo "=== 5. Python 버전 ===" && python --version && \
     echo "=== 6. 모듈 import 테스트 ===" && \
     python -c "import app" && echo "✅ app 모듈 import 성공!" && \
-    python -c "from app.main import app" && echo "✅ app.main.app import 성공!"
+    python -c "from app.main import app" && echo "✅ app.main.app import 성공!" && \
+    echo "=== 7. 파일 존재 확인 ===" && \
+    echo "app/__init__.py exists:" && test -f app/__init__.py && echo "✅ YES" || echo "❌ NO" && \
+    echo "app/main.py exists:" && test -f app/main.py && echo "✅ YES" || echo "❌ NO" && \
+    echo "=== 8. 파일 내용 확인 ===" && \
+    echo "app/__init__.py content:" && head -5 app/__init__.py && \
+    echo "app/main.py first few lines:" && head -5 app/main.py
 
 # 포트 설정
 EXPOSE 8080
