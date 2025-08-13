@@ -1,6 +1,26 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { authApi, AuthUser, LoginCredentials, RegisterData } from '@/lib/auth';
+
+interface AuthUser {
+  id: string;
+  email: string;
+  username: string;
+  full_name?: string;
+  created_at: string;
+  message?: string;
+}
+
+interface LoginCredentials {
+  email: string;
+  password: string;
+}
+
+interface RegisterData {
+  email: string;
+  username: string;
+  password: string;
+  full_name?: string;
+}
 
 interface AuthState {
   user: AuthUser | null;
@@ -27,14 +47,25 @@ export const useAuthStore = create<AuthStore>()(
       login: async (credentials: LoginCredentials) => {
         set({ isLoading: true, error: null });
         try {
-          const response = await authApi.login(credentials);
+          // Gateway로 직접 요청
+          const response = await fetch('https://gateway-production-1104.up.railway.app/api/v1/auth/login', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(credentials)
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.detail || '로그인에 실패했습니다.');
+          }
+
+          const result = await response.json();
           
-          if (response.success && response.user) {
-            // 사용자 정보 저장
-            authApi.saveUser(response.user);
-            
+          if (result.user) {
             set({
-              user: response.user,
+              user: result.user,
               isLoading: false,
               error: null,
             });
@@ -42,7 +73,7 @@ export const useAuthStore = create<AuthStore>()(
           } else {
             set({ 
               isLoading: false, 
-              error: response.message || '로그인에 실패했습니다.' 
+              error: result.message || '로그인에 실패했습니다.' 
             });
             return false;
           }
@@ -60,10 +91,21 @@ export const useAuthStore = create<AuthStore>()(
       register: async (data: RegisterData) => {
         set({ isLoading: true, error: null });
         try {
-          const user = await authApi.register(data);
-          
-          // 사용자 정보 저장
-          authApi.saveUser(user);
+          // Gateway로 직접 요청
+          const response = await fetch('https://gateway-production-1104.up.railway.app/api/v1/auth/register', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.detail || '회원가입에 실패했습니다.');
+          }
+
+          const user = await response.json();
           
           set({
             user,
@@ -83,7 +125,10 @@ export const useAuthStore = create<AuthStore>()(
       },
 
       logout: () => {
-        authApi.logout();
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('auth-user');
+          localStorage.removeItem('auth-token');
+        }
         set({
           user: null,
           isLoading: false,
@@ -96,7 +141,10 @@ export const useAuthStore = create<AuthStore>()(
       },
 
       clearAuth: () => {
-        authApi.logout();
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('auth-user');
+          localStorage.removeItem('auth-token');
+        }
         set({
           user: null,
           isLoading: false,

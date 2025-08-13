@@ -26,7 +26,7 @@ export default function RegisterPage() {
   };
 
   // Register form submission
-  const handleRegister = (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     
     // 비밀번호 확인 검증
@@ -51,32 +51,23 @@ export default function RegisterPage() {
     // 프론트엔드 로그: 입력값들을 JSON 형태로 출력
     console.log('📝 프론트엔드 회원가입 입력값:', JSON.stringify(registerData, null, 2));
     
-    // API Gateway로 요청 (환경변수 사용)
-    const apiGatewayUrl = process.env.NEXT_PUBLIC_API_URL 
-      ? `${process.env.NEXT_PUBLIC_API_URL}/api/v1/auth/register`
-      : 'https://gateway-production-22ef.up.railway.app/api/v1/auth/register';
-    
-    console.log('🔧 환경변수 확인:', {
-      NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || '설정되지 않음',
-      NEXT_PUBLIC_RAILWAY_API_URL: process.env.NEXT_PUBLIC_RAILWAY_API_URL || '설정되지 않음',
-      NODE_ENV: process.env.NODE_ENV || '설정되지 않음'
-    });
-    
-    console.log('🚀 API Gateway 요청 시작:', apiGatewayUrl);
-    console.log('📤 전송 데이터:', {
-      username: formData.username,
-      email: formData.email,
-      password: formData.password,
-      full_name: formData.full_name || undefined
-    });
-    
-    axios.post(apiGatewayUrl, {
-      username: formData.username,
-      email: formData.email,
-      password: formData.password,
-      full_name: formData.full_name || undefined
-    })
-    .then(response => {
+    try {
+      // Gateway URL 설정 (제공된 코드 참고)
+      const apiUrl = 'https://gateway-production-1104.up.railway.app/api/v1/auth/register';
+      console.log(`😂 apiUrl: ${apiUrl}`);
+      
+      // 전송할 데이터 준비
+      const requestData = {
+        username: formData.username,
+        email: formData.email,
+        password: formData.password,
+        full_name: formData.full_name || undefined
+      };
+      
+      console.log('🚀 Gateway로 전송할 데이터:', requestData);
+      
+      // 비동기 요청 처리
+      const response = await axios.post(apiUrl, requestData);
       console.log('✅ 회원가입 성공:', response.data);
       
       // 성공 메시지 표시
@@ -84,19 +75,19 @@ export default function RegisterPage() {
       
       // 대시보드로 이동
       router.replace('/dashboard');
-    })
-    .catch(error => {
+      
+    } catch (error: any) {
       console.error('❌ 회원가입 실패:', error);
       
       // 에러 응답 처리
       if (error.response && error.response.data) {
         alert(`❌ 회원가입 실패: ${error.response.data.detail || error.response.data.message || '알 수 없는 오류'}`);
       } else if (error.code === 'ERR_NETWORK') {
-        alert('❌ API Gateway에 연결할 수 없습니다. 서버가 실행 중인지 확인해주세요.');
+        alert('❌ Gateway에 연결할 수 없습니다. 서버가 실행 중인지 확인해주세요.');
       } else {
         alert('❌ 회원가입에 실패했습니다. 서버 연결을 확인해주세요.');
       }
-    });
+    }
   };
 
   // Go back to login page
