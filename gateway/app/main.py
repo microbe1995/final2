@@ -129,6 +129,17 @@ CORS_ALLOW_CREDENTIALS = os.getenv("CORS_ALLOW_CREDENTIALS", "true").lower() == 
 CORS_ALLOW_METHODS = os.getenv("CORS_ALLOW_METHODS", "GET,POST,PUT,DELETE,OPTIONS,PATCH").split(",")
 CORS_ALLOW_HEADERS = os.getenv("CORS_ALLOW_HEADERS", "Accept,Accept-Language,Content-Language,Content-Type,Authorization,X-Requested-With,Origin,Access-Control-Request-Method,Access-Control-Request-Headers").split(",")
 
+# CORS 환경변수 디버깅 로그 추가
+print(f"🔧 CORS 환경변수 확인:")
+print(f"  - CORS_ORIGINS: {CORS_ORIGINS}")
+print(f"  - CORS_ALLOW_CREDENTIALS: {CORS_ALLOW_CREDENTIALS}")
+print(f"  - CORS_ALLOW_METHODS: {CORS_ALLOW_METHODS}")
+print(f"  - CORS_ALLOW_HEADERS: {CORS_ALLOW_HEADERS}")
+print(f"  - CORS_ORIGINS 원본값: {os.getenv('CORS_ORIGINS')}")
+print(f"  - CORS_ALLOW_CREDENTIALS 원본값: {os.getenv('CORS_ALLOW_CREDENTIALS')}")
+print(f"  - CORS_ALLOW_METHODS 원본값: {os.getenv('CORS_ALLOW_METHODS')}")
+print(f"  - CORS_ALLOW_HEADERS 원본값: {os.getenv('CORS_ALLOW_HEADERS')}")
+
 # CORS 미들웨어 설정 (OPTIONS 핸들러보다 먼저)
 app.add_middleware(
     CORSMiddleware,
@@ -150,13 +161,27 @@ async def auth_register_options():
     # 환경변수 기반 CORS 헤더 설정
     from fastapi.responses import Response
     response = Response(content="OK", status_code=200)
+    
+    # CORS 헤더 설정 전 환경변수 확인
+    logger.info(f"🔧 회원가입 OPTIONS CORS 헤더 설정:")
+    logger.info(f"  - CORS_ORIGINS: {CORS_ORIGINS}")
+    logger.info(f"  - CORS_ALLOW_CREDENTIALS: {CORS_ALLOW_CREDENTIALS}")
+    logger.info(f"  - CORS_ALLOW_METHODS: {CORS_ALLOW_METHODS}")
+    logger.info(f"  - CORS_ALLOW_HEADERS: {CORS_ALLOW_HEADERS}")
+    
     response.headers["Access-Control-Allow-Origin"] = CORS_ORIGINS[0] if CORS_ORIGINS else "https://lca-final.vercel.app"
     response.headers["Access-Control-Allow-Methods"] = ", ".join(CORS_ALLOW_METHODS)
     response.headers["Access-Control-Allow-Headers"] = ", ".join(CORS_ALLOW_HEADERS)
     response.headers["Access-Control-Max-Age"] = "86400"
     response.headers["Access-Control-Allow-Credentials"] = str(CORS_ALLOW_CREDENTIALS).lower()
     
-    logger.info(f"🌐 회원가입 OPTIONS 응답 헤더 설정 완료")
+    # 설정된 헤더 확인
+    logger.info(f"🌐 회원가입 OPTIONS 응답 헤더 설정 완료:")
+    logger.info(f"  - Access-Control-Allow-Origin: {response.headers.get('access-control-allow-origin')}")
+    logger.info(f"  - Access-Control-Allow-Methods: {response.headers.get('access-control-allow-methods')}")
+    logger.info(f"  - Access-Control-Allow-Headers: {response.headers.get('access-control-allow-headers')}")
+    logger.info(f"  - Access-Control-Allow-Credentials: {response.headers.get('access-control-allow-credentials')}")
+    
     return response
 
 @app.options("/api/v1/auth/login")
@@ -167,13 +192,27 @@ async def auth_login_options():
     # 환경변수 기반 CORS 헤더 설정
     from fastapi.responses import Response
     response = Response(content="OK", status_code=200)
+    
+    # CORS 헤더 설정 전 환경변수 확인
+    logger.info(f"🔧 로그인 OPTIONS CORS 헤더 설정:")
+    logger.info(f"  - CORS_ORIGINS: {CORS_ORIGINS}")
+    logger.info(f"  - CORS_ALLOW_CREDENTIALS: {CORS_ALLOW_CREDENTIALS}")
+    logger.info(f"  - CORS_ALLOW_METHODS: {CORS_ALLOW_METHODS}")
+    logger.info(f"  - CORS_ALLOW_HEADERS: {CORS_ALLOW_HEADERS}")
+    
     response.headers["Access-Control-Allow-Origin"] = CORS_ORIGINS[0] if CORS_ORIGINS else "https://lca-final.vercel.app"
     response.headers["Access-Control-Allow-Methods"] = ", ".join(CORS_ALLOW_METHODS)
     response.headers["Access-Control-Allow-Headers"] = ", ".join(CORS_ALLOW_HEADERS)
     response.headers["Access-Control-Max-Age"] = "86400"
     response.headers["Access-Control-Allow-Credentials"] = str(CORS_ALLOW_CREDENTIALS).lower()
     
-    logger.info(f"🌐 로그인 OPTIONS 응답 헤더 설정 완료")
+    # 설정된 헤더 확인
+    logger.info(f"🌐 로그인 OPTIONS 응답 헤더 설정 완료:")
+    logger.info(f"  - Access-Control-Allow-Origin: {response.headers.get('access-control-allow-origin')}")
+    logger.info(f"  - Access-Control-Allow-Methods: {response.headers.get('access-control-allow-methods')}")
+    logger.info(f"  - Access-Control-Allow-Headers: {response.headers.get('access-control-allow-headers')}")
+    logger.info(f"  - Access-Control-Allow-Credentials: {response.headers.get('access-control-allow-credentials')}")
+    
     return response
 
 # 모든 API 경로에 대한 범용 OPTIONS 핸들러
@@ -185,13 +224,27 @@ async def api_options(full_path: str):
     # 환경변수 기반 CORS 헤더 설정
     from fastapi.responses import Response
     response = Response(content="OK", status_code=200)
+    
+    # CORS 헤더 설정 전 환경변수 확인
+    logger.info(f"🔧 API OPTIONS CORS 헤더 설정:")
+    logger.info(f"  - CORS_ORIGINS: {CORS_ORIGINS}")
+    logger.info(f"  - CORS_ALLOW_CREDENTIALS: {CORS_ALLOW_CREDENTIALS}")
+    logger.info(f"  - CORS_ALLOW_METHODS: {CORS_ALLOW_METHODS}")
+    logger.info(f"  - CORS_ALLOW_HEADERS: {CORS_ALLOW_HEADERS}")
+    
     response.headers["Access-Control-Allow-Origin"] = CORS_ORIGINS[0] if CORS_ORIGINS else "https://lca-final.vercel.app"
     response.headers["Access-Control-Allow-Methods"] = ", ".join(CORS_ALLOW_METHODS)
     response.headers["Access-Control-Allow-Headers"] = ", ".join(CORS_ALLOW_HEADERS)
     response.headers["Access-Control-Max-Age"] = "86400"
     response.headers["Access-Control-Allow-Credentials"] = str(CORS_ALLOW_CREDENTIALS).lower()
     
-    logger.info(f"🌐 API OPTIONS 응답 헤더 설정 완료")
+    # 설정된 헤더 확인
+    logger.info(f"🌐 API OPTIONS 응답 헤더 설정 완료:")
+    logger.info(f"  - Access-Control-Allow-Origin: {response.headers.get('access-control-allow-origin')}")
+    logger.info(f"  - Access-Control-Allow-Methods: {response.headers.get('access-control-allow-methods')}")
+    logger.info(f"  - Access-Control-Allow-Headers: {response.headers.get('access-control-allow-headers')}")
+    logger.info(f"  - Access-Control-Allow-Credentials: {response.headers.get('access-control-allow-credentials')}")
+    
     return response
 
 # 루트 경로에 대한 OPTIONS 핸들러 추가
@@ -202,12 +255,27 @@ async def root_options():
     
     from fastapi.responses import Response
     response = Response(content="OK", status_code=200)
+    
+    # CORS 헤더 설정 전 환경변수 확인
+    logger.info(f"🔧 루트 OPTIONS CORS 헤더 설정:")
+    logger.info(f"  - CORS_ORIGINS: {CORS_ORIGINS}")
+    logger.info(f"  - CORS_ALLOW_CREDENTIALS: {CORS_ALLOW_CREDENTIALS}")
+    logger.info(f"  - CORS_ALLOW_METHODS: {CORS_ALLOW_METHODS}")
+    logger.info(f"  - CORS_ALLOW_HEADERS: {CORS_ALLOW_HEADERS}")
+    
     response.headers["Access-Control-Allow-Origin"] = CORS_ORIGINS[0] if CORS_ORIGINS else "https://lca-final.vercel.app"
     response.headers["Access-Control-Origin"] = CORS_ORIGINS[0] if CORS_ORIGINS else "https://lca-final.vercel.app"
     response.headers["Access-Control-Allow-Methods"] = ", ".join(CORS_ALLOW_METHODS)
     response.headers["Access-Control-Allow-Headers"] = ", ".join(CORS_ALLOW_HEADERS)
     response.headers["Access-Control-Max-Age"] = "86400"
     response.headers["Access-Control-Allow-Credentials"] = str(CORS_ALLOW_CREDENTIALS).lower()
+    
+    # 설정된 헤더 확인
+    logger.info(f"🌐 루트 OPTIONS 응답 헤더 설정 완료:")
+    logger.info(f"  - Access-Control-Allow-Origin: {response.headers.get('access-control-allow-origin')}")
+    logger.info(f"  - Access-Control-Allow-Methods: {response.headers.get('access-control-allow-methods')}")
+    logger.info(f"  - Access-Control-Allow-Headers: {response.headers.get('access-control-allow-headers')}")
+    logger.info(f"  - Access-Control-Allow-Credentials: {response.headers.get('access-control-allow-credentials')}")
     
     return response
 
