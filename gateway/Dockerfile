@@ -1,4 +1,4 @@
-# Gateway Service Dockerfile - 모듈 경로 문제 근본 해결
+# Gateway Service Dockerfile - gateway 폴더 구조 기반
 FROM python:3.11-slim
 
 # 작업 디렉토리 설정
@@ -15,8 +15,8 @@ ENV PYTHONPATH=/app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# 애플리케이션 코드 복사 (gateway 폴더 전체를 /app에 복사)
-COPY . .
+# 애플리케이션 코드 복사 (gateway/app/ 폴더의 내용을 /app/app/에 복사)
+COPY app/ ./app/
 
 # 디버깅: 정확한 문제 파악
 RUN echo "=== 1. 현재 작업 디렉토리 ===" && pwd && \
@@ -38,5 +38,5 @@ EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8080/health || exit 1
 
-# uvicorn으로 직접 실행
+# uvicorn으로 실행 (Railway 호환)
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080"]

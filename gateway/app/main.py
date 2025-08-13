@@ -112,5 +112,7 @@ async def gateway_health_check():
 async def root():
     return {"message": "Gateway API", "version": "0.1.0"}
 
-# Railway 배포를 위한 uvicorn 호환성
-# 직접 실행은 제거하고 uvicorn app.main:app으로 실행 
+# Railway 배포를 위한 uvicorn 실행 코드
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8080) 
