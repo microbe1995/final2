@@ -83,18 +83,30 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-CORS_ORIGINS = os.getenv("CORS_ORIGINS", "https://lca-final.vercel.app").split(",")
-CORS_ALLOW_CREDENTIALS = os.getenv("CORS_ALLOW_CREDENTIALS", "true").lower() == "true"
-CORS_ALLOW_METHODS = os.getenv("CORS_ALLOW_METHODS", "GET,POST,PUT,DELETE,OPTIONS,PATCH").split(",")
-CORS_ALLOW_HEADERS = os.getenv("CORS_ALLOW_HEADERS", "Accept,Accept-Language,Content-Language,Content-Type,Authorization,X-Requested-With,Origin,Access-Control-Request-Method,Access-Control-Request-Headers").split(",")
+# CORS 설정 - 허용 Origin을 정확히 고정
+FRONT_ORIGIN = os.getenv("FRONT_ORIGIN", "https://lca-final.vercel.app").strip()
+ALLOWED_METHODS = [m.strip() for m in os.getenv(
+    "CORS_ALLOW_METHODS",
+    "GET,POST,PUT,DELETE,OPTIONS,PATCH"
+).split(",") if m.strip()]
+ALLOWED_HEADERS = [h.strip() for h in os.getenv(
+    "CORS_ALLOW_HEADERS",
+    "Accept,Accept-Language,Content-Language,Content-Type,Authorization,X-Requested-With,Origin,Access-Control-Request-Method,Access-Control-Request-Headers"
+).split(",") if h.strip()]
+
+# CORS 설정 로그 출력
+print(f"🔧 CORS 설정 확인:")
+print(f"  - FRONT_ORIGIN: '{FRONT_ORIGIN}'")
+print(f"  - ALLOWED_METHODS: {ALLOWED_METHODS}")
+print(f"  - ALLOWED_HEADERS: {ALLOWED_HEADERS}")
+print("=" * 60)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[o.strip() for o in CORS_ORIGINS if o.strip()],
-    allow_origin_regex=r"https://.*\.vercel\.app",
-    allow_credentials=CORS_ALLOW_CREDENTIALS,
-    allow_methods=[m.strip() for m in CORS_ALLOW_METHODS if m.strip()],
-    allow_headers=[h.strip() for h in CORS_ALLOW_HEADERS if h.strip()],
+    allow_origins=[FRONT_ORIGIN],  # 정확히 1개로 고정
+    allow_credentials=True,  # 쿠키/인증 헤더 쓰면 True 유지
+    allow_methods=ALLOWED_METHODS,
+    allow_headers=ALLOWED_HEADERS,
     expose_headers=["*"],
     max_age=86400,
 )
@@ -102,11 +114,10 @@ app.add_middleware(
 @app.options("/{path:path}")
 async def any_options(path: str):
     response = Response(content="OK", status_code=200)
-    origin = (CORS_ORIGINS[0] or "").strip() if CORS_ORIGINS else ""
-    response.headers["Access-Control-Allow-Origin"] = origin or ""
-    response.headers["Access-Control-Allow-Methods"] = ", ".join(CORS_ALLOW_METHODS)
-    response.headers["Access-Control-Allow-Headers"] = ", ".join(CORS_ALLOW_HEADERS)
-    response.headers["Access-Control-Allow-Credentials"] = str(CORS_ALLOW_CREDENTIALS).lower()
+    response.headers["Access-Control-Allow-Origin"] = FRONT_ORIGIN
+    response.headers["Access-Control-Allow-Methods"] = ", ".join(ALLOWED_METHODS)
+    response.headers["Access-Control-Allow-Headers"] = ", ".join(ALLOWED_HEADERS)
+    response.headers["Access-Control-Allow-Credentials"] = "true"
     response.headers["Access-Control-Max-Age"] = "86400"
     return response
 
