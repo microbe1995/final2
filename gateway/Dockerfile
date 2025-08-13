@@ -1,4 +1,4 @@
-# Gateway Service Dockerfile - 간단한 방법
+# Gateway Service Dockerfile - 모듈 경로 문제 해결
 FROM python:3.11-slim
 
 # 작업 디렉토리 설정
@@ -26,13 +26,16 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Gateway 애플리케이션 코드 복사 (전체 디렉토리)
 COPY . .
 
-# 디버깅: 디렉토리 구조 확인
+# 디버깅: 디렉토리 구조 및 Python 경로 확인
 RUN echo "=== 디렉토리 구조 확인 ===" && \
     ls -la && \
     echo "=== app 디렉토리 내용 ===" && \
     ls -la app/ && \
     echo "=== Python 경로 확인 ===" && \
-    python -c "import sys; print('Python path:', sys.path)"
+    python -c "import sys; print('Python path:', sys.path)" && \
+    echo "=== 모듈 import 테스트 ===" && \
+    python -c "import app; print('✅ app 모듈 import 성공!')" && \
+    python -c "from app.main import app; print('✅ app.main.app import 성공!')"
 
 # 포트 설정
 EXPOSE 8080
@@ -42,5 +45,5 @@ ENV PORT=8080
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8080/health || exit 1
 
-# 직접 uvicorn 실행 (가장 간단한 방법)
+# 올바른 모듈 경로로 uvicorn 실행 (--reload 제거)
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080"]
