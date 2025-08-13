@@ -16,30 +16,51 @@ from contextlib import asynccontextmanager
 # Railway 환경 감지 및 import 경로 결정
 def get_auth_router():
     """Railway 환경에 따라 적절한 import 경로 선택"""
-    # Railway 환경 감지 (더 안전한 방법)
+    # Railway 환경 감지 (더 확실한 방법)
     is_railway = (
         os.getenv("RAILWAY_ENVIRONMENT") == "true" or
         os.getenv("RAILWAY_STATIC_URL") is not None or
-        os.getenv("PORT") is not None
+        os.getenv("PORT") is not None or
+        os.getenv("RAILWAY_PROJECT_ID") is not None or
+        os.getenv("RAILWAY_SERVICE_ID") is not None
     )
     
-    if is_railway:
-        # Railway 환경: 절대 경로로 import (app. 접두사 없음)
+    # 디버깅: 환경 변수 출력
+    print(f"🔍 환경 변수 확인:")
+    print(f"  - RAILWAY_ENVIRONMENT: {os.getenv('RAILWAY_ENVIRONMENT')}")
+    print(f"  - RAILWAY_STATIC_URL: {os.getenv('RAILWAY_STATIC_URL')}")
+    print(f"  - PORT: {os.getenv('PORT')}")
+    print(f"  - RAILWAY_PROJECT_ID: {os.getenv('RAILWAY_PROJECT_ID')}")
+    print(f"  - RAILWAY_SERVICE_ID: {os.getenv('RAILWAY_SERVICE_ID')}")
+    print(f"  - /app/main.py 존재: {os.path.exists('/app/main.py')}")
+    print(f"  - is_railway: {is_railway}")
+    
+    # Railway 환경이거나 Docker 컨테이너 내부라면 절대 경로 사용
+    if is_railway or os.path.exists("/app/main.py"):
+        print(f"🚂 Railway/Docker 환경 감지됨 - 절대 경로 import 사용")
+        # Railway/Docker 환경: 절대 경로로 import (app. 접두사 없음)
         try:
             from router.auth_router import auth_router
+            print(f"✅ 절대 경로 import 성공: router.auth_router")
             return auth_router
-        except ImportError:
+        except ImportError as e:
+            print(f"❌ 절대 경로 import 실패: {e}")
             # fallback: 상대 경로 시도
             from .router.auth_router import auth_router
+            print(f"✅ 상대 경로 import 성공: .router.auth_router")
             return auth_router
     else:
+        print(f"🏠 로컬 개발 환경 감지됨 - 상대 경로 import 사용")
         # 로컬 개발 환경: 상대 경로로 import
         try:
             from .router.auth_router import auth_router
+            print(f"✅ 상대 경로 import 성공: .router.auth_router")
             return auth_router
-        except ImportError:
+        except ImportError as e:
+            print(f"❌ 상대 경로 import 실패: {e}")
             # fallback: 절대 경로 시도 (app. 접두사 없음)
             from router.auth_router import auth_router
+            print(f"✅ 절대 경로 import 성공: router.auth_router")
             return auth_router
 
 # auth_router 가져오기
