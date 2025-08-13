@@ -124,11 +124,10 @@ app = FastAPI(
 )
 
 # CORS preflight 요청을 위한 OPTIONS 핸들러 추가 (CORS 미들웨어보다 먼저)
-@app.options("/{full_path:path}")
-async def options_handler(full_path: str, request: Request):
-    """모든 경로에 대한 OPTIONS 요청 처리 (CORS preflight)"""
-    logger.info(f"🌐 OPTIONS 요청 처리: /{full_path}")
-    logger.info(f"🌐 Origin: {request.headers.get('origin', 'No Origin')}")
+@app.options("/api/v1/auth/register")
+async def auth_register_options():
+    """회원가입 API에 대한 OPTIONS 요청 처리 (CORS preflight)"""
+    logger.info(f"🌐 회원가입 OPTIONS 요청 처리")
     
     # 명시적인 CORS 헤더 설정
     from fastapi.responses import Response
@@ -138,14 +137,13 @@ async def options_handler(full_path: str, request: Request):
     response.headers["Access-Control-Allow-Headers"] = "Accept, Accept-Language, Content-Language, Content-Type, Authorization, X-Requested-With, Origin, Access-Control-Request-Method, Access-Control-Request-Headers"
     response.headers["Access-Control-Max-Age"] = "86400"
     
-    logger.info(f"🌐 OPTIONS 응답 헤더 설정 완료")
+    logger.info(f"🌐 회원가입 OPTIONS 응답 헤더 설정 완료")
     return response
 
-@gateway_router.options("/{full_path:path}")
-async def gateway_options_handler(full_path: str, request: Request):
-    """Gateway API 경로에 대한 OPTIONS 요청 처리"""
-    logger.info(f"🌐 Gateway OPTIONS 요청 처리: /{full_path}")
-    logger.info(f"🌐 Origin: {request.headers.get('origin', 'No Origin')}")
+@app.options("/api/v1/auth/login")
+async def auth_login_options():
+    """로그인 API에 대한 OPTIONS 요청 처리 (CORS preflight)"""
+    logger.info(f"🌐 로그인 OPTIONS 요청 처리")
     
     # 명시적인 CORS 헤더 설정
     from fastapi.responses import Response
@@ -155,7 +153,24 @@ async def gateway_options_handler(full_path: str, request: Request):
     response.headers["Access-Control-Allow-Headers"] = "Accept, Accept-Language, Content-Language, Content-Type, Authorization, X-Requested-With, Origin, Access-Control-Request-Method, Access-Control-Request-Headers"
     response.headers["Access-Control-Max-Age"] = "86400"
     
-    logger.info(f"🌐 Gateway OPTIONS 응답 헤더 설정 완료")
+    logger.info(f"🌐 로그인 OPTIONS 응답 헤더 설정 완료")
+    return response
+
+# 모든 API 경로에 대한 범용 OPTIONS 핸들러
+@app.options("/api/{full_path:path}")
+async def api_options(full_path: str):
+    """모든 API 경로에 대한 OPTIONS 요청 처리 (CORS preflight)"""
+    logger.info(f"🌐 API OPTIONS 요청 처리: /api/{full_path}")
+    
+    # 명시적인 CORS 헤더 설정
+    from fastapi.responses import Response
+    response = Response(content="OK", status_code=200)
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
+    response.headers["Access-Control-Allow-Headers"] = "Accept, Accept-Language, Content-Language, Content-Type, Authorization, X-Requested-With, Origin, Access-Control-Request-Method, Access-Control-Request-Headers"
+    response.headers["Access-Control-Max-Age"] = "86400"
+    
+    logger.info(f"🌐 API OPTIONS 응답 헤더 설정 완료")
     return response
 
 # CORS 미들웨어 설정
