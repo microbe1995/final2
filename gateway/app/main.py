@@ -132,10 +132,11 @@ async def auth_register_options():
     # 명시적인 CORS 헤더 설정
     from fastapi.responses import Response
     response = Response(content="OK", status_code=200)
-    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Access-Control-Allow-Origin"] = "https://lca-final.vercel.app"
     response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
     response.headers["Access-Control-Allow-Headers"] = "Accept, Accept-Language, Content-Language, Content-Type, Authorization, X-Requested-With, Origin, Access-Control-Request-Method, Access-Control-Request-Headers"
     response.headers["Access-Control-Max-Age"] = "86400"
+    response.headers["Access-Control-Allow-Credentials"] = "true"
     
     logger.info(f"🌐 회원가입 OPTIONS 응답 헤더 설정 완료")
     return response
@@ -148,10 +149,11 @@ async def auth_login_options():
     # 명시적인 CORS 헤더 설정
     from fastapi.responses import Response
     response = Response(content="OK", status_code=200)
-    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Access-Control-Allow-Origin"] = "https://lca-final.vercel.app"
     response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
     response.headers["Access-Control-Allow-Headers"] = "Accept, Accept-Language, Content-Language, Content-Type, Authorization, X-Requested-With, Origin, Access-Control-Request-Method, Access-Control-Request-Headers"
     response.headers["Access-Control-Max-Age"] = "86400"
+    response.headers["Access-Control-Allow-Credentials"] = "true"
     
     logger.info(f"🌐 로그인 OPTIONS 응답 헤더 설정 완료")
     return response
@@ -165,12 +167,29 @@ async def api_options(full_path: str):
     # 명시적인 CORS 헤더 설정
     from fastapi.responses import Response
     response = Response(content="OK", status_code=200)
-    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Access-Control-Allow-Origin"] = "https://lca-final.vercel.app"
     response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
     response.headers["Access-Control-Allow-Headers"] = "Accept, Accept-Language, Content-Language, Content-Type, Authorization, X-Requested-With, Origin, Access-Control-Request-Method, Access-Control-Request-Headers"
     response.headers["Access-Control-Max-Age"] = "86400"
+    response.headers["Access-Control-Allow-Credentials"] = "true"
     
     logger.info(f"🌐 API OPTIONS 응답 헤더 설정 완료")
+    return response
+
+# 루트 경로에 대한 OPTIONS 핸들러 추가
+@app.options("/")
+async def root_options():
+    """루트 경로에 대한 OPTIONS 요청 처리"""
+    logger.info(f"🌐 루트 OPTIONS 요청 처리")
+    
+    from fastapi.responses import Response
+    response = Response(content="OK", status_code=200)
+    response.headers["Access-Control-Allow-Origin"] = "https://lca-final.vercel.app"
+    response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
+    response.headers["Access-Control-Allow-Headers"] = "Accept, Accept-Language, Content-Language, Content-Type, Authorization, X-Requested-With, Origin, Access-Control-Request-Method, Access-Control-Request-Headers"
+    response.headers["Access-Control-Max-Age"] = "86400"
+    response.headers["Access-Control-Allow-Credentials"] = "true"
+    
     return response
 
 # CORS 미들웨어 설정
