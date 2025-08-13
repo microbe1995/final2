@@ -8,13 +8,18 @@ from fastapi import APIRouter, HTTPException
 from typing import Dict, Any
 import httpx
 
-try:
-    from ..domain.auth.controller.auth_controller import AuthController
-    from ..domain.auth.model.auth_model import UserRegisterRequest, UserRegisterResponse, UserLoginRequest
-except ImportError:
-    # Docker 환경에서 절대 경로로 import 시도
+# Railway 환경에서는 절대 경로로 import
+if os.getenv("RAILWAY_ENVIRONMENT") == "true":
     from app.domain.auth.controller.auth_controller import AuthController
     from app.domain.auth.model.auth_model import UserRegisterRequest, UserRegisterResponse, UserLoginRequest
+else:
+    # 로컬 개발 환경에서는 상대 경로로 import
+    try:
+        from ..domain.auth.controller.auth_controller import AuthController
+        from ..domain.auth.model.auth_model import UserRegisterRequest, UserRegisterResponse, UserLoginRequest
+    except ImportError:
+        from app.domain.auth.controller.auth_controller import AuthController
+        from app.domain.auth.model.auth_model import UserRegisterRequest, UserRegisterResponse, UserLoginRequest
 
 logger = logging.getLogger(__name__)
 auth_router = APIRouter(prefix="/auth", tags=["Authentication"])

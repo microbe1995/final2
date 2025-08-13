@@ -1,10 +1,24 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 
-// 하드코딩된 API 설정
+// 환경변수 기반 API 설정
 const API_CONFIG = {
-  baseURL: 'http://localhost:8080',
-  apiBaseURL: 'http://localhost:8080/api/v1'
+  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080',
+  apiBaseURL: process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080/api/v1'
 };
+
+// Railway 배포 환경 확인
+const isRailwayDeployed = process.env.NEXT_PUBLIC_RAILWAY_API_URL && 
+                          process.env.NEXT_PUBLIC_RAILWAY_API_URL !== 'http://localhost:8080';
+
+// Railway 환경에서는 Railway URL 사용
+if (isRailwayDeployed) {
+  API_CONFIG.baseURL = process.env.NEXT_PUBLIC_RAILWAY_API_URL;
+  API_CONFIG.apiBaseURL = process.env.NEXT_PUBLIC_RAILWAY_API_BASE_URL || 
+                          `${process.env.NEXT_PUBLIC_RAILWAY_API_URL}/api/v1`;
+}
+
+console.log('🔧 API 설정:', API_CONFIG);
+console.log('🚀 Railway 배포 여부:', isRailwayDeployed);
 
 // axios 인스턴스 생성
 const createApiClient = (): AxiosInstance => {

@@ -13,13 +13,17 @@ from datetime import datetime
 from dotenv import load_dotenv
 from contextlib import asynccontextmanager
 
-# 기본 라우터만 import (나머지는 나중에 추가)
-try:
-    from .router.auth_router import auth_router
-except ImportError:
-    # Docker 환경에서 절대 경로로 import 시도
+# Railway 환경에서는 절대 경로로 import
+if os.getenv("RAILWAY_ENVIRONMENT") == "true":
     from app.router.auth_router import auth_router
+else:
+    # 로컬 개발 환경에서는 상대 경로로 import
+    try:
+        from .router.auth_router import auth_router
+    except ImportError:
+        from app.router.auth_router import auth_router
 
+# Railway 환경이 아닐 때만 .env 파일 로드
 if os.getenv("RAILWAY_ENVIRONMENT") != "true":
     load_dotenv()
 
@@ -108,11 +112,5 @@ async def gateway_health_check():
 async def root():
     return {"message": "Gateway API", "version": "0.1.0"}
 
-# ✅ 서버 실행 (직접 uvicorn 실행)
-if __name__ == "__main__":
-    import uvicorn
-    # 포트를 명시적으로 8080으로 설정
-    port = 8080
-    logger.info(f"🚀 Gateway 서버 시작 - 포트: {port}")
-    # 직접 uvicorn 실행
-    uvicorn.run(app, host="0.0.0.0", port=port, log_level="info") 
+# Railway 배포를 위한 uvicorn 호환성
+# 직접 실행은 제거하고 uvicorn app.main:app으로 실행 

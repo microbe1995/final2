@@ -34,5 +34,5 @@ ENV PORT=8080
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8080/health || exit 1
 
-# 실행 명령어 - uvicorn으로 실행 (Railway 환경에 최적화)
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080", "--reload"]
+# Railway 배포를 위한 main.py 직접 실행
+CMD ["python", "main.py"]
