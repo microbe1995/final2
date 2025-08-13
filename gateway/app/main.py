@@ -83,20 +83,20 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# CORS 설정 - 허용 Origin을 정확히 고정
+# CORS 설정 - 환경변수 기반
 FRONT_ORIGIN = os.getenv("FRONT_ORIGIN", "https://lca-final.vercel.app").strip()
-ALLOWED_METHODS = [m.strip() for m in os.getenv(
-    "CORS_ALLOW_METHODS",
-    "GET,POST,PUT,DELETE,OPTIONS,PATCH"
-).split(",") if m.strip()]
-ALLOWED_HEADERS = [h.strip() for h in os.getenv(
-    "CORS_ALLOW_HEADERS",
-    "Accept,Accept-Language,Content-Language,Content-Type,Authorization,X-Requested-With,Origin,Access-Control-Request-Method,Access-Control-Request-Headers"
-).split(",") if h.strip()]
+CORS_ALLOW_CREDENTIALS = os.getenv("CORS_ALLOW_CREDENTIALS", "true").lower() == "true"
+CORS_ALLOW_METHODS = os.getenv("CORS_ALLOW_METHODS", "GET,POST,PUT,DELETE,OPTIONS,PATCH")
+CORS_ALLOW_HEADERS = os.getenv("CORS_ALLOW_HEADERS", "Accept,Accept-Language,Content-Language,Content-Type,Authorization,X-Requested-With,Origin,Access-Control-Request-Method,Access-Control-Request-Headers")
+
+# 메서드와 헤더를 리스트로 변환 (공백 제거)
+ALLOWED_METHODS = [m.strip() for m in CORS_ALLOW_METHODS.split(",") if m.strip()]
+ALLOWED_HEADERS = [h.strip() for h in CORS_ALLOW_HEADERS.split(",") if h.strip()]
 
 # CORS 설정 로그 출력
 print(f"🔧 CORS 설정 확인:")
 print(f"  - FRONT_ORIGIN: '{FRONT_ORIGIN}'")
+print(f"  - CORS_ALLOW_CREDENTIALS: {CORS_ALLOW_CREDENTIALS}")
 print(f"  - ALLOWED_METHODS: {ALLOWED_METHODS}")
 print(f"  - ALLOWED_HEADERS: {ALLOWED_HEADERS}")
 print("=" * 60)
@@ -104,7 +104,7 @@ print("=" * 60)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[FRONT_ORIGIN],  # 정확히 1개로 고정
-    allow_credentials=True,  # 쿠키/인증 헤더 쓰면 True 유지
+    allow_credentials=CORS_ALLOW_CREDENTIALS,
     allow_methods=ALLOWED_METHODS,
     allow_headers=ALLOWED_HEADERS,
     expose_headers=["*"],
@@ -117,8 +117,16 @@ async def any_options(path: str):
     response.headers["Access-Control-Allow-Origin"] = FRONT_ORIGIN
     response.headers["Access-Control-Allow-Methods"] = ", ".join(ALLOWED_METHODS)
     response.headers["Access-Control-Allow-Headers"] = ", ".join(ALLOWED_HEADERS)
-    response.headers["Access-Control-Allow-Credentials"] = "true"
+    response.headers["Access-Control-Allow-Credentials"] = str(CORS_ALLOW_CREDENTIALS).lower()
     response.headers["Access-Control-Max-Age"] = "86400"
+    
+    # CORS preflight 로깅
+    print(f"🔍 CORS OPTIONS 요청 처리:")
+    print(f"  - Path: {path}")
+    print(f"  - Origin: {FRONT_ORIGIN}")
+    print(f"  - Methods: {', '.join(ALLOWED_METHODS)}")
+    print(f"  - Headers: {', '.join(ALLOWED_HEADERS)}")
+    
     return response
 
 @app.middleware("http")
@@ -126,6 +134,16 @@ async def cors_debug_middleware(request: Request, call_next):
     logger.info(f"{request.method} {request.url}")
     response = await call_next(request)
     return response
+
+@app.middleware("http")
+async def _cors_probe(request: Request, call_next):
+    print("CORS_PROBE",
+          "origin=", repr(request.headers.get("origin")),
+          "acr-method=", repr(request.headers.get("access-control-request-method")),
+          "acr-headers=", repr(request.headers.get("access-control-request-headers")),
+          "path=", request.url.path,
+          "method=", request.method)
+    return await call_next(request)
 
 @app.get("/health")
 async def health_check():
