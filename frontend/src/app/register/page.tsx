@@ -54,12 +54,12 @@ export default function RegisterPage() {
     // API Gateway로 요청 (환경변수 사용)
     const apiGatewayUrl = process.env.NEXT_PUBLIC_API_URL 
       ? `${process.env.NEXT_PUBLIC_API_URL}/api/v1/auth/register`
-      : 'http://localhost:8080/api/v1/auth/register';
+      : 'https://gateway-production-22ef.up.railway.app/api/v1/auth/register';
     
     console.log('🔧 환경변수 확인:', {
-      NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
-      NEXT_PUBLIC_RAILWAY_API_URL: process.env.NEXT_PUBLIC_RAILWAY_API_URL,
-      NODE_ENV: process.env.NODE_ENV
+      NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || '설정되지 않음',
+      NEXT_PUBLIC_RAILWAY_API_URL: process.env.NEXT_PUBLIC_RAILWAY_API_URL || '설정되지 않음',
+      NODE_ENV: process.env.NODE_ENV || '설정되지 않음'
     });
     
     console.log('🚀 API Gateway 요청 시작:', apiGatewayUrl);

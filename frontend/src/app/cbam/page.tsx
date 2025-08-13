@@ -64,7 +64,14 @@ export default function CBAMCalculator() {
     try {
       console.log('🧮 CBAM 계산 요청:', formData);
       
-      const response = await axios.post('/api/gateway/cbam/calculate', formData);
+      // API URL 구성 (환경변수 기반)
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL 
+        ? `${process.env.NEXT_PUBLIC_API_URL}/api/v1/gateway/cbam/calculate`
+        : 'https://gateway-production-22ef.up.railway.app/api/v1/gateway/cbam/calculate';
+      
+      console.log('🔧 CBAM API URL:', apiUrl);
+      
+      const response = await axios.post(apiUrl, formData);
       
       console.log('✅ CBAM 계산 결과:', response.data);
       setResult(response.data);

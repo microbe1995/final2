@@ -44,7 +44,14 @@ export const useMessageStore = create<MessageState>((set, get) => ({
     try {
       console.log('📡 프론트엔드: API 요청 전송 중...');
       
-      const response = await axios.post('/api/gateway/message', {
+      // API URL 구성 (환경변수 기반)
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL 
+        ? `${process.env.NEXT_PUBLIC_API_URL}/api/v1/gateway/message`
+        : 'https://gateway-production-22ef.up.railway.app/api/v1/gateway/message';
+      
+      console.log('🔧 Message API URL:', apiUrl);
+      
+      const response = await axios.post(apiUrl, {
         message: message
       }, {
         headers: {
