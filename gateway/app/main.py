@@ -13,15 +13,37 @@ from datetime import datetime
 from dotenv import load_dotenv
 from contextlib import asynccontextmanager
 
-# Railway 환경에서는 절대 경로로 import
-if os.getenv("RAILWAY_ENVIRONMENT") == "true":
-    from .router.auth_router import auth_router
-else:
-    # 로컬 개발 환경에서는 상대 경로로 import
-    try:
-        from .router.auth_router import auth_router
-    except ImportError:
-        from app.router.auth_router import auth_router
+# Railway 환경 감지 및 import 경로 결정
+def get_auth_router():
+    """Railway 환경에 따라 적절한 import 경로 선택"""
+    # Railway 환경 감지 (더 안전한 방법)
+    is_railway = (
+        os.getenv("RAILWAY_ENVIRONMENT") == "true" or
+        os.getenv("RAILWAY_STATIC_URL") is not None or
+        os.getenv("PORT") is not None
+    )
+    
+    if is_railway:
+        # Railway 환경: 절대 경로로 import (app. 접두사 없음)
+        try:
+            from router.auth_router import auth_router
+            return auth_router
+        except ImportError:
+            # fallback: 상대 경로 시도
+            from .router.auth_router import auth_router
+            return auth_router
+    else:
+        # 로컬 개발 환경: 상대 경로로 import
+        try:
+            from .router.auth_router import auth_router
+            return auth_router
+        except ImportError:
+            # fallback: 절대 경로 시도 (app. 접두사 없음)
+            from router.auth_router import auth_router
+            return auth_router
+
+# auth_router 가져오기
+auth_router = get_auth_router()
 
 # Railway 환경이 아닐 때만 .env 파일 로드
 if os.getenv("RAILWAY_ENVIRONMENT") != "true":

@@ -15,21 +15,12 @@ ENV PYTHONPATH=/app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# 애플리케이션 코드 복사 (gateway/app/ 폴더의 내용을 /app/app/에 복사)
-COPY app/ ./app/
+# 애플리케이션 코드 복사 (gateway/app/ 폴더의 내용을 /app/에 직접 복사)
+COPY app/ .
 
-# 디버깅: 정확한 문제 파악
-RUN echo "=== 1. 현재 작업 디렉토리 ===" && pwd && \
-    echo "=== 2. 디렉토리 구조 ===" && ls -la && \
-    echo "=== 3. app 디렉토리 내용 ===" && ls -la app/ && \
-    echo "=== 4. Python 경로 ===" && python -c "import sys; print('Python path:', sys.path)" && \
-    echo "=== 5. Python 버전 ===" && python --version && \
-    echo "=== 6. 모듈 import 테스트 ===" && \
-    python -c "import app" && echo "✅ app 모듈 import 성공!" && \
-    python -c "from app.main import app" && echo "✅ app.main.app import 성공!" && \
-    echo "=== 7. 파일 존재 확인 ===" && \
-    echo "app/__init__.py exists:" && test -f app/__init__.py && echo "✅ YES" || echo "❌ NO" && \
-    echo "app/main.py exists:" && test -f app/main.py && echo "✅ YES" || echo "❌ NO"
+# 디버깅: 파일 구조 확인만
+RUN echo "=== 파일 구조 확인 ===" && ls -la && \
+    echo "=== main.py 존재 확인 ===" && test -f main.py && echo "✅ main.py exists" || echo "❌ main.py not found"
 
 # 포트 설정
 EXPOSE 8080
@@ -38,5 +29,5 @@ EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8080/health || exit 1
 
-# uvicorn으로 실행 (Railway 호환)
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080"]
+# uvicorn으로 실행 (수정된 경로)
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]
