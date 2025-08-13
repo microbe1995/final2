@@ -129,18 +129,54 @@ app.add_middleware(
         "http://localhost:3000",  # 로컬 접근
         "http://127.0.0.1:3000",  # 로컬 IP 접근
         "http://frontend:3000",   # Docker 내부 네트워크
-        "https://lca-final.vercel.app",  # Vercel 프론트엔드
+        "https://lca-final.vercel.app",  # Vercel 프론트엔드 (정확한 도메인)
         "https://*.vercel.app",   # 모든 Vercel 도메인
+        "https://vercel.app",     # Vercel 메인 도메인
         "*",  # 모든 프론트엔드 도메인 허용 (개발용)
     ],
+    allow_origin_regex=r"https://.*\.vercel\.app",  # Vercel 서브도메인 정규식
     allow_credentials=True,  # HttpOnly 쿠키 사용을 위해 필수
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],  # 명시적 메서드 허용
+    allow_headers=[
+        "Accept",
+        "Accept-Language",
+        "Content-Language",
+        "Content-Type",
+        "Authorization",
+        "X-Requested-With",
+        "Origin",
+        "Access-Control-Request-Method",
+        "Access-Control-Request-Headers",
+    ],
+    expose_headers=["*"],  # 모든 응답 헤더 노출
+    max_age=86400,  # CORS preflight 캐시 시간 (24시간)
 )
 
 gateway_router = APIRouter(prefix="/api/v1", tags=["Gateway API"])
 gateway_router.include_router(auth_router)
 app.include_router(gateway_router)
+
+# CORS 디버깅을 위한 미들웨어 추가
+@app.middleware("http")
+async def cors_debug_middleware(request: Request, call_next):
+    """CORS 요청 디버깅을 위한 미들웨어"""
+    # 요청 정보 로깅
+    logger.info(f"🌐 CORS 요청: {request.method} {request.url}")
+    logger.info(f"🌐 Origin: {request.headers.get('origin', 'No Origin')}")
+    logger.info(f"🌐 User-Agent: {request.headers.get('user-agent', 'No User-Agent')}")
+    
+    # 응답 처리
+    response = await call_next(request)
+    
+    # CORS 헤더 확인
+    cors_headers = {
+        'Access-Control-Allow-Origin': response.headers.get('access-control-allow-origin'),
+        'Access-Control-Allow-Methods': response.headers.get('access-control-allow-methods'),
+        'Access-Control-Allow-Headers': response.headers.get('access-control-allow-headers'),
+    }
+    logger.info(f"🌐 CORS 응답 헤더: {cors_headers}")
+    
+    return response
 
 @app.get("/health", summary="테스트 엔드포인트")
 async def health_check():
