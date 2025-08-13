@@ -15,7 +15,7 @@ from contextlib import asynccontextmanager
 
 # Railway 환경에서는 절대 경로로 import
 if os.getenv("RAILWAY_ENVIRONMENT") == "true":
-    from app.router.auth_router import auth_router
+    from .router.auth_router import auth_router
 else:
     # 로컬 개발 환경에서는 상대 경로로 import
     try:
