@@ -123,6 +123,42 @@ app = FastAPI(
     lifespan=lifespan
 )
 
+# CORS preflight 요청을 위한 OPTIONS 핸들러 추가 (CORS 미들웨어보다 먼저)
+@app.options("/{full_path:path}")
+async def options_handler(full_path: str, request: Request):
+    """모든 경로에 대한 OPTIONS 요청 처리 (CORS preflight)"""
+    logger.info(f"🌐 OPTIONS 요청 처리: /{full_path}")
+    logger.info(f"🌐 Origin: {request.headers.get('origin', 'No Origin')}")
+    
+    # 명시적인 CORS 헤더 설정
+    from fastapi.responses import Response
+    response = Response(content="OK", status_code=200)
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
+    response.headers["Access-Control-Allow-Headers"] = "Accept, Accept-Language, Content-Language, Content-Type, Authorization, X-Requested-With, Origin, Access-Control-Request-Method, Access-Control-Request-Headers"
+    response.headers["Access-Control-Max-Age"] = "86400"
+    
+    logger.info(f"🌐 OPTIONS 응답 헤더 설정 완료")
+    return response
+
+@gateway_router.options("/{full_path:path}")
+async def gateway_options_handler(full_path: str, request: Request):
+    """Gateway API 경로에 대한 OPTIONS 요청 처리"""
+    logger.info(f"🌐 Gateway OPTIONS 요청 처리: /{full_path}")
+    logger.info(f"🌐 Origin: {request.headers.get('origin', 'No Origin')}")
+    
+    # 명시적인 CORS 헤더 설정
+    from fastapi.responses import Response
+    response = Response(content="OK", status_code=200)
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
+    response.headers["Access-Control-Allow-Headers"] = "Accept, Accept-Language, Content-Language, Content-Type, Authorization, X-Requested-With, Origin, Access-Control-Request-Method, Access-Control-Request-Headers"
+    response.headers["Access-Control-Max-Age"] = "86400"
+    
+    logger.info(f"🌐 Gateway OPTIONS 응답 헤더 설정 완료")
+    return response
+
+# CORS 미들웨어 설정
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -177,19 +213,6 @@ async def cors_debug_middleware(request: Request, call_next):
     logger.info(f"🌐 CORS 응답 헤더: {cors_headers}")
     
     return response
-
-# CORS preflight 요청을 위한 OPTIONS 핸들러 추가
-@app.options("/{full_path:path}")
-async def options_handler(full_path: str):
-    """모든 경로에 대한 OPTIONS 요청 처리 (CORS preflight)"""
-    logger.info(f"🌐 OPTIONS 요청 처리: /{full_path}")
-    return {"message": "OK"}
-
-@gateway_router.options("/{full_path:path}")
-async def gateway_options_handler(full_path: str):
-    """Gateway API 경로에 대한 OPTIONS 요청 처리"""
-    logger.info(f"🌐 Gateway OPTIONS 요청 처리: /{full_path}")
-    return {"message": "OK"}
 
 @app.get("/health", summary="테스트 엔드포인트")
 async def health_check():
