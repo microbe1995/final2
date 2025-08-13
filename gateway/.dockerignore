@@ -19,7 +19,6 @@ nosetests.xml
 coverage.xml
 *.cover
 *.log
-.git
 .mypy_cache
 .pytest_cache
 .hypothesis
@@ -47,9 +46,9 @@ coverage.xml
 ehthumbs.db
 Thumbs.db
 
-# 문서
-README.md
+# 문서 (README.md는 유지)
 *.md
+!README.md
 
 # 테스트
 tests/
@@ -65,3 +64,7 @@ tmp/
 temp/
 *.tmp
 *.temp
+
+# Docker 관련
+Dockerfile
+.dockerignore
