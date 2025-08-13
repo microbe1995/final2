@@ -257,7 +257,7 @@ async def health_check():
 async def gateway_health_check():
     return {"status": "gateway healthy!"}
 
-# 기본 루트 경로
+# 기본 루트 경로햣
 @app.get("/")
 async def root():
     return {"message": "Gateway API", "version": "0.1.0"}
