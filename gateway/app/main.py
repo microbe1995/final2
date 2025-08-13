@@ -13,6 +13,41 @@ from datetime import datetime
 from dotenv import load_dotenv
 from contextlib import asynccontextmanager
 
+# Gateway API 서비스
+import os
+import logging
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.middleware.cors import CORSMiddleware
+from dotenv import load_dotenv
+
+# 🚨 강력한 테스트 로그 추가
+print("=" * 60)
+print("🚀 Gateway API 서비스 시작 - Railway 디버깅 모드")
+print("=" * 60)
+print(f"현재 작업 디렉토리: {os.getcwd()}")
+print(f"Python 경로: {os.environ.get('PYTHONPATH', '설정되지 않음')}")
+print(f"현재 시간: {os.popen('date').read().strip()}")
+print("=" * 60)
+
+# 로깅 설정
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("gateway_api")
+
+# 🚨 모든 환경변수 출력 (Railway 디버깅용)
+print("🔧 모든 환경변수 확인:")
+for key, value in os.environ.items():
+    if key.startswith(('CORS_', 'RAILWAY_', 'PYTHON')):
+        print(f"  - {key}: {value}")
+print("=" * 60)
+
+# 환경변수 로드 (Railway 환경이 아닐 때만)
+if not os.getenv("RAILWAY_ENVIRONMENT"):
+    load_dotenv()
+    print("📁 .env 파일에서 환경변수 로드됨")
+else:
+    print("🚂 Railway 환경에서 실행 중 - .env 파일 로드 안함")
+print("=" * 60)
+
 # Railway 환경 감지 및 import 경로 결정
 def get_auth_router():
     """Railway 환경에 따라 적절한 import 경로 선택"""
