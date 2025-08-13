@@ -15,8 +15,8 @@ ENV PYTHONPATH=/app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# 애플리케이션 코드 복사
-COPY . .
+# 애플리케이션 코드 복사 (app 폴더만)
+COPY app/ ./app/
 
 # 디버깅: 정확한 문제 파악
 RUN echo "=== 1. 현재 작업 디렉토리 ===" && pwd && \
