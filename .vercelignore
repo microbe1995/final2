@@ -98,13 +98,24 @@ Thumbs.db
 
 # Docker 관련
 docker-compose.yml
-Dockerfile*
+Dockerfile
 .dockerignore
 
-# 문서
-README.md
-*.md
+# Railway 관련
+railway.json
 
-# 백엔드 서비스
+# 개발 도구
+check-gateway.bat
+vercel-build.bat
+docker-guide.md
+RAILWAY_DEPLOYMENT.md
+VERCEL_ENV_SETUP.md
+
+# Python 관련 (frontend 빌드에 불필요)
 gateway/
 service/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+requirements.txt
