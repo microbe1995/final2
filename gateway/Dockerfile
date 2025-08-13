@@ -31,3 +31,6 @@ HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
 
 # uvicorn으로 실행 (수정된 경로)
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]
+
+# 🚨 캐시 무효화 레이어 추가 - Railway 재배포를 위한 강제 빌드
+RUN echo "Cache bust: $(date)" > /tmp/cache_bust.txt && rm /tmp/cache_bust.txt
