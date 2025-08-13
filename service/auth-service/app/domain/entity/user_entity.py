@@ -12,7 +12,8 @@ class UserEntity:
         self,
         email: str,
         username: str,
-        hashed_password: str,
+        password_hash: str,
+        full_name: Optional[str] = None,
         is_active: bool = True,
         id: Optional[str] = None,
         created_at: Optional[datetime] = None,
@@ -21,10 +22,11 @@ class UserEntity:
         self.id = id or str(uuid.uuid4())
         self.email = email
         self.username = username
-        self.hashed_password = hashed_password
+        self.password_hash = password_hash
+        self.full_name = full_name
         self.is_active = is_active
         self.created_at = created_at or datetime.utcnow()
-        self.updated_at = updated_at
+        self.updated_at = updated_at or datetime.utcnow()
     
     def to_dict(self) -> dict:
         """엔티티를 딕셔너리로 변환"""
@@ -32,7 +34,7 @@ class UserEntity:
             "id": self.id,
             "email": self.email,
             "username": self.username,
-            "hashed_password": self.hashed_password,
+            "full_name": self.full_name,
             "is_active": self.is_active,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None
@@ -45,7 +47,8 @@ class UserEntity:
             id=data.get("id"),
             email=data["email"],
             username=data["username"],
-            hashed_password=data["hashed_password"],
+            password_hash=data["password_hash"],
+            full_name=data.get("full_name"),
             is_active=data.get("is_active", True),
             created_at=datetime.fromisoformat(data["created_at"]) if data.get("created_at") else None,
             updated_at=datetime.fromisoformat(data["updated_at"]) if data.get("updated_at") else None

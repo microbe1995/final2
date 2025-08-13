@@ -1,8 +1,10 @@
 """
-인증 서비스 (JWT 제거 버전)
+인증 서비스
 """
 import os
 import logging
+import hashlib
+import secrets
 from typing import Optional
 
 from domain.entity.user_entity import UserEntity
@@ -12,10 +14,26 @@ from domain.repository.user_repository import UserRepository
 logger = logging.getLogger(__name__)
 
 class AuthService:
-    """인증 서비스 클래스 (JWT 제거)"""
+    """인증 서비스 클래스"""
     
     def __init__(self):
         self.user_repository = UserRepository()
+    
+    def _hash_password(self, password: str) -> str:
+        """비밀번호 해싱"""
+        salt = secrets.token_hex(16)
+        hash_obj = hashlib.pbkdf2_hmac('sha256', password.encode('utf-8'), salt.encode('utf-8'), 100000)
+        return f"{salt}${hash_obj.hex()}"
+    
+    def _verify_password(self, password: str, hashed: str) -> bool:
+        """비밀번호 검증"""
+        try:
+            salt, hash_value = hashed.split('$')
+            hash_obj = hashlib.pbkdf2_hmac('sha256', password.encode('utf-8'), salt.encode('utf-8'), 100000)
+            return hash_obj.hex() == hash_value
+        except Exception as e:
+            logger.error(f"비밀번호 검증 중 오류: {e}")
+            return False
     
     async def create_user(self, user_data: UserCreateModel) -> UserEntity:
         """사용자 생성"""
@@ -31,11 +49,15 @@ class AuthService:
             logger.warning(f"사용자명 중복: {user_data.username}")
             raise ValueError("이미 존재하는 사용자명입니다.")
         
-        # 사용자 엔티티 생성 (비밀번호는 평문으로 저장 - 개발용)
+        # 비밀번호 해싱
+        password_hash = self._hash_password(user_data.password)
+        
+        # 사용자 엔티티 생성
         user = UserEntity(
             email=user_data.email,
             username=user_data.username,
-            hashed_password=user_data.password,  # 개발용으로 평문 저장
+            password_hash=password_hash,
+            full_name=user_data.full_name,
             is_active=True
         )
         
@@ -46,7 +68,7 @@ class AuthService:
         return saved_user
     
     async def authenticate_user(self, email: str, password: str) -> Optional[str]:
-        """사용자 인증 (JWT 제거)"""
+        """사용자 인증"""
         logger.info(f"로그인 시도: {email}")
         
         # 사용자 조회
@@ -55,10 +77,10 @@ class AuthService:
             logger.warning(f"사용자 없음: {email}")
             return None
         
-        # 비밀번호 확인 (개발용으로 평문 비교)
-        if user.hashed_password != password:
+        # 비밀번호 확인
+        if not self._verify_password(password, user.password_hash):
             logger.warning(f"비밀번호 불일치: {email}")
             return None
         
         logger.info(f"로그인 성공: {email}")
-        return "success"  # JWT 대신 간단한 성공 메시지
+        return "success"

@@ -68,11 +68,6 @@ async def root():
         "docs": "/docs"
     }
 
-@app.get("/health")
-async def health_check():
-    """헬스 체크 엔드포인트"""
-    return {"status": "healthy", "service": "auth"}
-
 # Docker 환경에서 포트 설정 (8000으로 고정)
 if __name__ == "__main__":
     import uvicorn

@@ -20,11 +20,12 @@ class UserRepository:
         self._initialize_test_data()
     
     def _initialize_test_data(self):
-        """테스트 데이터 초기화 (JWT 제거)"""
+        """테스트 데이터 초기화"""
         test_user = UserEntity(
             email="test@example.com",
             username="testuser",
-            hashed_password="test123",  # 개발용으로 평문 저장
+            password_hash="test123",  # 개발용으로 평문 저장
+            full_name="테스트 사용자",
             is_active=True
         )
         

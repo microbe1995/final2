@@ -1,8 +1,9 @@
 """
-인증 컨트롤러 (JWT 제거 버전)
+인증 컨트롤러
 """
 from fastapi import HTTPException, status
 import logging
+import json
 
 from domain.model.auth_model import UserCreateModel, UserLoginModel, UserResponseModel
 from domain.service.auth_service import AuthService
@@ -10,7 +11,7 @@ from domain.service.auth_service import AuthService
 logger = logging.getLogger(__name__)
 
 class AuthController:
-    """인증 컨트롤러 클래스 (JWT 제거)"""
+    """인증 컨트롤러 클래스"""
     
     def __init__(self):
         self.auth_service = AuthService()
@@ -18,7 +19,8 @@ class AuthController:
     async def register_user(self, user_data: UserCreateModel) -> UserResponseModel:
         """사용자 회원가입"""
         try:
-            logger.info(f"회원가입 요청: {user_data.email}")
+            # 로깅: 컨트롤러에서 받은 요청 데이터
+            logger.info(f"컨트롤러 회원가입 요청: {json.dumps(user_data.dict(), ensure_ascii=False)}")
             
             # 사용자 생성
             user = await self.auth_service.create_user(user_data)
@@ -28,11 +30,13 @@ class AuthController:
                 "id": user.id,
                 "email": user.email,
                 "username": user.username,
+                "full_name": user.full_name,
                 "is_active": user.is_active,
-                "created_at": user.created_at.isoformat() if user.created_at else None
+                "created_at": user.created_at,
+                "message": "회원가입이 성공적으로 완료되었습니다."
             }
             
-            logger.info(f"회원가입 성공: {user.email}")
+            logger.info(f"✅ 로컬 회원가입 성공: {user.email}")
             return UserResponseModel(**response_data)
             
         except ValueError as e:
@@ -43,9 +47,11 @@ class AuthController:
             raise HTTPException(status_code=500, detail="회원가입 중 오류가 발생했습니다.")
     
     async def login_user(self, user_credentials: UserLoginModel) -> dict:
-        """사용자 로그인 (JWT 제거)"""
+        """사용자 로그인"""
         try:
-            logger.info(f"로그인 시도: {user_credentials.email}")
+            # 로깅: 로그인 요청 데이터 (비밀번호는 마스킹)
+            masked_credentials = {**user_credentials.dict(), 'password': '***'}
+            logger.info(f"컨트롤러 로그인 요청: {json.dumps(masked_credentials, ensure_ascii=False)}")
             
             # 사용자 인증
             result = await self.auth_service.authenticate_user(
@@ -61,7 +67,7 @@ class AuthController:
                 )
             
             logger.info(f"로그인 성공: {user_credentials.email}")
-            return {"message": "로그인 성공", "status": "success"}
+            return {"message": "로그인이 성공했습니다.", "status": "success"}
             
         except HTTPException:
             raise
