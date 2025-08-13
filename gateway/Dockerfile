@@ -1,8 +1,16 @@
 # Gateway Service Dockerfile - gateway 폴더 구조 기반
 FROM python:3.11-slim
 
+# 🚨 강력한 캐시 무효화를 위한 ARG 추가
+ARG CACHEBUST=1
+
 # 작업 디렉토리 설정
 WORKDIR /app
+
+# 🚨 캐시 무효화를 위한 강제 재빌드 레이어
+RUN echo "Cache bust: $(date) - CACHEBUST=${CACHEBUST}" > /tmp/cache_bust.txt && \
+    echo "강제 재빌드: $(date)" && \
+    rm /tmp/cache_bust.txt
 
 # 시스템 패키지 설치
 RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
@@ -31,6 +39,3 @@ HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
 
 # uvicorn으로 실행 (수정된 경로)
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]
-
-# 🚨 캐시 무효화 레이어 추가 - Railway 재배포를 위한 강제 빌드
-RUN echo "Cache bust: $(date)" > /tmp/cache_bust.txt && rm /tmp/cache_bust.txt
