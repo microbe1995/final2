@@ -178,6 +178,19 @@ async def cors_debug_middleware(request: Request, call_next):
     
     return response
 
+# CORS preflight 요청을 위한 OPTIONS 핸들러 추가
+@app.options("/{full_path:path}")
+async def options_handler(full_path: str):
+    """모든 경로에 대한 OPTIONS 요청 처리 (CORS preflight)"""
+    logger.info(f"🌐 OPTIONS 요청 처리: /{full_path}")
+    return {"message": "OK"}
+
+@gateway_router.options("/{full_path:path}")
+async def gateway_options_handler(full_path: str):
+    """Gateway API 경로에 대한 OPTIONS 요청 처리"""
+    logger.info(f"🌐 Gateway OPTIONS 요청 처리: /{full_path}")
+    return {"message": "OK"}
+
 @app.get("/health", summary="테스트 엔드포인트")
 async def health_check():
     return {"status": "healthy!"}
