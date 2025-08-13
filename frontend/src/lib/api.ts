@@ -12,19 +12,28 @@ const API_CONFIG = {
   apiBaseURL: getEnvVar('NEXT_PUBLIC_API_BASE_URL', 'http://localhost:8080/api/v1')
 };
 
-// Railway 배포 환경 확인
-const isRailwayDeployed = process.env.NEXT_PUBLIC_RAILWAY_API_URL && 
-                          process.env.NEXT_PUBLIC_RAILWAY_API_URL !== 'http://localhost:8080';
+// Railway 배포 환경 확인 (더 강화된 로직)
+const isRailwayDeployed = (
+  process.env.NEXT_PUBLIC_RAILWAY_API_URL && 
+  process.env.NEXT_PUBLIC_RAILWAY_API_URL !== 'http://localhost:8080' &&
+  process.env.NEXT_PUBLIC_RAILWAY_API_URL.includes('railway.app')
+);
 
 // Railway 환경에서는 Railway URL 사용
 if (isRailwayDeployed && process.env.NEXT_PUBLIC_RAILWAY_API_URL) {
   API_CONFIG.baseURL = process.env.NEXT_PUBLIC_RAILWAY_API_URL;
   API_CONFIG.apiBaseURL = process.env.NEXT_PUBLIC_RAILWAY_API_BASE_URL || 
                           `${process.env.NEXT_PUBLIC_RAILWAY_API_URL}/api/v1`;
+  
+  console.log('🚂 Railway 환경 감지됨 - Railway API 사용');
+} else {
+  console.log('🏠 로컬 개발 환경 - localhost API 사용');
 }
 
 console.log('🔧 API 설정:', API_CONFIG);
 console.log('🚀 Railway 배포 여부:', isRailwayDeployed);
+console.log('🌐 Railway API URL:', process.env.NEXT_PUBLIC_RAILWAY_API_URL);
+console.log('🔗 API Base URL:', API_CONFIG.apiBaseURL);
 
 // axios 인스턴스 생성
 const createApiClient = (): AxiosInstance => {
