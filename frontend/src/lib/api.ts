@@ -2,12 +2,13 @@ import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 
 // 환경변수 기반 API 설정
 const API_CONFIG = {
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080',
-  apiBaseURL: process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080/api/v1'
+  baseURL: process.env.NEXT_PUBLIC_API_URL || 'https://gateway-production-22ef.up.railway.app',
+  apiBaseURL: process.env.NEXT_PUBLIC_API_BASE_URL || 'https://gateway-production-22ef.up.railway.app/api/v1'
 };
 
 // Railway 배포 환경 확인
-const isRailwayDeployed = process.env.NEXT_PUBLIC_API_URL?.includes('railway.app');
+const isRailwayDeployed = process.env.NEXT_PUBLIC_API_URL?.includes('railway.app') || 
+                          !process.env.NEXT_PUBLIC_API_URL; // 환경변수가 없으면 Railway 사용
 
 // 모든 환경변수 출력 (디버깅용)
 console.log('🔍 모든 환경변수 확인:');
@@ -16,10 +17,9 @@ console.log('  - NEXT_PUBLIC_API_URL:', process.env.NEXT_PUBLIC_API_URL);
 console.log('  - NEXT_PUBLIC_API_BASE_URL:', process.env.NEXT_PUBLIC_API_BASE_URL);
 
 // Railway 환경에서는 Railway URL 사용
-if (isRailwayDeployed && process.env.NEXT_PUBLIC_API_URL) {
-  API_CONFIG.baseURL = process.env.NEXT_PUBLIC_API_URL;
-  API_CONFIG.apiBaseURL = process.env.NEXT_PUBLIC_API_BASE_URL || 
-                          `${process.env.NEXT_PUBLIC_API_URL}/api/v1`;
+if (isRailwayDeployed) {
+  API_CONFIG.baseURL = 'https://gateway-production-22ef.up.railway.app';
+  API_CONFIG.apiBaseURL = 'https://gateway-production-22ef.up.railway.app/api/v1';
   
   console.log('🚂 Railway 환경 감지됨 - Railway API 사용');
 } else {

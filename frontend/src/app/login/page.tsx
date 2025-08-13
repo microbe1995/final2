@@ -30,6 +30,18 @@ export default function LoginPage() {
     try {
       console.log('🚀 로그인 요청:', { email, password: '***' });
       
+      // API 설정 확인
+      console.log('🔧 API 설정 확인:', {
+        NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || '설정되지 않음',
+        NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL || '설정되지 않음',
+        NODE_ENV: process.env.NODE_ENV || '설정되지 않음'
+      });
+      
+      // Railway Gateway URL 확인
+      const gatewayUrl = process.env.NEXT_PUBLIC_API_URL || 'https://gateway-production-22ef.up.railway.app';
+      console.log('🌐 Railway Gateway URL:', gatewayUrl);
+      console.log('🔗 로그인 엔드포인트:', `${gatewayUrl}/api/v1/auth/login`);
+      
       // 로그인 API 호출
       const success = await login({ email, password });
       

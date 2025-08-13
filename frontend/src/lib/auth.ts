@@ -70,7 +70,12 @@ export const authApi = {
     try {
       console.log('🚀 로그인 API 호출:', credentials);
       
-      const response = await api.post<LoginResponse>(API_ENDPOINTS.AUTH.LOGIN, credentials);
+      // API 엔드포인트 확인
+      const loginEndpoint = API_ENDPOINTS.AUTH.LOGIN;
+      console.log('🔗 로그인 엔드포인트:', loginEndpoint);
+      console.log('🌐 전체 URL:', `${process.env.NEXT_PUBLIC_API_BASE_URL || 'https://gateway-production-22ef.up.railway.app/api/v1'}${loginEndpoint}`);
+      
+      const response = await api.post<LoginResponse>(loginEndpoint, credentials);
       
       console.log('✅ 로그인 성공:', response);
       return { 

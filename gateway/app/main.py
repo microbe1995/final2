@@ -93,9 +93,19 @@ CORS_ALLOW_HEADERS = os.getenv("CORS_ALLOW_HEADERS", "Accept,Accept-Language,Con
 ALLOWED_METHODS = [m.strip() for m in CORS_ALLOW_METHODS.split(",") if m.strip()]
 ALLOWED_HEADERS = [h.strip() for h in CORS_ALLOW_HEADERS.split(",") if h.strip()]
 
+# 허용할 origin들을 리스트로 설정 (개발 및 프로덕션 환경 모두 지원)
+ALLOWED_ORIGINS = [
+    FRONT_ORIGIN,  # 기본 Vercel 프론트엔드
+    "http://localhost:3000",  # 로컬 개발
+    "http://127.0.0.1:3000",  # 로컬 IP
+    "https://lca-final.vercel.app",  # Vercel 프로덕션
+    "https://lca-final-git-main-microbe95.vercel.app",  # Vercel 프리뷰
+]
+
 # CORS 설정 로그 출력
 print(f"🔧 CORS 설정 확인:")
 print(f"  - FRONT_ORIGIN: '{FRONT_ORIGIN}'")
+print(f"  - ALLOWED_ORIGINS: {ALLOWED_ORIGINS}")
 print(f"  - CORS_ALLOW_CREDENTIALS: {CORS_ALLOW_CREDENTIALS}")
 print(f"  - ALLOWED_METHODS: {ALLOWED_METHODS}")
 print(f"  - ALLOWED_HEADERS: {ALLOWED_HEADERS}")
@@ -103,7 +113,7 @@ print("=" * 60)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[FRONT_ORIGIN],  # 정확히 1개로 고정
+    allow_origins=ALLOWED_ORIGINS,  # 여러 origin 허용
     allow_credentials=CORS_ALLOW_CREDENTIALS,
     allow_methods=ALLOWED_METHODS,
     allow_headers=ALLOWED_HEADERS,
@@ -113,8 +123,17 @@ app.add_middleware(
 
 @app.options("/{path:path}")
 async def any_options(path: str):
+    # 요청의 origin을 확인
+    request_origin = request.headers.get("origin")
+    
+    # origin이 허용된 목록에 있는지 확인
+    if request_origin in ALLOWED_ORIGINS:
+        allowed_origin = request_origin
+    else:
+        allowed_origin = FRONT_ORIGIN  # 기본값 사용
+    
     response = Response(content="OK", status_code=200)
-    response.headers["Access-Control-Allow-Origin"] = FRONT_ORIGIN
+    response.headers["Access-Control-Allow-Origin"] = allowed_origin
     response.headers["Access-Control-Allow-Methods"] = ", ".join(ALLOWED_METHODS)
     response.headers["Access-Control-Allow-Headers"] = ", ".join(ALLOWED_HEADERS)
     response.headers["Access-Control-Allow-Credentials"] = str(CORS_ALLOW_CREDENTIALS).lower()
@@ -123,7 +142,8 @@ async def any_options(path: str):
     # CORS preflight 로깅
     print(f"🔍 CORS OPTIONS 요청 처리:")
     print(f"  - Path: {path}")
-    print(f"  - Origin: {FRONT_ORIGIN}")
+    print(f"  - Request Origin: {request_origin}")
+    print(f"  - Allowed Origin: {allowed_origin}")
     print(f"  - Methods: {', '.join(ALLOWED_METHODS)}")
     print(f"  - Headers: {', '.join(ALLOWED_HEADERS)}")
     
@@ -131,8 +151,24 @@ async def any_options(path: str):
 
 @app.middleware("http")
 async def cors_debug_middleware(request: Request, call_next):
-    logger.info(f"{request.method} {request.url}")
+    # CORS 관련 헤더 로깅
+    origin = request.headers.get("origin")
+    method = request.method
+    path = request.url.path
+    
+    logger.info(f"🌐 CORS 요청: {method} {path}")
+    logger.info(f"  - Origin: {origin}")
+    logger.info(f"  - Allowed Origins: {ALLOWED_ORIGINS}")
+    
     response = await call_next(request)
+    
+    # CORS 응답 헤더 확인
+    if origin and origin in ALLOWED_ORIGINS:
+        response.headers["Access-Control-Allow-Origin"] = origin
+        logger.info(f"✅ CORS 헤더 설정: {origin}")
+    else:
+        logger.warning(f"⚠️ CORS Origin 미허용: {origin}")
+    
     return response
 
 @app.middleware("http")
