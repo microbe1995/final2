@@ -130,7 +130,8 @@ app.add_middleware(
         "http://localhost:3000",  # 로컬 접근
         "http://127.0.0.1:3000",  # 로컬 IP 접근
         "http://frontend:3000",   # Docker 내부 네트워크
-        "https://lca-final.vercel.app",  # Vercel 프론트엔드 (정확한 도메인)
+        "https://lca-final.vercel.app",  # Vercel 프론트엔드 (기존 도메인)
+        "https://lca-final-microbe95s-projects.vercel.app",  # Vercel 프론트엔드 (새로운 도메인)
         "https://*.vercel.app",   # 모든 Vercel 도메인
         "https://vercel.app",     # Vercel 메인 도메인
         "*",  # 모든 프론트엔드 도메인 허용 (개발용)
@@ -162,7 +163,7 @@ async def auth_register_options():
     # 명시적인 CORS 헤더 설정
     from fastapi.responses import Response
     response = Response(content="OK", status_code=200)
-    response.headers["Access-Control-Allow-Origin"] = "https://lca-final.vercel.app"
+    response.headers["Access-Control-Allow-Origin"] = "https://lca-final-microbe95s-projects.vercel.app"
     response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
     response.headers["Access-Control-Allow-Headers"] = "Accept, Accept-Language, Content-Language, Content-Type, Authorization, X-Requested-With, Origin, Access-Control-Request-Method, Access-Control-Request-Headers"
     response.headers["Access-Control-Max-Age"] = "86400"
@@ -179,7 +180,7 @@ async def auth_login_options():
     # 명시적인 CORS 헤더 설정
     from fastapi.responses import Response
     response = Response(content="OK", status_code=200)
-    response.headers["Access-Control-Allow-Origin"] = "https://lca-final.vercel.app"
+    response.headers["Access-Control-Allow-Origin"] = "https://lca-final-microbe95s-projects.vercel.app"
     response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
     response.headers["Access-Control-Allow-Headers"] = "Accept, Accept-Language, Content-Language, Content-Type, Authorization, X-Requested-With, Origin, Access-Control-Request-Method, Access-Control-Request-Headers"
     response.headers["Access-Control-Max-Age"] = "86400"
@@ -197,7 +198,7 @@ async def api_options(full_path: str):
     # 명시적인 CORS 헤더 설정
     from fastapi.responses import Response
     response = Response(content="OK", status_code=200)
-    response.headers["Access-Control-Allow-Origin"] = "https://lca-final.vercel.app"
+    response.headers["Access-Control-Allow-Origin"] = "https://lca-final-microbe95s-projects.vercel.app"
     response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
     response.headers["Access-Control-Allow-Headers"] = "Accept, Accept-Language, Content-Language, Content-Type, Authorization, X-Requested-With, Origin, Access-Control-Request-Method, Access-Control-Request-Headers"
     response.headers["Access-Control-Max-Age"] = "86400"
@@ -214,7 +215,7 @@ async def root_options():
     
     from fastapi.responses import Response
     response = Response(content="OK", status_code=200)
-    response.headers["Access-Control-Allow-Origin"] = "https://lca-final.vercel.app"
+    response.headers["Access-Control-Allow-Origin"] = "https://lca-final-microbe95s-projects.vercel.app"
     response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
     response.headers["Access-Control-Allow-Headers"] = "Accept, Accept-Language, Content-Language, Content-Type, Authorization, X-Requested-With, Origin, Access-Control-Request-Method, Access-Control-Request-Headers"
     response.headers["Access-Control-Max-Age"] = "86400"
