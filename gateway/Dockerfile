@@ -1,4 +1,4 @@
-# Gateway Service Dockerfile
+# Gateway Service Dockerfile - 간단한 방법
 FROM python:3.11-slim
 
 # 작업 디렉토리 설정
@@ -23,8 +23,16 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Gateway 애플리케이션 코드 복사 (app 디렉토리만 복사)
-COPY app/ ./app/
+# Gateway 애플리케이션 코드 복사 (전체 디렉토리)
+COPY . .
+
+# 디버깅: 디렉토리 구조 확인
+RUN echo "=== 디렉토리 구조 확인 ===" && \
+    ls -la && \
+    echo "=== app 디렉토리 내용 ===" && \
+    ls -la app/ && \
+    echo "=== Python 경로 확인 ===" && \
+    python -c "import sys; print('Python path:', sys.path)"
 
 # 포트 설정
 EXPOSE 8080
@@ -34,5 +42,5 @@ ENV PORT=8080
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8080/health || exit 1
 
-# Railway 배포를 위한 uvicorn 직접 실행
-CMD ["uvicorn", "gateway.app.main:app", "--host", "0.0.0.0", "--port", "8080"]
+# 직접 uvicorn 실행 (가장 간단한 방법)
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080"]
