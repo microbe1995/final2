@@ -3,6 +3,7 @@ import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 // 환경변수 타입 안전성을 위한 헬퍼 함수
 const getEnvVar = (key: string, defaultValue: string): string => {
   const value = process.env[key];
+  console.log(`🔍 환경변수 ${key}:`, value || 'undefined');
   return value || defaultValue;
 };
 
@@ -19,6 +20,13 @@ const isRailwayDeployed = (
   process.env.NEXT_PUBLIC_RAILWAY_API_URL.includes('railway.app')
 );
 
+// 모든 환경변수 출력 (디버깅용)
+console.log('🔍 모든 환경변수 확인:');
+console.log('  - NODE_ENV:', process.env.NODE_ENV);
+console.log('  - NEXT_PUBLIC_API_URL:', process.env.NEXT_PUBLIC_API_URL);
+console.log('  - NEXT_PUBLIC_RAILWAY_API_URL:', process.env.NEXT_PUBLIC_RAILWAY_API_URL);
+console.log('  - NEXT_PUBLIC_RAILWAY_API_BASE_URL:', process.env.NEXT_PUBLIC_RAILWAY_API_BASE_URL);
+
 // Railway 환경에서는 Railway URL 사용
 if (isRailwayDeployed && process.env.NEXT_PUBLIC_RAILWAY_API_URL) {
   API_CONFIG.baseURL = process.env.NEXT_PUBLIC_RAILWAY_API_URL;
@@ -28,6 +36,10 @@ if (isRailwayDeployed && process.env.NEXT_PUBLIC_RAILWAY_API_URL) {
   console.log('🚂 Railway 환경 감지됨 - Railway API 사용');
 } else {
   console.log('🏠 로컬 개발 환경 - localhost API 사용');
+  console.log('❌ Railway 환경 감지 실패 이유:');
+  console.log('  - NEXT_PUBLIC_RAILWAY_API_URL 존재:', !!process.env.NEXT_PUBLIC_RAILWAY_API_URL);
+  console.log('  - localhost가 아님:', process.env.NEXT_PUBLIC_RAILWAY_API_URL !== 'http://localhost:8080');
+  console.log('  - railway.app 포함:', process.env.NEXT_PUBLIC_RAILWAY_API_URL?.includes('railway.app'));
 }
 
 console.log('🔧 API 설정:', API_CONFIG);
