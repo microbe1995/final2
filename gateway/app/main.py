@@ -123,6 +123,36 @@ app = FastAPI(
     lifespan=lifespan
 )
 
+# CORS 미들웨어 설정 (OPTIONS 핸들러보다 먼저)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:3000",  # 로컬 접근
+        "http://127.0.0.1:3000",  # 로컬 IP 접근
+        "http://frontend:3000",   # Docker 내부 네트워크
+        "https://lca-final.vercel.app",  # Vercel 프론트엔드 (정확한 도메인)
+        "https://*.vercel.app",   # 모든 Vercel 도메인
+        "https://vercel.app",     # Vercel 메인 도메인
+        "*",  # 모든 프론트엔드 도메인 허용 (개발용)
+    ],
+    allow_origin_regex=r"https://.*\.vercel\.app",  # Vercel 서브도메인 정규식
+    allow_credentials=True,  # HttpOnly 쿠키 사용을 위해 필수
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],  # 명시적 메서드 허용
+    allow_headers=[
+        "Accept",
+        "Accept-Language",
+        "Content-Language",
+        "Content-Type",
+        "Authorization",
+        "X-Requested-With",
+        "Origin",
+        "Access-Control-Request-Method",
+        "Access-Control-Request-Headers",
+    ],
+    expose_headers=["*"],  # 모든 응답 헤더 노출
+    max_age=86400,  # CORS preflight 캐시 시간 (24시간)
+)
+
 # CORS preflight 요청을 위한 OPTIONS 핸들러 추가 (CORS 미들웨어보다 먼저)
 @app.options("/api/v1/auth/register")
 async def auth_register_options():
@@ -191,36 +221,6 @@ async def root_options():
     response.headers["Access-Control-Allow-Credentials"] = "true"
     
     return response
-
-# CORS 미들웨어 설정
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",  # 로컬 접근
-        "http://127.0.0.1:3000",  # 로컬 IP 접근
-        "http://frontend:3000",   # Docker 내부 네트워크
-        "https://lca-final.vercel.app",  # Vercel 프론트엔드 (정확한 도메인)
-        "https://*.vercel.app",   # 모든 Vercel 도메인
-        "https://vercel.app",     # Vercel 메인 도메인
-        "*",  # 모든 프론트엔드 도메인 허용 (개발용)
-    ],
-    allow_origin_regex=r"https://.*\.vercel\.app",  # Vercel 서브도메인 정규식
-    allow_credentials=True,  # HttpOnly 쿠키 사용을 위해 필수
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],  # 명시적 메서드 허용
-    allow_headers=[
-        "Accept",
-        "Accept-Language",
-        "Content-Language",
-        "Content-Type",
-        "Authorization",
-        "X-Requested-With",
-        "Origin",
-        "Access-Control-Request-Method",
-        "Access-Control-Request-Headers",
-    ],
-    expose_headers=["*"],  # 모든 응답 헤더 노출
-    max_age=86400,  # CORS preflight 캐시 시간 (24시간)
-)
 
 gateway_router = APIRouter(prefix="/api/v1", tags=["Gateway API"])
 gateway_router.include_router(auth_router)
