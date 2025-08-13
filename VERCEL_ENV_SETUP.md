@@ -23,9 +23,18 @@ IS_RAILWAY_DEPLOYED=true
 
 #### **🌍 환경 구분**
 ```
-NODE_ENV=production
 CURRENT_ENVIRONMENT=railway
 ```
+
+## ⚠️ **주의사항**
+
+### **자동 설정되는 환경변수 (설정 불필요)**
+- `NODE_ENV`: Vercel에서 자동으로 `production` 설정
+- `VERCEL`: Vercel 배포 환경임을 나타내는 플래그
+
+### **설정 불가능한 환경변수**
+- `NODE_ENV`는 `next.config.js`에서 직접 설정 불가
+- Next.js 예약 환경변수
 
 ## 🔧 **설정 방법**
 
@@ -48,6 +57,7 @@ CURRENT_ENVIRONMENT=railway
 ```javascript
 console.log('API URL:', process.env.NEXT_PUBLIC_API_URL);
 console.log('Railway API URL:', process.env.NEXT_PUBLIC_RAILWAY_API_URL);
+console.log('NODE_ENV:', process.env.NODE_ENV); // Vercel에서 자동 설정
 ```
 
 ### **Next.js 빌드 시 확인**
@@ -68,6 +78,10 @@ npm run build
 
 3. **CORS 설정 확인**
    - Gateway의 CORS 설정에서 Vercel 도메인 허용 필요
+
+4. **NODE_ENV 설정 금지**
+   - `next.config.js`에서 직접 설정 불가
+   - Vercel에서 자동으로 `production` 설정
 
 ## 🔍 **문제 해결**
 
