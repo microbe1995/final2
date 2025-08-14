@@ -30,6 +30,9 @@ coverage.xml
 .pytest_cache
 .hypothesis
 
+# 불필요한 도메인 폴더 (현재 사용하지 않음)
+domain/
+
 # 환경 변수
 .env
 .env.local

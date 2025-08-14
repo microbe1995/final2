@@ -21,16 +21,16 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY app/ .
 
 # 포트 노출 (Auth 서비스)
-EXPOSE 8001
+EXPOSE 8000
 
 # 환경 변수 설정
 ENV PYTHONPATH=/app
 ENV PYTHONUNBUFFERED=1
-ENV PORT=8001
+ENV PORT=8000
 
 # 헬스 체크
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD curl -f http://localhost:8001/health || exit 1
+    CMD curl -f http://localhost:8000/health || exit 1
 
 # Auth 서비스 실행
 CMD ["python", "main.py"]

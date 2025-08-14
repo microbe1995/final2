@@ -43,6 +43,7 @@ app = FastAPI(
 @app.get("/")
 async def root():
     """루트 엔드포인트"""
+    logger.info("🔵 / 엔드포인트 호출됨")
     return {
         "message": "Auth Service (서브라우터)", 
         "version": "1.0.0", 
@@ -54,6 +55,7 @@ async def root():
 @app.get("/health")
 async def health_check():
     """헬스 체크 엔드포인트"""
+    logger.info("🔵 /health 엔드포인트 호출됨")
     return {"status": "healthy", "service": "auth", "mode": "sub-router"}
 
 @app.post("/register")
@@ -106,4 +108,5 @@ async def login_user(user_credentials: dict):
 if __name__ == "__main__":
     import uvicorn
     port = int(os.getenv("PORT", "8000"))
+    logger.info(f"🚀 Auth Service 시작 - 포트: {port}")
     uvicorn.run(app, host="0.0.0.0", port=port)
