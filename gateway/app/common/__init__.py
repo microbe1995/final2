@@ -1,1 +1,1 @@
-# common package
+# 사용하지 않는 common 패키지

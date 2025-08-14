@@ -1,20 +1,2 @@
-"""
-Response Factory
-"""
-from fastapi.responses import JSONResponse
-from httpx import Response
-
-class ResponseFactory:
-    @staticmethod
-    def create_response(response: Response) -> JSONResponse:
-        """HTTP 응답을 FastAPI JSONResponse로 변환"""
-        try:
-            content = response.json()
-        except:
-            content = response.text
-        
-        return JSONResponse(
-            content=content,
-            status_code=response.status_code,
-            headers=dict(response.headers)
-        ) 
+# 사용하지 않는 response_factory.py 파일
+# 현재는 main.py에서 직접 처리 

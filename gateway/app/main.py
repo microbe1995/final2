@@ -108,7 +108,8 @@ async def any_options(path: str, request: Request):
     else:
         allowed_origin = FRONT_ORIGIN
     
-    response = Response(content="OK", status_code=200)
+    # 204 No Content로 응답 (CORS preflight 표준)
+    response = Response(status_code=204)
     response.headers["Access-Control-Allow-Origin"] = allowed_origin
     response.headers["Access-Control-Allow-Credentials"] = str(CORS_ALLOW_CREDENTIALS).lower()
     response.headers["Access-Control-Allow-Methods"] = ", ".join(ALLOWED_METHODS)
