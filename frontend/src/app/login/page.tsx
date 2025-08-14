@@ -28,8 +28,8 @@ export default function LoginPage() {
       let apiUrl: string;
       
       if (process.env.NODE_ENV === 'production') {
-        // 프로덕션 환경 (Vercel)
-        apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://gateway-production-22ef.up.railway.app/api/v1/auth/login';
+        // 프로덕션 환경 (Vercel) - 환경변수 사용
+        apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL + '/auth/login';
       } else {
         // 개발 환경 (로컬) - 절대 URL 사용
         apiUrl = 'http://localhost:8080/api/v1/auth/login';
