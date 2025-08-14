@@ -32,5 +32,5 @@ ENV PORT=8000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD curl -f http://localhost:8000/health || exit 1
 
-# Auth 서비스 실행
-CMD ["python", "main.py"]
+# Auth 서비스 실행 (포트 8000 강제)
+CMD ["python", "-c", "import uvicorn; uvicorn.run('main:app', host='0.0.0.0', port=8000)"]
