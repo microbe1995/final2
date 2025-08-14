@@ -1,6 +1,7 @@
 # Git 관련
 .git
 .gitignore
+.gitattributes
 
 # Python 관련
 __pycache__
@@ -9,6 +10,8 @@ __pycache__
 *.pyd
 .Python
 env
+venv
+.venv
 pip-log.txt
 pip-delete-this-directory.txt
 .tox
@@ -64,3 +67,13 @@ tmp/
 temp/
 *.tmp
 *.temp
+
+# Docker 관련
+Dockerfile
+.dockerignore
+
+# 기타
+node_modules/
+.next/
+dist/
+build/
