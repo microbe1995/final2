@@ -116,6 +116,7 @@ async def login_user(request: Request):
 # Docker 환경에서 포트 설정 (8000으로 고정)
 if __name__ == "__main__":
     import uvicorn
-    port = int(os.getenv("PORT", "8000"))
-    logger.info(f"🚀 Auth Service 시작 - 포트: {port} (완전 격리)")
+    # Railway 환경변수와 관계없이 8000 포트 강제 사용
+    port = 8000
+    logger.info(f"🚀 Auth Service 시작 - 포트: {port} (완전 격리, 강제 8000)")
     uvicorn.run(app, host="0.0.0.0", port=port)
