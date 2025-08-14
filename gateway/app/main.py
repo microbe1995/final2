@@ -154,7 +154,11 @@ async def proxy_post_json(
     path: str,
     request: Request
 ):
-    logger.info(f"🎯 POST 프록시 호출: service={service}, path={path}")
+    logger.info(f"🎯 POST 프록시 호출됨!")
+    logger.info(f"🎯 service: {service}")
+    logger.info(f"🎯 path: {path}")
+    logger.info(f"🎯 전체 경로: /api/v1/{service}/{path}")
+    logger.info(f"🎯 요청 URL: {request.url}")
     
     try:
         headers = dict(request.headers)

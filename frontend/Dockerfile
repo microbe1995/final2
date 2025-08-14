@@ -13,8 +13,13 @@ COPY package.json pnpm-lock.yaml* ./
 # 의존성 설치
 RUN pnpm install --frozen-lockfile
 
-# 소스 코드 복사
-COPY . .
+# 소스 코드 복사 (node_modules 제외)
+COPY src/ ./src/
+COPY public/ ./public/
+COPY next.config.js ./
+COPY tailwind.config.js ./
+COPY postcss.config.js ./
+COPY tsconfig.json ./
 
 # Next.js 애플리케이션 빌드
 RUN pnpm build

@@ -52,9 +52,20 @@ export default function RegisterPage() {
     console.log('📝 프론트엔드 회원가입 입력값:', JSON.stringify(registerData, null, 2));
     
     try {
-      // Gateway URL 설정 (프록시 활용)
-      const apiUrl = '/api/v1/auth/register';
+      // 환경별 API URL 설정
+      let apiUrl: string;
+      
+      if (process.env.NODE_ENV === 'production') {
+        // 프로덕션 환경 (Vercel)
+        apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://gateway-production-22ef.up.railway.app/api/v1/auth/register';
+      } else {
+        // 개발 환경 (로컬) - 절대 URL 사용
+        apiUrl = 'http://localhost:8080/api/v1/auth/register';
+      }
+      
       console.log(`😂 apiUrl: ${apiUrl}`);
+      console.log(`🌍 환경: ${process.env.NODE_ENV}`);
+      console.log(`🔗 전체 URL: ${apiUrl}`);
       
       // 전송할 데이터 준비
       const requestData = {
@@ -71,7 +82,7 @@ export default function RegisterPage() {
       console.log('✅ 회원가입 성공:', response.data);
       
       // 성공 메시지 표시
-      alert(`🎉 회원가입이 성공적으로 완료되었습니다!\n\n사용자명: ${response.data.username}\n이메일: ${response.data.email}\n사용자 ID: ${response.data.id}`);
+      alert(`🎉 회원가입이 성공적으로 완료되었습니다!\n\n사용자명: ${response.data.user.username}\n이메일: ${response.data.user.email}\n사용자 ID: ${response.data.user.id}`);
       
       // 대시보드로 이동
       router.replace('/dashboard');

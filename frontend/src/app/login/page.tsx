@@ -24,8 +24,21 @@ export default function LoginPage() {
     try {
       console.log('🚀 로그인 요청:', { email, password: '***' });
       
-      // 프록시를 통한 API 호출
-      const response = await axios.post('/api/v1/auth/login', {
+      // 환경별 API URL 설정
+      let apiUrl: string;
+      
+      if (process.env.NODE_ENV === 'production') {
+        // 프로덕션 환경 (Vercel)
+        apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://gateway-production-22ef.up.railway.app/api/v1/auth/login';
+      } else {
+        // 개발 환경 (로컬) - 절대 URL 사용
+        apiUrl = 'http://localhost:8080/api/v1/auth/login';
+      }
+      
+      console.log(`🔗 로그인 API URL: ${apiUrl}`);
+      
+      // API 호출
+      const response = await axios.post(apiUrl, {
         email,
         password
       });
