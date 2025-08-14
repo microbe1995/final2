@@ -111,7 +111,7 @@ app.add_middleware(
 logger.info(f"🔧 CORS origins={allowed_origins}, credentials={allow_credentials}")
 
 # ---- 프록시 라우터 ----
-proxy_router = APIRouter(prefix="/e/v2", tags=["Service Proxy"])
+proxy_router = APIRouter(prefix="/api/v1", tags=["Service Proxy"])
 
 @proxy_router.get("/gateway/health", summary="Gateway 헬스 체크")
 async def gateway_health():
