@@ -79,11 +79,6 @@ logger.info("🔧 Auth Service 설정 완료 - 서브라우터 등록됨")
 
 # Docker 환경에서 포트 설정 (Railway 환경변수 사용)
 if __name__ == "__main__":
-    import uvicorn
-    import os
-    
-    # Auth Service는 8000 포트 고정 사용
-    port = 8000
-    logger.info(f"🚀 Auth Service 시작 - 포트: {port} (고정)")
-    logger.info(f"🔧 Gateway는 8080 포트, Auth Service는 8000 포트")
-    uvicorn.run(app, host="0.0.0.0", port=port, log_level="info")
+    # Auth Service는 Gateway를 통해 프록시되므로 직접 실행하지 않음
+    logger.info("🔧 Auth Service 설정 완료 - Gateway를 통해 프록시됨")
+    logger.info("🔧 Gateway는 8080 포트, Auth Service는 8000 포트")
