@@ -110,10 +110,10 @@ logger.info("🔧 CORS 설정: 모든 출처 허용")
 # --- 프록시 라우터 정의 ---
 proxy_router = APIRouter(prefix="/e/v2", tags=["Service Proxy"])
 
-@proxy_router.get("/health", summary="헬스 체크 엔드포인트")
+@proxy_router.get("/gateway/health", summary="Gateway 헬스 체크 엔드포인트")
 async def health_check():
-    """서비스가 정상적으로 실행 중인지 확인하는 엔드포인트"""
-    logger.info("🔧 헬스 체크 요청 수신")
+    """Gateway가 정상적으로 실행 중인지 확인하는 엔드포인트"""
+    logger.info("🔧 Gateway 헬스 체크 요청 수신")
     return {"status": "healthy!", "service": "gateway", "version": "0.3.0"}
 
 @proxy_router.options("/{service}/{path:path}", summary="OPTIONS 프록시")
@@ -310,13 +310,13 @@ async def log_all_requests(request: Request, call_next):
     logger.info(f"🌐 응답: {response.status_code}")
     return response
 
-# 기본 엔드포인트들
+# 프록시 라우터 등록 (먼저 등록)
+app.include_router(proxy_router)
+
+# 기본 엔드포인트들 (나중에 등록)
 @app.get("/")
 async def root():
     return {"message": "Gateway API - 서비스 팩토리 패턴 적용", "version": "0.3.0"}
-
-# 프록시 라우터 등록
-app.include_router(proxy_router)
 
 logger.info("🔧 Gateway API 서비스 설정 완료")
 

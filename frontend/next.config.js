@@ -8,14 +8,14 @@ const withPWA = require('next-pwa')({
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   env: {
-    // API Gateway 설정
+    // API Gateway 설정 - 모든 API 경로를 /e/v2로 통일
     GATEWAY_URL: process.env.GATEWAY_URL || 'http://localhost:8080',
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080',
-    NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080/api/v1',
+    NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080/e/v2',
     
-    // Railway 배포 환경 설정
+    // Railway 배포 환경 설정 - 모든 API 경로를 /e/v2로 통일
     NEXT_PUBLIC_RAILWAY_API_URL: process.env.NEXT_PUBLIC_RAILWAY_API_URL || 'http://localhost:8080',
-    NEXT_PUBLIC_RAILWAY_API_BASE_URL: process.env.NEXT_PUBLIC_RAILWAY_API_BASE_URL || 'http://localhost:8080/api/v1',
+    NEXT_PUBLIC_RAILWAY_API_BASE_URL: process.env.NEXT_PUBLIC_RAILWAY_API_BASE_URL || 'http://localhost:8080/e/v2',
     
     // 환경 구분 (NODE_ENV 제거 - Vercel에서 자동 설정)
     IS_RAILWAY_DEPLOYED: process.env.IS_RAILWAY_DEPLOYED || 'false'

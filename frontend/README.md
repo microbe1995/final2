@@ -87,13 +87,13 @@ npm start
 ```bash
 # .env.local (선택사항)
 NEXT_PUBLIC_API_URL=http://localhost:8080
-NEXT_PUBLIC_API_BASE_URL=http://localhost:8080/api/v1
+NEXT_PUBLIC_API_BASE_URL=http://localhost:8080/e/v2
 ```
 
 ### API 엔드포인트
-- **회원가입**: `POST /api/v1/auth/register/local`
-- **로그인**: `POST /api/v1/auth/login/local`
-- **헬스체크**: `GET /api/v1/auth/health`
+- **회원가입**: `POST /e/v2/auth/register`
+- **로그인**: `POST /e/v2/auth/login`
+- **헬스체크**: `GET /e/v2/auth/health`
 
 ## 📱 PWA 기능
 
@@ -131,7 +131,7 @@ docker run -p 3000:3000 frontend
 
 ## 🔗 연관 서비스
 
-- **API Gateway**: `http://localhost:8080`
+- **API Gateway**: `http://localhost:8080/e/v2`
 - **Auth Service**: `http://localhost:8000`
 - **User Service**: `http://localhost:8002`
 

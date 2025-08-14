@@ -57,10 +57,10 @@ export default function RegisterPage() {
       
       if (process.env.NODE_ENV === 'production') {
         // 프로덕션 환경 (Vercel) - Gateway 프록시 엔드포인트 사용
-        apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL + '/e/v2/auth/register';
+        apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL + '/auth/register';
       } else {
         // 개발 환경 (로컬) - Gateway 프록시 엔드포인트 사용
-        apiUrl = 'http://localhost:8080/e/v2/auth/register';
+        apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL + '/auth/register';
       }
       
       console.log(`😂 apiUrl: ${apiUrl}`);
