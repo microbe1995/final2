@@ -7,7 +7,6 @@ from fastapi.responses import JSONResponse, Response
 import os
 import logging
 import sys
-import json
 from dotenv import load_dotenv
 from contextlib import asynccontextmanager
 import httpx
@@ -95,54 +94,18 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# Auth Service URL
-AUTH_SERVICE_URL = os.getenv("AUTH_SERVICE_URL", "http://localhost:8000")
-logger.info(f"🔧 Auth Service URL: {AUTH_SERVICE_URL}")
-
 # CORS 설정 - 모든 출처 허용 (보안 약화)
-CORS_ALLOW_CREDENTIALS = os.getenv("CORS_ALLOW_CREDENTIALS", "true").lower() == "true"
-CORS_ALLOW_METHODS = os.getenv("CORS_ALLOW_METHODS", "GET,POST,PUT,DELETE,OPTIONS,PATCH")
-CORS_ALLOW_HEADERS = os.getenv("CORS_ALLOW_HEADERS", "Accept,Accept-Language,Content-Language,Content-Type,Authorization,X-Requested-With,Origin,Access-Control-Request-Method,Access-Control-Request-Headers")
-
-# 메서드와 헤더를 리스트로 변환
-ALLOWED_METHODS = [m.strip() for m in CORS_ALLOW_METHODS.split(",") if m.strip()]
-ALLOWED_HEADERS = [h.strip() for h in CORS_ALLOW_HEADERS.split(",") if h.strip()]
-
-# 모든 출처 허용 (보안 약화)
-ALLOWED_ORIGINS = ["*"]
-
-logger.info(f"🔧 CORS 설정 정보:")
-logger.info(f"🔧 ALLOWED_ORIGINS: {ALLOWED_ORIGINS} (모든 출처 허용)")
-logger.info(f"🔧 ALLOWED_METHODS: {ALLOWED_METHODS}")
-logger.info(f"🔧 ALLOWED_HEADERS: {ALLOWED_HEADERS}")
-logger.info(f"🔧 CORS_ALLOW_CREDENTIALS: {CORS_ALLOW_CREDENTIALS}")
-
-# CORS 미들웨어 추가
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=ALLOWED_ORIGINS,
-    allow_credentials=CORS_ALLOW_CREDENTIALS,
-    allow_methods=ALLOWED_METHODS,
-    allow_headers=ALLOWED_HEADERS,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+    allow_headers=["*"],
     expose_headers=["*"],
     max_age=86400,
 )
 
-# CORS 헤더를 응답에 강제로 추가하는 함수
-def add_cors_headers(response: Response, request: Request) -> Response:
-    """응답에 CORS 헤더를 강제로 추가합니다."""
-    origin = request.headers.get("origin", "*")
-    
-    # 모든 출처 허용
-    response.headers["Access-Control-Allow-Origin"] = "*"
-    response.headers["Access-Control-Allow-Credentials"] = str(CORS_ALLOW_CREDENTIALS).lower()
-    response.headers["Access-Control-Allow-Methods"] = ", ".join(ALLOWED_METHODS)
-    response.headers["Access-Control-Allow-Headers"] = ", ".join(ALLOWED_HEADERS)
-    response.headers["Access-Control-Max-Age"] = "86400"
-    response.headers["Access-Control-Expose-Headers"] = "*"
-    
-    logger.info(f"🔧 CORS 헤더 추가: Origin=모든 출처 허용, Method={request.method}")
-    return response
+logger.info("🔧 CORS 설정: 모든 출처 허용")
 
 # --- 프록시 라우터 정의 ---
 proxy_router = APIRouter(prefix="/e/v2", tags=["Service Proxy"])
@@ -163,8 +126,8 @@ async def proxy_options(service: ServiceType, path: str, request: Request):
         headers={
             'Access-Control-Allow-Origin': '*',
             'Access-Control-Allow-Credentials': 'true',
-            'Access-Control-Allow-Methods': ', '.join(ALLOWED_METHODS),
-            'Access-Control-Allow-Headers': ', '.join(ALLOWED_HEADERS)
+            'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS, PATCH',
+            'Access-Control-Allow-Headers': '*'
         }
     )
 
@@ -186,22 +149,19 @@ async def proxy_get(service: ServiceType, path: str, request: Request):
             params=dict(request.query_params)
         )
         
-        # CORS 헤더가 포함된 응답 생성
-        json_response = JSONResponse(
+        # 응답 생성
+        return JSONResponse(
             content=response.json() if response.content else {},
             status_code=response.status_code,
             headers=dict(response.headers)
         )
         
-        return add_cors_headers(json_response, request)
-        
     except Exception as e:
         logger.error(f"GET 프록시 오류: {str(e)}")
-        response = JSONResponse(
+        return JSONResponse(
             content={"detail": f"Error processing request: {str(e)}"},
             status_code=500
         )
-        return add_cors_headers(response, request)
 
 @proxy_router.post("/{service}/{path:path}", summary="POST 프록시")
 async def proxy_post(service: ServiceType, path: str, request: Request):
@@ -223,22 +183,19 @@ async def proxy_post(service: ServiceType, path: str, request: Request):
             params=dict(request.query_params)
         )
         
-        # CORS 헤더가 포함된 응답 생성
-        json_response = JSONResponse(
+        # 응답 생성
+        return JSONResponse(
             content=response.json() if response.content else {},
             status_code=response.status_code,
             headers=dict(response.headers)
         )
         
-        return add_cors_headers(json_response, request)
-        
     except Exception as e:
         logger.error(f"POST 프록시 오류: {str(e)}")
-        response = JSONResponse(
+        return JSONResponse(
             content={"detail": f"Error processing request: {str(e)}"},
             status_code=500
         )
-        return add_cors_headers(response, request)
 
 @proxy_router.put("/{service}/{path:path}", summary="PUT 프록시")
 async def proxy_put(service: ServiceType, path: str, request: Request):
@@ -260,22 +217,19 @@ async def proxy_put(service: ServiceType, path: str, request: Request):
             params=dict(request.query_params)
         )
         
-        # CORS 헤더가 포함된 응답 생성
-        json_response = JSONResponse(
+        # 응답 생성
+        return JSONResponse(
             content=response.json() if response.content else {},
             status_code=response.status_code,
             headers=dict(response.headers)
         )
         
-        return add_cors_headers(json_response, request)
-        
     except Exception as e:
         logger.error(f"PUT 프록시 오류: {str(e)}")
-        response = JSONResponse(
+        return JSONResponse(
             content={"detail": f"Error processing request: {str(e)}"},
             status_code=500
         )
-        return add_cors_headers(response, request)
 
 @proxy_router.delete("/{service}/{path:path}", summary="DELETE 프록시")
 async def proxy_delete(service: ServiceType, path: str, request: Request):
@@ -297,22 +251,19 @@ async def proxy_delete(service: ServiceType, path: str, request: Request):
             params=dict(request.query_params)
         )
         
-        # CORS 헤더가 포함된 응답 생성
-        json_response = JSONResponse(
+        # 응답 생성
+        return JSONResponse(
             content=response.json() if response.content else {},
             status_code=response.status_code,
             headers=dict(response.headers)
         )
         
-        return add_cors_headers(json_response, request)
-        
     except Exception as e:
         logger.error(f"DELETE 프록시 오류: {str(e)}")
-        response = JSONResponse(
+        return JSONResponse(
             content={"detail": f"Error processing request: {str(e)}"},
             status_code=500
         )
-        return add_cors_headers(response, request)
 
 @proxy_router.patch("/{service}/{path:path}", summary="PATCH 프록시")
 async def proxy_patch(service: ServiceType, path: str, request: Request):
@@ -334,22 +285,19 @@ async def proxy_patch(service: ServiceType, path: str, request: Request):
             params=dict(request.query_params)
         )
         
-        # CORS 헤더가 포함된 응답 생성
-        json_response = JSONResponse(
+        # 응답 생성
+        return JSONResponse(
             content=response.json() if response.content else {},
             status_code=response.status_code,
             headers=dict(response.headers)
         )
         
-        return add_cors_headers(json_response, request)
-        
     except Exception as e:
         logger.error(f"PATCH 프록시 오류: {str(e)}")
-        response = JSONResponse(
+        return JSONResponse(
             content={"detail": f"Error processing request: {str(e)}"},
             status_code=500
         )
-        return add_cors_headers(response, request)
 
 # 요청 로깅 미들웨어
 @app.middleware("http")
@@ -358,9 +306,6 @@ async def log_all_requests(request: Request, call_next):
     logger.info(f"🌐 Origin: {request.headers.get('origin', 'N/A')}")
     
     response = await call_next(request)
-    
-    # CORS 헤더 강제 추가
-    response = add_cors_headers(response, request)
     
     logger.info(f"🌐 응답: {response.status_code}")
     return response
@@ -384,7 +329,7 @@ async def not_found_handler(request: Request, exc):
     logger.error(f"🚨 요청 경로: {request.url.path}")
     logger.error(f"🚨 Origin: {request.headers.get('origin', 'N/A')}")
     
-    response = JSONResponse(
+    return JSONResponse(
         status_code=404,
         content={
             "detail": f"요청한 리소스를 찾을 수 없습니다. URL: {request.url}",
@@ -392,8 +337,6 @@ async def not_found_handler(request: Request, exc):
             "path": request.url.path
         }
     )
-    
-    return add_cors_headers(response, request)
 
 # 405 에러 핸들러 추가
 @app.exception_handler(405)
@@ -404,7 +347,7 @@ async def method_not_allowed_handler(request: Request, exc):
     logger.error(f"🚨 요청 경로: {request.url.path}")
     logger.error(f"🚨 Origin: {request.headers.get('origin', 'N/A')}")
     
-    response = JSONResponse(
+    return JSONResponse(
         status_code=405,
         content={
             "detail": f"허용되지 않는 HTTP 메서드입니다. 메서드: {request.method}, URL: {request.url}",
@@ -412,8 +355,6 @@ async def method_not_allowed_handler(request: Request, exc):
             "path": request.url.path
         }
     )
-    
-    return add_cors_headers(response, request)
 
 if __name__ == "__main__":
     import uvicorn
