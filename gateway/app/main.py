@@ -103,8 +103,12 @@ gateway_router = APIRouter(tags=["Gateway API"], prefix="/api/v1")
 # Auth Service URL
 AUTH_SERVICE_URL = os.getenv("AUTH_SERVICE_URL", "http://localhost:8000")
 
+# 디버깅을 위한 라우터 등록 확인
+logger.info(f"🔧 Gateway 라우터 생성: prefix={gateway_router.prefix}")
+
 @gateway_router.get("/{service}/{path:path}", summary="GET 프록시")
 async def proxy_get(service: str, path: str, request: Request):
+    logger.info(f"🎯 GET 프록시 호출: service={service}, path={path}")
     try:
         headers = dict(request.headers)
         
@@ -140,6 +144,9 @@ async def proxy_post_json(
     request: Request,
     payload: dict = Body(..., example={"email": "test@example.com", "password": "****"})
 ):
+    logger.info(f"🎯 POST 프록시 호출: service={service}, path={path}")
+    logger.info(f"🎯 요청 데이터: {payload}")
+    
     try:
         headers = dict(request.headers)
         headers["content-type"] = "application/json"
@@ -161,6 +168,7 @@ async def proxy_post_json(
                     timeout=30.0
                 )
                 
+                logger.info(f"✅ Auth Service 응답: {response.status_code}")
                 return JSONResponse(
                     content=response.json(),
                     status_code=response.status_code,
@@ -181,6 +189,7 @@ async def proxy_post_json(
 
 @gateway_router.put("/{service}/{path:path}", summary="PUT 프록시")
 async def proxy_put(service: str, path: str, request: Request):
+    logger.info(f"🎯 PUT 프록시 호출: service={service}, path={path}")
     try:
         headers = dict(request.headers)
         body = await request.body()
@@ -217,6 +226,7 @@ async def proxy_put(service: str, path: str, request: Request):
 
 @gateway_router.delete("/{service}/{path:path}", summary="DELETE 프록시")
 async def proxy_delete(service: str, path: str, request: Request):
+    logger.info(f"🎯 DELETE 프록시 호출: service={service}, path={path}")
     try:
         headers = dict(request.headers)
 
@@ -251,6 +261,7 @@ async def proxy_delete(service: str, path: str, request: Request):
 
 @gateway_router.patch("/{service}/{path:path}", summary="PATCH 프록시")
 async def proxy_patch(service: str, path: str, request: Request):
+    logger.info(f"🎯 PATCH 프록시 호출: service={service}, path={path}")
     try:
         headers = dict(request.headers)
         body = await request.body()
@@ -286,7 +297,72 @@ async def proxy_patch(service: str, path: str, request: Request):
         )
 
 # 라우터 등록
+logger.info("🔧 Gateway 라우터 등록 시작...")
 app.include_router(gateway_router)
+logger.info("✅ Gateway 라우터 등록 완료")
+
+# 등록된 라우트 확인
+logger.info("🔍 등록된 라우트들:")
+for route in app.routes:
+    if hasattr(route, 'path'):
+        logger.info(f"  - {route.methods} {route.path}")
+
+logger.info(f"🔍 Gateway 라우터의 라우트들:")
+for route in gateway_router.routes:
+    if hasattr(route, 'path'):
+        logger.info(f"  - {route.methods} {route.path}")
+
+# 404 에러 핸들러 추가
+@app.exception_handler(404)
+async def not_found_handler(request: Request, exc):
+    logger.error(f"🚨 404 에러 발생!")
+    logger.error(f"🚨 요청 URL: {request.url}")
+    logger.error(f"🚨 요청 메서드: {request.method}")
+    logger.error(f"🚨 요청 경로: {request.url.path}")
+    logger.error(f"🚨 요청 헤더: {dict(request.headers)}")
+    
+    # 경로 파싱
+    path_parts = request.url.path.split('/')
+    logger.error(f"🎯 경로 파싱: {path_parts}")
+    
+    if len(path_parts) >= 5:
+        logger.error(f"🎯 추출된 service: {path_parts[3]}")
+        logger.error(f"🎯 추출된 path: {path_parts[4:]}")
+    
+    return JSONResponse(
+        status_code=404,
+        content={
+            "detail": f"요청한 리소스를 찾을 수 없습니다. URL: {request.url}",
+            "method": request.method,
+            "path": request.url.path
+        }
+    )
+
+# 405 에러 핸들러 추가
+@app.exception_handler(405)
+async def method_not_allowed_handler(request: Request, exc):
+    logger.error(f"🚨 405 Method Not Allowed 에러 발생!")
+    logger.error(f"🚨 요청 URL: {request.url}")
+    logger.error(f"🚨 요청 메서드: {request.method}")
+    logger.error(f"🚨 요청 경로: {request.url.path}")
+    logger.error(f"🚨 요청 헤더: {dict(request.headers)}")
+    
+    # 경로 파싱
+    path_parts = request.url.path.split('/')
+    logger.error(f"🎯 경로 파싱: {path_parts}")
+    
+    if len(path_parts) >= 5:
+        logger.error(f"🎯 추출된 service: {path_parts[3]}")
+        logger.error(f"🎯 추출된 path: {path_parts[4:]}")
+    
+    return JSONResponse(
+        status_code=405,
+        content={
+            "detail": f"허용되지 않는 HTTP 메서드입니다. 메서드: {request.method}, URL: {request.url}",
+            "method": request.method,
+            "path": request.url.path
+        }
+    )
 
 # 기본 엔드포인트들
 @app.get("/")
