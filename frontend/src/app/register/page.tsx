@@ -56,8 +56,8 @@ export default function RegisterPage() {
       let apiUrl: string;
       
       if (process.env.NODE_ENV === 'production') {
-        // 프로덕션 환경 (Vercel) - Gateway 프록시 엔드포인트 사용
-        apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL + '/e/v2/auth/register';
+        // 프로덕션 환경 (Vercel) - 직접 Auth Service로 요청
+        apiUrl = 'https://auth-service-production-6058.up.railway.app/auth/register';
       } else {
         // 개발 환경 (로컬) - Gateway 프록시 엔드포인트 사용
         apiUrl = 'http://localhost:8080/e/v2/auth/register';
@@ -75,7 +75,7 @@ export default function RegisterPage() {
         full_name: formData.full_name || undefined
       };
       
-      console.log('🚀 Gateway로 전송할 데이터:', requestData);
+      console.log('🚀 Auth Service로 전송할 데이터:', requestData);
       
       // 비동기 요청 처리
       const response = await axios.post(apiUrl, requestData);
@@ -94,7 +94,7 @@ export default function RegisterPage() {
       if (error.response && error.response.data) {
         alert(`❌ 회원가입 실패: ${error.response.data.detail || error.response.data.message || '알 수 없는 오류'}`);
       } else if (error.code === 'ERR_NETWORK') {
-        alert('❌ Gateway에 연결할 수 없습니다. 서버가 실행 중인지 확인해주세요.');
+        alert('❌ Auth Service에 연결할 수 없습니다. 서버가 실행 중인지 확인해주세요.');
       } else {
         alert('❌ 회원가입에 실패했습니다. 서버 연결을 확인해주세요.');
       }

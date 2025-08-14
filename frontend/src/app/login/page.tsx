@@ -28,8 +28,8 @@ export default function LoginPage() {
       let apiUrl: string;
       
       if (process.env.NODE_ENV === 'production') {
-        // 프로덕션 환경 (Vercel) - Gateway 프록시 엔드포인트 사용
-        apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL + '/e/v2/auth/login';
+        // 프로덕션 환경 (Vercel) - 직접 Auth Service로 요청
+        apiUrl = 'https://auth-service-production-6058.up.railway.app/auth/login';
       } else {
         // 개발 환경 (로컬) - Gateway 프록시 엔드포인트 사용
         apiUrl = 'http://localhost:8080/e/v2/auth/login';
