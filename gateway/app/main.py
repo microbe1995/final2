@@ -94,18 +94,23 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# CORS 설정 - 모든 출처 허용 (보안 약화)
+# CORS 설정값 환경변수에서 로드
+allowed_origins = os.getenv("CORS_URL", "").split(",")
+allow_credentials = os.getenv("CORS_ALLOW_CREDENTIALS", "false").lower() == "true"
+allow_methods = os.getenv("CORS_ALLOW_METHODS", "GET,POST").split(",")
+allow_headers = os.getenv("CORS_ALLOW_HEADERS", "*").split(",")
+
+# CORS 미들웨어 적용
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
-    allow_headers=["*"],
+    allow_origins=allowed_origins,        # 정확한 도메인만 허용
+    allow_credentials=allow_credentials,
+    allow_methods=allow_methods,
+    allow_headers=allow_headers,
     expose_headers=["*"],
     max_age=86400,
 )
 
-logger.info("🔧 CORS 설정: 모든 출처 허용")
 
 # --- 프록시 라우터 정의 ---
 proxy_router = APIRouter(prefix="/e/v2", tags=["Service Proxy"])
@@ -116,20 +121,9 @@ async def health_check():
     logger.info("🔧 Gateway 헬스 체크 요청 수신")
     return {"status": "healthy!", "service": "gateway", "version": "0.3.0"}
 
-@proxy_router.options("/{service}/{path:path}", summary="OPTIONS 프록시")
-async def proxy_options(service: ServiceType, path: str, request: Request):
-    """OPTIONS 요청을 처리합니다 (CORS preflight)."""
-    logger.info(f"🔧 OPTIONS 프록시 요청: service={service.value}, path={path}")
-    
-    return Response(
-        status_code=200,
-        headers={
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Credentials': 'true',
-            'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS, PATCH',
-            'Access-Control-Allow-Headers': '*'
-        }
-    )
+@proxy_router.options("/{service}/{path:path}")
+async def handle_options(service: ServiceType, path: str):
+    return Response(status_code=200)
 
 @proxy_router.get("/{service}/{path:path}", summary="GET 프록시")
 async def proxy_get(service: ServiceType, path: str, request: Request):
@@ -149,20 +143,7 @@ async def proxy_get(service: ServiceType, path: str, request: Request):
             params=dict(request.query_params)
         )
         
-        # 응답 생성 (CORS 헤더 추가)
-        response_headers = dict(response.headers)
-        response_headers.update({
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Credentials': 'true',
-            'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS, PATCH',
-            'Access-Control-Allow-Headers': '*'
-        })
-        
-        return JSONResponse(
-            content=response.json() if response.content else {},
-            status_code=response.status_code,
-            headers=response_headers
-        )
+    
         
     except Exception as e:
         logger.error(f"GET 프록시 오류: {str(e)}")
@@ -338,17 +319,6 @@ async def proxy_patch(service: ServiceType, path: str, request: Request):
             content={"detail": f"Error processing request: {str(e)}"},
             status_code=500
         )
-
-# 요청 로깅 미들웨어
-@app.middleware("http")
-async def log_all_requests(request: Request, call_next):
-    logger.info(f"🌐 요청: {request.method} {request.url.path}")
-    logger.info(f"🌐 Origin: {request.headers.get('origin', 'N/A')}")
-    
-    response = await call_next(request)
-    
-    logger.info(f"🌐 응답: {response.status_code}")
-    return response
 
 # CORS 헤더를 모든 응답에 추가하는 미들웨어
 @app.middleware("http")
