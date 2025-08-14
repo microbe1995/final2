@@ -233,11 +233,19 @@ async def proxy_put(service: ServiceType, path: str, request: Request):
             params=dict(request.query_params)
         )
         
-        # 응답 생성
+        # 응답 생성 (CORS 헤더 추가)
+        response_headers = dict(response.headers)
+        response_headers.update({
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Credentials': 'true',
+            'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS, PATCH',
+            'Access-Control-Allow-Headers': '*'
+        })
+        
         return JSONResponse(
             content=response.json() if response.content else {},
             status_code=response.status_code,
-            headers=dict(response.headers)
+            headers=response_headers
         )
         
     except Exception as e:
@@ -267,11 +275,19 @@ async def proxy_delete(service: ServiceType, path: str, request: Request):
             params=dict(request.query_params)
         )
         
-        # 응답 생성
+        # 응답 생성 (CORS 헤더 추가)
+        response_headers = dict(response.headers)
+        response_headers.update({
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Credentials': 'true',
+            'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS, PATCH',
+            'Access-Control-Allow-Headers': '*'
+        })
+        
         return JSONResponse(
             content=response.json() if response.content else {},
             status_code=response.status_code,
-            headers=dict(response.headers)
+            headers=response_headers
         )
         
     except Exception as e:
@@ -301,11 +317,19 @@ async def proxy_patch(service: ServiceType, path: str, request: Request):
             params=dict(request.query_params)
         )
         
-        # 응답 생성
+        # 응답 생성 (CORS 헤더 추가)
+        response_headers = dict(response.headers)
+        response_headers.update({
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Credentials': 'true',
+            'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS, PATCH',
+            'Access-Control-Allow-Headers': '*'
+        })
+        
         return JSONResponse(
             content=response.json() if response.content else {},
             status_code=response.status_code,
-            headers=dict(response.headers)
+            headers=response_headers
         )
         
     except Exception as e:
@@ -324,6 +348,19 @@ async def log_all_requests(request: Request, call_next):
     response = await call_next(request)
     
     logger.info(f"🌐 응답: {response.status_code}")
+    return response
+
+# CORS 헤더를 모든 응답에 추가하는 미들웨어
+@app.middleware("http")
+async def add_cors_headers(request: Request, call_next):
+    response = await call_next(request)
+    
+    # 모든 응답에 CORS 헤더 추가
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Access-Control-Allow-Credentials"] = "true"
+    response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
+    response.headers["Access-Control-Allow-Headers"] = "*"
+    
     return response
 
 # 프록시 라우터 등록 (먼저 등록)

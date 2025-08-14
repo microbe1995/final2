@@ -63,6 +63,11 @@ export default function RegisterPage() {
         apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL + '/auth/register';
       }
       
+      // 환경 변수가 없으면 기본값 사용
+      if (!process.env.NEXT_PUBLIC_API_BASE_URL) {
+        apiUrl = 'http://localhost:8080/e/v2/auth/register';
+      }
+      
       console.log(`😂 apiUrl: ${apiUrl}`);
       console.log(`🌍 환경: ${process.env.NODE_ENV}`);
       console.log(`🔗 전체 URL: ${apiUrl}`);

@@ -35,6 +35,11 @@ export default function LoginPage() {
         apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL + '/auth/login';
       }
       
+      // 환경 변수가 없으면 기본값 사용
+      if (!process.env.NEXT_PUBLIC_API_BASE_URL) {
+        apiUrl = 'http://localhost:8080/e/v2/auth/login';
+      }
+      
       console.log(`🔗 로그인 API URL: ${apiUrl}`);
       
       // API 호출

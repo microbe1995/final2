@@ -8,6 +8,7 @@ services:
       - "8080:8080"
     environment:
       - AUTH_SERVICE_URL=http://auth-service:8000
+      - DISCOVERY_SERVICE_URL=http://discovery-service:8001
       - USER_SERVICE_URL=http://user-service:8002
       - PORT=8080
     depends_on:
