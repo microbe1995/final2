@@ -1,14 +1,13 @@
 """
 Gateway API 메인 파일
 """
-from fastapi import APIRouter, FastAPI, Request, HTTPException, Body
+from fastapi import FastAPI, Request, Body
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, Response
 import os
 import logging
 import sys
 import json
-from datetime import datetime
 from dotenv import load_dotenv
 from contextlib import asynccontextmanager
 import httpx
@@ -97,16 +96,28 @@ async def log_all_requests(request: Request, call_next):
     logger.info(f"🌐 응답: {response.status_code}")
     return response
 
-# Gateway 라우터 생성
-gateway_router = APIRouter(tags=["Gateway API"], prefix="/api/v1")
+# 기본 엔드포인트들 (정적 경로를 먼저 등록)
+@app.get("/")
+async def root():
+    return {"message": "Gateway API", "version": "0.1.0"}
+
+@app.get("/health")
+async def health_check():
+    return {"status": "healthy", "service": "gateway"}
+
+@app.get("/health/db")
+async def health_check_db():
+    return {
+        "status": "healthy",
+        "service": "gateway",
+        "message": "Database health check delegated to auth-service"
+    }
 
 # Auth Service URL
 AUTH_SERVICE_URL = os.getenv("AUTH_SERVICE_URL", "http://localhost:8000")
 
-# 디버깅을 위한 라우터 등록 확인
-logger.info(f"🔧 Gateway 라우터 생성: prefix={gateway_router.prefix}")
-
-@gateway_router.get("/{service}/{path:path}", summary="GET 프록시")
+# 동적 프록시 엔드포인트들
+@app.get("/api/v1/{service}/{path:path}")
 async def proxy_get(service: str, path: str, request: Request):
     logger.info(f"🎯 GET 프록시 호출: service={service}, path={path}")
     try:
@@ -137,7 +148,7 @@ async def proxy_get(service: str, path: str, request: Request):
             status_code=500
         )
 
-@gateway_router.post("/{service}/{path:path}", summary="POST 프록시")
+@app.post("/api/v1/{service}/{path:path}")
 async def proxy_post_json(
     service: str,
     path: str,
@@ -187,7 +198,7 @@ async def proxy_post_json(
             status_code=500
         )
 
-@gateway_router.put("/{service}/{path:path}", summary="PUT 프록시")
+@app.put("/api/v1/{service}/{path:path}")
 async def proxy_put(service: str, path: str, request: Request):
     logger.info(f"🎯 PUT 프록시 호출: service={service}, path={path}")
     try:
@@ -224,7 +235,7 @@ async def proxy_put(service: str, path: str, request: Request):
             status_code=500
         )
 
-@gateway_router.delete("/{service}/{path:path}", summary="DELETE 프록시")
+@app.delete("/api/v1/{service}/{path:path}")
 async def proxy_delete(service: str, path: str, request: Request):
     logger.info(f"🎯 DELETE 프록시 호출: service={service}, path={path}")
     try:
@@ -259,7 +270,7 @@ async def proxy_delete(service: str, path: str, request: Request):
             status_code=500
         )
 
-@gateway_router.patch("/{service}/{path:path}", summary="PATCH 프록시")
+@app.patch("/api/v1/{service}/{path:path}")
 async def proxy_patch(service: str, path: str, request: Request):
     logger.info(f"🎯 PATCH 프록시 호출: service={service}, path={path}")
     try:
@@ -296,22 +307,6 @@ async def proxy_patch(service: str, path: str, request: Request):
             status_code=500
         )
 
-# 라우터 등록
-logger.info("🔧 Gateway 라우터 등록 시작...")
-app.include_router(gateway_router)
-logger.info("✅ Gateway 라우터 등록 완료")
-
-# 등록된 라우트 확인
-logger.info("🔍 등록된 라우트들:")
-for route in app.routes:
-    if hasattr(route, 'path'):
-        logger.info(f"  - {route.methods} {route.path}")
-
-logger.info(f"🔍 Gateway 라우터의 라우트들:")
-for route in gateway_router.routes:
-    if hasattr(route, 'path'):
-        logger.info(f"  - {route.methods} {route.path}")
-
 # 404 에러 핸들러 추가
 @app.exception_handler(404)
 async def not_found_handler(request: Request, exc):
@@ -328,7 +323,7 @@ async def not_found_handler(request: Request, exc):
     if len(path_parts) >= 5:
         logger.error(f"🎯 추출된 service: {path_parts[3]}")
         logger.error(f"🎯 추출된 path: {path_parts[4:]}")
-    
+
     return JSONResponse(
         status_code=404,
         content={
@@ -354,7 +349,7 @@ async def method_not_allowed_handler(request: Request, exc):
     if len(path_parts) >= 5:
         logger.error(f"🎯 추출된 service: {path_parts[3]}")
         logger.error(f"🎯 추출된 path: {path_parts[4:]}")
-    
+
     return JSONResponse(
         status_code=405,
         content={
@@ -363,23 +358,6 @@ async def method_not_allowed_handler(request: Request, exc):
             "path": request.url.path
         }
     )
-
-# 기본 엔드포인트들
-@app.get("/")
-async def root():
-    return {"message": "Gateway API", "version": "0.1.0"}
-
-@app.get("/health")
-async def health_check():
-    return {"status": "healthy", "service": "gateway"}
-
-@app.get("/health/db")
-async def health_check_db():
-    return {
-        "status": "healthy",
-        "service": "gateway",
-        "message": "Database health check delegated to auth-service"
-    }
 
 if __name__ == "__main__":
     import uvicorn
