@@ -2,7 +2,6 @@
 Auth Service 메인 파일 - 서브라우터 역할
 """
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 import os
 import logging
@@ -37,22 +36,8 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# CORS 설정
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",  # 로컬 프론트엔드
-        "http://127.0.0.1:3000",  # 로컬 IP 접근
-        "http://frontend:3000",   # Docker 내부 네트워크
-        "https://lca-final.vercel.app",  # Vercel 프론트엔드
-        "https://lca-final-9th3dtaxw-microbe95s-projects.vercel.app",  # 실제 Vercel 도메인
-        "http://gateway:8080",  # Gateway 서비스
-        "http://localhost:8080",  # 로컬 Gateway
-    ],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# CORS 설정 제거 - Gateway에서 모든 CORS 처리
+# Auth Service는 내부 서비스로만 사용되므로 CORS 불필요
 
 # 직접 엔드포인트 정의 (라우터 등록 없이)
 @app.get("/")
