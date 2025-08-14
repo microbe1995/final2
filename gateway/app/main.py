@@ -113,6 +113,27 @@ logger.info(f"🔧 CORS origins={allowed_origins}, credentials={allow_credential
 # ---- 프록시 라우터 ----
 proxy_router = APIRouter(prefix="/api/v1", tags=["Service Proxy"])
 
+# OPTIONS 요청 처리 (CORS preflight)
+@proxy_router.options("/{service}/{path:path}")
+async def proxy_options(service: str, path: str, request: Request):
+    """CORS preflight 요청 처리"""
+    origin = request.headers.get("origin")
+    if origin in allowed_origins:
+        allowed_origin = origin
+    else:
+        allowed_origin = allowed_origins[0] if allowed_origins else "https://lca-final.vercel.app"
+    
+    return JSONResponse(
+        content={},
+        headers={
+            "Access-Control-Allow-Origin": allowed_origin,
+            "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS, PATCH",
+            "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Requested-With",
+            "Access-Control-Allow-Credentials": "true",
+            "Access-Control-Max-Age": "86400"
+        }
+    )
+
 @proxy_router.get("/gateway/health", summary="Gateway 헬스 체크")
 async def gateway_health():
     return {"status": "healthy", "service": "gateway", "version": "0.3.1"}
