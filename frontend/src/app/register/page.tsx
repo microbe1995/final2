@@ -65,7 +65,7 @@ export default function RegisterPage() {
       
       // 환경 변수가 없으면 기본값 사용
       if (!process.env.NEXT_PUBLIC_API_BASE_URL) {
-        apiUrl = 'http://localhost:8080/e/v2/auth/register';
+        apiUrl = 'http://localhost:8080/api/v1/auth/register';
       }
       
       console.log(`😂 apiUrl: ${apiUrl}`);
