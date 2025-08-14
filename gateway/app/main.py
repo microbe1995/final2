@@ -1,7 +1,7 @@
 """
 Gateway API 메인 파일
 """
-from fastapi import FastAPI, Request, Body
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, Response
 import os
@@ -152,24 +152,25 @@ async def proxy_get(service: str, path: str, request: Request):
 async def proxy_post_json(
     service: str,
     path: str,
-    request: Request,
-    payload: dict = Body(..., example={"email": "test@example.com", "password": "****"})
+    request: Request
 ):
     logger.info(f"🎯 POST 프록시 호출: service={service}, path={path}")
-    logger.info(f"🎯 요청 데이터: {payload}")
     
     try:
         headers = dict(request.headers)
-        headers["content-type"] = "application/json"
+        body = await request.body()
+        
+        logger.info(f"🎯 요청 본문: {body}")
+        logger.info(f"🎯 요청 헤더: {headers}")
         
         if "content-length" in headers:
             del headers["content-length"]
         
-        body = json.dumps(payload)
-        
         if service == "auth":
             target_url = f"{AUTH_SERVICE_URL}/{path}"
             logger.info(f"🎯 Auth Service로 전달: {target_url}")
+            logger.info(f"🎯 전송할 데이터: {body}")
+            logger.info(f"🎯 전송할 헤더: {headers}")
 
             async with httpx.AsyncClient() as client:
                 response = await client.post(
@@ -180,8 +181,17 @@ async def proxy_post_json(
                 )
                 
                 logger.info(f"✅ Auth Service 응답: {response.status_code}")
+                logger.info(f"✅ Auth Service 응답 헤더: {dict(response.headers)}")
+                
+                try:
+                    response_content = response.json()
+                    logger.info(f"✅ Auth Service 응답 내용: {response_content}")
+                except:
+                    response_content = response.text
+                    logger.info(f"✅ Auth Service 응답 내용 (텍스트): {response_content}")
+                
                 return JSONResponse(
-                    content=response.json(),
+                    content=response_content,
                     status_code=response.status_code,
                     headers=dict(response.headers)
                 )
