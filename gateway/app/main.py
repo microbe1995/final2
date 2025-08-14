@@ -1,9 +1,9 @@
 """
-Gateway API 메인 파일 - CORS 정리 & 프록시 안정화
+Gateway API 메인 파일 - CORS 정리 & 프록시 안정화 (완성본)
 """
 from fastapi import FastAPI, Request, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import Response as FastAPIResponse, JSONResponse
 import os
 import logging
 import sys
@@ -12,11 +12,15 @@ from contextlib import asynccontextmanager
 import httpx
 from enum import Enum
 
-# 환경 변수 로드 (.env는 로컬에서만 사용, Railway에선 대시보드 변수 사용)
+# ──────────────────────────────────────────────────────────────────────────────
+# 환경 변수 로드 (.env는 로컬에서만 사용, Railway는 대시보드 변수를 사용)
+# ──────────────────────────────────────────────────────────────────────────────
 if not os.getenv("RAILWAY_ENVIRONMENT"):
     load_dotenv()
 
-# 로깅 설정
+# ──────────────────────────────────────────────────────────────────────────────
+# 로깅
+# ──────────────────────────────────────────────────────────────────────────────
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
@@ -24,27 +28,34 @@ logging.basicConfig(
 )
 logger = logging.getLogger("gateway_api")
 
-# --- 서비스 타입 Enum ---
+# ──────────────────────────────────────────────────────────────────────────────
+# 서비스 타입
+# ──────────────────────────────────────────────────────────────────────────────
 class ServiceType(str, Enum):
     AUTH = "auth"
     DISCOVERY = "discovery"
     USER = "user"
 
-# --- 서비스 프록시 팩토리 ---
+# ──────────────────────────────────────────────────────────────────────────────
+# 서비스 프록시 팩토리
+#   ⚠️ 각 서비스 URL은 "서비스 prefix까지 포함"하도록 환경변수에 넣어주세요.
+#   예) AUTH_SERVICE_URL = http://auth-service.railway.internal:8000/api/v1/auth
+# ──────────────────────────────────────────────────────────────────────────────
 class ServiceProxyFactory:
     def __init__(self, service_type: ServiceType):
         self.service_type = service_type
-        self.base_url = self._get_service_url()
+        self.base_url = self._get_service_url()  # prefix 포함 URL
 
     def _get_service_url(self) -> str:
-        if self.service_type == ServiceType.AUTH:
-            return os.getenv("AUTH_SERVICE_URL", "http://localhost:8000")
-        elif self.service_type == ServiceType.DISCOVERY:
-            return os.getenv("DISCOVERY_SERVICE_URL", "http://localhost:8001")
-        elif self.service_type == ServiceType.USER:
-            return os.getenv("USER_SERVICE_URL", "http://localhost:8002")
+        st = self.service_type
+        if st == ServiceType.AUTH:
+            return os.getenv("AUTH_SERVICE_URL", "http://localhost:8000/api/v1/auth")
+        if st == ServiceType.DISCOVERY:
+            return os.getenv("DISCOVERY_SERVICE_URL", "http://localhost:8001/api/v1/discovery")
+        if st == ServiceType.USER:
+            return os.getenv("USER_SERVICE_URL", "http://localhost:8002/api/v1/user")
         # fallback
-        return os.getenv("AUTH_SERVICE_URL", "http://localhost:8000")
+        return os.getenv("AUTH_SERVICE_URL", "http://localhost:8000/api/v1/auth")
 
     async def request(
         self,
@@ -54,55 +65,61 @@ class ServiceProxyFactory:
         body: bytes | None = None,
         params: dict | None = None,
     ):
-        url = f"{self.base_url}/{path}"
-        logger.info(f"➡️  proxy -> {self.service_type.value}: {method} {url}")
+        url = f"{self.base_url.rstrip('/')}/{path.lstrip('/')}"
+        logger.info(f"➡️  proxy -> {self.service_type.value}: {method.upper()} {url}")
+
         async with httpx.AsyncClient() as client:
             m = method.upper()
             if m == "GET":
                 resp = await client.get(url, headers=headers, params=params)
             elif m == "POST":
-                resp = await client.post(url, content=body, headers=headers, params=params)
+                resp = await client.post(url, headers=headers, content=body, params=params)
             elif m == "PUT":
-                resp = await client.put(url, content=body, headers=headers, params=params)
+                resp = await client.put(url, headers=headers, content=body, params=params)
             elif m == "DELETE":
-                resp = await client.delete(url, content=body, headers=headers, params=params)
+                resp = await client.delete(url, headers=headers, content=body, params=params)
             elif m == "PATCH":
-                resp = await client.patch(url, content=body, headers=headers, params=params)
+                resp = await client.patch(url, headers=headers, content=body, params=params)
             else:
                 raise ValueError(f"지원하지 않는 HTTP 메서드: {method}")
-            logger.info(f"✅  {self.service_type.value} 응답: {resp.status_code}")
-            return resp
 
+        # 에러면 upstream 본문을 로그에 남겨 디버깅 용이
+        if resp.status_code >= 400:
+            preview = resp.text[:1000] if resp.text else "<empty body>"
+            logger.error(f"⛔ upstream {self.service_type.value} {resp.status_code}: {preview}")
+
+        return resp
+
+# ──────────────────────────────────────────────────────────────────────────────
+# 앱 & CORS
+# ──────────────────────────────────────────────────────────────────────────────
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("🚀 Gateway API 시작")
     yield
     logger.info("🛑 Gateway API 종료")
 
-# FastAPI 앱
 app = FastAPI(
     title="Gateway API",
     description="Gateway API for LCA Final",
-    version="0.3.1",
+    version="0.4.0",
     docs_url="/docs",
     lifespan=lifespan,
 )
 
-# ---- CORS 설정 (환경변수 기반) ----
-# Railway Variables 예시:
-# CORS_URL = https://lca-final.vercel.app
+# CORS (환경변수 기반)
+# Railway 변수 예) CORS_URL=https://lca-final.vercel.app
 allowed_origins = [o.strip() for o in os.getenv("CORS_URL", "").split(",") if o.strip()]
 if not allowed_origins:
-    # 안전한 기본값(필요 시 바꿔도 됨)
     allowed_origins = ["https://lca-final.vercel.app"]
 
-allow_credentials = os.getenv("CORS_ALLOW_CREDENTIALS", "false").lower() == "true"
+allow_credentials = os.getenv("CORS_ALLOW_CREDENTIALS", "true").lower() == "true"
 allow_methods = [m.strip() for m in os.getenv("CORS_ALLOW_METHODS", "GET,POST,PUT,DELETE,OPTIONS,PATCH").split(",")]
 allow_headers = [h.strip() for h in os.getenv("CORS_ALLOW_HEADERS", "*").split(",")]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=allowed_origins,    # "*" 금지 (credentials true일 때 규칙 위반)
+    allow_origins=allowed_origins,    # "*" 금지(credential true일 때 규칙 위반)
     allow_credentials=allow_credentials,
     allow_methods=allow_methods,
     allow_headers=allow_headers,
@@ -110,139 +127,71 @@ app.add_middleware(
 
 logger.info(f"🔧 CORS origins={allowed_origins}, credentials={allow_credentials}")
 
-# ---- 프록시 라우터 ----
-proxy_router = APIRouter(prefix="/api/v1", tags=["Service Proxy"])
-
-# OPTIONS 요청 처리 (CORS preflight)
-@proxy_router.options("/{service}/{path:path}")
-async def proxy_options(service: str, path: str, request: Request):
-    """CORS preflight 요청 처리"""
-    origin = request.headers.get("origin")
-    if origin in allowed_origins:
-        allowed_origin = origin
-    else:
-        allowed_origin = allowed_origins[0] if allowed_origins else "https://lca-final.vercel.app"
-    
-    return JSONResponse(
-        content={},
-        headers={
-            "Access-Control-Allow-Origin": allowed_origin,
-            "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS, PATCH",
-            "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Requested-With",
-            "Access-Control-Allow-Credentials": "true",
-            "Access-Control-Max-Age": "86400"
-        }
-    )
-
-@proxy_router.get("/gateway/health", summary="Gateway 헬스 체크")
-async def gateway_health():
-    return {"status": "healthy", "service": "gateway", "version": "0.3.1"}
-
+# ──────────────────────────────────────────────────────────────────────────────
+# 공통 유틸
+# ──────────────────────────────────────────────────────────────────────────────
 def _clean_forward_headers(h: dict) -> dict:
     h = dict(h)
     h.pop("host", None)
     h.pop("content-length", None)
     return h
 
-@proxy_router.get("/{service}/{path:path}", summary="GET 프록시")
-async def proxy_get(service: ServiceType, path: str, request: Request):
-    try:
-        factory = ServiceProxyFactory(service_type=service)
-        resp = await factory.request(
-            method="GET",
-            path=path,
-            headers=_clean_forward_headers(request.headers),
-            params=dict(request.query_params),
-        )
-        return JSONResponse(
-            content=resp.json() if resp.content else {},
-            status_code=resp.status_code,
-        )
-    except Exception as e:
-        logger.exception("GET 프록시 오류")
-        return JSONResponse(content={"detail": f"Error processing request: {str(e)}"}, status_code=500)
+def _passthrough_response(resp: httpx.Response) -> FastAPIResponse:
+    headers = {}
+    ct = resp.headers.get("content-type")
+    if ct:
+        headers["content-type"] = ct
+    return FastAPIResponse(content=resp.content, status_code=resp.status_code, headers=headers)
 
-@proxy_router.post("/{service}/{path:path}", summary="POST 프록시")
-async def proxy_post(service: ServiceType, path: str, request: Request):
-    try:
-        factory = ServiceProxyFactory(service_type=service)
-        body = await request.body()
-        resp = await factory.request(
-            method="POST",
-            path=path,
-            headers=_clean_forward_headers(request.headers),
-            body=body,
-            params=dict(request.query_params),
-        )
-        return JSONResponse(
-            content=resp.json() if resp.content else {},
-            status_code=resp.status_code,
-        )
-    except Exception as e:
-        logger.exception("POST 프록시 오류")
-        return JSONResponse(content={"detail": f"Error processing request: {str(e)}"}, status_code=500)
+# ──────────────────────────────────────────────────────────────────────────────
+# 프록시 라우터 (/api/v1 …)
+#   프런트는 다음처럼 호출:
+#   POST https://<gateway>/api/v1/auth/register
+# ──────────────────────────────────────────────────────────────────────────────
+router_v1 = APIRouter(prefix="/api/v1", tags=["Service Proxy v1"])
 
-@proxy_router.put("/{service}/{path:path}", summary="PUT 프록시")
-async def proxy_put(service: ServiceType, path: str, request: Request):
-    try:
-        factory = ServiceProxyFactory(service_type=service)
-        body = await request.body()
-        resp = await factory.request(
-            method="PUT",
-            path=path,
-            headers=_clean_forward_headers(request.headers),
-            body=body,
-            params=dict(request.query_params),
-        )
-        return JSONResponse(
-            content=resp.json() if resp.content else {},
-            status_code=resp.status_code,
-        )
-    except Exception as e:
-        logger.exception("PUT 프록시 오류")
-        return JSONResponse(content={"detail": f"Error processing request: {str(e)}"}, status_code=500)
+@router_v1.get("/gateway/health")
+async def gateway_health_v1():
+    return {"status": "healthy", "service": "gateway", "version": "0.4.0"}
 
-@proxy_router.delete("/{service}/{path:path}", summary="DELETE 프록시")
-async def proxy_delete(service: ServiceType, path: str, request: Request):
-    try:
-        factory = ServiceProxyFactory(service_type=service)
-        body = await request.body()
-        resp = await factory.request(
-            method="DELETE",
-            path=path,
-            headers=_clean_forward_headers(request.headers),
-            body=body,
-            params=dict(request.query_params),
-        )
-        return JSONResponse(
-            content=resp.json() if resp.content else {},
-            status_code=resp.status_code,
-        )
-    except Exception as e:
-        logger.exception("DELETE 프록시 오류")
-        return JSONResponse(content={"detail": f"Error processing request: {str(e)}"}, status_code=500)
+@router_v1.api_route("/{service}/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"])
+async def proxy_v1(service: ServiceType, path: str, request: Request):
+    factory = ServiceProxyFactory(service_type=service)
+    body = await request.body()
+    resp = await factory.request(
+        method=request.method,
+        path=path,
+        headers=_clean_forward_headers(request.headers),
+        body=body if request.method not in ("GET", "HEAD") else None,
+        params=dict(request.query_params),
+    )
+    return _passthrough_response(resp)
 
-@proxy_router.patch("/{service}/{path:path}", summary="PATCH 프록시")
-async def proxy_patch(service: ServiceType, path: str, request: Request):
-    try:
-        factory = ServiceProxyFactory(service_type=service)
-        body = await request.body()
-        resp = await factory.request(
-            method="PATCH",
-            path=path,
-            headers=_clean_forward_headers(request.headers),
-            body=body,
-            params=dict(request.query_params),
-        )
-        return JSONResponse(
-            content=resp.json() if resp.content else {},
-            status_code=resp.status_code,
-        )
-    except Exception as e:
-        logger.exception("PATCH 프록시 오류")
-        return JSONResponse(content={"detail": f"Error processing request: {str(e)}"}, status_code=500)
+# ──────────────────────────────────────────────────────────────────────────────
+# 호환 라우터 (/e/v2 …)  — 필요 없으면 이 블록 삭제해도 됨
+# ──────────────────────────────────────────────────────────────────────────────
+router_v2 = APIRouter(prefix="/e/v2", tags=["Service Proxy v2 (compat)"])
 
+@router_v2.get("/gateway/health")
+async def gateway_health_v2():
+    return {"status": "healthy", "service": "gateway", "version": "0.4.0"}
+
+@router_v2.api_route("/{service}/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"])
+async def proxy_v2(service: ServiceType, path: str, request: Request):
+    factory = ServiceProxyFactory(service_type=service)
+    body = await request.body()
+    resp = await factory.request(
+        method=request.method,
+        path=path,
+        headers=_clean_forward_headers(request.headers),
+        body=body if request.method not in ("GET", "HEAD") else None,
+        params=dict(request.query_params),
+    )
+    return _passthrough_response(resp)
+
+# ──────────────────────────────────────────────────────────────────────────────
 # 요청 로깅(참고용)
+# ──────────────────────────────────────────────────────────────────────────────
 @app.middleware("http")
 async def log_all_requests(request: Request, call_next):
     logger.info(f"🌐 {request.method} {request.url.path} origin={request.headers.get('origin','N/A')}")
@@ -250,19 +199,21 @@ async def log_all_requests(request: Request, call_next):
     logger.info(f"🌐 응답: {response.status_code}")
     return response
 
-# 라우터 등록
-app.include_router(proxy_router)
+# ──────────────────────────────────────────────────────────────────────────────
+# 라우터 등록 & 기본 엔드포인트
+# ──────────────────────────────────────────────────────────────────────────────
+app.include_router(router_v1)
+app.include_router(router_v2)
 
-# 기본 엔드포인트
 @app.get("/")
 async def root():
-    return {"message": "Gateway API", "version": "0.3.1"}
+    return {"message": "Gateway API", "version": "0.4.0"}
 
 @app.get("/health")
 async def health_check_root():
-    return {"status": "healthy", "service": "gateway", "version": "0.3.1"}
+    return {"status": "healthy", "service": "gateway", "version": "0.4.0"}
 
-# 404
+# 404 / 405
 @app.exception_handler(404)
 async def not_found_handler(request: Request, exc):
     logger.error("🚨 404")
@@ -272,7 +223,6 @@ async def not_found_handler(request: Request, exc):
                  "method": request.method, "path": request.url.path},
     )
 
-# 405
 @app.exception_handler(405)
 async def method_not_allowed_handler(request: Request, exc):
     logger.error("🚨 405")
