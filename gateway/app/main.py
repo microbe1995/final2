@@ -39,8 +39,13 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# CORS 설정 - 환경변수 기반
-FRONT_ORIGIN = os.getenv("CORS_URL", "https://lca-final.vercel.app").strip()
+# CORS 설정 - 환경변수 기반 (더 안전한 방식)
+CORS_URL = os.getenv("CORS_URL")
+if not CORS_URL:
+    CORS_URL = "https://lca-final.vercel.app"
+    logger.warning("⚠️ CORS_URL 환경변수가 설정되지 않아 기본값 사용")
+
+FRONT_ORIGIN = CORS_URL.strip()
 CORS_ALLOW_CREDENTIALS = os.getenv("CORS_ALLOW_CREDENTIALS", "true").lower() == "true"
 CORS_ALLOW_METHODS = os.getenv("CORS_ALLOW_METHODS", "GET,POST,PUT,DELETE,OPTIONS,PATCH")
 CORS_ALLOW_HEADERS = os.getenv("CORS_ALLOW_HEADERS", "Accept,Accept-Language,Content-Language,Content-Type,Authorization,X-Requested-With,Origin,Access-Control-Request-Method,Access-Control-Request-Headers")
@@ -59,12 +64,14 @@ ALLOWED_ORIGINS = [
 ]
 
 logger.info(f"🔧 CORS 설정 정보:")
+logger.info(f"🔧 CORS_URL: {CORS_URL}")
 logger.info(f"🔧 FRONT_ORIGIN: {FRONT_ORIGIN}")
 logger.info(f"🔧 ALLOWED_ORIGINS: {ALLOWED_ORIGINS}")
 logger.info(f"🔧 ALLOWED_METHODS: {ALLOWED_METHODS}")
 logger.info(f"🔧 ALLOWED_HEADERS: {ALLOWED_HEADERS}")
+logger.info(f"🔧 CORS_ALLOW_CREDENTIALS: {CORS_ALLOW_CREDENTIALS}")
 
-# CORS 미들웨어 추가
+# CORS 미들웨어 추가 (더 명시적 설정)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS,
@@ -85,15 +92,19 @@ def add_cors_headers(response: Response, request: Request) -> Response:
         allowed_origin = origin
     else:
         allowed_origin = FRONT_ORIGIN
+        logger.warning(f"⚠️ 허용되지 않은 origin: {origin}, 기본값 사용: {allowed_origin}")
     
-    # CORS 헤더 강제 삽입
+    # CORS 헤더 강제 삽입 (기존 헤더 덮어쓰기)
     response.headers["Access-Control-Allow-Origin"] = allowed_origin
     response.headers["Access-Control-Allow-Credentials"] = str(CORS_ALLOW_CREDENTIALS).lower()
     response.headers["Access-Control-Allow-Methods"] = ", ".join(ALLOWED_METHODS)
     response.headers["Access-Control-Allow-Headers"] = ", ".join(ALLOWED_HEADERS)
     response.headers["Access-Control-Max-Age"] = "86400"
     
-    logger.info(f"🔧 CORS 헤더 추가: Origin={allowed_origin}")
+    # 추가 CORS 헤더 (더 안전한 CORS 설정)
+    response.headers["Access-Control-Expose-Headers"] = "*"
+    
+    logger.info(f"🔧 CORS 헤더 추가: Origin={allowed_origin}, Method={request.method}")
     return response
 
 # CORS OPTIONS 요청 처리 - 모든 경로에 대해
