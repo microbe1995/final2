@@ -1,5 +1,5 @@
 """
-Auth Service 메인 파일 - 서브라우터 사용
+Auth Service 메인 파일 - 직접 엔드포인트 정의
 """
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
@@ -7,9 +7,6 @@ import os
 import logging
 import sys
 from dotenv import load_dotenv
-
-# 라우터 import
-from .router.auth_router import auth_router
 
 # 환경 변수 로드
 if os.getenv("RAILWAY_ENVIRONMENT") != "true":
@@ -26,14 +23,14 @@ logger = logging.getLogger("auth_service_main")
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """애플리케이션 생명주기 관리"""
-    logger.info("🔐 Auth Service 시작 (서브라우터 사용)")
+    logger.info("🔐 Auth Service 시작 (직접 엔드포인트)")
     yield
     logger.info("🛑 Auth Service 종료")
 
 # FastAPI 앱 생성
 app = FastAPI(
-    title="Auth Service (Router)",
-    description="서브라우터를 사용하는 인증 서비스",
+    title="Auth Service",
+    description="직접 엔드포인트를 정의하는 인증 서비스",
     version="1.0.0",
     docs_url="/docs",
     lifespan=lifespan
@@ -58,24 +55,67 @@ async def root():
     """메인 루트 엔드포인트"""
     logger.info("🔵 메인 / 엔드포인트 호출됨")
     return {
-        "message": "Auth Service Main", 
+        "message": "Auth Service", 
         "version": "1.0.0", 
         "status": "running",
         "docs": "/docs",
-        "mode": "main-with-router",
-        "router": "/auth"
+        "mode": "direct-endpoints"
     }
 
 @app.get("/health")
 async def health_check():
     """메인 헬스 체크 엔드포인트"""
     logger.info("🔵 메인 /health 엔드포인트 호출됨")
-    return {"status": "healthy", "service": "auth-main", "mode": "main-with-router"}
+    return {"status": "healthy", "service": "auth", "mode": "direct-endpoints"}
 
-# Auth 라우터 등록
-app.include_router(auth_router)
+# 직접 엔드포인트 정의
+@app.post("/register")
+async def register_user(user_data: dict):
+    """사용자 회원가입"""
+    logger.info(f"🔵 /register 엔드포인트 호출됨")
+    logger.info(f"🔵 받은 데이터: {user_data}")
+    
+    try:
+        # 간단한 응답 (실제로는 데이터베이스 처리)
+        logger.info(f"✅ 회원가입 성공: {user_data.get('email', 'unknown')}")
+        return {
+            "message": "회원가입 성공",
+            "user": {
+                "username": user_data.get('username'),
+                "email": user_data.get('email'),
+                "full_name": user_data.get('full_name'),
+                "id": "temp_id_123"  # 임시 ID
+            },
+            "status": "success"
+        }
+        
+    except Exception as e:
+        logger.error(f"❌ 회원가입 실패: {str(e)}")
+        return {"error": f"회원가입 실패: {str(e)}", "status": "error"}
 
-logger.info("🔧 Auth Service 설정 완료 - 서브라우터 등록됨")
+@app.post("/login")
+async def login_user(user_credentials: dict):
+    """사용자 로그인"""
+    logger.info(f"🔵 /login 엔드포인트 호출됨")
+    logger.info(f"🔵 받은 데이터: {user_credentials}")
+    
+    try:
+        # 간단한 응답 (실제로는 인증 처리)
+        logger.info(f"✅ 로그인 성공: {user_credentials.get('email', 'unknown')}")
+        return {
+            "message": "로그인 성공",
+            "user": {
+                "email": user_credentials.get('email'),
+                "token": "temp_token_123"  # 임시 토큰
+            },
+            "status": "success"
+        }
+        
+    except Exception as e:
+        logger.error(f"❌ 로그인 실패: {str(e)}")
+        return {"error": f"로그인 실패: {str(e)}", "status": "error"}
+
+logger.info("🔧 Auth Service 설정 완료 - 직접 엔드포인트 정의됨")
 
 # Docker 환경에서 포트 설정 (Railway 환경변수 사용)
 if __name__ == "__main__":
