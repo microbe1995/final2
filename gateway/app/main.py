@@ -40,7 +40,7 @@ app = FastAPI(
 )
 
 # CORS 설정 - 환경변수 기반
-FRONT_ORIGIN = os.getenv("FRONT_ORIGIN", "https://lca-final.vercel.app").strip()
+FRONT_ORIGIN = os.getenv("CORS_URL", "https://lca-final.vercel.app").strip()
 CORS_ALLOW_CREDENTIALS = os.getenv("CORS_ALLOW_CREDENTIALS", "true").lower() == "true"
 CORS_ALLOW_METHODS = os.getenv("CORS_ALLOW_METHODS", "GET,POST,PUT,DELETE,OPTIONS,PATCH")
 CORS_ALLOW_HEADERS = os.getenv("CORS_ALLOW_HEADERS", "Accept,Accept-Language,Content-Language,Content-Type,Authorization,X-Requested-With,Origin,Access-Control-Request-Method,Access-Control-Request-Headers")
@@ -56,6 +56,7 @@ ALLOWED_ORIGINS = [
     "http://127.0.0.1:3000",
     "https://lca-final.vercel.app",
     "https://lca-final-git-main-microbe95.vercel.app",
+    "https://lca-final-9th3dtaxw-microbe95s-projects.vercel.app",  # 실제 Vercel 도메인
 ]
 
 # CORS 미들웨어 추가

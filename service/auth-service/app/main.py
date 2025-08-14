@@ -45,6 +45,7 @@ app.add_middleware(
         "http://127.0.0.1:3000",  # 로컬 IP 접근
         "http://frontend:3000",   # Docker 내부 네트워크
         "https://lca-final.vercel.app",  # Vercel 프론트엔드
+        "https://lca-final-9th3dtaxw-microbe95s-projects.vercel.app",  # 실제 Vercel 도메인
         "http://gateway:8080",  # Gateway 서비스
         "http://localhost:8080",  # 로컬 Gateway
     ],
