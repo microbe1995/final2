@@ -93,10 +93,56 @@ async def register_user(user_data: dict):
         logger.error(f"❌ 회원가입 실패: {str(e)}")
         return {"error": f"회원가입 실패: {str(e)}", "status": "error"}
 
+@app.post("/auth/register")
+async def register_user_via_gateway(user_data: dict):
+    """Gateway를 통한 사용자 회원가입"""
+    logger.info(f"🔵 /auth/register 엔드포인트 호출됨 (Gateway 프록시)")
+    logger.info(f"🔵 받은 데이터: {user_data}")
+    
+    try:
+        # 간단한 응답 (실제로는 데이터베이스 처리)
+        logger.info(f"✅ 회원가입 성공: {user_data.get('email', 'unknown')}")
+        return {
+            "message": "회원가입 성공",
+            "user": {
+                "username": user_data.get('username'),
+                "email": user_data.get('email'),
+                "full_name": user_data.get('full_name'),
+                "id": "temp_id_123"  # 임시 ID
+            },
+            "status": "success"
+        }
+        
+    except Exception as e:
+        logger.error(f"❌ 회원가입 실패: {str(e)}")
+        return {"error": f"회원가입 실패: {str(e)}", "status": "error"}
+
 @app.post("/login")
 async def login_user(user_credentials: dict):
     """사용자 로그인"""
     logger.info(f"🔵 /login 엔드포인트 호출됨")
+    logger.info(f"🔵 받은 데이터: {user_credentials}")
+    
+    try:
+        # 간단한 응답 (실제로는 인증 처리)
+        logger.info(f"✅ 로그인 성공: {user_credentials.get('email', 'unknown')}")
+        return {
+            "message": "로그인 성공",
+            "user": {
+                "email": user_credentials.get('email'),
+                "token": "temp_token_123"  # 임시 토큰
+            },
+            "status": "success"
+        }
+        
+    except Exception as e:
+        logger.error(f"❌ 로그인 실패: {str(e)}")
+        return {"error": f"로그인 실패: {str(e)}", "status": "error"}
+
+@app.post("/auth/login")
+async def login_user_via_gateway(user_credentials: dict):
+    """Gateway를 통한 사용자 로그인"""
+    logger.info(f"🔵 /auth/login 엔드포인트 호출됨 (Gateway 프록시)")
     logger.info(f"🔵 받은 데이터: {user_credentials}")
     
     try:

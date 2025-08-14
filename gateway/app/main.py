@@ -54,24 +54,40 @@ class ServiceProxyFactory:
         body: bytes | None = None,
         params: dict | None = None,
     ):
-        url = f"{self.base_url}/{path}"
+        # 경로 정리 (앞의 슬래시 제거)
+        clean_path = path.lstrip('/')
+        url = f"{self.base_url}/{clean_path}"
         logger.info(f"➡️  proxy -> {self.service_type.value}: {method} {url}")
-        async with httpx.AsyncClient() as client:
-            m = method.upper()
-            if m == "GET":
-                resp = await client.get(url, headers=headers, params=params)
-            elif m == "POST":
-                resp = await client.post(url, content=body, headers=headers, params=params)
-            elif m == "PUT":
-                resp = await client.put(url, content=body, headers=headers, params=params)
-            elif m == "DELETE":
-                resp = await client.delete(url, content=body, headers=headers, params=params)
-            elif m == "PATCH":
-                resp = await client.patch(url, content=body, headers=headers, params=params)
-            else:
-                raise ValueError(f"지원하지 않는 HTTP 메서드: {method}")
-            logger.info(f"✅  {self.service_type.value} 응답: {resp.status_code}")
-            return resp
+        logger.info(f"🔧 base_url: {self.base_url}, path: {path}, clean_path: {clean_path}")
+        
+        try:
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                m = method.upper()
+                if m == "GET":
+                    resp = await client.get(url, headers=headers, params=params)
+                elif m == "POST":
+                    resp = await client.post(url, content=body, headers=headers, params=params)
+                elif m == "PUT":
+                    resp = await client.put(url, content=body, headers=headers, params=params)
+                elif m == "DELETE":
+                    resp = await client.delete(url, content=body, headers=headers, params=params)
+                elif m == "PATCH":
+                    resp = await client.patch(url, content=body, headers=headers, params=params)
+                else:
+                    raise ValueError(f"지원하지 않는 HTTP 메서드: {method}")
+                
+                logger.info(f"✅  {self.service_type.value} 응답: {resp.status_code}")
+                logger.info(f"🔧 응답 헤더: {dict(resp.headers)}")
+                return resp
+        except httpx.TimeoutException:
+            logger.error(f"⏰ {self.service_type.value} 서비스 타임아웃")
+            raise Exception(f"{self.service_type.value} 서비스 응답 시간 초과")
+        except httpx.ConnectError:
+            logger.error(f"🔌 {self.service_type.value} 서비스 연결 실패")
+            raise Exception(f"{self.service_type.value} 서비스에 연결할 수 없습니다")
+        except Exception as e:
+            logger.error(f"❌ {self.service_type.value} 서비스 요청 실패: {str(e)}")
+            raise e
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -138,6 +154,33 @@ async def proxy_options(service: str, path: str, request: Request):
 async def gateway_health():
     return {"status": "healthy", "service": "gateway", "version": "0.3.1"}
 
+@proxy_router.get("/gateway/services/health", summary="연결된 서비스들의 헬스 체크")
+async def services_health():
+    """연결된 모든 서비스의 상태를 확인"""
+    services_status = {}
+    
+    try:
+        # Auth Service 헬스 체크
+        auth_factory = ServiceProxyFactory(service_type=ServiceType.AUTH)
+        auth_resp = await auth_factory.request("GET", "health")
+        services_status["auth"] = {
+            "status": "healthy" if auth_resp.status_code == 200 else "unhealthy",
+            "status_code": auth_resp.status_code,
+            "url": auth_factory.base_url
+        }
+    except Exception as e:
+        services_status["auth"] = {
+            "status": "error",
+            "error": str(e),
+            "url": auth_factory.base_url if 'auth_factory' in locals() else "unknown"
+        }
+    
+    return {
+        "gateway": "healthy",
+        "services": services_status,
+        "timestamp": "2024-01-01T00:00:00Z"
+    }
+
 def _clean_forward_headers(h: dict) -> dict:
     h = dict(h)
     h.pop("host", None)
@@ -165,8 +208,13 @@ async def proxy_get(service: ServiceType, path: str, request: Request):
 @proxy_router.post("/{service}/{path:path}", summary="POST 프록시")
 async def proxy_post(service: ServiceType, path: str, request: Request):
     try:
+        logger.info(f"📝 POST 프록시 요청: service={service}, path={path}")
+        logger.info(f"🔧 요청 헤더: {dict(request.headers)}")
+        
         factory = ServiceProxyFactory(service_type=service)
         body = await request.body()
+        logger.info(f"📦 요청 본문 크기: {len(body)} bytes")
+        
         resp = await factory.request(
             method="POST",
             path=path,
@@ -174,12 +222,14 @@ async def proxy_post(service: ServiceType, path: str, request: Request):
             body=body,
             params=dict(request.query_params),
         )
+        
+        logger.info(f"✅ 프록시 응답 성공: {resp.status_code}")
         return JSONResponse(
             content=resp.json() if resp.content else {},
             status_code=resp.status_code,
         )
     except Exception as e:
-        logger.exception("POST 프록시 오류")
+        logger.exception(f"❌ POST 프록시 오류: {str(e)}")
         return JSONResponse(content={"detail": f"Error processing request: {str(e)}"}, status_code=500)
 
 @proxy_router.put("/{service}/{path:path}", summary="PUT 프록시")
