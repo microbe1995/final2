@@ -26,11 +26,10 @@ EXPOSE 8000
 # 환경 변수 설정
 ENV PYTHONPATH=/app
 ENV PYTHONUNBUFFERED=1
-ENV PORT=8000
 
 # 헬스 체크
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD curl -f http://localhost:8000/health || exit 1
+    CMD curl -f http://localhost:$PORT/health || exit 1
 
-# Auth 서비스 실행 (포트 8000 강제)
-CMD ["python", "-c", "import uvicorn; uvicorn.run('main:app', host='0.0.0.0', port=8000)"]
+# Auth 서비스 실행 (Railway 환경변수 사용)
+CMD ["python", "main.py"]
