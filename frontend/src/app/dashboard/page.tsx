@@ -10,16 +10,14 @@ export default function Dashboard() {
     error,
     response,
     setMessage,
-    sendMessage,
     clearError,
     clearResponse
   } = useMessageStore();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (message.trim()) {
-      await sendMessage();
-    }
+    // 메시지 전송 기능은 현재 구현되지 않음
+    console.log('📝 입력된 메시지:', message);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -31,7 +29,8 @@ export default function Dashboard() {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       if (message.trim() && !isLoading) {
-        sendMessage();
+        // 메시지 전송 기능은 현재 구현되지 않음
+        console.log('📝 Enter로 입력된 메시지:', message);
       }
     }
   };
@@ -61,7 +60,7 @@ export default function Dashboard() {
                 value={message}
                 onChange={handleInputChange}
                 onKeyDown={handleKeyDown}
-                placeholder="무엇이든 물어보세요"
+                placeholder="무엇이든 물어보세요 (현재는 입력만 가능)"
                 className="w-full resize-none bg-transparent border-0 outline-none text-gray-900 placeholder-gray-400 text-base leading-6 min-h-[120px] pr-20"
                 rows={4}
                 disabled={isLoading}
