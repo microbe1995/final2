@@ -8,7 +8,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const router = useRouter();
-  const { setUser, setLoading, setError, isLoading, error, clearError } = useAuthStore();
+  const { login, isLoading, error, clearError } = useAuthStore();
 
   // 인증 오류가 있으면 폼 오류에 추가
   useEffect(() => {
@@ -24,62 +24,23 @@ export default function LoginPage() {
       return;
     }
 
-    setLoading(true);
-
     try {
       console.log('🚀 로그인 요청:', { email, password: '***' });
       
-      // Gateway URL 설정
-      const apiUrl = 'https://gateway-production-1104.up.railway.app/api/v1/auth/login';
-      console.log(`😂 apiUrl: ${apiUrl}`);
+      // AuthStore의 login 함수 사용
+      await login({ email, password });
       
-      // 전송할 데이터 준비
-      const requestData = {
-        email: email,
-        password: password
-      };
+      // 성공 메시지 표시
+      alert('🎉 로그인이 성공했습니다!');
       
-      console.log('🚀 Gateway로 전송할 데이터:', requestData);
-      
-      // Gateway로 직접 요청
-      const response = await fetch(apiUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestData)
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || '로그인에 실패했습니다.');
-      }
-
-      const result = await response.json();
-      console.log('✅ 로그인 성공:', result);
-      
-      if (result.user) {
-        // 사용자 정보를 store에 저장
-        setUser(result.user);
-        
-        // 성공 메시지 표시
-        alert('🎉 로그인이 성공했습니다!');
-        
-        // 대시보드로 이동
-        router.replace('/dashboard');
-      } else {
-        setError(result.message || '로그인에 실패했습니다.');
-      }
+      // 대시보드로 이동
+      router.replace('/dashboard');
       
     } catch (error: any) {
       console.error('로그인 에러:', error);
-      setError(error.message || '로그인 중 오류가 발생했습니다.');
-    } finally {
-      setLoading(false);
+      // 에러는 AuthStore에서 자동으로 설정됨
     }
   };
-
-  const isFormLoading = isLoading;
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
@@ -142,10 +103,10 @@ export default function LoginPage() {
             <div>
               <button
                 type="submit"
-                disabled={isFormLoading}
+                disabled={isLoading}
                 className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isFormLoading ? '로그인 중...' : '로그인'}
+                {isLoading ? '로그인 중...' : '로그인'}
               </button>
             </div>
           </form>
