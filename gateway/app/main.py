@@ -149,11 +149,19 @@ async def proxy_get(service: ServiceType, path: str, request: Request):
             params=dict(request.query_params)
         )
         
-        # 응답 생성
+        # 응답 생성 (CORS 헤더 추가)
+        response_headers = dict(response.headers)
+        response_headers.update({
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Credentials': 'true',
+            'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS, PATCH',
+            'Access-Control-Allow-Headers': '*'
+        })
+        
         return JSONResponse(
             content=response.json() if response.content else {},
             status_code=response.status_code,
-            headers=dict(response.headers)
+            headers=response_headers
         )
         
     except Exception as e:
@@ -183,11 +191,19 @@ async def proxy_post(service: ServiceType, path: str, request: Request):
             params=dict(request.query_params)
         )
         
-        # 응답 생성
+        # 응답 생성 (CORS 헤더 추가)
+        response_headers = dict(response.headers)
+        response_headers.update({
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Credentials': 'true',
+            'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS, PATCH',
+            'Access-Control-Allow-Headers': '*'
+        })
+        
         return JSONResponse(
             content=response.json() if response.content else {},
             status_code=response.status_code,
-            headers=dict(response.headers)
+            headers=response_headers
         )
         
     except Exception as e:
@@ -317,6 +333,12 @@ app.include_router(proxy_router)
 @app.get("/")
 async def root():
     return {"message": "Gateway API - 서비스 팩토리 패턴 적용", "version": "0.3.0"}
+
+@app.get("/health")
+async def health_check():
+    """Gateway 직접 헬스 체크 엔드포인트"""
+    logger.info("🔧 Gateway 직접 헬스 체크 요청 수신")
+    return {"status": "healthy", "service": "gateway", "version": "0.3.0"}
 
 logger.info("🔧 Gateway API 서비스 설정 완료")
 
