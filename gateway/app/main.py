@@ -138,6 +138,16 @@ async def log_all_requests(request: Request, call_next):
 async def root():
     return {"message": "Gateway API - CORS 문제 해결 버전", "version": "0.2.0"}
 
+@app.get("/register")
+async def register_page():
+    """회원가입 페이지로 리다이렉트"""
+    return {"message": "회원가입 페이지", "redirect_to": "/api/v1/auth/register"}
+
+@app.get("/login")
+async def login_page():
+    """로그인 페이지로 리다이렉트"""
+    return {"message": "로그인 페이지", "redirect_to": "/api/v1/auth/login"}
+
 @app.get("/health")
 async def health_check():
     return {"status": "healthy", "service": "gateway", "version": "0.2.0"}
