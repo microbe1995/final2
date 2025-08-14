@@ -71,4 +71,5 @@ async def root():
 # Docker 환경에서 포트 설정 (8000으로 고정)
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    port = int(os.getenv("PORT", "8000"))
+    uvicorn.run(app, host="0.0.0.0", port=port)

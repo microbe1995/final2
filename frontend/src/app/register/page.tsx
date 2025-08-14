@@ -52,8 +52,8 @@ export default function RegisterPage() {
     console.log('📝 프론트엔드 회원가입 입력값:', JSON.stringify(registerData, null, 2));
     
     try {
-      // Gateway URL 설정 (제공된 코드 참고)
-      const apiUrl = 'https://gateway-production-1104.up.railway.app/api/v1/auth/register';
+      // Gateway URL 설정 (프록시 활용)
+      const apiUrl = '/api/v1/auth/register';
       console.log(`😂 apiUrl: ${apiUrl}`);
       
       // 전송할 데이터 준비

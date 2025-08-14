@@ -137,7 +137,7 @@ logger.info("🔧 Gateway 라우터 생성 완료")
 logger.info(f"🔧 라우터 prefix: {gateway_router.prefix}")
 logger.info(f"🔧 라우터 tags: {gateway_router.tags}")
 
-# Auth Service URL - Railway 환경에 맞게 수정
+# Auth Service URL - 로컬 개발 환경
 AUTH_SERVICE_URL = os.getenv("AUTH_SERVICE_URL", "http://localhost:8000")
 
 @gateway_router.get("/{service}/{path:path}", summary="GET 프록시")

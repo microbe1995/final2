@@ -1,106 +1,114 @@
-# GreenSteel MSA 프로젝트
+# LCA Final Project
 
-GreenSteel은 Next.js + TypeScript + React + Zustand + Axios + PWA + JWT 인증을 기반으로 한 마이크로서비스 아키텍처 프로젝트입니다.
+## 🚀 프로젝트 개요
 
-## 🏗️ 프로젝트 구조
+이 프로젝트는 마이크로서비스 아키텍처를 기반으로 한 LCA(Life Cycle Assessment) 시스템입니다.
+
+## 🏗️ 아키텍처
 
 ```
-greensteel/
-├── frontend/              # Next.js 프론트엔드 애플리케이션
-│   ├── src/               # 소스 코드
-│   ├── public/            # 정적 파일 (PWA 매니페스트, 아이콘 등)
-│   ├── package.json       # 프론트엔드 의존성
-│   └── ...
-├── gateway/               # FastAPI API Gateway
-│   ├── app/               # 게이트웨이 애플리케이션 코드
-│   ├── main.py            # 게이트웨이 메인 파일
-│   └── docker-compose.yml # 게이트웨이 도커 설정
-├── service/               # 마이크로서비스들
-│   ├── auth-service/      # 인증 서비스
-│   ├── user-service/      # 사용자 관리 서비스
-│   └── esg-service/       # ESG 데이터 서비스
-├── document/              # 프로젝트 문서
-│   └── README.md          # 상세 문서
-├── .github/               # GitHub Actions CI/CD
-│   └── workflows/
-└── vercel.json            # Vercel 배포 설정
+프론트엔드 (Next.js) → Gateway (FastAPI) → Auth Service (FastAPI)
+     ↓                    ↓                    ↓
+  localhost:3000    localhost:8080      localhost:8000
 ```
 
-## 🚀 기술 스택
+## 📁 프로젝트 구조
 
-### Frontend
-- **Next.js 14** - React 프레임워크
-- **TypeScript** - 타입 안전성
-- **React 18** - UI 라이브러리
-- **Zustand** - 상태 관리
-- **Axios** - HTTP 클라이언트
-- **Tailwind CSS** - 스타일링
-- **PWA** - Progressive Web App
+```
+LCA_final-main/
+├── frontend/                 # Next.js 프론트엔드
+├── gateway/                  # API Gateway (FastAPI)
+├── service/
+│   └── auth-service/        # 인증 서비스 (FastAPI)
+├── docker-compose.yml       # Docker Compose 설정
+├── start-dev.bat           # 개발 환경 시작
+└── stop-dev.bat            # 개발 환경 중지
+```
 
-### Backend
-- **FastAPI** - API Gateway
-- **Python** - 백엔드 언어
-- **JWT** - 인증 토큰
-- **Docker** - 컨테이너화
+## 🔄 데이터 흐름
 
-### DevOps
-- **GitHub Actions** - CI/CD
-- **Vercel** - 프론트엔드 배포
-- **Docker Compose** - 로컬 개발 환경
+### 회원가입 흐름
+1. **프론트엔드** (`/register`): 사용자 입력 수집
+2. **Gateway** (`/api/v1/auth/register`): CORS 처리 및 라우팅
+3. **Auth Service** (`/auth/register`): 실제 회원 생성 로직
 
-## 🛠️ 개발 환경 설정
+### API 엔드포인트
+- **Gateway**: `http://localhost:8080/api/v1/{service}/{path}`
+- **Auth Service**: `http://localhost:8000/auth/{endpoint}`
 
-### 1. 프론트엔드 실행
+## 🚀 빠른 시작
+
+### 1. 개발 환경 시작
 ```bash
-cd frontend
-npm install
-npm run dev
+# Windows
+start-dev.bat
+
+# 또는 수동으로
+docker-compose up --build -d
 ```
 
-### 2. 게이트웨이 실행
+### 2. 서비스 접속
+- **프론트엔드**: http://localhost:3000
+- **Gateway**: http://localhost:8080
+- **Auth Service**: http://localhost:8000
+
+### 3. API 문서
+- **Gateway API Docs**: http://localhost:8080/docs
+- **Auth Service API Docs**: http://localhost:8000/docs
+
+### 4. 개발 환경 중지
 ```bash
-cd gateway
-pip install -r requirements.txt
-python main.py
+# Windows
+stop-dev.bat
+
+# 또는 수동으로
+docker-compose down
 ```
 
-### 3. 서비스 실행
-```bash
-# 각 서비스 디렉토리에서 실행
-cd service/auth-service
-python main.py
-```
+## 🔧 환경 변수
 
-## 📦 배포
+### Gateway
+- `PORT`: 8080 (기본값)
+- `AUTH_SERVICE_URL`: http://localhost:8000 (기본값)
 
-### Frontend (Vercel)
-- GitHub main 브랜치에 푸시하면 자동 배포
-- Vercel 대시보드에서 환경 변수 설정
+### Auth Service
+- `PORT`: 8000 (기본값)
 
-### Backend (Docker)
-```bash
-cd gateway
-docker-compose up -d
-```
+## 📝 주요 기능
 
-## 🔄 CI/CD 파이프라인
+### 회원가입
+- 이메일, 사용자명, 비밀번호, 전체 이름 입력
+- 비밀번호 해싱 및 저장
+- 중복 이메일/사용자명 검증
 
-1. **코드 푸시** → GitHub
-2. **자동 테스트** → GitHub Actions
-3. **빌드 검증** → TypeScript, ESLint
-4. **자동 배포** → Vercel (Frontend)
+### 로그인
+- 이메일/비밀번호 인증
+- JWT 토큰 발급 (향후 구현 예정)
 
-## 📚 문서
+## 🐛 문제 해결
 
-자세한 문서는 `document/` 폴더를 참조하세요.
+### 서비스가 시작되지 않는 경우
+1. Docker가 실행 중인지 확인
+2. 포트 충돌 확인 (3000, 8080, 8000)
+3. `docker-compose logs`로 로그 확인
 
-## 🤝 기여하기
+### CORS 오류가 발생하는 경우
+1. Gateway의 CORS 설정 확인
+2. 프론트엔드 origin이 허용 목록에 포함되어 있는지 확인
 
-1. Fork the Project
-2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the Branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+## 📚 기술 스택
+
+- **Frontend**: Next.js 14, React 18, TypeScript, Tailwind CSS
+- **Backend**: FastAPI, Python 3.11+
+- **Container**: Docker, Docker Compose
+- **Database**: 메모리 기반 (향후 PostgreSQL 추가 예정)
+
+## 🤝 기여 방법
+
+1. 이슈 생성 또는 기존 이슈 확인
+2. 기능 브랜치 생성
+3. 코드 작성 및 테스트
+4. Pull Request 생성
 
 ## 📄 라이선스
 

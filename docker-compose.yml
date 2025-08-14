@@ -20,6 +20,8 @@ services:
     build: ./service/auth-service
     ports:
       - "8000:8000"
+    environment:
+      - PORT=8000
     networks:
       - greensteel-network
 
