@@ -55,6 +55,26 @@ async def health_check():
     logger.info("🔵 /health 엔드포인트 호출됨 (격리됨)")
     return {"status": "healthy", "service": "auth", "mode": "isolated-sub-router"}
 
+@app.get("/register")
+async def register_page():
+    """회원가입 페이지 정보"""
+    logger.info("🔵 /register 페이지 정보 요청됨")
+    return {
+        "message": "회원가입 페이지",
+        "endpoint": "POST /register",
+        "service": "auth-service"
+    }
+
+@app.get("/login")
+async def login_page():
+    """로그인 페이지 정보"""
+    logger.info("🔵 /login 페이지 정보 요청됨")
+    return {
+        "message": "로그인 페이지", 
+        "endpoint": "POST /login",
+        "service": "auth-service"
+    }
+
 @app.post("/register")
 async def register_user(request: Request):
     """사용자 회원가입 - Gateway에서 프록시된 요청"""

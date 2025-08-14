@@ -32,7 +32,7 @@ export default function LoginPage() {
         apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL + '/auth/login';
       } else {
         // 개발 환경 (로컬) - 절대 URL 사용
-        apiUrl = 'http://localhost:8080/api/v1/auth/login';
+        apiUrl = 'http://localhost:8080/auth/login';
       }
       
       console.log(`🔗 로그인 API URL: ${apiUrl}`);

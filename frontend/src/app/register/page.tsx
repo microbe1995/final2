@@ -60,7 +60,7 @@ export default function RegisterPage() {
         apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL + '/auth/register';
       } else {
         // 개발 환경 (로컬) - 절대 URL 사용
-        apiUrl = 'http://localhost:8080/api/v1/auth/register';
+        apiUrl = 'http://localhost:8080/auth/register';
       }
       
       console.log(`😂 apiUrl: ${apiUrl}`);

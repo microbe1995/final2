@@ -11,6 +11,109 @@ import json
 from dotenv import load_dotenv
 from contextlib import asynccontextmanager
 import httpx
+from typing import Optional, Dict, Any
+from enum import Enum
+
+# --- ServiceType Enum 정의 ---
+class ServiceType(Enum):
+    """지원하는 서비스 타입들"""
+    AUTH = "auth"
+    USER = "user"
+    DISCOVERY = "discovery"
+    
+    @classmethod
+    def from_string(cls, service_str: str):
+        """문자열로부터 ServiceType을 생성합니다."""
+        try:
+            return cls(service_str.lower())
+        except ValueError:
+            raise ValueError(f"지원하지 않는 서비스 타입: {service_str}")
+
+# --- ServiceProxyFactory 클래스 정의 ---
+class ServiceProxyFactory:
+    """서비스 타입에 따른 프록시 팩토리"""
+    
+    def __init__(self, service_type: ServiceType):
+        self.service_type = service_type
+        self.base_url = self._get_service_url()
+    
+    def _get_service_url(self) -> str:
+        """서비스 타입에 따른 기본 URL을 반환합니다."""
+        if self.service_type == ServiceType.AUTH:
+            return os.getenv("AUTH_SERVICE_URL", "http://localhost:8000")
+        elif self.service_type == ServiceType.USER:
+            return os.getenv("USER_SERVICE_URL", "http://localhost:8001")
+        elif self.service_type == ServiceType.DISCOVERY:
+            return os.getenv("DISCOVERY_SERVICE_URL", "http://localhost:8002")
+        else:
+            raise ValueError(f"지원하지 않는 서비스 타입: {self.service_type}")
+    
+    async def request(
+        self,
+        method: str,
+        path: str,
+        headers: Optional[Dict[str, str]] = None,
+        body: Optional[bytes] = None,
+        params: Optional[Dict[str, Any]] = None,
+        timeout: float = 30.0
+    ) -> httpx.Response:
+        """서비스로 요청을 전달합니다."""
+        target_url = f"{self.base_url}/{path}"
+        
+        logger.info(f"🎯 {self.service_type.value} 서비스로 요청: {method} {target_url}")
+        
+        # 기본 헤더 설정
+        if headers is None:
+            headers = {}
+        
+        # host 헤더 제거 (프록시 요청 시 불필요)
+        headers.pop('host', None)
+        headers.pop('content-length', None)
+        
+        async with httpx.AsyncClient() as client:
+            if method.upper() == "GET":
+                response = await client.get(
+                    target_url,
+                    headers=headers,
+                    params=params,
+                    timeout=timeout
+                )
+            elif method.upper() == "POST":
+                response = await client.post(
+                    target_url,
+                    content=body,
+                    headers=headers,
+                    params=params,
+                    timeout=timeout
+                )
+            elif method.upper() == "PUT":
+                response = await client.put(
+                    target_url,
+                    content=body,
+                    headers=headers,
+                    params=params,
+                    timeout=timeout
+                )
+            elif method.upper() == "DELETE":
+                response = await client.delete(
+                    target_url,
+                    headers=headers,
+                    params=params,
+                    timeout=timeout
+                )
+            elif method.upper() == "PATCH":
+                response = await client.patch(
+                    target_url,
+                    content=body,
+                    headers=headers,
+                    params=params,
+                    timeout=timeout
+                )
+            else:
+                raise ValueError(f"지원하지 않는 HTTP 메서드: {method}")
+            
+            logger.info(f"✅ {self.service_type.value} 서비스 응답: {response.status_code}")
+            return response
 
 # 환경 변수 로드
 if not os.getenv("RAILWAY_ENVIRONMENT"):
@@ -132,7 +235,7 @@ async def any_options(path: str, request: Request):
     return response
 
 # API 경로에 대한 구체적인 OPTIONS 핸들러 추가
-@app.options("/api/v1/{service}/{path:path}")
+@app.options("/{service}/{path:path}")
 async def api_options(service: str, path: str, request: Request):
     """API 경로에 대한 OPTIONS 요청을 처리합니다 (CORS preflight)."""
     logger.info(f"🔧 API OPTIONS 요청 처리: service={service}, path={path}")
@@ -169,68 +272,49 @@ async def log_all_requests(request: Request, call_next):
     logger.info(f"🌐 응답: {response.status_code}")
     return response
 
-# 기본 엔드포인트들 (정적 경로를 먼저 등록)
+# 기본 엔드포인트들 (최소한만 유지)
 @app.get("/")
 async def root():
     return {"message": "Gateway API - CORS 문제 해결 버전", "version": "0.2.0"}
 
-@app.get("/register")
-async def register_page():
-    """회원가입 페이지로 리다이렉트"""
-    return {"message": "회원가입 페이지", "redirect_to": "/api/v1/auth/register"}
-
-@app.get("/login")
-async def login_page():
-    """로그인 페이지로 리다이렉트"""
-    return {"message": "로그인 페이지", "redirect_to": "/api/v1/auth/login"}
-
-@app.get("/health")
-async def health_check():
-    return {"status": "healthy", "service": "gateway", "version": "0.2.0"}
-
-@app.get("/health/db")
-async def health_check_db():
-    return {
-        "status": "healthy",
-        "service": "gateway",
-        "message": "Database health check delegated to auth-service"
-    }
-
-# Auth Service URL
-AUTH_SERVICE_URL = os.getenv("AUTH_SERVICE_URL", "http://localhost:8000")
-
-logger.info(f"🔧 Auth Service URL: {AUTH_SERVICE_URL}")
+logger.info("🔧 Gateway API 서비스 설정 완료")
 
 # 동적 프록시 엔드포인트들
-@app.get("/api/v1/{service}/{path:path}")
+@app.get("/{service}/{path:path}")
 async def proxy_get(service: str, path: str, request: Request):
     logger.info(f"🎯 GET 프록시 호출: service={service}, path={path}")
     try:
-        headers = dict(request.headers)
+        # ServiceType 검증
+        service_type = ServiceType.from_string(service)
         
-        if service == "auth":
-            target_url = f"{AUTH_SERVICE_URL}/{path}"
-            logger.info(f"🎯 Auth Service로 전달: {target_url}")
+        # 프록시 팩토리 생성
+        factory = ServiceProxyFactory(service_type)
+        
+        # 요청 처리
+        response = await factory.request(
+            method="GET",
+            path=path,
+            headers=dict(request.headers),
+            params=dict(request.query_params)
+        )
+        
+        # CORS 헤더가 포함된 응답 생성
+        json_response = JSONResponse(
+            content=response.json() if response.content else {},
+            status_code=response.status_code,
+            headers=dict(response.headers)
+        )
+        
+        # CORS 헤더 강제 추가
+        return add_cors_headers(json_response, request)
             
-            async with httpx.AsyncClient() as client:
-                response = await client.get(target_url, headers=headers, timeout=30.0)
-                
-                # CORS 헤더가 포함된 응답 생성
-                json_response = JSONResponse(
-                    content=response.json(),
-                    status_code=response.status_code,
-                    headers=dict(response.headers)
-                )
-                
-                # CORS 헤더 강제 추가
-                return add_cors_headers(json_response, request)
-        else:
-            response = JSONResponse(
-                content={"detail": f"Service {service} not supported"},
-                status_code=400
-            )
-            return add_cors_headers(response, request)
-            
+    except ValueError as e:
+        logger.error(f"❌ 지원하지 않는 서비스: {service}")
+        response = JSONResponse(
+            content={"detail": f"Service {service} not supported"},
+            status_code=400
+        )
+        return add_cors_headers(response, request)
     except Exception as e:
         logger.error(f"GET 프록시 오류: {str(e)}")
         response = JSONResponse(
@@ -239,7 +323,7 @@ async def proxy_get(service: str, path: str, request: Request):
         )
         return add_cors_headers(response, request)
 
-@app.post("/api/v1/{service}/{path:path}")
+@app.post("/{service}/{path:path}")
 async def proxy_post_json(
     service: str,
     path: str,
@@ -248,60 +332,59 @@ async def proxy_post_json(
     logger.info(f"🎯 POST 프록시 호출됨!")
     logger.info(f"🎯 service: {service}")
     logger.info(f"🎯 path: {path}")
-    logger.info(f"🎯 전체 경로: /api/v1/{service}/{path}")
+    logger.info(f"🎯 전체 경로: /{service}/{path}")
     logger.info(f"🎯 요청 URL: {request.url}")
     logger.info(f"🎯 Origin: {request.headers.get('origin', 'N/A')}")
     
     try:
-        headers = dict(request.headers)
+        # ServiceType 검증
+        service_type = ServiceType.from_string(service)
+        
+        # 프록시 팩토리 생성
+        factory = ServiceProxyFactory(service_type)
+        
+        # 요청 본문과 헤더 준비
         body = await request.body()
+        headers = dict(request.headers)
         
         logger.info(f"🎯 요청 본문: {body}")
         logger.info(f"🎯 요청 헤더: {headers}")
         
-        if "content-length" in headers:
-            del headers["content-length"]
+        # 요청 처리
+        response = await factory.request(
+            method="POST",
+            path=path,
+            headers=headers,
+            body=body,
+            params=dict(request.query_params)
+        )
         
-        if service == "auth":
-            target_url = f"{AUTH_SERVICE_URL}/{path}"
-            logger.info(f"🎯 Auth Service로 전달: {target_url}")
-            logger.info(f"🎯 전송할 데이터: {body}")
-            logger.info(f"🎯 전송할 헤더: {headers}")
+        logger.info(f"✅ {service_type.value} 서비스 응답: {response.status_code}")
+        
+        try:
+            response_content = response.json()
+            logger.info(f"✅ {service_type.value} 서비스 응답 내용: {response_content}")
+        except:
+            response_content = response.text
+            logger.info(f"✅ {service_type.value} 서비스 응답 내용 (텍스트): {response_content}")
+        
+        # CORS 헤더가 포함된 응답 생성
+        json_response = JSONResponse(
+            content=response_content,
+            status_code=response.status_code,
+            headers=dict(response.headers)
+        )
+        
+        # CORS 헤더 강제 추가
+        return add_cors_headers(json_response, request)
 
-            async with httpx.AsyncClient() as client:
-                response = await client.post(
-                    target_url, 
-                    content=body,
-                    headers=headers, 
-                    timeout=30.0
-                )
-                
-                logger.info(f"✅ Auth Service 응답: {response.status_code}")
-                logger.info(f"✅ Auth Service 응답 헤더: {dict(response.headers)}")
-                
-                try:
-                    response_content = response.json()
-                    logger.info(f"✅ Auth Service 응답 내용: {response_content}")
-                except:
-                    response_content = response.text
-                    logger.info(f"✅ Auth Service 응답 내용 (텍스트): {response_content}")
-                
-                # CORS 헤더가 포함된 응답 생성
-                json_response = JSONResponse(
-                    content=response_content,
-                    status_code=response.status_code,
-                    headers=dict(response.headers)
-                )
-                
-                # CORS 헤더 강제 추가
-                return add_cors_headers(json_response, request)
-        else:
-            response = JSONResponse(
-                content={"detail": f"Service {service} not supported"},
-                status_code=400
-            )
-            return add_cors_headers(response, request)
-
+    except ValueError as e:
+        logger.error(f"❌ 지원하지 않는 서비스: {service}")
+        response = JSONResponse(
+            content={"detail": f"Service {service} not supported"},
+            status_code=400
+        )
+        return add_cors_headers(response, request)
     except Exception as e:
         logger.error(f"POST 프록시 오류: {e}")
         response = JSONResponse(
@@ -310,39 +393,44 @@ async def proxy_post_json(
         )
         return add_cors_headers(response, request)
 
-@app.put("/api/v1/{service}/{path:path}")
+@app.put("/{service}/{path:path}")
 async def proxy_put(service: str, path: str, request: Request):
     logger.info(f"🎯 PUT 프록시 호출: service={service}, path={path}")
     try:
-        headers = dict(request.headers)
+        # ServiceType 검증
+        service_type = ServiceType.from_string(service)
+        
+        # 프록시 팩토리 생성
+        factory = ServiceProxyFactory(service_type)
+        
+        # 요청 처리
         body = await request.body()
-
-        if service == "auth":
-            target_url = f"{AUTH_SERVICE_URL}/{path}"
-            logger.info(f"🎯 Auth Service로 전달: {target_url}")
-
-            async with httpx.AsyncClient() as client:
-                response = await client.put(
-                    target_url, 
-                    content=body,
-                    headers=headers, 
-                    timeout=30.0
-                )
-                
-                json_response = JSONResponse(
-                    content=response.json(),
-                    status_code=response.status_code,
-                    headers=dict(response.headers)
-                )
-                
-                return add_cors_headers(json_response, request)
-        else:
-            response = JSONResponse(
-                content={"detail": f"Service {service} not supported"},
-                status_code=400
-            )
-            return add_cors_headers(response, request)
+        headers = dict(request.headers)
+        
+        response = await factory.request(
+            method="PUT",
+            path=path,
+            headers=headers,
+            body=body,
+            params=dict(request.query_params)
+        )
+        
+        # CORS 헤더가 포함된 응답 생성
+        json_response = JSONResponse(
+            content=response.json() if response.content else {},
+            status_code=response.status_code,
+            headers=dict(response.headers)
+        )
+        
+        return add_cors_headers(json_response, request)
             
+    except ValueError as e:
+        logger.error(f"❌ 지원하지 않는 서비스: {service}")
+        response = JSONResponse(
+            content={"detail": f"Service {service} not supported"},
+            status_code=400
+        )
+        return add_cors_headers(response, request)
     except Exception as e:
         logger.error(f"PUT 프록시 오류: {str(e)}")
         response = JSONResponse(
@@ -351,37 +439,44 @@ async def proxy_put(service: str, path: str, request: Request):
         )
         return add_cors_headers(response, request)
 
-@app.delete("/api/v1/{service}/{path:path}")
+@app.delete("/{service}/{path:path}")
 async def proxy_delete(service: str, path: str, request: Request):
     logger.info(f"🎯 DELETE 프록시 호출: service={service}, path={path}")
     try:
+        # ServiceType 검증
+        service_type = ServiceType.from_string(service)
+        
+        # 프록시 팩토리 생성
+        factory = ServiceProxyFactory(service_type)
+        
+        # 요청 처리
         headers = dict(request.headers)
+        body = await request.body()
 
-        if service == "auth":
-            target_url = f"{AUTH_SERVICE_URL}/{path}"
-            logger.info(f"🎯 Auth Service로 전달: {target_url}")
-
-            async with httpx.AsyncClient() as client:
-                response = await client.delete(
-                    target_url, 
-                    headers=headers, 
-                    timeout=30.0
-                )
-                
-                json_response = JSONResponse(
-                    content=response.json() if response.content else {},
-                    status_code=response.status_code,
-                    headers=dict(response.headers)
-                )
-                
-                return add_cors_headers(json_response, request)
-        else:
-            response = JSONResponse(
-                content={"detail": f"Service {service} not supported"},
-                status_code=400
-            )
-            return add_cors_headers(response, request)
+        response = await factory.request(
+            method="DELETE",
+            path=path,
+            headers=headers,
+            body=body,
+            params=dict(request.query_params)
+        )
+        
+        # CORS 헤더가 포함된 응답 생성
+        json_response = JSONResponse(
+            content=response.json() if response.content else {},
+            status_code=response.status_code,
+            headers=dict(response.headers)
+        )
+        
+        return add_cors_headers(json_response, request)
             
+    except ValueError as e:
+        logger.error(f"❌ 지원하지 않는 서비스: {service}")
+        response = JSONResponse(
+            content={"detail": f"Service {service} not supported"},
+            status_code=400
+        )
+        return add_cors_headers(response, request)
     except Exception as e:
         logger.error(f"DELETE 프록시 오류: {str(e)}")
         response = JSONResponse(
@@ -390,39 +485,44 @@ async def proxy_delete(service: str, path: str, request: Request):
         )
         return add_cors_headers(response, request)
 
-@app.patch("/api/v1/{service}/{path:path}")
+@app.patch("/{service}/{path:path}")
 async def proxy_patch(service: str, path: str, request: Request):
     logger.info(f"🎯 PATCH 프록시 호출: service={service}, path={path}")
     try:
-        headers = dict(request.headers)
+        # ServiceType 검증
+        service_type = ServiceType.from_string(service)
+        
+        # 프록시 팩토리 생성
+        factory = ServiceProxyFactory(service_type)
+        
+        # 요청 처리
         body = await request.body()
+        headers = dict(request.headers)
 
-        if service == "auth":
-            target_url = f"{AUTH_SERVICE_URL}/{path}"
-            logger.info(f"🎯 Auth Service로 전달: {target_url}")
-
-            async with httpx.AsyncClient() as client:
-                response = await client.patch(
-                    target_url, 
-                    content=body,
-                    headers=headers, 
-                    timeout=30.0
-                )
-                
-                json_response = JSONResponse(
-                    content=response.json(),
-                    status_code=response.status_code,
-                    headers=dict(response.headers)
-                )
-                
-                return add_cors_headers(json_response, request)
-        else:
-            response = JSONResponse(
-                content={"detail": f"Service {service} not supported"},
-                status_code=400
-            )
-            return add_cors_headers(response, request)
+        response = await factory.request(
+            method="PATCH",
+            path=path,
+            headers=headers,
+            body=body,
+            params=dict(request.query_params)
+        )
+        
+        # CORS 헤더가 포함된 응답 생성
+        json_response = JSONResponse(
+            content=response.json() if response.content else {},
+            status_code=response.status_code,
+            headers=dict(response.headers)
+        )
+        
+        return add_cors_headers(json_response, request)
             
+    except ValueError as e:
+        logger.error(f"❌ 지원하지 않는 서비스: {service}")
+        response = JSONResponse(
+            content={"detail": f"Service {service} not supported"},
+            status_code=400
+        )
+        return add_cors_headers(response, request)
     except Exception as e:
         logger.error(f"PATCH 프록시 오류: {str(e)}")
         response = JSONResponse(
