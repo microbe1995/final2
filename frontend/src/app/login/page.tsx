@@ -1,21 +1,15 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuthStore } from '@/store/authStore';
+import axios from 'axios';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
   const router = useRouter();
-  const { login, isLoading, error, clearError } = useAuthStore();
-
-  // 인증 오류가 있으면 폼 오류에 추가
-  useEffect(() => {
-    if (error) {
-      clearError();
-    }
-  }, [error, clearError]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,11 +18,19 @@ export default function LoginPage() {
       return;
     }
 
+    setIsLoading(true);
+    setError('');
+
     try {
       console.log('🚀 로그인 요청:', { email, password: '***' });
       
-      // AuthStore의 login 함수 사용
-      await login({ email, password });
+      // 프록시를 통한 API 호출
+      const response = await axios.post('/api/v1/auth/login', {
+        email,
+        password
+      });
+      
+      console.log('✅ 로그인 성공:', response.data);
       
       // 성공 메시지 표시
       alert('🎉 로그인이 성공했습니다!');
@@ -38,7 +40,9 @@ export default function LoginPage() {
       
     } catch (error: any) {
       console.error('로그인 에러:', error);
-      // 에러는 AuthStore에서 자동으로 설정됨
+      setError(error.response?.data?.detail || '로그인 중 오류가 발생했습니다.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -54,7 +58,7 @@ export default function LoginPage() {
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+        <div className="bg-white py-8 px-4 shadow-sm rounded-lg sm:px-10">
           <form className="space-y-6" onSubmit={handleSubmit}>
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700">

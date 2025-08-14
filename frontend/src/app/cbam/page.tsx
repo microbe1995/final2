@@ -64,10 +64,8 @@ export default function CBAMCalculator() {
     try {
       console.log('🧮 CBAM 계산 요청:', formData);
       
-      // API URL 구성 (환경변수 기반)
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL 
-        ? `${process.env.NEXT_PUBLIC_API_URL}/api/v1/gateway/cbam/calculate`
-        : 'https://gateway-production-22ef.up.railway.app/api/v1/gateway/cbam/calculate';
+      // 로컬 개발 환경용 API URL (프록시 활용)
+      const apiUrl = '/api/v1/cbam/calculate';
       
       console.log('🔧 CBAM API URL:', apiUrl);
       
