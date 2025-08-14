@@ -99,13 +99,7 @@ app = FastAPI(
 AUTH_SERVICE_URL = os.getenv("AUTH_SERVICE_URL", "http://localhost:8000")
 logger.info(f"🔧 Auth Service URL: {AUTH_SERVICE_URL}")
 
-# CORS 설정 - 환경변수 기반
-CORS_URL = os.getenv("CORS_URL")
-if not CORS_URL:
-    CORS_URL = "https://lca-final.vercel.app"
-    logger.warning("⚠️ CORS_URL 환경변수가 설정되지 않아 기본값 사용")
-
-FRONT_ORIGIN = CORS_URL.strip()
+# CORS 설정 - 모든 출처 허용 (보안 약화)
 CORS_ALLOW_CREDENTIALS = os.getenv("CORS_ALLOW_CREDENTIALS", "true").lower() == "true"
 CORS_ALLOW_METHODS = os.getenv("CORS_ALLOW_METHODS", "GET,POST,PUT,DELETE,OPTIONS,PATCH")
 CORS_ALLOW_HEADERS = os.getenv("CORS_ALLOW_HEADERS", "Accept,Accept-Language,Content-Language,Content-Type,Authorization,X-Requested-With,Origin,Access-Control-Request-Method,Access-Control-Request-Headers")
@@ -114,19 +108,11 @@ CORS_ALLOW_HEADERS = os.getenv("CORS_ALLOW_HEADERS", "Accept,Accept-Language,Con
 ALLOWED_METHODS = [m.strip() for m in CORS_ALLOW_METHODS.split(",") if m.strip()]
 ALLOWED_HEADERS = [h.strip() for h in CORS_ALLOW_HEADERS.split(",") if h.strip()]
 
-# 허용할 origin들을 리스트로 설정
-ALLOWED_ORIGINS = [
-    FRONT_ORIGIN,
-    "https://lca-final.vercel.app",
-    "https://lca-final-9th3dtaxw-microbe95s-projects.vercel.app",
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-]
+# 모든 출처 허용 (보안 약화)
+ALLOWED_ORIGINS = ["*"]
 
 logger.info(f"🔧 CORS 설정 정보:")
-logger.info(f"🔧 CORS_URL: {CORS_URL}")
-logger.info(f"🔧 FRONT_ORIGIN: {FRONT_ORIGIN}")
-logger.info(f"🔧 ALLOWED_ORIGINS: {ALLOWED_ORIGINS}")
+logger.info(f"🔧 ALLOWED_ORIGINS: {ALLOWED_ORIGINS} (모든 출처 허용)")
 logger.info(f"🔧 ALLOWED_METHODS: {ALLOWED_METHODS}")
 logger.info(f"🔧 ALLOWED_HEADERS: {ALLOWED_HEADERS}")
 logger.info(f"🔧 CORS_ALLOW_CREDENTIALS: {CORS_ALLOW_CREDENTIALS}")
@@ -145,22 +131,17 @@ app.add_middleware(
 # CORS 헤더를 응답에 강제로 추가하는 함수
 def add_cors_headers(response: Response, request: Request) -> Response:
     """응답에 CORS 헤더를 강제로 추가합니다."""
-    origin = request.headers.get("origin")
+    origin = request.headers.get("origin", "*")
     
-    if origin in ALLOWED_ORIGINS:
-        allowed_origin = origin
-    else:
-        allowed_origin = FRONT_ORIGIN
-        logger.warning(f"⚠️ 허용되지 않은 origin: {origin}, 기본값 사용: {allowed_origin}")
-    
-    response.headers["Access-Control-Allow-Origin"] = allowed_origin
+    # 모든 출처 허용
+    response.headers["Access-Control-Allow-Origin"] = "*"
     response.headers["Access-Control-Allow-Credentials"] = str(CORS_ALLOW_CREDENTIALS).lower()
     response.headers["Access-Control-Allow-Methods"] = ", ".join(ALLOWED_METHODS)
     response.headers["Access-Control-Allow-Headers"] = ", ".join(ALLOWED_HEADERS)
     response.headers["Access-Control-Max-Age"] = "86400"
     response.headers["Access-Control-Expose-Headers"] = "*"
     
-    logger.info(f"🔧 CORS 헤더 추가: Origin={allowed_origin}, Method={request.method}")
+    logger.info(f"🔧 CORS 헤더 추가: Origin=모든 출처 허용, Method={request.method}")
     return response
 
 # --- 프록시 라우터 정의 ---
@@ -177,12 +158,10 @@ async def proxy_options(service: ServiceType, path: str, request: Request):
     """OPTIONS 요청을 처리합니다 (CORS preflight)."""
     logger.info(f"🔧 OPTIONS 프록시 요청: service={service.value}, path={path}")
     
-    origin = request.headers.get('Origin', FRONT_ORIGIN)
-    
     return Response(
         status_code=200,
         headers={
-            'Access-Control-Allow-Origin': origin,
+            'Access-Control-Allow-Origin': '*',
             'Access-Control-Allow-Credentials': 'true',
             'Access-Control-Allow-Methods': ', '.join(ALLOWED_METHODS),
             'Access-Control-Allow-Headers': ', '.join(ALLOWED_HEADERS)
