@@ -82,7 +82,8 @@ if __name__ == "__main__":
     import uvicorn
     import os
     
-    # Railway 환경변수 사용 (기본값: 8000)
-    port = int(os.getenv("PORT", "8000"))
-    logger.info(f"🚀 Auth Service 시작 - 포트: {port} (서브라우터 사용, Railway PORT: {os.getenv('PORT', '8000')})")
+    # Auth Service는 8000 포트 고정 사용
+    port = 8000
+    logger.info(f"🚀 Auth Service 시작 - 포트: {port} (고정)")
+    logger.info(f"🔧 Gateway는 8080 포트, Auth Service는 8000 포트")
     uvicorn.run(app, host="0.0.0.0", port=port, log_level="info")

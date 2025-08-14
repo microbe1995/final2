@@ -20,16 +20,17 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Auth 서비스 코드 복사
 COPY app/ .
 
-# 포트 노출 (Auth 서비스)
+# 포트 노출 (Auth Service는 8000 포트 고정)
 EXPOSE 8000
 
 # 환경 변수 설정
 ENV PYTHONPATH=/app
 ENV PYTHONUNBUFFERED=1
+ENV PORT=8000
 
-# 헬스 체크
+# 헬스 체크 (8000 포트 사용)
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD curl -f http://localhost:$PORT/health || exit 1
+    CMD curl -f http://localhost:8000/health || exit 1
 
 # Auth 서비스 실행 (Railway 환경변수 사용)
 CMD ["python", "main.py"]
