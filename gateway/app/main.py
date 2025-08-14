@@ -118,6 +118,7 @@ async def any_options(path: str, request: Request):
         allowed_origin = origin
     else:
         allowed_origin = FRONT_ORIGIN
+        logger.warning(f"⚠️ 허용되지 않은 origin: {origin}, 기본값 사용: {allowed_origin}")
     
     # 204 No Content로 응답 (CORS preflight 표준)
     response = Response(status_code=204)
@@ -128,6 +129,30 @@ async def any_options(path: str, request: Request):
     response.headers["Access-Control-Max-Age"] = "86400"
     
     logger.info(f"🔧 OPTIONS 응답 CORS 헤더: Origin={allowed_origin}")
+    return response
+
+# API 경로에 대한 구체적인 OPTIONS 핸들러 추가
+@app.options("/api/v1/{service}/{path:path}")
+async def api_options(service: str, path: str, request: Request):
+    """API 경로에 대한 OPTIONS 요청을 처리합니다 (CORS preflight)."""
+    logger.info(f"🔧 API OPTIONS 요청 처리: service={service}, path={path}")
+    
+    origin = request.headers.get("origin")
+    if origin in ALLOWED_ORIGINS:
+        allowed_origin = origin
+    else:
+        allowed_origin = FRONT_ORIGIN
+        logger.warning(f"⚠️ 허용되지 않은 origin: {origin}, 기본값 사용: {allowed_origin}")
+    
+    # 204 No Content로 응답 (CORS preflight 표준)
+    response = Response(status_code=204)
+    response.headers["Access-Control-Allow-Origin"] = allowed_origin
+    response.headers["Access-Control-Allow-Credentials"] = str(CORS_ALLOW_CREDENTIALS).lower()
+    response.headers["Access-Control-Allow-Methods"] = ", ".join(ALLOWED_METHODS)
+    response.headers["Access-Control-Allow-Headers"] = ", ".join(ALLOWED_HEADERS)
+    response.headers["Access-Control-Max-Age"] = "86400"
+    
+    logger.info(f"🔧 API OPTIONS 응답 CORS 헤더: Origin={allowed_origin}")
     return response
 
 # 요청 로깅 미들웨어
