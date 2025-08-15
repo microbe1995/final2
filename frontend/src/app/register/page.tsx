@@ -29,6 +29,13 @@ export default function RegisterPage() {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // 사용자명 검증 (영문, 숫자, 언더스코어만)
+    const usernamePattern = /^[a-zA-Z0-9_]+$/;
+    if (!usernamePattern.test(formData.username)) {
+      alert('❌ 사용자명은 영문, 숫자, 언더스코어(_)만 사용 가능합니다.');
+      return;
+    }
+    
     // 비밀번호 확인 검증
     if (formData.password !== formData.confirmPassword) {
       alert('❌ 비밀번호가 일치하지 않습니다.');
@@ -123,10 +130,13 @@ export default function RegisterPage() {
                 name="username"
                 value={formData.username}
                 onChange={handleInputChange}
-                placeholder="사용자명"
+                placeholder="사용자명 (영문, 숫자, 언더스코어만)"
+                pattern="^[a-zA-Z0-9_]+$"
+                title="영문, 숫자, 언더스코어(_)만 사용 가능합니다"
                 className="w-full px-4 py-3 text-gray-800 placeholder-gray-400 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition-all duration-300"
                 required
               />
+              <p className="text-xs text-gray-500 mt-1">영문, 숫자, 언더스코어(_)만 사용 가능합니다</p>
             </div>
 
             {/* Full Name Input */}
