@@ -10,8 +10,8 @@ from fastapi import Request
 from fastapi.responses import JSONResponse
 from enum import Enum
 
-from app.domain.entity.service_entity import ServiceInfo
-from app.domain.repository.service_repository import ServiceRepository
+from ..entity.service_entity import ServiceInfo
+from ..repository.service_repository import ServiceRepository
 
 # 로거 설정
 logger = logging.getLogger(__name__)

@@ -6,7 +6,7 @@ from typing import Dict, List, Optional, Any
 import logging
 from datetime import datetime
 
-from app.domain.entity.service_entity import ServiceInfo, ServiceHealth
+from ..entity.service_entity import ServiceInfo, ServiceHealth
 
 # 로거 설정
 logger = logging.getLogger(__name__)

@@ -19,8 +19,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # 애플리케이션 코드 복사 (필요한 파일만)
-COPY app/main.py .
-COPY app/__init__.py .
+COPY app/ .
 
 EXPOSE 8080
 
