@@ -7,8 +7,8 @@ from fastapi.responses import JSONResponse
 from typing import Dict, Any
 import logging
 
-from ..service.proxy_service import ProxyService
-from ..schema.proxy_schema import ProxyRequest, ProxyResponse
+from app.domain.service.proxy_service import ProxyService
+from app.domain.schema.proxy_schema import ProxyRequest, ProxyResponse
 
 # 로거 설정
 logger = logging.getLogger(__name__)
