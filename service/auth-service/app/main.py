@@ -1,5 +1,6 @@
 """
-Auth Service 메인 파일 - 직접 엔드포인트 정의
+Auth Service 메인 파일 - 도메인 구조로 리팩토링
+기존 코드를 도메인 레이어로 분리하여 유지보수성 향상
 """
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
@@ -23,14 +24,14 @@ logger = logging.getLogger("auth_service_main")
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """애플리케이션 생명주기 관리"""
-    logger.info("🔐 Auth Service 시작 (직접 엔드포인트)")
+    logger.info("🔐 Auth Service 시작 (도메인 구조 적용)")
     yield
     logger.info("🛑 Auth Service 종료")
 
 # FastAPI 앱 생성
 app = FastAPI(
     title="Auth Service",
-    description="직접 엔드포인트를 정의하는 인증 서비스",
+    description="도메인 구조로 리팩토링된 인증 서비스",
     version="1.0.0",
     docs_url="/docs",
     lifespan=lifespan
@@ -49,119 +50,33 @@ app.add_middleware(
     max_age=86400,
 )
 
-# 기본 엔드포인트
-@app.get("/")
+# ---- 도메인 라우터 등록 ----
+# 인증 컨트롤러의 라우터를 등록
+from .domain.controller.auth_controller import auth_router
+
+app.include_router(auth_router)
+
+# ---- 기본 엔드포인트 ----
+@app.get("/", summary="Auth Service 루트")
 async def root():
-    """메인 루트 엔드포인트"""
-    logger.info("🔵 메인 / 엔드포인트 호출됨")
+    """Auth Service 루트 엔드포인트"""
     return {
-        "message": "Auth Service", 
-        "version": "1.0.0", 
-        "status": "running",
+        "message": "Auth Service - 도메인 구조로 리팩토링됨", 
+        "version": "1.0.0",
+        "architecture": "Domain-Driven Design",
         "docs": "/docs",
-        "mode": "direct-endpoints"
+        "endpoints": {
+            "auth": "/auth",
+            "health": "/health"
+        }
     }
 
-@app.get("/health")
-async def health_check():
-    """메인 헬스 체크 엔드포인트"""
-    logger.info("🔵 메인 /health 엔드포인트 호출됨")
-    return {"status": "healthy", "service": "auth", "mode": "direct-endpoints"}
+@app.get("/health", summary="Auth Service 헬스 체크")
+async def health_check_root():
+    """Auth Service 상태 확인"""
+    return {"status": "healthy", "service": "auth", "version": "1.0.0"}
 
-# 직접 엔드포인트 정의
-@app.post("/register")
-async def register_user(user_data: dict):
-    """사용자 회원가입"""
-    logger.info(f"🔵 /register 엔드포인트 호출됨")
-    logger.info(f"🔵 받은 데이터: {user_data}")
-    
-    try:
-        # 간단한 응답 (실제로는 데이터베이스 처리)
-        logger.info(f"✅ 회원가입 성공: {user_data.get('email', 'unknown')}")
-        return {
-            "message": "회원가입 성공",
-            "user": {
-                "username": user_data.get('username'),
-                "email": user_data.get('email'),
-                "full_name": user_data.get('full_name'),
-                "id": "temp_id_123"  # 임시 ID
-            },
-            "status": "success"
-        }
-        
-    except Exception as e:
-        logger.error(f"❌ 회원가입 실패: {str(e)}")
-        return {"error": f"회원가입 실패: {str(e)}", "status": "error"}
-
-@app.post("/auth/register")
-async def register_user_via_gateway(user_data: dict):
-    """Gateway를 통한 사용자 회원가입"""
-    logger.info(f"🔵 /auth/register 엔드포인트 호출됨 (Gateway 프록시)")
-    logger.info(f"🔵 받은 데이터: {user_data}")
-    
-    try:
-        # 간단한 응답 (실제로는 데이터베이스 처리)
-        logger.info(f"✅ 회원가입 성공: {user_data.get('email', 'unknown')}")
-        return {
-            "message": "회원가입 성공",
-            "user": {
-                "username": user_data.get('username'),
-                "email": user_data.get('email'),
-                "full_name": user_data.get('full_name'),
-                "id": "temp_id_123"  # 임시 ID
-            },
-            "status": "success"
-        }
-        
-    except Exception as e:
-        logger.error(f"❌ 회원가입 실패: {str(e)}")
-        return {"error": f"회원가입 실패: {str(e)}", "status": "error"}
-
-@app.post("/login")
-async def login_user(user_credentials: dict):
-    """사용자 로그인"""
-    logger.info(f"🔵 /login 엔드포인트 호출됨")
-    logger.info(f"🔵 받은 데이터: {user_credentials}")
-    
-    try:
-        # 간단한 응답 (실제로는 인증 처리)
-        logger.info(f"✅ 로그인 성공: {user_credentials.get('email', 'unknown')}")
-        return {
-            "message": "로그인 성공",
-            "user": {
-                "email": user_credentials.get('email'),
-                "token": "temp_token_123"  # 임시 토큰
-            },
-            "status": "success"
-        }
-        
-    except Exception as e:
-        logger.error(f"❌ 로그인 실패: {str(e)}")
-        return {"error": f"로그인 실패: {str(e)}", "status": "error"}
-
-@app.post("/auth/login")
-async def login_user_via_gateway(user_credentials: dict):
-    """Gateway를 통한 사용자 로그인"""
-    logger.info(f"🔵 /auth/login 엔드포인트 호출됨 (Gateway 프록시)")
-    logger.info(f"🔵 받은 데이터: {user_credentials}")
-    
-    try:
-        # 간단한 응답 (실제로는 인증 처리)
-        logger.info(f"✅ 로그인 성공: {user_credentials.get('email', 'unknown')}")
-        return {
-            "message": "로그인 성공",
-            "user": {
-                "email": user_credentials.get('email'),
-                "token": "temp_token_123"  # 임시 토큰
-            },
-            "status": "success"
-        }
-        
-    except Exception as e:
-        logger.error(f"❌ 로그인 실패: {str(e)}")
-        return {"error": f"로그인 실패: {str(e)}", "status": "error"}
-
-logger.info("🔧 Auth Service 설정 완료 - 직접 엔드포인트 정의됨")
+logger.info("🔧 Auth Service 설정 완료 - 도메인 구조 적용됨")
 
 # Docker 환경에서 포트 설정 (Railway 환경변수 사용)
 if __name__ == "__main__":
