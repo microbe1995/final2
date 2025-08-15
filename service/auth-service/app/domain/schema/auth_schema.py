@@ -17,7 +17,7 @@ class UserRegistrationRequest(BaseModel):
         confirm_password: 비밀번호 확인
         full_name: 전체 이름
     """
-    username: str = Field(..., description="사용자명", min_length=3, max_length=50, pattern="^[a-zA-Z0-9_]+$")
+    username: str = Field(..., description="사용자명", min_length=2, max_length=50, pattern="^[가-힣a-zA-Z0-9_]+$")
     email: EmailStr = Field(..., description="이메일 주소")
     password: str = Field(..., description="비밀번호", min_length=6, max_length=100)
     confirm_password: str = Field(..., description="비밀번호 확인")
@@ -34,9 +34,9 @@ class UserRegistrationRequest(BaseModel):
     @field_validator('username')
     @classmethod
     def validate_username(cls, v):
-        """사용자명 검증"""
-        if not v.replace('_', '').replace('-', '').isalnum():
-            raise ValueError('사용자명은 영문, 숫자, 언더스코어만 사용 가능합니다')
+        """사용자명 검증 - 한글, 영문, 숫자, 언더스코어 허용"""
+        if not v.replace('_', '').replace('-', '').replace(' ', '').isalnum() and not any(char in '가-힣' for char in v):
+            raise ValueError('사용자명은 한글, 영문, 숫자, 언더스코어만 사용 가능합니다')
         return v
 
 class UserLoginRequest(BaseModel):

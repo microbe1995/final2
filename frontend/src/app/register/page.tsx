@@ -29,10 +29,10 @@ export default function RegisterPage() {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // 사용자명 검증 (영문, 숫자, 언더스코어만)
-    const usernamePattern = /^[a-zA-Z0-9_]+$/;
+    // 사용자명 검증 (한글, 영문, 숫자, 언더스코어 허용)
+    const usernamePattern = /^[가-힣a-zA-Z0-9_]+$/;
     if (!usernamePattern.test(formData.username)) {
-      alert('❌ 사용자명은 영문, 숫자, 언더스코어(_)만 사용 가능합니다.');
+      alert('❌ 사용자명은 한글, 영문, 숫자, 언더스코어(_)만 사용 가능합니다.');
       return;
     }
     
@@ -130,13 +130,13 @@ export default function RegisterPage() {
                 name="username"
                 value={formData.username}
                 onChange={handleInputChange}
-                placeholder="사용자명 (영문, 숫자, 언더스코어만)"
-                pattern="^[a-zA-Z0-9_]+$"
-                title="영문, 숫자, 언더스코어(_)만 사용 가능합니다"
+                placeholder="사용자명 (한글, 영문, 숫자, 언더스코어)"
+                pattern="^[가-힣a-zA-Z0-9_]+$"
+                title="한글, 영문, 숫자, 언더스코어(_)만 사용 가능합니다"
                 className="w-full px-4 py-3 text-gray-800 placeholder-gray-400 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition-all duration-300"
                 required
               />
-              <p className="text-xs text-gray-500 mt-1">영문, 숫자, 언더스코어(_)만 사용 가능합니다</p>
+              <p className="text-xs text-gray-500 mt-1">한글, 영문, 숫자, 언더스코어(_)만 사용 가능합니다</p>
             </div>
 
             {/* Full Name Input */}
