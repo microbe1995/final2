@@ -18,8 +18,8 @@ ENV PORT=8080
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# 애플리케이션 코드 복사
-COPY app/ .
+# 애플리케이션 코드 복사 (현재 폴더 구조 그대로 유지)
+COPY . .
 
 EXPOSE 8080
 
