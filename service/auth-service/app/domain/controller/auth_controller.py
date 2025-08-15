@@ -6,8 +6,8 @@ from fastapi import APIRouter, HTTPException, Depends
 from fastapi.responses import JSONResponse
 import logging
 
-from ..service.auth_service import AuthService
-from ..schema.auth_schema import (
+from app.domain.service.auth_service import AuthService
+from app.domain.schema.auth_schema import (
     UserRegistrationRequest, UserLoginRequest,
     UserRegistrationResponse, UserLoginResponse,
     ErrorResponse, HealthResponse

@@ -8,9 +8,9 @@ import secrets
 from typing import Optional, Dict, Any
 from datetime import datetime, timedelta
 
-from ..entity.user_entity import User, UserCredentials
-from ..repository.user_repository import UserRepository
-from ..schema.auth_schema import UserRegistrationRequest, UserLoginRequest
+from app.domain.entity.user_entity import User, UserCredentials
+from app.domain.repository.user_repository import UserRepository
+from app.domain.schema.auth_schema import UserRegistrationRequest, UserLoginRequest
 
 # 로거 설정
 logger = logging.getLogger(__name__)

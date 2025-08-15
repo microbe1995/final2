@@ -7,7 +7,7 @@ import logging
 from datetime import datetime
 import uuid
 
-from ..entity.user_entity import User, UserCredentials
+from app.domain.entity.user_entity import User, UserCredentials
 
 # 로거 설정
 logger = logging.getLogger(__name__)
