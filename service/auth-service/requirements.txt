@@ -8,3 +8,8 @@ email-validator==2.2.0
 
 # Railway 배포를 위한 추가 패키지
 gunicorn==21.2.0
+
+# Database 연동을 위한 패키지
+sqlalchemy==2.0.23
+asyncpg==0.29.0
+alembic==1.13.1

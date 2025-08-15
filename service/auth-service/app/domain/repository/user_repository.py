@@ -6,8 +6,13 @@ from typing import Optional, List, Dict, Any
 import logging
 from datetime import datetime
 import uuid
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, update, delete
+from sqlalchemy.orm import selectinload
 
 from app.domain.entity.user_entity import User, UserCredentials
+from app.domain.entity.db_models import UserDB
+from app.domain.entity.database import database
 
 # 로거 설정
 logger = logging.getLogger(__name__)
@@ -22,12 +27,17 @@ class UserRepository:
     
     def __init__(self):
         """사용자 저장소 초기화"""
-        # 메모리 기반 저장소 (향후 데이터베이스로 확장 가능)
-        self._users: Dict[str, User] = {}
-        self._users_by_email: Dict[str, str] = {}  # email -> user_id 매핑
-        self._users_by_username: Dict[str, str] = {}  # username -> user_id 매핑
+        # 데이터베이스 연결 확인
+        self.use_database = database.database_url is not None
         
-        logger.info("✅ 사용자 저장소 초기화 완료")
+        if self.use_database:
+            logger.info("✅ PostgreSQL 데이터베이스 저장소 사용")
+        else:
+            logger.info("⚠️ 메모리 저장소 사용 (DATABASE_URL 미설정)")
+            # 메모리 기반 저장소 (fallback)
+            self._users: Dict[str, User] = {}
+            self._users_by_email: Dict[str, str] = {}  # email -> user_id 매핑
+            self._users_by_username: Dict[str, str] = {}  # username -> user_id 매핑
     
     async def create_user(self, user: User) -> Optional[User]:
         """
@@ -45,6 +55,58 @@ class UserRepository:
             user.created_at = datetime.now()
             user.updated_at = datetime.now()
             
+            if self.use_database:
+                # PostgreSQL 데이터베이스에 저장
+                return await self._create_user_db(user)
+            else:
+                # 메모리 저장소에 저장
+                return await self._create_user_memory(user)
+                
+        except Exception as e:
+            logger.error(f"❌ 사용자 생성 실패: {str(e)}")
+            return None
+    
+    async def _create_user_db(self, user: User) -> Optional[User]:
+        """PostgreSQL 데이터베이스에 사용자 생성"""
+        try:
+            # 중복 검사
+            if await self.get_user_by_email(user.email):
+                logger.warning(f"❌ 이메일 중복: {user.email}")
+                return None
+            
+            if await self.get_user_by_username(user.username):
+                logger.warning(f"❌ 사용자명 중복: {user.username}")
+                return None
+            
+            # UserDB 모델로 변환
+            user_db = UserDB(
+                id=user.id,
+                username=user.username,
+                email=user.email,
+                full_name=user.full_name,
+                password_hash=user.password_hash,
+                is_active=user.is_active,
+                created_at=user.created_at,
+                updated_at=user.updated_at,
+                last_login=user.last_login
+            )
+            
+            # 데이터베이스에 저장
+            async with database.get_async_session() as session:
+                session.add(user_db)
+                await session.commit()
+                await session.refresh(user_db)
+            
+            logger.info(f"✅ PostgreSQL 사용자 생성 성공: {user.email}")
+            return user
+            
+        except Exception as e:
+            logger.error(f"❌ PostgreSQL 사용자 생성 실패: {str(e)}")
+            return None
+    
+    async def _create_user_memory(self, user: User) -> Optional[User]:
+        """메모리 저장소에 사용자 생성"""
+        try:
             # 중복 검사
             if await self.get_user_by_email(user.email):
                 logger.warning(f"❌ 이메일 중복: {user.email}")
@@ -59,11 +121,11 @@ class UserRepository:
             self._users_by_email[user.email] = user.id
             self._users_by_username[user.username] = user.id
             
-            logger.info(f"✅ 사용자 생성 성공: {user.email}")
+            logger.info(f"✅ 메모리 사용자 생성 성공: {user.email}")
             return user
             
         except Exception as e:
-            logger.error(f"❌ 사용자 생성 실패: {str(e)}")
+            logger.error(f"❌ 메모리 사용자 생성 실패: {str(e)}")
             return None
     
     async def get_user_by_id(self, user_id: str) -> Optional[User]:

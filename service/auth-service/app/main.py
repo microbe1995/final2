@@ -25,7 +25,31 @@ logger = logging.getLogger("auth_service_main")
 async def lifespan(app: FastAPI):
     """애플리케이션 생명주기 관리"""
     logger.info("🔐 Auth Service 시작 (도메인 구조 적용)")
+    
+    # 데이터베이스 연결 및 테이블 생성
+    try:
+        from app.domain.entity.database import database
+        if database.database_url:
+            success = database.create_tables()
+            if success:
+                logger.info("✅ 데이터베이스 테이블 생성/확인 완료")
+            else:
+                logger.warning("⚠️ 데이터베이스 테이블 생성 실패")
+        else:
+            logger.warning("⚠️ DATABASE_URL 미설정 - 메모리 저장소 사용")
+    except Exception as e:
+        logger.error(f"❌ 데이터베이스 초기화 실패: {str(e)}")
+    
     yield
+    
+    # 데이터베이스 연결 종료
+    try:
+        from app.domain.entity.database import database
+        database.close()
+        logger.info("🔌 데이터베이스 연결 종료")
+    except Exception as e:
+        logger.error(f"❌ 데이터베이스 연결 종료 실패: {str(e)}")
+    
     logger.info("🛑 Auth Service 종료")
 
 # FastAPI 앱 생성

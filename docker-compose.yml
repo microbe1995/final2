@@ -16,6 +16,20 @@ services:
     networks:
       - greensteel-network
 
+  # PostgreSQL 데이터베이스
+  postgres:
+    image: postgres:15-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=cbam_db
+      - POSTGRES_USER=cbam_user
+      - POSTGRES_PASSWORD=cbam_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - greensteel-network
+
   # 인증 서비스
   auth-service:
     build: ./service/auth-service
@@ -23,6 +37,13 @@ services:
       - "8000:8000"
     environment:
       - PORT=8000
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=cbam_db
+      - DB_USER=cbam_user
+      - DB_PASSWORD=cbam_password
+    depends_on:
+      - postgres
     networks:
       - greensteel-network
 
@@ -49,3 +70,6 @@ services:
 networks:
   greensteel-network:
     driver: bridge
+
+volumes:
+  postgres_data:
