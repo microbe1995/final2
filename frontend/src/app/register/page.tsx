@@ -35,13 +35,14 @@ export default function RegisterPage() {
       return;
     }
     
-    // 입력된 데이터를 JSON 형태로 alert에 표시
+    // 입력된 데이터를 JSON 형태로 alert에 표시 (실제 전송 데이터와 동일하게)
     const registerData = {
       "회원가입 정보": {
-        "사용자명": formData.username,
-        "이메일": formData.email,
-        "전체 이름": formData.full_name || "미입력",
-        "비밀번호": formData.password
+        "username": formData.username,
+        "email": formData.email,
+        "full_name": formData.full_name || "미입력",
+        "password": formData.password,
+        "confirm_password": formData.password
       }
     };
     
