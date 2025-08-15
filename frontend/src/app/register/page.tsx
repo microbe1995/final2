@@ -77,6 +77,7 @@ export default function RegisterPage() {
         username: formData.username,
         email: formData.email,
         password: formData.password,
+        confirm_password: formData.confirmPassword,  // confirm_password 필드 추가
         full_name: formData.full_name || undefined
       };
       
