@@ -12,8 +12,8 @@ from dotenv import load_dotenv
 from contextlib import asynccontextmanager
 
 # 도메인 레이어 import
-from domain.controller.proxy_controller import proxy_router
-from domain.service.proxy_service import ProxyService
+from .domain.controller.proxy_controller import proxy_router
+from .domain.service.proxy_service import ProxyService
 
 # 환경 변수 로드 (.env는 로컬에서만 사용, Railway에선 대시보드 변수 사용)
 if not os.getenv("RAILWAY_ENVIRONMENT"):
