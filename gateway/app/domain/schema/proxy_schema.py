@@ -3,7 +3,7 @@
 Gateway의 프록시 기능에서 사용되는 데이터 모델 정의
 """
 from typing import Optional, Dict, Any
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 from datetime import datetime
 
 class ProxyRequest(BaseModel):
@@ -20,12 +20,13 @@ class ProxyRequest(BaseModel):
     """
     service: str = Field(..., description="대상 서비스명", min_length=1)
     path: str = Field(..., description="요청 경로", min_length=1)
-    method: str = Field(..., description="HTTP 메서드", regex="^(GET|POST|PUT|DELETE|PATCH)$")
+    method: str = Field(..., description="HTTP 메서드", pattern="^(GET|POST|PUT|DELETE|PATCH)$")
     headers: Optional[Dict[str, str]] = Field(default_factory=dict, description="요청 헤더")
     body: Optional[bytes] = Field(default=None, description="요청 본문")
     params: Optional[Dict[str, Any]] = Field(default_factory=dict, description="쿼리 파라미터")
     
-    @validator('service')
+    @field_validator('service')
+    @classmethod
     def validate_service(cls, v):
         """서비스명 검증"""
         allowed_services = ['auth', 'discovery', 'user']
@@ -33,7 +34,8 @@ class ProxyRequest(BaseModel):
             raise ValueError(f'지원하지 않는 서비스: {v}. 지원 서비스: {allowed_services}')
         return v
     
-    @validator('method')
+    @field_validator('method')
+    @classmethod
     def validate_method(cls, v):
         """HTTP 메서드 검증"""
         return v.upper()
@@ -63,7 +65,8 @@ class ProxyResponse(BaseModel):
     response_time: Optional[float] = Field(default=None, description="응답 시간 (밀리초)", ge=0)
     timestamp: datetime = Field(default_factory=datetime.utcnow, description="응답 시간")
     
-    @validator('status_code')
+    @field_validator('status_code')
+    @classmethod
     def validate_status_code(cls, v):
         """상태 코드 검증"""
         if v < 100 or v > 599:
@@ -87,7 +90,8 @@ class ServiceHealthRequest(BaseModel):
     service_name: str = Field(..., description="서비스명", min_length=1)
     timeout: Optional[float] = Field(default=30.0, description="타임아웃 시간 (초)", gt=0, le=300)
     
-    @validator('service_name')
+    @field_validator('service_name')
+    @classmethod
     def validate_service_name(cls, v):
         """서비스명 검증"""
         allowed_services = ['auth', 'discovery', 'user']
@@ -108,7 +112,7 @@ class ServiceHealthResponse(BaseModel):
         timestamp: 체크 시간
     """
     service_name: str = Field(..., description="서비스명")
-    status: str = Field(..., description="서비스 상태", regex="^(healthy|unhealthy|error|unknown)$")
+    status: str = Field(..., description="서비스 상태", pattern="^(healthy|unhealthy|error|unknown)$")
     response_time: Optional[float] = Field(default=None, description="응답 시간 (밀리초)", ge=0)
     status_code: Optional[int] = Field(default=None, description="HTTP 상태 코드", ge=100, le=599)
     error_message: Optional[str] = Field(default=None, description="오류 메시지")
@@ -131,7 +135,7 @@ class GatewayStatusResponse(BaseModel):
         services_count: 등록된 서비스 수
         timestamp: 상태 확인 시간
     """
-    status: str = Field(..., description="Gateway 상태", regex="^(healthy|unhealthy|error)$")
+    status: str = Field(..., description="Gateway 상태", pattern="^(healthy|unhealthy|error)$")
     version: str = Field(..., description="Gateway 버전")
     uptime: Optional[float] = Field(default=None, description="가동 시간 (초)", ge=0)
     services_count: int = Field(..., description="등록된 서비스 수", ge=0)
