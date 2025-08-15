@@ -64,8 +64,10 @@ export default function CBAMCalculator() {
     try {
       console.log('🧮 CBAM 계산 요청:', formData);
       
-      // 로컬 개발 환경용 API URL (프록시 활용)
-      const apiUrl = '/e/v2/cbam/calculate';
+      // API URL 설정 - 환경 변수 또는 기본값 사용
+      const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL 
+        ? `${process.env.NEXT_PUBLIC_API_BASE_URL}/cbam/calculate`
+        : '/api/v1/cbam/calculate';
       
       console.log('🔧 CBAM API URL:', apiUrl);
       

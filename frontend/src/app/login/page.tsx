@@ -24,21 +24,10 @@ export default function LoginPage() {
     try {
       console.log('🚀 로그인 요청:', { email, password: '***' });
       
-      // 환경별 API URL 설정
-      let apiUrl: string;
-      
-      if (process.env.NODE_ENV === 'production') {
-        // 프로덕션 환경 (Vercel) - Gateway 프록시 엔드포인트 사용
-        apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL + '/auth/login';
-      } else {
-        // 개발 환경 (로컬) - Gateway 프록시 엔드포인트 사용
-        apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL + '/auth/login';
-      }
-      
-      // 환경 변수가 없으면 기본값 사용
-      if (!process.env.NEXT_PUBLIC_API_BASE_URL) {
-        apiUrl = 'http://localhost:8080/e/v2/auth/login';
-      }
+      // API URL 설정 - 환경 변수 또는 기본값 사용
+      const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL 
+        ? `${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/login`
+        : 'http://localhost:8080/api/v1/auth/login';
       
       console.log(`🔗 로그인 API URL: ${apiUrl}`);
       

@@ -52,32 +52,21 @@ export default function RegisterPage() {
     console.log('📝 프론트엔드 회원가입 입력값:', JSON.stringify(registerData, null, 2));
     
     try {
-      // 환경별 API URL 설정
-      let apiUrl: string;
-      
-      if (process.env.NODE_ENV === 'production') {
-        // 프로덕션 환경 (Vercel) - Gateway 프록시 엔드포인트 사용
-        apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL + '/auth/register';
-      } else {
-        // 개발 환경 (로컬) - Gateway 프록시 엔드포인트 사용
-        apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL + '/auth/register';
-      }
-      
-      // 환경 변수가 없으면 기본값 사용
-      if (!process.env.NEXT_PUBLIC_API_BASE_URL) {
-        apiUrl = 'http://localhost:8080/api/v1/auth/register';
-      }
+      // API URL 설정 - 환경 변수 또는 기본값 사용
+      const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL 
+        ? `${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/register`
+        : 'http://localhost:8080/api/v1/auth/register';
       
       console.log(`😂 apiUrl: ${apiUrl}`);
       console.log(`🌍 환경: ${process.env.NODE_ENV}`);
       console.log(`🔗 전체 URL: ${apiUrl}`);
       
-      // 전송할 데이터 준비
+      // 전송할 데이터 준비 - confirm_password 필드 강제 설정
       const requestData = {
         username: formData.username,
         email: formData.email,
         password: formData.password,
-        confirm_password: formData.confirmPassword,  // confirm_password 필드 추가
+        confirm_password: formData.password,  // password와 동일한 값으로 설정
         full_name: formData.full_name || undefined
       };
       

@@ -5,13 +5,13 @@ import './globals.css';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'PWA Next.js App',
-  description: 'Next.js 기반 PWA 애플리케이션',
+  title: 'CBAM Calculator - 탄소국경조정메커니즘 계산기',
+  description: 'Carbon Border Adjustment Mechanism Calculator - 탄소국경조정메커니즘 계산기',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'PWA App',
+    title: 'CBAM Calculator',
   },
   icons: {
     icon: [
@@ -39,11 +39,11 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <head>
-        <meta name="application-name" content="PWA Next.js App" />
+        <meta name="application-name" content="CBAM Calculator" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <meta name="apple-mobile-web-app-title" content="PWA App" />
-        <meta name="description" content="Next.js 기반 PWA 애플리케이션" />
+        <meta name="apple-mobile-web-app-title" content="CBAM Calculator" />
+        <meta name="description" content="Carbon Border Adjustment Mechanism Calculator - 탄소국경조정메커니즘 계산기" />
         <meta name="format-detection" content="telephone=no" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="msapplication-config" content="/browserconfig.xml" />
