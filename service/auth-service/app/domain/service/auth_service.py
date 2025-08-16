@@ -18,12 +18,12 @@
 import logging
 import hashlib
 import secrets
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, Tuple
 from datetime import datetime, timedelta
 
 from app.domain.entity.user_entity import User, UserCredentials
 from app.domain.repository.user_repository import UserRepository
-from app.domain.schema.auth_schema import UserRegistrationRequest, UserLoginRequest
+from app.domain.schema.auth_schema import UserRegistrationRequest, UserLoginRequest, UserUpdateRequest, PasswordChangeRequest, UserDeleteRequest
 
 # ============================================================================
 # 🔧 로거 설정

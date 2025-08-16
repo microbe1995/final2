@@ -16,198 +16,313 @@
 # 📦 필요한 모듈 import
 # ============================================================================
 
-from fastapi import APIRouter, HTTPException, Depends
-from fastapi.responses import JSONResponse
 import logging
-
+from fastapi import APIRouter, Depends, HTTPException, status
 from app.domain.service.auth_service import AuthService
+from app.domain.repository.user_repository import UserRepository
 from app.domain.schema.auth_schema import (
-    UserRegistrationRequest, UserLoginRequest,
-    UserRegistrationResponse, UserLoginResponse,
-    ErrorResponse, HealthResponse
+    UserRegistrationRequest, UserLoginRequest, UserUpdateRequest,
+    PasswordChangeRequest, UserDeleteRequest, AuthResponse, UserResponse, MessageResponse
 )
 
 # ============================================================================
-# 🔧 로거 설정 및 기본 구성
+# 🔧 로거 설정
 # ============================================================================
 
 logger = logging.getLogger(__name__)
 
 # ============================================================================
-# 🚪 인증 라우터 생성
+# 🚀 라우터 생성
 # ============================================================================
 
-# 인증 라우터 생성
-auth_router = APIRouter(prefix="/auth", tags=["Authentication"])
+auth_router = APIRouter(prefix="/auth", tags=["인증"])
 
 # ============================================================================
-# 🔌 의존성 주입
+# 🔧 의존성 주입
 # ============================================================================
 
-def get_auth_service() -> AuthService:
+def get_user_repository() -> UserRepository:
+    """사용자 저장소 의존성 주입"""
+    return UserRepository()
+
+def get_auth_service(user_repository: UserRepository = Depends(get_user_repository)) -> AuthService:
     """인증 서비스 의존성 주입"""
-    return AuthService()
+    return AuthService(user_repository)
 
 # ============================================================================
 # 🔐 사용자 인증 엔드포인트
 # ============================================================================
 
-@auth_router.post("/register", response_model=UserRegistrationResponse, summary="사용자 회원가입")
+@auth_router.post("/register", response_model=AuthResponse, status_code=status.HTTP_201_CREATED)
 async def register_user(
-    registration_data: UserRegistrationRequest,
+    request: UserRegistrationRequest,
     auth_service: AuthService = Depends(get_auth_service)
 ):
     """
     사용자 회원가입
     
-    Args:
-        registration_data: 회원가입 요청 데이터
-        auth_service: 인증 서비스 인스턴스
-    
-    Returns:
-        회원가입 결과
+    - **username**: 사용자명 (한글, 영문, 숫자, 언더스코어 허용)
+    - **email**: 이메일 주소
+    - **full_name**: 전체 이름 (선택사항)
+    - **password**: 비밀번호 (최소 6자)
+    - **confirm_password**: 비밀번호 확인
     """
     try:
-        logger.info(f"🔐 회원가입 요청: {registration_data.email}")
+        logger.info(f"🔐 회원가입 요청: {request.email}")
         
-        # 회원가입 처리
-        result = await auth_service.register_user(registration_data)
+        user, token = await auth_service.register_user(request)
         
-        if result["status"] == "success":
-            logger.info(f"✅ 회원가입 성공: {registration_data.email}")
-            return UserRegistrationResponse(**result)
-        else:
-            logger.warning(f"❌ 회원가입 실패: {registration_data.email}")
-            raise HTTPException(
-                status_code=400,
-                detail=result.get("error", "회원가입에 실패했습니다")
+        logger.info(f"✅ 회원가입 성공: {request.email}")
+        
+        return AuthResponse(
+            access_token=token,
+            token_type="bearer",
+            user=UserResponse(
+                id=user.id,
+                username=user.username,
+                email=user.email,
+                full_name=user.full_name,
+                is_active=user.is_active,
+                created_at=user.created_at.isoformat() if user.created_at else None,
+                updated_at=user.updated_at.isoformat() if user.updated_at else None,
+                last_login=user.last_login.isoformat() if user.last_login else None
             )
-            
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"❌ 회원가입 처리 중 오류: {str(e)}")
+        )
+        
+    except ValueError as e:
+        logger.warning(f"❌ 회원가입 실패: {request.email} - {str(e)}")
         raise HTTPException(
-            status_code=500,
-            detail="서버 내부 오류가 발생했습니다"
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+    except Exception as e:
+        logger.error(f"❌ 회원가입 오류: {request.email} - {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="사용자 생성 중 오류가 발생했습니다"
         )
 
-@auth_router.post("/login", response_model=UserLoginResponse, summary="사용자 로그인")
+@auth_router.post("/login", response_model=AuthResponse)
 async def login_user(
-    login_data: UserLoginRequest,
+    request: UserLoginRequest,
     auth_service: AuthService = Depends(get_auth_service)
 ):
     """
     사용자 로그인
     
-    Args:
-        login_data: 로그인 요청 데이터
-        auth_service: 인증 서비스 인스턴스
-    
-    Returns:
-        로그인 결과
+    - **email**: 이메일 주소
+    - **password**: 비밀번호
     """
     try:
-        logger.info(f"🔐 로그인 요청: {login_data.email}")
+        logger.info(f"🔐 로그인 요청: {request.email}")
         
-        # 로그인 처리
-        result = await auth_service.login_user(login_data)
+        user, token = await auth_service.login_user(request)
         
-        if result["status"] == "success":
-            logger.info(f"✅ 로그인 성공: {login_data.email}")
-            return UserLoginResponse(**result)
-        else:
-            logger.warning(f"❌ 로그인 실패: {login_data.email}")
-            raise HTTPException(
-                status_code=401,
-                detail=result.get("error", "로그인에 실패했습니다")
+        logger.info(f"✅ 로그인 성공: {request.email}")
+        
+        return AuthResponse(
+            access_token=token,
+            token_type="bearer",
+            user=UserResponse(
+                id=user.id,
+                username=user.username,
+                email=user.email,
+                full_name=user.full_name,
+                is_active=user.is_active,
+                created_at=user.created_at.isoformat() if user.created_at else None,
+                updated_at=user.updated_at.isoformat() if user.updated_at else None,
+                last_login=user.last_login.isoformat() if user.last_login else None
             )
-            
+        )
+        
+    except ValueError as e:
+        logger.warning(f"❌ 로그인 실패: {request.email} - {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="이메일 또는 비밀번호가 잘못되었습니다"
+        )
+    except Exception as e:
+        logger.error(f"❌ 로그인 오류: {request.email} - {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="로그인 중 오류가 발생했습니다"
+        )
+
+# ============================================================================
+# ✏️ 회원 정보 관리 엔드포인트
+# ============================================================================
+
+@auth_router.put("/profile", response_model=UserResponse)
+async def update_user_profile(
+    request: UserUpdateRequest,
+    user_id: str,  # TODO: JWT 토큰에서 추출
+    auth_service: AuthService = Depends(get_auth_service)
+):
+    """
+    회원 정보 수정
+    
+    - **username**: 새 사용자명 (선택사항)
+    - **full_name**: 새 전체 이름 (선택사항)
+    - **current_password**: 현재 비밀번호
+    - **new_password**: 새 비밀번호 (선택사항)
+    - **confirm_new_password**: 새 비밀번호 확인
+    """
+    try:
+        logger.info(f"✏️ 회원 정보 수정 요청: {user_id}")
+        
+        user = await auth_service.update_user_info(user_id, request)
+        
+        logger.info(f"✅ 회원 정보 수정 성공: {user.email}")
+        
+        return UserResponse(
+            id=user.id,
+            username=user.username,
+            email=user.email,
+            full_name=user.full_name,
+            is_active=user.is_active,
+            created_at=user.created_at.isoformat() if user.created_at else None,
+            updated_at=user.updated_at.isoformat() if user.updated_at else None,
+            last_login=user.last_login.isoformat() if user.last_login else None
+        )
+        
+    except ValueError as e:
+        logger.warning(f"❌ 회원 정보 수정 실패: {user_id} - {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+    except Exception as e:
+        logger.error(f"❌ 회원 정보 수정 오류: {user_id} - {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="회원 정보 수정 중 오류가 발생했습니다"
+        )
+
+@auth_router.put("/password", response_model=MessageResponse)
+async def change_password(
+    request: PasswordChangeRequest,
+    user_id: str,  # TODO: JWT 토큰에서 추출
+    auth_service: AuthService = Depends(get_auth_service)
+):
+    """
+    비밀번호 변경
+    
+    - **current_password**: 현재 비밀번호
+    - **new_password**: 새 비밀번호 (최소 6자)
+    - **confirm_new_password**: 새 비밀번호 확인
+    """
+    try:
+        logger.info(f"🔑 비밀번호 변경 요청: {user_id}")
+        
+        await auth_service.change_password(user_id, request)
+        
+        logger.info(f"✅ 비밀번호 변경 성공: {user_id}")
+        
+        return MessageResponse(
+            message="비밀번호가 성공적으로 변경되었습니다"
+        )
+        
+    except ValueError as e:
+        logger.warning(f"❌ 비밀번호 변경 실패: {user_id} - {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+    except Exception as e:
+        logger.error(f"❌ 비밀번호 변경 오류: {user_id} - {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="비밀번호 변경 중 오류가 발생했습니다"
+        )
+
+# ============================================================================
+# 🗑️ 회원 탈퇴 엔드포인트
+# ============================================================================
+
+@auth_router.delete("/profile", response_model=MessageResponse)
+async def delete_user_profile(
+    request: UserDeleteRequest,
+    user_id: str,  # TODO: JWT 토큰에서 추출
+    auth_service: AuthService = Depends(get_auth_service)
+):
+    """
+    회원 탈퇴
+    
+    - **password**: 계정 삭제를 위한 비밀번호 확인
+    """
+    try:
+        logger.info(f"🗑️ 회원 탈퇴 요청: {user_id}")
+        
+        await auth_service.delete_user(user_id, request)
+        
+        logger.info(f"✅ 회원 탈퇴 성공: {user_id}")
+        
+        return MessageResponse(
+            message="계정이 성공적으로 삭제되었습니다"
+        )
+        
+    except ValueError as e:
+        logger.warning(f"❌ 회원 탈퇴 실패: {user_id} - {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+    except Exception as e:
+        logger.error(f"❌ 회원 탈퇴 오류: {user_id} - {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="회원 탈퇴 중 오류가 발생했습니다"
+        )
+
+# ============================================================================
+# 🔍 사용자 정보 조회 엔드포인트
+# ============================================================================
+
+@auth_router.get("/profile", response_model=UserResponse)
+async def get_user_profile(
+    user_id: str,  # TODO: JWT 토큰에서 추출
+    auth_service: AuthService = Depends(get_auth_service)
+):
+    """
+    회원 정보 조회
+    """
+    try:
+        logger.info(f"🔍 회원 정보 조회 요청: {user_id}")
+        
+        user = await auth_service.get_user_by_id(user_id)
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="사용자를 찾을 수 없습니다"
+            )
+        
+        logger.info(f"✅ 회원 정보 조회 성공: {user.email}")
+        
+        return UserResponse(
+            id=user.id,
+            username=user.username,
+            email=user.email,
+            full_name=user.full_name,
+            is_active=user.is_active,
+            created_at=user.created_at.isoformat() if user.created_at else None,
+            updated_at=user.updated_at.isoformat() if user.updated_at else None,
+            last_login=user.last_login.isoformat() if user.last_login else None
+        )
+        
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"❌ 로그인 처리 중 오류: {str(e)}")
+        logger.error(f"❌ 회원 정보 조회 오류: {user_id} - {str(e)}")
         raise HTTPException(
-            status_code=500,
-            detail="서버 내부 오류가 발생했습니다"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="회원 정보 조회 중 오류가 발생했습니다"
         )
 
-@auth_router.get("/users/count", summary="등록된 사용자 수 조회")
-async def get_users_count(
-    auth_service: AuthService = Depends(get_auth_service)
-):
-    """
-    등록된 사용자 수 조회
-    
-    Args:
-        auth_service: 인증 서비스 인스턴스
-    
-    Returns:
-        사용자 수
-    """
-    try:
-        count = await auth_service.get_users_count()
-        return {"users_count": count, "status": "success"}
-        
-    except Exception as e:
-        logger.error(f"❌ 사용자 수 조회 실패: {str(e)}")
-        raise HTTPException(
-            status_code=500,
-            detail="사용자 수 조회 중 오류가 발생했습니다"
-        )
+# ============================================================================
+# 🏥 헬스 체크 엔드포인트
+# ============================================================================
 
-@auth_router.get("/users/search", summary="사용자 검색")
-async def search_users(
-    query: str,
-    auth_service: AuthService = Depends(get_auth_service)
-):
-    """
-    사용자 검색
-    
-    Args:
-        query: 검색 쿼리
-        auth_service: 인증 서비스 인스턴스
-    
-    Returns:
-        검색 결과 사용자 목록
-    """
-    try:
-        users = await auth_service.search_users(query)
-        return {
-            "users": [user.to_dict() for user in users],
-            "count": len(users),
-            "query": query,
-            "status": "success"
-        }
-        
-    except Exception as e:
-        logger.error(f"❌ 사용자 검색 실패: {str(e)}")
-        raise HTTPException(
-            status_code=500,
-            detail="사용자 검색 중 오류가 발생했습니다"
-        )
-
-@auth_router.get("/health", response_model=HealthResponse, summary="인증 서비스 헬스 체크")
+@auth_router.get("/health")
 async def health_check():
-    """인증 서비스 상태 확인"""
-    return HealthResponse(
-        status="healthy",
-        service="auth",
-        version="1.0.0"
-    )
-
-@auth_router.get("/", summary="인증 서비스 루트")
-async def root():
-    """인증 서비스 루트 엔드포인트"""
-    return {
-        "message": "Auth Service",
-        "version": "1.0.0",
-        "status": "running",
-        "endpoints": {
-            "register": "/auth/register",
-            "login": "/auth/login",
-            "health": "/auth/health",
-            "users_count": "/auth/users/count",
-            "users_search": "/auth/users/search"
-        }
-    }
+    """서비스 상태 확인"""
+    return {"status": "healthy", "service": "auth-service"}
