@@ -30,14 +30,15 @@ class UserRepository:
         # 데이터베이스 연결 확인
         self.use_database = database.database_url is not None
         
+        # 메모리 기반 저장소 (fallback용으로 항상 초기화)
+        self._users: Dict[str, User] = {}
+        self._users_by_email: Dict[str, str] = {}  # email -> user_id 매핑
+        self._users_by_username: Dict[str, str] = {}  # username -> user_id 매핑
+        
         if self.use_database:
             logger.info("✅ PostgreSQL 데이터베이스 저장소 사용")
         else:
             logger.info("⚠️ 메모리 저장소 사용 (DATABASE_URL 미설정)")
-            # 메모리 기반 저장소 (fallback)
-            self._users: Dict[str, User] = {}
-            self._users_by_email: Dict[str, str] = {}  # email -> user_id 매핑
-            self._users_by_username: Dict[str, str] = {}  # username -> user_id 매핑
     
     async def create_user(self, user: User) -> Optional[User]:
         """
@@ -104,6 +105,64 @@ class UserRepository:
             logger.error(f"❌ PostgreSQL 사용자 생성 실패: {str(e)}")
             return None
     
+    async def _get_user_by_email_db(self, email: str) -> Optional[User]:
+        """PostgreSQL에서 이메일로 사용자 조회"""
+        try:
+            async with database.get_async_session() as session:
+                result = await session.execute(
+                    select(UserDB).where(UserDB.email == email)
+                )
+                user_db = result.scalar_one_or_none()
+                
+                if user_db:
+                    # UserDB를 User 엔티티로 변환
+                    user = User(
+                        id=user_db.id,
+                        username=user_db.username,
+                        email=user_db.email,
+                        full_name=user_db.full_name,
+                        password_hash=user_db.password_hash,
+                        is_active=user_db.is_active,
+                        created_at=user_db.created_at,
+                        updated_at=user_db.updated_at,
+                        last_login=user_db.last_login
+                    )
+                    return user
+                return None
+                
+        except Exception as e:
+            logger.error(f"❌ PostgreSQL 이메일 조회 실패: {str(e)}")
+            return None
+    
+    async def _get_user_by_username_db(self, username: str) -> Optional[User]:
+        """PostgreSQL에서 사용자명으로 사용자 조회"""
+        try:
+            async with database.get_async_session() as session:
+                result = await session.execute(
+                    select(UserDB).where(UserDB.username == username)
+                )
+                user_db = result.scalar_one_or_none()
+                
+                if user_db:
+                    # UserDB를 User 엔티티로 변환
+                    user = User(
+                        id=user_db.id,
+                        username=user_db.username,
+                        email=user_db.email,
+                        full_name=user_db.full_name,
+                        password_hash=user_db.password_hash,
+                        is_active=user_db.is_active,
+                        created_at=user_db.created_at,
+                        updated_at=user_db.updated_at,
+                        last_login=user_db.last_login
+                    )
+                    return user
+                return None
+                
+        except Exception as e:
+            logger.error(f"❌ PostgreSQL 사용자명 조회 실패: {str(e)}")
+            return None
+    
     async def _create_user_memory(self, user: User) -> Optional[User]:
         """메모리 저장소에 사용자 생성"""
         try:
@@ -150,10 +209,15 @@ class UserRepository:
         Returns:
             사용자 정보 (있으면), None (없으면)
         """
-        user_id = self._users_by_email.get(email)
-        if user_id:
-            return self._users.get(user_id)
-        return None
+        if self.use_database:
+            # PostgreSQL에서 조회
+            return await self._get_user_by_email_db(email)
+        else:
+            # 메모리에서 조회
+            user_id = self._users_by_email.get(email)
+            if user_id:
+                return self._users.get(user_id)
+            return None
     
     async def get_user_by_username(self, username: str) -> Optional[User]:
         """
@@ -165,10 +229,15 @@ class UserRepository:
         Returns:
             사용자 정보 (있으면), None (없으면)
         """
-        user_id = self._users_by_username.get(username)
-        if user_id:
-            return self._users.get(user_id)
-        return None
+        if self.use_database:
+            # PostgreSQL에서 조회
+            return await self._get_user_by_username_db(username)
+        else:
+            # 메모리에서 조회
+            user_id = self._users_by_username.get(username)
+            if user_id:
+                return self._users.get(user_id)
+            return None
     
     async def authenticate_user(self, credentials: UserCredentials) -> Optional[User]:
         """

@@ -9,10 +9,10 @@ export default function Home() {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <h1 className="mt-6 text-center text-4xl font-extrabold text-gray-900">
-          LCA Final Project
+          CBMA 프로젝트_GreenSteel
         </h1>
         <p className="mt-4 text-center text-lg text-gray-600">
-          마이크로서비스 아키텍처 기반 LCA 시스템
+          마이크로서비스 아키텍처 기반 탄소국경조정메커니즘 계산기
         </p>
       </div>
 
