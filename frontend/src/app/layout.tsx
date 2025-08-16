@@ -4,8 +4,8 @@
 
 import type { Metadata } from 'next';
 import './globals.css';
-import ThemeToggle from '@/components/ThemeToggle';
-import Navigation from '@/components/Navigation';
+import ThemeToggle from '@/organisms/ThemeToggle';
+import Navigation from '@/organisms/Navigation';
 import { AuthProvider } from './contexts/AuthContext';
 
 // ============================================================================

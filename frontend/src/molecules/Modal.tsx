@@ -6,7 +6,7 @@ import { useEffect, useRef } from 'react';
 // 🎯 Modal 컴포넌트 Props 타입
 // ============================================================================
 
-interface ModalProps {
+export interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
   title: string;
