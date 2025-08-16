@@ -19,7 +19,7 @@ import hashlib
 import uuid
 import logging
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List, Tuple
 
 from app.domain.entity.user_entity import User, UserCredentials
 from app.domain.repository.user_repository import UserRepository
@@ -58,7 +58,7 @@ class AuthService:
     # 🔐 사용자 인증 관련 메서드
     # ============================================================================
     
-    async def register_user(self, request: UserRegistrationRequest) -> tuple[User, str]:
+    async def register_user(self, request: UserRegistrationRequest) -> Tuple[User, str]:
         """
         새 사용자 등록
         
@@ -110,7 +110,7 @@ class AuthService:
     # 🔑 사용자 로그인
     # ============================================================================
 
-    async def login_user(self, request: UserLoginRequest) -> tuple[User, str]:
+    async def login_user(self, request: UserLoginRequest) -> Tuple[User, str]:
         """
         사용자 로그인
         
