@@ -61,6 +61,13 @@ def get_auth_service(user_repository: UserRepository = Depends(get_user_reposito
         logger.error(f"❌ AuthService 의존성 주입 실패: {str(e)}")
         raise
 
+def get_current_user_id() -> str:
+    """현재 인증된 사용자 ID 반환 (임시 구현)"""
+    # TODO: JWT 토큰에서 실제 사용자 ID 추출
+    # 현재는 테스트용으로 하드코딩된 값 반환
+    import uuid
+    return str(uuid.uuid4())
+
 # ============================================================================
 # 📝 회원가입 엔드포인트
 # ============================================================================
@@ -164,7 +171,7 @@ async def login_user(request: UserLoginRequest, auth_service: AuthService = Depe
 @auth_router.put("/profile", response_model=UserResponse)
 async def update_user_profile(
     request: UserUpdateRequest,
-    user_id: str,  # TODO: JWT 토큰에서 추출
+    user_id: str = Depends(get_current_user_id),  # 인증 의존성 적용
     auth_service: AuthService = Depends(get_auth_service)
 ):
     """
@@ -210,7 +217,7 @@ async def update_user_profile(
 @auth_router.put("/password", response_model=MessageResponse)
 async def change_password(
     request: PasswordChangeRequest,
-    user_id: str,  # TODO: JWT 토큰에서 추출
+    user_id: str = Depends(get_current_user_id),  # 인증 의존성 적용
     auth_service: AuthService = Depends(get_auth_service)
 ):
     """
@@ -251,7 +258,7 @@ async def change_password(
 @auth_router.delete("/profile", response_model=MessageResponse)
 async def delete_user_profile(
     request: UserDeleteRequest,
-    user_id: str,  # TODO: JWT 토큰에서 추출
+    user_id: str = Depends(get_current_user_id),  # 인증 의존성 적용
     auth_service: AuthService = Depends(get_auth_service)
 ):
     """
@@ -289,7 +296,7 @@ async def delete_user_profile(
 
 @auth_router.get("/profile", response_model=UserResponse)
 async def get_user_profile(
-    user_id: str,  # TODO: JWT 토큰에서 추출
+    user_id: str = Depends(get_current_user_id),  # 인증 의존성 적용
     auth_service: AuthService = Depends(get_auth_service)
 ):
     """
