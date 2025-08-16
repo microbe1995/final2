@@ -55,7 +55,6 @@ class UserRepository:
         # 메모리 저장소는 항상 초기화 (fallback용)
         self._users: dict = {}
         self._users_by_email: dict = {}
-        self._users_by_username: dict = {}
         
         logger.info(f"✅ {'PostgreSQL' if use_database else '메모리'} 데이터베이스 저장소 사용")
     
@@ -156,25 +155,6 @@ class UserRepository:
             logger.error(f"❌ 이메일 조회 실패: {email} - {str(e)}")
             return None
     
-    async def get_user_by_username(self, username: str) -> Optional[User]:
-        """
-        사용자명으로 사용자 조회
-        
-        Args:
-            username: 조회할 사용자명
-            
-        Returns:
-            Optional[User]: 사용자 정보 또는 None
-        """
-        try:
-            if self.use_database:
-                return await self._get_user_by_username_db(username)
-            else:
-                return self._users_by_username.get(username)
-        except Exception as e:
-            logger.error(f"❌ 사용자명 조회 실패: {username} - {str(e)}")
-            return None
-    
     async def update_user(self, user: User) -> User:
         """
         사용자 정보 업데이트
@@ -268,7 +248,6 @@ class UserRepository:
             try:
                 user_db = UserDB(
                     id=user.id,
-                    username=user.username,
                     email=user.email,
                     full_name=user.full_name,
                     password_hash=user.password_hash,
@@ -354,38 +333,6 @@ class UserRepository:
                 
         except Exception as e:
             logger.error(f"❌ PostgreSQL 이메일 조회 실패: {str(e)}")
-            return None
-    
-    async def _get_user_by_username_db(self, username: str) -> Optional[User]:
-        """PostgreSQL에서 사용자명으로 사용자 조회"""
-        try:
-            session = await database.get_async_session()
-            try:
-                result = await session.execute(
-                    text("SELECT * FROM users WHERE username = :username"),
-                    {"username": username}
-                )
-                user_data = result.fetchone()
-                
-                if user_data:
-                    return User(
-                        id=user_data.id,
-                        username=user_data.username,
-                        email=user_data.email,
-                        full_name=user_data.full_name,
-                        password_hash=user_data.password_hash,
-                        is_active=user_data.is_active,
-                        created_at=user_data.created_at,
-                        updated_at=user_data.updated_at,
-                        last_login=user_data.last_login
-                    )
-                return None
-                
-            finally:
-                await session.close()
-                
-        except Exception as e:
-            logger.error(f"❌ PostgreSQL 사용자명 조회 실패: {str(e)}")
             return None
     
     async def _update_user_db(self, user: User) -> User:
@@ -529,9 +476,8 @@ class UserRepository:
         """메모리에 사용자 생성"""
         self._users[user.id] = user
         self._users_by_email[user.email] = user
-        self._users_by_username[user.username] = user
         
-        logger.info(f"✅ 메모리 사용자 생성 성공: {user.email}")
+        logger.info(f"✅ 메모리 사용자 생성: {user.email}")
         return user
     
     async def _update_user_memory(self, user: User) -> User:
@@ -539,16 +485,13 @@ class UserRepository:
         if user.id in self._users:
             old_user = self._users[user.id]
             
-            # 이전 이메일/사용자명 인덱스 제거
+            # 이전 이메일 인덱스 제거
             if old_user.email in self._users_by_email:
                 del self._users_by_email[old_user.email]
-            if old_user.username in self._users_by_username:
-                del self._users_by_username[old_user.username]
             
             # 새 정보로 업데이트
             self._users[user.id] = user
             self._users_by_email[user.email] = user
-            self._users_by_username[user.username] = user
             
             logger.info(f"✅ 메모리 사용자 업데이트 성공: {user.email}")
             return user
@@ -563,8 +506,6 @@ class UserRepository:
             # 인덱스에서 제거
             if user.email in self._users_by_email:
                 del self._users_by_email[user.email]
-            if old_user.username in self._users_by_username:
-                del self._users_by_username[old_user.username]
             
             # 메인 저장소에서 제거
             del self._users[user_id]

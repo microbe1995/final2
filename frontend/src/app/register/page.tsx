@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
-import axios from 'axios';
+import { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import axios from 'axios';
 
 // ============================================================================
 // 🎯 회원가입 페이지 컴포넌트
@@ -16,145 +16,124 @@ export default function RegisterPage() {
   // ============================================================================
   
   const [formData, setFormData] = useState({
-    username: '',
+    fullName: '',
     email: '',
-    full_name: '',
     password: '',
-    confirm_password: ''
+    confirmPassword: ''
   });
   
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [validation, setValidation] = useState({
+    fullName: { isValid: false, message: '' },
+    email: { isValid: false, message: '', isChecking: false },
+    password: { isValid: false, message: '' },
+    confirmPassword: { isValid: false, message: '' }
+  });
+  
   const [isLoading, setIsLoading] = useState(false);
-  const [duplicateChecks, setDuplicateChecks] = useState({
-    username: { checked: false, available: false },
-    email: { checked: false, available: false }
-  });
+  const [error, setError] = useState('');
 
   // ============================================================================
-  // 🔧 API URL 설정
+  // 🔍 이메일 중복 체크
   // ============================================================================
   
-  const getApiBaseUrl = () => {
-    if (typeof window !== 'undefined') {
-      return process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080/api/v1';
-    }
-    return 'http://localhost:8080/api/v1';
-  };
-
-  // ============================================================================
-  // ✅ 중복 체크 함수
-  // ============================================================================
-  
-  const checkDuplicate = async (type: 'username' | 'email', value: string) => {
-    if (!value.trim()) return;
-    
-    try {
-      const response = await axios.get(`${getApiBaseUrl()}/auth/check/${type}/${encodeURIComponent(value)}`);
-      const { available } = response.data;
-      
-      setDuplicateChecks(prev => ({
+  const checkEmailAvailability = useCallback(async (email: string) => {
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setValidation(prev => ({
         ...prev,
-        [type]: { checked: true, available }
+        email: { isValid: false, message: '올바른 이메일 형식을 입력해주세요', isChecking: false }
       }));
-      
-      if (!available) {
-        setErrors(prev => ({
+      return;
+    }
+
+    setValidation(prev => ({
+      ...prev,
+      email: { ...prev.email, isChecking: true, message: '중복 확인 중...' }
+    }));
+
+    try {
+      const response = await axios.get(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080/api/v1'}/auth/check/email/${encodeURIComponent(email)}`
+      );
+
+      if (response.data.available) {
+        setValidation(prev => ({
           ...prev,
-          [type]: `${type === 'username' ? '사용자명' : '이메일'}이 이미 사용 중입니다.`
+          email: { isValid: true, message: response.data.message, isChecking: false }
         }));
       } else {
-        setErrors(prev => {
-          const newErrors = { ...prev };
-          delete newErrors[type];
-          return newErrors;
-        });
+        setValidation(prev => ({
+          ...prev,
+          email: { isValid: false, message: response.data.message, isChecking: false }
+        }));
       }
-    } catch (error) {
-      console.error(`${type} 중복 체크 오류:`, error);
-      setErrors(prev => ({
+    } catch (error: any) {
+      console.error('이메일 중복 체크 오류:', error);
+      setValidation(prev => ({
         ...prev,
-        [type]: `${type === 'username' ? '사용자명' : '이메일'} 중복 체크 중 오류가 발생했습니다.`
+        email: { 
+          isValid: false, 
+          message: '이메일 중복 체크 중 오류가 발생했습니다', 
+          isChecking: false 
+        }
       }));
     }
-  };
+  }, []);
 
   // ============================================================================
-  // 🔍 실시간 중복 체크 (디바운스)
+  // 📝 폼 입력 처리
   // ============================================================================
   
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-    
-    // 중복 체크 상태 초기화
-    if (field === 'username' || field === 'email') {
-      setDuplicateChecks(prev => ({
-        ...prev,
-        [field]: { checked: false, available: false }
-      }));
-    }
-    
-    // 에러 메시지 제거
-    if (errors[field]) {
-      setErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors[field];
-        return newErrors;
-      });
-    }
-  };
+    setError('');
 
-  // ============================================================================
-  // ✅ 폼 검증
-  // ============================================================================
-  
-  const validateForm = () => {
-    const newErrors: Record<string, string> = {};
-    
-    if (!formData.username.trim()) {
-      newErrors.username = '사용자명을 입력해주세요.';
-    } else if (formData.username.length < 2) {
-      newErrors.username = '사용자명은 2자 이상이어야 합니다.';
-    } else if (!/^[가-힣a-zA-Z0-9_]+$/.test(formData.username)) {
-      newErrors.username = '사용자명은 한글, 영문, 숫자, 언더스코어만 사용 가능합니다.';
+    // 실시간 유효성 검사
+    switch (field) {
+      case 'fullName':
+        const fullNameValid = value.length >= 2 && value.length <= 100;
+        setValidation(prev => ({
+          ...prev,
+          fullName: {
+            isValid: fullNameValid,
+            message: fullNameValid ? '' : '이름은 2-100자 사이여야 합니다'
+          }
+        }));
+        break;
+
+      case 'email':
+        const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+        setValidation(prev => ({
+          ...prev,
+          email: {
+            ...prev.email,
+            isValid: emailValid,
+            message: emailValid ? '' : '올바른 이메일 형식을 입력해주세요'
+          }
+        }));
+        break;
+
+      case 'password':
+        const passwordValid = value.length >= 6;
+        setValidation(prev => ({
+          ...prev,
+          password: {
+            isValid: passwordValid,
+            message: passwordValid ? '' : '비밀번호는 최소 6자 이상이어야 합니다'
+          }
+        }));
+        break;
+
+      case 'confirmPassword':
+        const confirmValid = value === formData.password;
+        setValidation(prev => ({
+          ...prev,
+          confirmPassword: {
+            isValid: confirmValid,
+            message: confirmValid ? '' : '비밀번호가 일치하지 않습니다'
+          }
+        }));
+        break;
     }
-    
-    if (!formData.email.trim()) {
-      newErrors.email = '이메일을 입력해주세요.';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = '올바른 이메일 형식을 입력해주세요.';
-    }
-    
-    if (!formData.full_name.trim()) {
-      newErrors.full_name = '이름을 입력해주세요.';
-    }
-    
-    if (!formData.password) {
-      newErrors.password = '비밀번호를 입력해주세요.';
-    } else if (formData.password.length < 6) {
-      newErrors.password = '비밀번호는 6자 이상이어야 합니다.';
-    }
-    
-    if (!formData.confirm_password) {
-      newErrors.confirm_password = '비밀번호 확인을 입력해주세요.';
-    } else if (formData.password !== formData.confirm_password) {
-      newErrors.confirm_password = '비밀번호가 일치하지 않습니다.';
-    }
-    
-    // 중복 체크 확인
-    if (!duplicateChecks.username.checked) {
-      newErrors.username = '사용자명 중복 체크를 해주세요.';
-    } else if (!duplicateChecks.username.available) {
-      newErrors.username = '사용자명이 이미 사용 중입니다.';
-    }
-    
-    if (!duplicateChecks.email.checked) {
-      newErrors.email = '이메일 중복 체크를 해주세요.';
-    } else if (!duplicateChecks.email.available) {
-      newErrors.email = '이메일이 이미 사용 중입니다.';
-    }
-    
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
   };
 
   // ============================================================================
@@ -164,27 +143,36 @@ export default function RegisterPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!validateForm()) {
+    // 전체 유효성 검사
+    if (!validation.fullName.isValid || !validation.email.isValid || 
+        !validation.password.isValid || !validation.confirmPassword.isValid) {
+      setError('모든 필드를 올바르게 입력해주세요');
       return;
     }
-    
+
     setIsLoading(true);
-    
+    setError('');
+
     try {
-      const response = await axios.post(`${getApiBaseUrl()}/auth/register`, formData);
-      
-      if (response.status === 201) {
+      const requestData = {
+        email: formData.email,
+        full_name: formData.fullName,
+        password: formData.password,
+        confirm_password: formData.confirmPassword
+      };
+
+      const response = await axios.post(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080/api/v1'}/auth/register`,
+        requestData
+      );
+
+      if (response.data) {
         alert('회원가입이 완료되었습니다! 로그인 페이지로 이동합니다.');
         router.push('/login');
       }
     } catch (error: any) {
       console.error('회원가입 오류:', error);
-      
-      if (error.response?.data?.detail) {
-        alert(`회원가입 실패: ${error.response.data.detail}`);
-      } else {
-        alert('회원가입 중 오류가 발생했습니다. 다시 시도해주세요.');
-      }
+      setError(error.response?.data?.detail || '회원가입 중 오류가 발생했습니다');
     } finally {
       setIsLoading(false);
     }
@@ -195,14 +183,14 @@ export default function RegisterPage() {
   // ============================================================================
   
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 py-12 px-4 sm:px-6 lg:px-8 transition-colors duration-200">
-      <div className="max-w-md mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center p-4">
+      <div className="w-full max-w-md">
         {/* 헤더 */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2 transition-colors duration-200">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
             회원가입
           </h1>
-          <p className="text-gray-600 dark:text-gray-300 transition-colors duration-200">
+          <p className="text-gray-600 dark:text-gray-300">
             CBAM Calculator 계정을 생성하고 서비스를 이용해보세요
           </p>
         </div>
@@ -210,39 +198,24 @@ export default function RegisterPage() {
         {/* 회원가입 폼 */}
         <div className="card">
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* 사용자명 필드 */}
+            {/* 이름 필드 */}
             <div className="form-field">
-              <label htmlFor="username" className="form-label">
-                사용자명 *
+              <label htmlFor="fullName" className="form-label">
+                이름 *
               </label>
-              <div className="flex gap-2">
-                <input
-                  id="username"
-                  name="username"
-                  type="text"
-                  required
-                  value={formData.username}
-                  onChange={(e) => handleInputChange('username', e.target.value)}
-                  className={`form-input flex-1 ${errors.username ? 'error' : ''}`}
-                  placeholder="사용자명을 입력하세요"
-                />
-                <button
-                  type="button"
-                  onClick={() => checkDuplicate('username', formData.username)}
-                  disabled={!formData.username.trim() || duplicateChecks.username.checked}
-                  className="btn btn-secondary px-4 py-2 text-sm whitespace-nowrap"
-                >
-                  {duplicateChecks.username.checked 
-                    ? (duplicateChecks.username.available ? '✅' : '❌')
-                    : '중복체크'
-                  }
-                </button>
-              </div>
-              {errors.username && <p className="form-error">{errors.username}</p>}
-              {duplicateChecks.username.checked && (
-                <p className={`text-sm ${duplicateChecks.username.available ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                  {duplicateChecks.username.available ? '사용 가능한 사용자명입니다.' : '이미 사용 중인 사용자명입니다.'}
-                </p>
+              <input
+                type="text"
+                id="fullName"
+                value={formData.fullName}
+                onChange={(e) => handleInputChange('fullName', e.target.value)}
+                placeholder="이름을 입력하세요"
+                className={`form-input ${validation.fullName.isValid ? 'border-green-500' : validation.fullName.message ? 'border-red-500' : ''}`}
+                required
+              />
+              {validation.fullName.message && (
+                <div className="form-error">
+                  {validation.fullName.message}
+                </div>
               )}
             </div>
 
@@ -253,53 +226,28 @@ export default function RegisterPage() {
               </label>
               <div className="flex gap-2">
                 <input
-                  id="email"
-                  name="email"
                   type="email"
-                  autoComplete="email"
-                  required
+                  id="email"
                   value={formData.email}
                   onChange={(e) => handleInputChange('email', e.target.value)}
-                  className={`form-input flex-1 ${errors.email ? 'error' : ''}`}
                   placeholder="이메일을 입력하세요"
+                  className={`form-input flex-1 ${validation.email.isValid ? 'border-green-500' : validation.email.message ? 'border-red-500' : ''}`}
+                  required
                 />
                 <button
                   type="button"
-                  onClick={() => checkDuplicate('email', formData.email)}
-                  disabled={!formData.email.trim() || duplicateChecks.email.checked}
-                  className="btn btn-secondary px-4 py-2 text-sm whitespace-nowrap"
+                  onClick={() => checkEmailAvailability(formData.email)}
+                  disabled={!formData.email || validation.email.isChecking}
+                  className="btn btn-secondary whitespace-nowrap px-4"
                 >
-                  {duplicateChecks.email.checked 
-                    ? (duplicateChecks.email.available ? '✅' : '❌')
-                    : '중복체크'
-                  }
+                  {validation.email.isChecking ? '확인중...' : '중복체크'}
                 </button>
               </div>
-              {errors.email && <p className="form-error">{errors.email}</p>}
-              {duplicateChecks.email.checked && (
-                <p className={`text-sm ${duplicateChecks.email.available ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                  {duplicateChecks.email.available ? '사용 가능한 이메일입니다.' : '이미 사용 중인 이메일입니다.'}
-                </p>
+              {validation.email.message && (
+                <div className={`form-error ${validation.email.isValid ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                  {validation.email.message}
+                </div>
               )}
-            </div>
-
-            {/* 이름 필드 */}
-            <div className="form-field">
-              <label htmlFor="full_name" className="form-label">
-                이름 *
-              </label>
-              <input
-                id="full_name"
-                name="full_name"
-                type="text"
-                autoComplete="name"
-                required
-                value={formData.full_name}
-                onChange={(e) => handleInputChange('full_name', e.target.value)}
-                className={`form-input ${errors.full_name ? 'error' : ''}`}
-                placeholder="이름을 입력하세요"
-              />
-              {errors.full_name && <p className="form-error">{errors.full_name}</p>}
             </div>
 
             {/* 비밀번호 필드 */}
@@ -308,67 +256,71 @@ export default function RegisterPage() {
                 비밀번호 *
               </label>
               <input
-                id="password"
-                name="password"
                 type="password"
-                autoComplete="new-password"
-                required
+                id="password"
                 value={formData.password}
                 onChange={(e) => handleInputChange('password', e.target.value)}
-                className={`form-input ${errors.password ? 'error' : ''}`}
                 placeholder="비밀번호를 입력하세요 (6자 이상)"
+                className={`form-input ${validation.password.isValid ? 'border-green-500' : validation.password.message ? 'border-red-500' : ''}`}
+                required
               />
-              {errors.password && <p className="form-error">{errors.password}</p>}
+              {validation.password.message && (
+                <div className="form-error">
+                  {validation.password.message}
+                </div>
+              )}
             </div>
 
             {/* 비밀번호 확인 필드 */}
             <div className="form-field">
-              <label htmlFor="confirm_password" className="form-label">
+              <label htmlFor="confirmPassword" className="form-label">
                 비밀번호 확인 *
               </label>
               <input
-                id="confirm_password"
-                name="confirm_password"
                 type="password"
-                autoComplete="new-password"
-                required
-                value={formData.confirm_password}
-                onChange={(e) => handleInputChange('confirm_password', e.target.value)}
-                className={`form-input ${errors.confirm_password ? 'error' : ''}`}
+                id="confirmPassword"
+                value={formData.confirmPassword}
+                onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
                 placeholder="비밀번호를 다시 입력하세요"
+                className={`form-input ${validation.confirmPassword.isValid ? 'border-green-500' : validation.confirmPassword.message ? 'border-red-500' : ''}`}
+                required
               />
-              {errors.confirm_password && <p className="form-error">{errors.confirm_password}</p>}
+              {validation.confirmPassword.message && (
+                <div className="form-error">
+                  {validation.confirmPassword.message}
+                </div>
+              )}
             </div>
+
+            {/* 에러 메시지 */}
+            {error && (
+              <div className="form-error text-center">
+                {error}
+              </div>
+            )}
 
             {/* 제출 버튼 */}
             <button
               type="submit"
-              disabled={isLoading}
-              className="btn btn-primary w-full py-3 text-lg font-medium"
+              disabled={isLoading || !Object.values(validation).every(v => v.isValid)}
+              className="btn btn-primary w-full"
             >
-              {isLoading ? (
-                <div className="flex items-center gap-2">
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  회원가입 중...
-                </div>
-              ) : (
-                '회원가입 완료'
-              )}
+              {isLoading ? '처리중...' : '회원가입 완료'}
             </button>
           </form>
-        </div>
 
-        {/* 로그인 링크 */}
-        <div className="text-center mt-6">
-          <p className="text-gray-600 dark:text-gray-300 transition-colors duration-200">
-            이미 계정이 있으신가요?{' '}
-            <a
-              href="/login"
-              className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium transition-colors"
-            >
-              SignIn
-            </a>
-          </p>
+          {/* 로그인 링크 */}
+          <div className="text-center mt-6">
+            <p className="text-gray-600 dark:text-gray-400">
+              이미 계정이 있으신가요?{' '}
+              <button
+                onClick={() => router.push('/login')}
+                className="text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 font-medium"
+              >
+                SignIn
+              </button>
+            </p>
+          </div>
         </div>
       </div>
     </div>

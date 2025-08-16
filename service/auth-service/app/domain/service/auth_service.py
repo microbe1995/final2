@@ -23,6 +23,8 @@ from typing import Optional, Tuple
 from app.domain.entity.user_entity import User
 from app.domain.repository.user_repository import UserRepository
 from app.domain.schema.auth_schema import UserRegistrationRequest, UserLoginRequest, UserUpdateRequest, PasswordChangeRequest, UserDeleteRequest
+import uuid
+from app.domain.schema.auth_schema import UserCredentials
 
 # ============================================================================
 # 🔧 로거 설정
@@ -57,39 +59,34 @@ class AuthService:
     # 🔐 사용자 인증 관련 메서드
     # ============================================================================
     
-    async def register_user(self, request: UserRegistrationRequest) -> Tuple[User, str]:
+    async def register_user(self, request: UserRegistrationRequest) -> tuple[User, str]:
         """
-        사용자 회원가입
+        새 사용자 등록
         
         Args:
             request: 회원가입 요청 데이터
             
         Returns:
-            Tuple[User, str]: 생성된 사용자 정보와 액세스 토큰
+            tuple: (생성된 사용자, 인증 토큰)
             
         Raises:
-            ValueError: 사용자명 또는 이메일이 이미 존재하는 경우
+            ValueError: 비즈니스 로직 오류
         """
         try:
             logger.info(f"🔐 회원가입 시작: {request.email}")
             
-            # 기존 사용자 확인 (더 엄격한 검증)
-            existing_user = await self.user_repository.get_user_by_username(request.username)
+            # 이메일 중복 확인
+            existing_user = await self.user_repository.get_user_by_email(request.email)
             if existing_user:
-                logger.warning(f"❌ 사용자명 중복: {request.username}")
-                raise ValueError(f"사용자명 '{request.username}'이 이미 존재합니다")
-            
-            existing_email = await self.user_repository.get_user_by_email(request.email)
-            if existing_email:
                 logger.warning(f"❌ 이메일 중복: {request.email}")
-                raise ValueError(f"이메일 '{request.email}'이 이미 존재합니다")
+                raise ValueError(f"이메일 '{request.email}'은 이미 사용 중입니다")
             
-            # 비밀번호 해싱
+            # 비밀번호 해시화
             password_hash = self._hash_password(request.password)
             
             # 사용자 생성
             user = User(
-                username=request.username,
+                id=str(uuid.uuid4()),
                 email=request.email,
                 full_name=request.full_name,
                 password_hash=password_hash
@@ -98,57 +95,65 @@ class AuthService:
             # 저장소에 저장
             created_user = await self.user_repository.create_user(user)
             
-            # 액세스 토큰 생성
-            token = self._generate_token()
+            # 인증 토큰 생성
+            token = self._generate_token(created_user.id)
             
             logger.info(f"✅ 회원가입 성공: {request.email}")
             return created_user, token
             
-        except ValueError as e:
-            logger.warning(f"❌ 회원가입 실패 (검증 오류): {request.email} - {str(e)}")
+        except ValueError:
             raise
         except Exception as e:
-            logger.error(f"❌ 회원가입 실패 (시스템 오류): {request.email} - {str(e)}")
-            raise ValueError(f"회원가입 처리 중 오류가 발생했습니다: {str(e)}")
+            logger.error(f"❌ 회원가입 오류: {request.email} - {str(e)}")
+            raise ValueError(f"사용자 생성 중 오류가 발생했습니다: {str(e)}")
     
-    async def login_user(self, request: UserLoginRequest) -> Tuple[User, str]:
+    async def login_user(self, credentials: UserCredentials) -> tuple[User, str]:
         """
         사용자 로그인
         
         Args:
-            request: 로그인 요청 데이터
+            credentials: 로그인 인증 정보
             
         Returns:
-            Tuple[User, str]: 인증된 사용자 정보와 액세스 토큰
+            tuple: (인증된 사용자, 인증 토큰)
             
         Raises:
-            ValueError: 이메일 또는 비밀번호가 잘못된 경우
+            ValueError: 인증 실패
         """
         try:
-            logger.info(f"🔐 로그인 시작: {request.email}")
+            logger.info(f"🔑 로그인 시도: {credentials.email}")
             
             # 사용자 조회
-            user = await self.user_repository.get_user_by_email(request.email)
+            user = await self.user_repository.get_user_by_email(credentials.email)
             if not user:
-                raise ValueError("이메일 또는 비밀번호가 잘못되었습니다")
+                logger.warning(f"❌ 사용자 없음: {credentials.email}")
+                raise ValueError("이메일 또는 비밀번호가 올바르지 않습니다")
             
             # 비밀번호 검증
-            if not await self.user_repository.authenticate_user(request.email, request.password):
-                raise ValueError("이메일 또는 비밀번호가 잘못되었습니다")
+            if not self.user_repository.authenticate_user(credentials, user):
+                logger.warning(f"❌ 비밀번호 불일치: {credentials.email}")
+                raise ValueError("이메일 또는 비밀번호가 올바르지 않습니다")
+            
+            # 계정 활성화 상태 확인
+            if not user.is_active:
+                logger.warning(f"❌ 비활성 계정: {credentials.email}")
+                raise ValueError("비활성화된 계정입니다")
+            
+            # 인증 토큰 생성
+            token = self._generate_token(user.id)
             
             # 마지막 로그인 시간 업데이트
-            user.update_last_login()
+            user.last_login = datetime.utcnow()
             await self.user_repository.update_user(user)
             
-            # 액세스 토큰 생성
-            token = self._generate_token()
-            
-            logger.info(f"✅ 로그인 성공: {request.email}")
+            logger.info(f"✅ 로그인 성공: {credentials.email}")
             return user, token
             
-        except Exception as e:
-            logger.error(f"❌ 로그인 실패: {request.email} - {str(e)}")
+        except ValueError:
             raise
+        except Exception as e:
+            logger.error(f"❌ 로그인 오류: {credentials.email} - {str(e)}")
+            raise ValueError(f"로그인 중 오류가 발생했습니다: {str(e)}")
     
     # ============================================================================
     # ✏️ 회원 정보 관리 메서드
@@ -300,10 +305,13 @@ class AuthService:
         """
         return hashlib.sha256(password.encode()).hexdigest()
     
-    def _generate_token(self) -> str:
+    def _generate_token(self, user_id: str) -> str:
         """
         액세스 토큰 생성
         
+        Args:
+            user_id: 토큰에 포함될 사용자 ID
+            
         Returns:
             str: 생성된 토큰
         """

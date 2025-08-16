@@ -334,59 +334,6 @@ async def get_user_profile(
 # 🔍 중복 체크 엔드포인트
 # ============================================================================
 
-@auth_router.get("/check/username/{username}")
-async def check_username_availability(username: str):
-    """
-    사용자명 중복 체크
-    
-    - **username**: 확인할 사용자명
-    
-    Returns:
-        - available: true (사용 가능) / false (이미 사용 중)
-        - message: 상태 메시지
-    """
-    try:
-        logger.info(f"🔍 사용자명 중복 체크 요청: {username}")
-        
-        # 사용자명 유효성 검증
-        import re
-        if not re.match(r'^[가-힣a-zA-Z0-9_]+$', username):
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="사용자명은 한글, 영문, 숫자, 언더스코어만 사용 가능합니다"
-            )
-        
-        if len(username) < 2 or len(username) > 50:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="사용자명은 2-50자 사이여야 합니다"
-            )
-        
-        # 중복 확인
-        existing_user = await get_user_repository().get_user_by_username(username)
-        
-        if existing_user:
-            logger.info(f"❌ 사용자명 중복: {username}")
-            return {
-                "available": False,
-                "message": f"사용자명 '{username}'은 이미 사용 중입니다"
-            }
-        else:
-            logger.info(f"✅ 사용자명 사용 가능: {username}")
-            return {
-                "available": True,
-                "message": f"사용자명 '{username}'은 사용 가능합니다"
-            }
-            
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"❌ 사용자명 중복 체크 오류: {username} - {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="사용자명 중복 체크 중 오류가 발생했습니다"
-        )
-
 @auth_router.get("/check/email/{email}")
 async def check_email_availability(email: str):
     """
