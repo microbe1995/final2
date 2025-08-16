@@ -115,27 +115,66 @@ class Database:
             self.database_url = None
     
     def create_tables(self):
-        """테이블 생성 (기존 테이블 삭제 후 새로 생성)"""
+        """테이블 생성 (기존 테이블 강제 삭제 후 새로 생성)"""
         if not self.engine:
             logger.warning("⚠️ 데이터베이스 연결이 설정되지 않았습니다.")
             return False
             
         try:
-            # 기존 테이블 삭제 (스키마 변경을 위해)
             with self.engine.connect() as conn:
+                # 트랜잭션 시작
+                trans = conn.begin()
                 try:
-                    conn.execute(text("DROP TABLE IF EXISTS users CASCADE"))
-                    logger.info("🗑️ 기존 users 테이블 삭제 완료")
+                    # 1. 기존 테이블이 있는지 확인
+                    result = conn.execute(text("""
+                        SELECT EXISTS (
+                            SELECT FROM information_schema.tables 
+                            WHERE table_schema = 'public' 
+                            AND table_name = 'users'
+                        );
+                    """))
+                    table_exists = result.scalar()
+                    
+                    if table_exists:
+                        logger.info("🗑️ 기존 users 테이블 발견 - 삭제 시작")
+                        
+                        # 2. 기존 테이블 삭제 (여러 방법 시도)
+                        try:
+                            # 방법 1: CASCADE로 삭제
+                            conn.execute(text("DROP TABLE IF EXISTS users CASCADE"))
+                            logger.info("✅ CASCADE로 테이블 삭제 완료")
+                        except Exception as e:
+                            logger.warning(f"⚠️ CASCADE 삭제 실패: {str(e)}")
+                            try:
+                                # 방법 2: 강제 삭제
+                                conn.execute(text("DROP TABLE users"))
+                                logger.info("✅ 강제 테이블 삭제 완료")
+                            except Exception as e2:
+                                logger.warning(f"⚠️ 강제 삭제 실패: {str(e2)}")
+                                # 방법 3: 컬럼별로 삭제
+                                try:
+                                    conn.execute(text("ALTER TABLE users DROP COLUMN IF EXISTS username"))
+                                    logger.info("✅ username 컬럼 삭제 완료")
+                                except Exception as e3:
+                                    logger.warning(f"⚠️ 컬럼 삭제 실패: {str(e3)}")
+                
+                    # 3. 새 스키마로 테이블 생성
+                    logger.info("🔨 새로운 스키마로 users 테이블 생성 시작")
+                    Base.metadata.create_all(bind=self.engine)
+                    logger.info("✅ 새로운 스키마로 users 테이블 생성 완료")
+                    
+                    # 트랜잭션 커밋
+                    trans.commit()
+                    return True
+                    
                 except Exception as e:
-                    logger.warning(f"⚠️ 기존 테이블 삭제 중 오류 (무시): {str(e)}")
-                
-                # 새 스키마로 테이블 생성
-                Base.metadata.create_all(bind=self.engine)
-                logger.info("✅ 새로운 스키마로 users 테이블 생성 완료")
-                return True
-                
+                    # 트랜잭션 롤백
+                    trans.rollback()
+                    logger.error(f"❌ 테이블 생성 실패: {str(e)}")
+                    return False
+                    
         except Exception as e:
-            logger.error(f"❌ 테이블 생성 실패: {str(e)}")
+            logger.error(f"❌ 데이터베이스 연결 실패: {str(e)}")
             return False
     
     def get_session(self):
