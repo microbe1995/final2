@@ -1,15 +1,17 @@
 'use client';
 
 import { useState } from 'react';
-import axios from 'axios';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '../contexts/AuthContext';
+import axios from 'axios';
 
 // ============================================================================
-// 🎯 로그인 페이지 컴포넌트
+// 🔑 로그인 페이지 컴포넌트
 // ============================================================================
 
 export default function LoginPage() {
   const router = useRouter();
+  const { login } = useAuth();
   
   // ============================================================================
   // 📝 상태 관리
@@ -20,39 +22,46 @@ export default function LoginPage() {
     password: ''
   });
   
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [validation, setValidation] = useState({
+    email: { isValid: false, message: '' },
+    password: { isValid: false, message: '' }
+  });
+  
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
 
   // ============================================================================
-  // 🔧 API URL 설정
+  // 📝 폼 입력 처리
   // ============================================================================
   
-  const getApiBaseUrl = () => {
-    if (typeof window !== 'undefined') {
-      return process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080/api/v1';
-    }
-    return 'http://localhost:8080/api/v1';
-  };
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    setError('');
 
-  // ============================================================================
-  // ✅ 폼 검증
-  // ============================================================================
-  
-  const validateForm = () => {
-    const newErrors: Record<string, string> = {};
-    
-    if (!formData.email.trim()) {
-      newErrors.email = '이메일을 입력해주세요.';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = '올바른 이메일 형식을 입력해주세요.';
+    // 실시간 유효성 검사
+    switch (field) {
+      case 'email':
+        const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+        setValidation(prev => ({
+          ...prev,
+          email: {
+            isValid: emailValid,
+            message: emailValid ? '' : '올바른 이메일 형식을 입력해주세요'
+          }
+        }));
+        break;
+
+      case 'password':
+        const passwordValid = value.length >= 1;
+        setValidation(prev => ({
+          ...prev,
+          password: {
+            isValid: passwordValid,
+            message: passwordValid ? '' : '비밀번호를 입력해주세요'
+          }
+        }));
+        break;
     }
-    
-    if (!formData.password) {
-      newErrors.password = '비밀번호를 입력해주세요.';
-    }
-    
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
   };
 
   // ============================================================================
@@ -62,35 +71,31 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!validateForm()) {
+    // 전체 유효성 검사
+    if (!validation.email.isValid || !validation.password.isValid) {
+      setError('모든 필드를 올바르게 입력해주세요');
       return;
     }
-    
+
     setIsLoading(true);
-    
+    setError('');
+
     try {
-      const response = await axios.post(`${getApiBaseUrl()}/auth/login`, formData);
-      
-      if (response.status === 200) {
-        const { access_token, user } = response.data;
+      const response = await axios.post(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080/api/v1'}/auth/login`,
+        formData
+      );
+
+      if (response.data && response.data.user && response.data.token) {
+        // AuthContext를 통해 로그인 상태 업데이트
+        login(response.data.user, response.data.token);
         
-        // 토큰을 로컬 스토리지에 저장 (실제로는 더 안전한 방법 사용)
-        localStorage.setItem('access_token', access_token);
-        localStorage.setItem('user', JSON.stringify(user));
-        
-        alert(`🎉 로그인 성공!\n\n환영합니다, ${user.username}님!`);
-        router.push('/'); // 홈페이지로 이동
+        alert('로그인이 완료되었습니다!');
+        router.push('/');
       }
     } catch (error: any) {
       console.error('로그인 오류:', error);
-      
-      if (error.response?.data?.detail) {
-        setErrors({ general: error.response.data.detail });
-      } else if (error.response?.status === 401) {
-        setErrors({ general: '이메일 또는 비밀번호가 올바르지 않습니다.' });
-      } else {
-        setErrors({ general: '로그인 중 오류가 발생했습니다. 다시 시도해주세요.' });
-      }
+      setError(error.response?.data?.detail || '로그인 중 오류가 발생했습니다');
     } finally {
       setIsLoading(false);
     }
@@ -101,14 +106,14 @@ export default function LoginPage() {
   // ============================================================================
   
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 py-12 px-4 sm:px-6 lg:px-8 transition-colors duration-200">
-      <div className="max-w-md mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center p-4">
+      <div className="w-full max-w-md">
         {/* 헤더 */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2 transition-colors duration-200">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
             로그인
           </h1>
-          <p className="text-gray-600 dark:text-gray-300 transition-colors duration-200">
+          <p className="text-gray-600 dark:text-gray-300">
             CBAM Calculator 계정으로 로그인하세요
           </p>
         </div>
@@ -122,17 +127,19 @@ export default function LoginPage() {
                 이메일 *
               </label>
               <input
-                id="email"
-                name="email"
                 type="email"
-                autoComplete="email"
-                required
+                id="email"
                 value={formData.email}
-                onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                className={`form-input ${errors.email ? 'error' : ''}`}
+                onChange={(e) => handleInputChange('email', e.target.value)}
                 placeholder="이메일을 입력하세요"
+                className={`form-input ${validation.email.isValid ? 'border-green-500' : validation.email.message ? 'border-red-500' : ''}`}
+                required
               />
-              {errors.email && <p className="form-error">{errors.email}</p>}
+              {validation.email.message && (
+                <div className="form-error">
+                  {validation.email.message}
+                </div>
+              )}
             </div>
 
             {/* 비밀번호 필드 */}
@@ -141,64 +148,50 @@ export default function LoginPage() {
                 비밀번호 *
               </label>
               <input
-                id="password"
-                name="password"
                 type="password"
-                autoComplete="current-password"
-                required
+                id="password"
                 value={formData.password}
-                onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
-                className={`form-input ${errors.password ? 'error' : ''}`}
+                onChange={(e) => handleInputChange('password', e.target.value)}
                 placeholder="비밀번호를 입력하세요"
+                className={`form-input ${validation.password.isValid ? 'border-green-500' : validation.password.message ? 'border-red-500' : ''}`}
+                required
               />
-              {errors.password && <p className="form-error">{errors.password}</p>}
+              {validation.password.message && (
+                <div className="form-error">
+                  {validation.password.message}
+                </div>
+              )}
             </div>
 
-            {/* 일반 오류 메시지 */}
-            {errors.general && (
-              <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-                <p className="text-red-800 dark:text-red-200 text-sm">{errors.general}</p>
+            {/* 에러 메시지 */}
+            {error && (
+              <div className="form-error">
+                {error}
               </div>
             )}
 
-            {/* 제출 버튼 */}
+            {/* 로그인 버튼 */}
             <button
               type="submit"
               disabled={isLoading}
-              className="btn btn-primary w-full py-3 text-lg font-medium"
+              className="btn btn-primary w-full"
             >
-              {isLoading ? (
-                <div className="flex items-center gap-2">
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  로그인 중...
-                </div>
-              ) : (
-                '로그인'
-              )}
+              {isLoading ? '로그인 중...' : '로그인'}
             </button>
-          </form>
-        </div>
 
-        {/* 추가 링크 */}
-        <div className="text-center mt-6 space-y-3">
-          <p className="text-gray-600 dark:text-gray-300 transition-colors duration-200">
-            계정이 없으신가요?{' '}
-            <a
-              href="/register"
-              className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium transition-colors"
-            >
-              SignUp
-            </a>
-          </p>
-          
-          <p className="text-gray-600 dark:text-gray-300 transition-colors duration-200">
-            <a
-              href="/"
-              className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 font-medium transition-colors"
-            >
-              ← Back to Home
-            </a>
-          </p>
+            {/* 회원가입 링크 */}
+            <div className="text-center">
+              <p className="text-gray-600 dark:text-gray-400">
+                계정이 없으신가요?{' '}
+                <a
+                  href="/register"
+                  className="text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 font-medium transition-colors duration-200"
+                >
+                  SignUp
+                </a>
+              </p>
+            </div>
+          </form>
         </div>
       </div>
     </div>

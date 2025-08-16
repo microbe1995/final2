@@ -5,6 +5,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import ThemeToggle from '../components/ThemeToggle';
+import { AuthProvider } from './contexts/AuthContext';
 
 // ============================================================================
 // 🎯 메타데이터 설정
@@ -210,27 +211,29 @@ export default function RootLayout({
       </head>
       
       <body className="h-full bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
-        {/* 네비게이션 */}
-        <Navigation />
-        
-        {/* 메인 콘텐츠 */}
-        <main className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
-          {children}
-        </main>
-        
-        {/* 푸터 */}
-        <footer className="bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 mt-auto transition-colors duration-200">
-          <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-            <div className="text-center">
-              <p className="text-gray-500 dark:text-gray-400 text-sm transition-colors duration-200">
-                © 2024 CBAM Calculator. 모든 권리 보유.
-              </p>
-              <p className="text-gray-400 dark:text-gray-500 text-xs mt-2 transition-colors duration-200">
-                PostgreSQL 기반 안전한 사용자 데이터 관리
-              </p>
+        <AuthProvider>
+          {/* 네비게이션 */}
+          <Navigation />
+          
+          {/* 메인 콘텐츠 */}
+          <main className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
+            {children}
+          </main>
+          
+          {/* 푸터 */}
+          <footer className="bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 mt-auto transition-colors duration-200">
+            <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+              <div className="text-center">
+                <p className="text-gray-500 dark:text-gray-400 text-sm transition-colors duration-200">
+                  © 2024 CBAM Calculator. 모든 권리 보유.
+                </p>
+                <p className="text-gray-400 dark:text-gray-500 text-xs mt-2 transition-colors duration-200">
+                  PostgreSQL 기반 안전한 사용자 데이터 관리
+                </p>
+              </div>
             </div>
-          </div>
-        </footer>
+          </footer>
+        </AuthProvider>
       </body>
     </html>
   );
