@@ -17,7 +17,9 @@
 # ============================================================================
 
 import logging
+import os
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import text
 from app.domain.service.auth_service import AuthService
 from app.domain.repository.user_repository import UserRepository
 from app.domain.schema.auth_schema import (
@@ -77,6 +79,89 @@ def set_current_user_id(user_id: str):
     """현재 로그인한 사용자 ID 설정"""
     global _current_user_id
     _current_user_id = user_id
+
+# ============================================================================
+# 🔍 디버깅 엔드포인트
+# ============================================================================
+
+@auth_router.get("/debug/users", response_model=dict)
+async def debug_users(auth_service: AuthService = Depends(get_auth_service)):
+    """데이터베이스에 저장된 사용자 목록 조회 (디버깅용)"""
+    try:
+        logger.info("🔍 디버깅: 사용자 목록 조회 요청")
+        
+        # 모든 사용자 조회
+        users = await auth_service.get_all_users()
+        
+        # 사용자 정보 정리 (비밀번호 제외)
+        user_list = []
+        for user in users:
+            user_list.append({
+                "id": user.id,
+                "email": user.email,
+                "full_name": user.full_name,
+                "is_active": user.is_active,
+                "created_at": user.created_at.isoformat() if user.created_at else None,
+                "updated_at": user.updated_at.isoformat() if user.updated_at else None,
+                "last_login": user.last_login.isoformat() if user.last_login else None
+            })
+        
+        logger.info(f"✅ 디버깅: {len(user_list)}명의 사용자 발견")
+        return {
+            "total_users": len(user_list),
+            "users": user_list
+        }
+        
+    except Exception as e:
+        logger.error(f"❌ 디버깅: 사용자 목록 조회 실패 - {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"사용자 목록 조회 실패: {str(e)}"
+        )
+
+@auth_router.get("/debug/db-status", response_model=dict)
+async def debug_database_status():
+    """데이터베이스 연결 상태 확인 (디버깅용)"""
+    try:
+        logger.info("🔍 디버깅: 데이터베이스 상태 확인 요청")
+        
+        from app.common.database.database import database
+        
+        # 데이터베이스 연결 상태 확인
+        db_status = {
+            "database_url_set": bool(database.database_url),
+            "database_url_preview": database.database_url[:50] + "..." if database.database_url else None,
+            "engine_available": bool(database.engine),
+            "async_engine_available": bool(database.async_engine),
+            "railway_environment": os.getenv("RAILWAY_ENVIRONMENT") == "true",
+            "railway_project_id": os.getenv("RAILWAY_PROJECT_ID"),
+            "railway_service_id": os.getenv("RAILWAY_SERVICE_ID")
+        }
+        
+        # 테이블 존재 여부 확인
+        if database.engine:
+            try:
+                with database.engine.connect() as conn:
+                    result = conn.execute(text("SELECT COUNT(*) FROM users"))
+                    user_count = result.scalar()
+                    db_status["users_table_exists"] = True
+                    db_status["total_users"] = user_count
+            except Exception as e:
+                db_status["users_table_exists"] = False
+                db_status["table_error"] = str(e)
+        else:
+            db_status["users_table_exists"] = False
+            db_status["table_error"] = "엔진이 사용할 수 없음"
+        
+        logger.info(f"✅ 디버깅: 데이터베이스 상태 확인 완료")
+        return db_status
+        
+    except Exception as e:
+        logger.error(f"❌ 디버깅: 데이터베이스 상태 확인 실패 - {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"데이터베이스 상태 확인 실패: {str(e)}"
+        )
 
 # ============================================================================
 # 📝 회원가입 엔드포인트

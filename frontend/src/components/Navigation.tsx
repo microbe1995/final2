@@ -1,6 +1,6 @@
 'use client';
 
-import { useAuth } from '../app/contexts/AuthContext';
+import { useAuth } from '@/app/contexts/AuthContext';
 import ThemeToggle from './ThemeToggle';
 
 // ============================================================================

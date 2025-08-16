@@ -341,3 +341,12 @@ class AuthService:
             Optional[User]: 사용자 정보 또는 None
         """
         return await self.user_repository.get_user_by_email(email)
+    
+    async def get_all_users(self) -> List[User]:
+        """
+        모든 사용자 조회
+        
+        Returns:
+            List[User]: 사용자 목록
+        """
+        return await self.user_repository.get_all_users()

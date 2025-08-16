@@ -4,8 +4,8 @@
 
 import type { Metadata } from 'next';
 import './globals.css';
-import ThemeToggle from '../components/ThemeToggle';
-import Navigation from '../components/Navigation';
+import ThemeToggle from '@/components/ThemeToggle';
+import Navigation from '@/components/Navigation';
 import { AuthProvider } from './contexts/AuthContext';
 
 // ============================================================================
@@ -66,13 +66,13 @@ export const metadata: Metadata = {
       { url: '/icon-192x192.png', sizes: '192x192', type: 'image/png' },
     ],
   },
-  
+
   // 뷰포트
   viewport: {
-    width: 'device-width',
-    initialScale: 1,
-    maximumScale: 1,
-    userScalable: false,
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
   },
   
   // 기타
@@ -227,7 +227,7 @@ export default function RootLayout({
           
           {/* 메인 콘텐츠 */}
           <main className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
-            {children}
+        {children}
           </main>
           
           {/* 푸터 */}

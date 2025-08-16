@@ -11,7 +11,7 @@ export default function HomePage() {
           <div className="text-center">
             <h1 className="text-5xl md:text-6xl font-bold text-gray-900 dark:text-white mb-6 leading-tight transition-colors duration-200">
               Welcome to CBAM Calculator
-            </h1>
+        </h1>
             
             <p className="text-xl md:text-2xl text-gray-600 dark:text-gray-300 mb-12 max-w-4xl mx-auto leading-relaxed transition-colors duration-200">
               사용자 계정 관리 시스템을 통해 안전하고 편리하게 서비스를 이용하세요.
@@ -53,9 +53,9 @@ export default function HomePage() {
             </h2>
             <p className="text-lg text-gray-600 dark:text-gray-300 transition-colors duration-200">
               현재까지의 서비스 이용 현황을 확인해보세요
-            </p>
-          </div>
-          
+        </p>
+      </div>
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {/* 사용자 수 KPI */}
             <article className="card text-center hover:scale-105 transition-transform duration-200">
@@ -183,7 +183,7 @@ export default function HomePage() {
             회원가입은 단 1분이면 완료됩니다.
           </p>
         
-        </div>
+      </div>
       </section>
     </div>
   );
