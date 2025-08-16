@@ -1,0 +1,202 @@
+{
+    "meta": {
+    "title": "saas\_uiux\_spec",
+    "version": "1.0.0",
+    "description": "SaaS 대시보드/웹앱 설계를 위한 컴포넌트-원칙-태그/스타일 매핑 JSON",
+    "targets": \["dashboard", "internal\_tool", "settings", "auth"],
+    "principles": \["consistency", "accessibility", "conversion\_focus", "scalability", "handoff\_ready"]
+    },
+    "app\_shell": {
+    "layout": {
+    "regions": \["header", "sidebar", "main", "footer"],
+    "html": {
+    "header": \["header"],
+    "sidebar": \["aside", "nav", "ul", "li", "a"],
+    "main": \["main", "section", "article"],
+    "footer": \["footer"]
+    },
+    "aria": {
+    "nav": {"aria-label": "Primary"},
+    "active\_link": {"aria-current": "page"},
+    "search": {"role": "search"}
+    },
+    "css": {
+    "grid": {
+    "display": "grid",
+    "gridTemplateColumns": "240px 1fr",
+    "gridTemplateRows": "64px 1fr auto",
+    "gap": "var(--space-24)"
+    },
+    "spacing\_scale": \[4, 8, 12, 16, 20, 24, 32],
+    "breakpoints": {"sm": 640, "md": 768, "lg": 1024, "xl": 1280}
+    }
+    },
+    "header": {
+    "slots": \["brand", "global\_search", "notifications", "user\_menu"],
+    "html": \["header", "button", "form", "input"],
+    "a11y": {"user\_menu\_button": {"aria-haspopup": "menu", "aria-expanded": "false"}},
+    "css": {"height": "64px", "paddingInline": "var(--space-16)"}
+    },
+    "sidebar": {
+    "pattern": "permanent\_on\_desktop\_toggle\_on\_mobile",
+    "menu\_item": {
+    "html": \["li", "a"],
+    "states": \["default", "hover", "active", "disabled"],
+    "a11y": {"active": {"aria-current": "page"}}
+    }
+    }
+    },
+    "dashboard\_layout": {
+    "sections": \[
+    {"id": "kpi\_row", "html": \["section"], "grid": {"cols": 12, "gap": 16}, "purpose": "핵심지표 상단 배치로 의사결정 가속"},
+    {"id": "trend\_charts", "html": \["section"], "grid": {"cols": 12, "gap": 16}},
+    {"id": "tables\_and\_feeds", "html": \["section"], "grid": {"cols": 12, "gap": 16}}
+    ],
+    "kpi\_card": {
+    "html": \["article", "h3", "p", "button"],
+    "a11y": {"group": {"role": "group"}, "value\_label": {"aria-describedby": "kpi-title"}},
+    "css": {
+    "padding": "var(--space-16)",
+    "borderRadius": "12px",
+    "boxShadow": "var(--elevation-1)"
+    },
+    "data": \["title", "value", "delta", "trend"]
+    }
+    },
+    "components": {
+    "card": {
+    "html": \["article", "h3", "p"],
+    "props": \["title", "subtitle", "actions", "icon", "footer"],
+    "css": {
+    "padding": "var(--space-16)",
+    "background": "var(--surface)",
+    "borderRadius": "12px",
+    "gap": "var(--space-8)"
+    }
+    },
+    "table": {
+    "html": \["table", "thead", "tbody", "tr", "th", "td"],
+    "a11y": {
+    "th": {"scope": "col"},
+    "sortable": {"aria-sort": \["none", "ascending", "descending"]},
+    "caption": {"required": true}
+    },
+    "patterns": \["sticky\_header", "row\_selection", "column\_sort"],
+    "css": {"fontSize": "14px", "rowHeight": "44px"}
+    },
+    "form": {
+    "html": \["form", "fieldset", "legend", "label", "input", "select", "textarea", "button"],
+    "validation": {
+    "error\_region": {"role": "alert", "aria-live": "polite"},
+    "linkage": {"label\_for": true, "aria-describedby": "error-id"}
+    },
+    "css": {"field\_gap": "var(--space-12)", "control\_height": "40px"}
+    },
+    "modal": {
+    "html": \["div", "dialog"],
+    "a11y": {"role": "dialog", "aria-modal": "true", "focus\_trap": true},
+    "css": {"backdrop": "rgba(0,0,0,.4)", "radius": "12px"}
+    },
+    "toast": {
+    "html": \["div"],
+    "a11y": {"role": "status", "aria-live": "polite"},
+    "css": {"position": "fixed", "inset": "auto var(--space-16) var(--space-16) auto"}
+    },
+    "tabs": {
+    "html": \["div", "button"],
+    "a11y": {"role": "tablist", "tab": {"role": "tab", "aria-selected": "true|false", "aria-controls": "panel-id"}, "panel": {"role": "tabpanel"}},
+    "css": {"indicator\_height": "2px"}
+    },
+    "pagination": {
+    "html": \["nav", "ul", "li", "button"],
+    "a11y": {"nav": {"aria-label": "Pagination"}},
+    "props": \["page", "page\_size", "total"]
+    },
+    "chart": {
+    "types": \["line", "bar", "pie", "area", "scatter"],
+    "a11y": {"title": true, "desc": true, "focusable\_points": true},
+    "legend": {"outside\_clickable": true},
+    "helpers": \["summary\_text", "trend\_delta\_badge"]
+    }
+    },
+    "states": {
+    "empty": {"pattern": "illustration + guidance + primary\_cta", "html": \["section", "h3", "p", "button"]},
+    "loading": {"pattern": "skeleton\_placeholder", "css": {"animation": "pulse 1.2s infinite"}},
+    "error": {"pattern": "message + retry\_button", "a11y": {"role": "alert"}}
+    },
+    "accessibility": {
+    "contrast": "WCAG AA",
+    "focus\_visible": true,
+    "keyboard\_navigation": true,
+    "labels": {"forms": true, "charts": "title/desc", "tables": "caption"},
+    "live\_regions": {"toast": "status", "form\_error": "alert"}
+    },
+    "design\_tokens": {
+    "typography": {
+    "font\_family": "system-ui, -apple-system, Segoe UI, Roboto",
+    "scale": {"body": 14, "body\_large": 16, "h3": 18, "h2": 22, "h1": 28},
+    "line\_height": {"body": 1.5, "heading": 1.3}
+    },
+    "spacing": {"s4": 4, "s8": 8, "s12": 12, "s16": 16, "s20": 20, "s24": 24, "s32": 32},
+    "radius": {"sm": 8, "md": 12, "lg": 16, "pill": 999},
+    "elevation": {
+    "elevation-0": "none",
+    "elevation-1": "0 1px 2px rgba(0,0,0,.06)",
+    "elevation-2": "0 4px 12px rgba(0,0,0,.10)"
+    },
+    "color": {
+    "bg": "#0b0c0f",
+    "surface": "#ffffff",
+    "text\_primary": "#0f172a",
+    "text\_secondary": "#475569",
+    "border": "#e2e8f0",
+    "accent": "#2563eb",
+    "success": "#16a34a",
+    "warning": "#d97706",
+    "danger": "#dc2626"
+    }
+    },
+    "interaction": {
+    "states": {
+    "hover": {"duration\_ms": 120},
+    "focus": {"outline": "2px solid var(--accent)"},
+    "press": {"scale": 0.98},
+    "disabled": {"opacity": 0.5, "pointer-events": "none"}
+    },
+    "motion": {
+    "standard\_duration\_ms": 160,
+    "easings": {"standard": "cubic-bezier(0.2, 0, 0, 1)"},
+    "use\_cases": \["modal\_open\_close", "toast\_enter\_exit", "dropdown\_open\_close"]
+    }
+    },
+    "i18n": {
+    "number\_date\_currency": "Intl API 사용",
+    "rtl\_support": false,
+    "copy\_slots": \["title", "subtitle", "helper\_text", "empty\_state\_text", "error\_messages"]
+    },
+    "routes\_examples": \[
+    {"path": "/dashboard", "sections": \["kpi\_row", "trend\_charts", "tables\_and\_feeds"]},
+    {"path": "/settings/profile", "sections": \["form"]},
+    {"path": "/auth/login", "sections": \["form"]}
+    ],
+    "html\_snippets": {
+    "header": "<header>\<a class="brand">Brand</a>\<form role="search">\<input type="search" placeholder="Search"/></form>\<button aria-haspopup="menu" aria-expanded="false">User</button></header>",
+    "sidebar": "<aside>\<nav aria-label="Primary"><ul><li>\<a href="/dashboard" aria-current="page">Dashboard</a></li></ul></nav></aside>",
+    "kpi\_card": "\<article role="group" class="card">\<h3 id="kpi-title">MRR</h3>\<p class="value" aria-describedby="kpi-title">\$42,000</p>\<p class="delta positive">+8% MoM</p></article>",
+    "table": "<table><caption>Subscriptions</caption><thead><tr>\<th scope="col" aria-sort="none">Plan</th>\<th scope="col">MRR</th></tr></thead><tbody>...</tbody></table>",
+    "form\_field": "\<label for="email">Email</label>\<input id="email" name="email" type="email" aria-required="true"/>\<p id="email-error" role="alert" hidden>Invalid email</p>"
+    },
+    "handoff": {
+    "deliverables": \["wireframe", "hi\_fi\_screens", "prototype\_click", "design\_tokens", "component\_specs", "a11y\_checklist"],
+    "tools": \["figma\_dev\_mode", "storybook", "zeplin\_optional", "notion\_specs"],
+    "checklist": \[
+    "모든 상호작용 상태 정의(hover/focus/press/disabled)",
+    "차트 대체 텍스트/요약 제공",
+    "테이블 정렬/페이징 명세",
+    "빈/로딩/에러 상태 화면 포함",
+    "i18n 포맷 규칙 명문화",
+    "컴포넌트별 props/slot 문서화"
+    ]
+    }
+    }
+    

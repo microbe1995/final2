@@ -1,215 +1,374 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import axios from 'axios';
+import { useRouter } from 'next/navigation';
+
+// ============================================================================
+// 🎯 회원가입 페이지 컴포넌트
+// ============================================================================
 
 export default function RegisterPage() {
   const router = useRouter();
-
-  // Form state management
+  
+  // ============================================================================
+  // 📝 상태 관리
+  // ============================================================================
+  
   const [formData, setFormData] = useState({
     username: '',
     email: '',
+    full_name: '',
     password: '',
-    confirmPassword: '',
-    full_name: ''
+    confirm_password: ''
+  });
+  
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isLoading, setIsLoading] = useState(false);
+  const [duplicateChecks, setDuplicateChecks] = useState({
+    username: { checked: false, available: false },
+    email: { checked: false, available: false }
   });
 
-  // Form input handler
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+  // ============================================================================
+  // 🔧 API URL 설정
+  // ============================================================================
+  
+  const getApiBaseUrl = () => {
+    if (typeof window !== 'undefined') {
+      return process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080/api/v1';
+    }
+    return 'http://localhost:8080/api/v1';
   };
 
-  // Register form submission
-  const handleRegister = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // 사용자명 검증 (한글, 영문, 숫자, 언더스코어 허용)
-    const usernamePattern = /^[가-힣a-zA-Z0-9_]+$/;
-    if (!usernamePattern.test(formData.username)) {
-      alert('❌ 사용자명은 한글, 영문, 숫자, 언더스코어(_)만 사용 가능합니다.');
-      return;
-    }
-    
-    // 비밀번호 확인 검증
-    if (formData.password !== formData.confirmPassword) {
-      alert('❌ 비밀번호가 일치하지 않습니다.');
-      return;
-    }
-    
-    // 입력된 데이터를 JSON 형태로 alert에 표시 (실제 전송 데이터와 동일하게)
-    const registerData = {
-      "회원가입 정보": {
-        "username": formData.username,
-        "email": formData.email,
-        "full_name": formData.full_name || "미입력",
-        "password": formData.password,
-        "confirm_password": formData.password
-      }
-    };
-    
-    // JSON을 보기 좋게 포맷팅하여 alert에 표시
-    alert(JSON.stringify(registerData, null, 2));
-    
-    // 프론트엔드 로그: 입력값들을 JSON 형태로 출력
-    console.log('📝 프론트엔드 회원가입 입력값:', JSON.stringify(registerData, null, 2));
+  // ============================================================================
+  // ✅ 중복 체크 함수
+  // ============================================================================
+  
+  const checkDuplicate = async (type: 'username' | 'email', value: string) => {
+    if (!value.trim()) return;
     
     try {
-      // API URL 설정 - 환경 변수 또는 기본값 사용
-      const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL 
-        ? `${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/register`
-        : 'http://localhost:8080/api/v1/auth/register';
+      const response = await axios.get(`${getApiBaseUrl()}/auth/check/${type}/${encodeURIComponent(value)}`);
+      const { available } = response.data;
       
-      console.log(`😂 apiUrl: ${apiUrl}`);
-      console.log(`🌍 환경: ${process.env.NODE_ENV}`);
-      console.log(`🔗 전체 URL: ${apiUrl}`);
+      setDuplicateChecks(prev => ({
+        ...prev,
+        [type]: { checked: true, available }
+      }));
       
-      // 전송할 데이터 준비 - confirm_password 필드 강제 설정
-      const requestData = {
-        username: formData.username,
-        email: formData.email,
-        password: formData.password,
-        confirm_password: formData.password,  // password와 동일한 값으로 설정
-        full_name: formData.full_name || undefined
-      };
-      
-      console.log('🚀 Gateway로 전송할 데이터:', requestData);
-      
-      // 비동기 요청 처리
-      const response = await axios.post(apiUrl, requestData);
-      console.log('✅ 회원가입 성공:', response.data);
-      
-      // 성공 메시지 표시
-      alert(`🎉 회원가입이 성공적으로 완료되었습니다!\n\n사용자명: ${response.data.user.username}\n이메일: ${response.data.user.email}\n사용자 ID: ${response.data.user.id}`);
-      
-      // 대시보드로 이동
-      router.replace('/dashboard');
-      
-    } catch (error: any) {
-      console.error('❌ 회원가입 실패:', error);
-      
-      // 에러 응답 처리
-      if (error.response && error.response.data) {
-        alert(`❌ 회원가입 실패: ${error.response.data.detail || error.response.data.message || '알 수 없는 오류'}`);
-      } else if (error.code === 'ERR_NETWORK') {
-        alert('❌ Gateway에 연결할 수 없습니다. 서버가 실행 중인지 확인해주세요.');
+      if (!available) {
+        setErrors(prev => ({
+          ...prev,
+          [type]: `${type === 'username' ? '사용자명' : '이메일'}이 이미 사용 중입니다.`
+        }));
       } else {
-        alert('❌ 회원가입에 실패했습니다. 서버 연결을 확인해주세요.');
+        setErrors(prev => {
+          const newErrors = { ...prev };
+          delete newErrors[type];
+          return newErrors;
+        });
       }
+    } catch (error) {
+      console.error(`${type} 중복 체크 오류:`, error);
+      setErrors(prev => ({
+        ...prev,
+        [type]: `${type === 'username' ? '사용자명' : '이메일'} 중복 체크 중 오류가 발생했습니다.`
+      }));
     }
   };
 
-  // Go back to login page
-  const handleBackToLogin = () => {
-    router.replace('/login');
+  // ============================================================================
+  // 🔍 실시간 중복 체크 (디바운스)
+  // ============================================================================
+  
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    
+    // 중복 체크 상태 초기화
+    if (field === 'username' || field === 'email') {
+      setDuplicateChecks(prev => ({
+        ...prev,
+        [field]: { checked: false, available: false }
+      }));
+    }
+    
+    // 에러 메시지 제거
+    if (errors[field]) {
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[field];
+        return newErrors;
+      });
+    }
   };
 
+  // ============================================================================
+  // ✅ 폼 검증
+  // ============================================================================
+  
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {};
+    
+    if (!formData.username.trim()) {
+      newErrors.username = '사용자명을 입력해주세요.';
+    } else if (formData.username.length < 2) {
+      newErrors.username = '사용자명은 2자 이상이어야 합니다.';
+    } else if (!/^[가-힣a-zA-Z0-9_]+$/.test(formData.username)) {
+      newErrors.username = '사용자명은 한글, 영문, 숫자, 언더스코어만 사용 가능합니다.';
+    }
+    
+    if (!formData.email.trim()) {
+      newErrors.email = '이메일을 입력해주세요.';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = '올바른 이메일 형식을 입력해주세요.';
+    }
+    
+    if (!formData.full_name.trim()) {
+      newErrors.full_name = '이름을 입력해주세요.';
+    }
+    
+    if (!formData.password) {
+      newErrors.password = '비밀번호를 입력해주세요.';
+    } else if (formData.password.length < 6) {
+      newErrors.password = '비밀번호는 6자 이상이어야 합니다.';
+    }
+    
+    if (!formData.confirm_password) {
+      newErrors.confirm_password = '비밀번호 확인을 입력해주세요.';
+    } else if (formData.password !== formData.confirm_password) {
+      newErrors.confirm_password = '비밀번호가 일치하지 않습니다.';
+    }
+    
+    // 중복 체크 확인
+    if (!duplicateChecks.username.checked) {
+      newErrors.username = '사용자명 중복 체크를 해주세요.';
+    } else if (!duplicateChecks.username.available) {
+      newErrors.username = '사용자명이 이미 사용 중입니다.';
+    }
+    
+    if (!duplicateChecks.email.checked) {
+      newErrors.email = '이메일 중복 체크를 해주세요.';
+    } else if (!duplicateChecks.email.available) {
+      newErrors.email = '이메일이 이미 사용 중입니다.';
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  // ============================================================================
+  // 🚀 회원가입 제출
+  // ============================================================================
+  
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!validateForm()) {
+      return;
+    }
+    
+    setIsLoading(true);
+    
+    try {
+      const response = await axios.post(`${getApiBaseUrl()}/auth/register`, formData);
+      
+      if (response.status === 201) {
+        alert('회원가입이 완료되었습니다! 로그인 페이지로 이동합니다.');
+        router.push('/login');
+      }
+    } catch (error: any) {
+      console.error('회원가입 오류:', error);
+      
+      if (error.response?.data?.detail) {
+        alert(`회원가입 실패: ${error.response.data.detail}`);
+      } else {
+        alert('회원가입 중 오류가 발생했습니다. 다시 시도해주세요.');
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // ============================================================================
+  // 🎨 렌더링
+  // ============================================================================
+  
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        <div className="bg-white rounded-3xl shadow-2xl px-8 py-12">
-          {/* Register Title */}
-          <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold text-gray-900 tracking-tight">
-              회원가입
-            </h1>
-            <p className="text-gray-600 mt-2">새 계정을 만들어 서비스를 이용하세요</p>
-          </div>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 py-12 px-4 sm:px-6 lg:px-8 transition-colors duration-200">
+      <div className="max-w-md mx-auto">
+        {/* 헤더 */}
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2 transition-colors duration-200">
+            회원가입
+          </h1>
+          <p className="text-gray-600 dark:text-gray-300 transition-colors duration-200">
+            CBAM Calculator 계정을 생성하고 서비스를 이용해보세요
+          </p>
+        </div>
 
-          {/* Register Form */}
-          <form onSubmit={handleRegister} className="space-y-6">
-            {/* Username Input */}
-            <div className="relative">
-              <input
-                type="text"
-                name="username"
-                value={formData.username}
-                onChange={handleInputChange}
-                placeholder="사용자명 (한글, 영문, 숫자, 언더스코어)"
-                pattern="^[가-힣a-zA-Z0-9_]+$"
-                title="한글, 영문, 숫자, 언더스코어(_)만 사용 가능합니다"
-                className="w-full px-4 py-3 text-gray-800 placeholder-gray-400 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition-all duration-300"
-                required
-              />
-              <p className="text-xs text-gray-500 mt-1">한글, 영문, 숫자, 언더스코어(_)만 사용 가능합니다</p>
+        {/* 회원가입 폼 */}
+        <div className="card">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* 사용자명 필드 */}
+            <div className="form-field">
+              <label htmlFor="username" className="form-label">
+                사용자명 *
+              </label>
+              <div className="flex gap-2">
+                <input
+                  id="username"
+                  name="username"
+                  type="text"
+                  required
+                  value={formData.username}
+                  onChange={(e) => handleInputChange('username', e.target.value)}
+                  className={`form-input flex-1 ${errors.username ? 'error' : ''}`}
+                  placeholder="사용자명을 입력하세요"
+                />
+                <button
+                  type="button"
+                  onClick={() => checkDuplicate('username', formData.username)}
+                  disabled={!formData.username.trim() || duplicateChecks.username.checked}
+                  className="btn btn-secondary px-4 py-2 text-sm whitespace-nowrap"
+                >
+                  {duplicateChecks.username.checked 
+                    ? (duplicateChecks.username.available ? '✅' : '❌')
+                    : '중복체크'
+                  }
+                </button>
+              </div>
+              {errors.username && <p className="form-error">{errors.username}</p>}
+              {duplicateChecks.username.checked && (
+                <p className={`text-sm ${duplicateChecks.username.available ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                  {duplicateChecks.username.available ? '사용 가능한 사용자명입니다.' : '이미 사용 중인 사용자명입니다.'}
+                </p>
+              )}
             </div>
 
-            {/* Full Name Input */}
-            <div className="relative">
+            {/* 이메일 필드 */}
+            <div className="form-field">
+              <label htmlFor="email" className="form-label">
+                이메일 *
+              </label>
+              <div className="flex gap-2">
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  required
+                  value={formData.email}
+                  onChange={(e) => handleInputChange('email', e.target.value)}
+                  className={`form-input flex-1 ${errors.email ? 'error' : ''}`}
+                  placeholder="이메일을 입력하세요"
+                />
+                <button
+                  type="button"
+                  onClick={() => checkDuplicate('email', formData.email)}
+                  disabled={!formData.email.trim() || duplicateChecks.email.checked}
+                  className="btn btn-secondary px-4 py-2 text-sm whitespace-nowrap"
+                >
+                  {duplicateChecks.email.checked 
+                    ? (duplicateChecks.email.available ? '✅' : '❌')
+                    : '중복체크'
+                  }
+                </button>
+              </div>
+              {errors.email && <p className="form-error">{errors.email}</p>}
+              {duplicateChecks.email.checked && (
+                <p className={`text-sm ${duplicateChecks.email.available ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                  {duplicateChecks.email.available ? '사용 가능한 이메일입니다.' : '이미 사용 중인 이메일입니다.'}
+                </p>
+              )}
+            </div>
+
+            {/* 이름 필드 */}
+            <div className="form-field">
+              <label htmlFor="full_name" className="form-label">
+                이름 *
+              </label>
               <input
-                type="text"
+                id="full_name"
                 name="full_name"
+                type="text"
+                autoComplete="name"
+                required
                 value={formData.full_name}
-                onChange={handleInputChange}
-                placeholder="전체 이름 (선택사항)"
-                className="w-full px-4 py-3 text-gray-800 placeholder-gray-400 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition-all duration-300"
+                onChange={(e) => handleInputChange('full_name', e.target.value)}
+                className={`form-input ${errors.full_name ? 'error' : ''}`}
+                placeholder="이름을 입력하세요"
               />
+              {errors.full_name && <p className="form-error">{errors.full_name}</p>}
             </div>
 
-            {/* Email Input */}
-            <div className="relative">
+            {/* 비밀번호 필드 */}
+            <div className="form-field">
+              <label htmlFor="password" className="form-label">
+                비밀번호 *
+              </label>
               <input
-                type="email"
-                name="email"
-                value={formData.email}
-                onChange={handleInputChange}
-                placeholder="이메일"
-                className="w-full px-4 py-3 text-gray-800 placeholder-gray-400 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition-all duration-300"
-                required
-              />
-            </div>
-
-            {/* Password Input */}
-            <div className="relative">
-              <input
-                type="password"
+                id="password"
                 name="password"
-                value={formData.password}
-                onChange={handleInputChange}
-                placeholder="비밀번호 (최소 8자)"
-                className="w-full px-4 py-3 text-gray-800 placeholder-gray-400 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition-all duration-300"
-                required
-              />
-            </div>
-
-            {/* Confirm Password Input */}
-            <div className="relative">
-              <input
                 type="password"
-                name="confirmPassword"
-                value={formData.confirmPassword}
-                onChange={handleInputChange}
-                placeholder="비밀번호 확인"
-                className="w-full px-4 py-3 text-gray-800 placeholder-gray-400 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition-all duration-300"
+                autoComplete="new-password"
                 required
+                value={formData.password}
+                onChange={(e) => handleInputChange('password', e.target.value)}
+                className={`form-input ${errors.password ? 'error' : ''}`}
+                placeholder="비밀번호를 입력하세요 (6자 이상)"
               />
+              {errors.password && <p className="form-error">{errors.password}</p>}
             </div>
 
-            {/* Buttons */}
-            <div className="space-y-4 pt-4">
-              {/* Register Button */}
-              <button
-                type="submit"
-                className="w-full bg-blue-600 text-white py-3 rounded-xl hover:bg-blue-700 transition-all duration-200 font-medium text-lg shadow-sm"
-              >
-                회원가입
-              </button>
-
-              {/* Back to Login Button */}
-              <button
-                type="button"
-                onClick={handleBackToLogin}
-                className="w-full bg-white border-2 border-gray-300 text-gray-800 py-3 rounded-xl hover:bg-gray-50 hover:border-gray-400 transition-all duration-200 font-medium text-lg shadow-sm"
-              >
-                로그인으로 돌아가기
-              </button>
+            {/* 비밀번호 확인 필드 */}
+            <div className="form-field">
+              <label htmlFor="confirm_password" className="form-label">
+                비밀번호 확인 *
+              </label>
+              <input
+                id="confirm_password"
+                name="confirm_password"
+                type="password"
+                autoComplete="new-password"
+                required
+                value={formData.confirm_password}
+                onChange={(e) => handleInputChange('confirm_password', e.target.value)}
+                className={`form-input ${errors.confirm_password ? 'error' : ''}`}
+                placeholder="비밀번호를 다시 입력하세요"
+              />
+              {errors.confirm_password && <p className="form-error">{errors.confirm_password}</p>}
             </div>
+
+            {/* 제출 버튼 */}
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="btn btn-primary w-full py-3 text-lg font-medium"
+            >
+              {isLoading ? (
+                <div className="flex items-center gap-2">
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  회원가입 중...
+                </div>
+              ) : (
+                '회원가입 완료'
+              )}
+            </button>
           </form>
+        </div>
+
+        {/* 로그인 링크 */}
+        <div className="text-center mt-6">
+          <p className="text-gray-600 dark:text-gray-300 transition-colors duration-200">
+            이미 계정이 있으신가요?{' '}
+            <a
+              href="/login"
+              className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium transition-colors"
+            >
+              로그인하기
+            </a>
+          </p>
         </div>
       </div>
     </div>
