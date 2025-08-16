@@ -115,26 +115,28 @@ class Database:
             self.database_url = None
     
     def create_tables(self):
-        """테이블 생성 (없는 경우)"""
+        """테이블 생성 (기존 테이블 삭제 후 새로 생성)"""
         if not self.engine:
             logger.warning("⚠️ 데이터베이스 연결이 설정되지 않았습니다.")
             return False
             
         try:
-            # 테이블 존재 여부 확인
+            # 기존 테이블 삭제 (스키마 변경을 위해)
             with self.engine.connect() as conn:
-                result = conn.execute(text("SELECT 1 FROM users LIMIT 1"))
-                logger.info("✅ users 테이블이 이미 존재합니다.")
-                return True
-        except Exception:
-            try:
-                # 테이블 생성
+                try:
+                    conn.execute(text("DROP TABLE IF EXISTS users CASCADE"))
+                    logger.info("🗑️ 기존 users 테이블 삭제 완료")
+                except Exception as e:
+                    logger.warning(f"⚠️ 기존 테이블 삭제 중 오류 (무시): {str(e)}")
+                
+                # 새 스키마로 테이블 생성
                 Base.metadata.create_all(bind=self.engine)
-                logger.info("✅ users 테이블 생성 완료")
+                logger.info("✅ 새로운 스키마로 users 테이블 생성 완료")
                 return True
-            except Exception as e:
-                logger.error(f"❌ 테이블 생성 실패: {str(e)}")
-                return False
+                
+        except Exception as e:
+            logger.error(f"❌ 테이블 생성 실패: {str(e)}")
+            return False
     
     def get_session(self):
         """동기 세션 반환"""
