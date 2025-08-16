@@ -61,12 +61,22 @@ def get_auth_service(user_repository: UserRepository = Depends(get_user_reposito
         logger.error(f"❌ AuthService 의존성 주입 실패: {str(e)}")
         raise
 
+# 전역 변수로 현재 로그인한 사용자 ID 저장 (임시 구현)
+_current_user_id = None
+
 def get_current_user_id() -> str:
     """현재 인증된 사용자 ID 반환 (임시 구현)"""
-    # TODO: JWT 토큰에서 실제 사용자 ID 추출
-    # 현재는 테스트용으로 하드코딩된 값 반환
-    import uuid
-    return str(uuid.uuid4())
+    global _current_user_id
+    if _current_user_id is None:
+        # TODO: JWT 토큰에서 실제 사용자 ID 추출
+        # 현재는 테스트용으로 하드코딩된 값 반환
+        _current_user_id = "test-user-id-12345"
+    return _current_user_id
+
+def set_current_user_id(user_id: str):
+    """현재 로그인한 사용자 ID 설정"""
+    global _current_user_id
+    _current_user_id = user_id
 
 # ============================================================================
 # 📝 회원가입 엔드포인트
@@ -92,6 +102,9 @@ async def register_user(request: UserRegistrationRequest, auth_service: AuthServ
         user, token = await auth_service.register_user(request)
         
         logger.info(f"✅ 회원가입 성공: {request.email}")
+        
+        # 현재 로그인한 사용자 ID 저장
+        set_current_user_id(user.id)
         
         return AuthResponse(
             user=UserResponse(
@@ -139,6 +152,9 @@ async def login_user(request: UserLoginRequest, auth_service: AuthService = Depe
         user, token = await auth_service.login_user(request)
         
         logger.info(f"✅ 로그인 성공: {request.email}")
+        
+        # 현재 로그인한 사용자 ID 저장
+        set_current_user_id(user.id)
         
         return AuthResponse(
             user=UserResponse(

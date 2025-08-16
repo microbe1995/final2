@@ -178,6 +178,10 @@ export default function ProfilePage() {
         email: profileData.email
       };
       
+      console.log('🔍 프로필 수정 요청 데이터:', updateData);
+      console.log('🔍 API URL:', `${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080/api/v1'}/auth/profile`);
+      console.log('🔍 Authorization 헤더:', `Bearer ${token}`);
+      
       const response = await axios.put(
         `${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080/api/v1'}/auth/profile`,
         updateData,
@@ -187,6 +191,8 @@ export default function ProfilePage() {
           }
         }
       );
+      
+      console.log('✅ 프로필 수정 응답:', response.data);
 
       if (response.data) {
         // AuthContext 업데이트
@@ -198,8 +204,23 @@ export default function ProfilePage() {
         setSuccess('프로필 정보가 성공적으로 수정되었습니다!');
       }
     } catch (error: any) {
-      console.error('프로필 수정 오류:', error);
-      setError(error.response?.data?.detail || '프로필 수정 중 오류가 발생했습니다');
+      console.error('❌ 프로필 수정 오류:', error);
+      console.error('❌ 에러 응답:', error.response);
+      console.error('❌ 에러 상태:', error.response?.status);
+      console.error('❌ 에러 데이터:', error.response?.data);
+      
+      let errorMessage = '프로필 수정 중 오류가 발생했습니다';
+      if (error.response?.data?.detail) {
+        errorMessage = error.response.data.detail;
+      } else if (error.response?.status === 400) {
+        errorMessage = '잘못된 요청 데이터입니다. 입력값을 확인해주세요.';
+      } else if (error.response?.status === 401) {
+        errorMessage = '인증이 필요합니다. 다시 로그인해주세요.';
+      } else if (error.response?.status === 404) {
+        errorMessage = '사용자를 찾을 수 없습니다.';
+      }
+      
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
