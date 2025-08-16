@@ -112,8 +112,7 @@ class Database:
         """비동기 세션 반환"""
         if not self.AsyncSessionLocal:
             return None
-        async with self.AsyncSessionLocal() as session:
-            return session
+        return self.AsyncSessionLocal()
     
     def close(self):
         """데이터베이스 연결 종료"""

@@ -93,10 +93,17 @@ class UserRepository:
             )
             
             # 데이터베이스에 저장
-            async with database.get_async_session() as session:
-                session.add(user_db)
-                await session.commit()
-                await session.refresh(user_db)
+            session = await database.get_async_session()
+            if session:
+                try:
+                    session.add(user_db)
+                    await session.commit()
+                    await session.refresh(user_db)
+                finally:
+                    await session.close()
+            else:
+                logger.error("❌ 데이터베이스 세션을 가져올 수 없습니다.")
+                return None
             
             logger.info(f"✅ PostgreSQL 사용자 생성 성공: {user.email}")
             return user
@@ -108,26 +115,33 @@ class UserRepository:
     async def _get_user_by_email_db(self, email: str) -> Optional[User]:
         """PostgreSQL에서 이메일로 사용자 조회"""
         try:
-            async with database.get_async_session() as session:
-                result = await session.execute(
-                    select(UserDB).where(UserDB.email == email)
-                )
-                user_db = result.scalar_one_or_none()
-                
-                if user_db:
-                    # UserDB를 User 엔티티로 변환
-                    user = User(
-                        id=user_db.id,
-                        username=user_db.username,
-                        email=user_db.email,
-                        full_name=user_db.full_name,
-                        password_hash=user_db.password_hash,
-                        is_active=user_db.is_active,
-                        created_at=user_db.created_at,
-                        updated_at=user_db.updated_at,
-                        last_login=user_db.last_login
+            session = await database.get_async_session()
+            if session:
+                try:
+                    result = await session.execute(
+                        select(UserDB).where(UserDB.email == email)
                     )
-                    return user
+                    user_db = result.scalar_one_or_none()
+                    
+                    if user_db:
+                        # UserDB를 User 엔티티로 변환
+                        user = User(
+                            id=user_db.id,
+                            username=user_db.username,
+                            email=user_db.email,
+                            full_name=user_db.full_name,
+                            password_hash=user_db.password_hash,
+                            is_active=user_db.is_active,
+                            created_at=user_db.created_at,
+                            updated_at=user_db.updated_at,
+                            last_login=user_db.last_login
+                        )
+                        return user
+                    return None
+                finally:
+                    await session.close()
+            else:
+                logger.error("❌ 데이터베이스 세션을 가져올 수 없습니다.")
                 return None
                 
         except Exception as e:
@@ -137,26 +151,33 @@ class UserRepository:
     async def _get_user_by_username_db(self, username: str) -> Optional[User]:
         """PostgreSQL에서 사용자명으로 사용자 조회"""
         try:
-            async with database.get_async_session() as session:
-                result = await session.execute(
-                    select(UserDB).where(UserDB.username == username)
-                )
-                user_db = result.scalar_one_or_none()
-                
-                if user_db:
-                    # UserDB를 User 엔티티로 변환
-                    user = User(
-                        id=user_db.id,
-                        username=user_db.username,
-                        email=user_db.email,
-                        full_name=user_db.full_name,
-                        password_hash=user_db.password_hash,
-                        is_active=user_db.is_active,
-                        created_at=user_db.created_at,
-                        updated_at=user_db.updated_at,
-                        last_login=user_db.last_login
+            session = await database.get_async_session()
+            if session:
+                try:
+                    result = await session.execute(
+                        select(UserDB).where(UserDB.username == username)
                     )
-                    return user
+                    user_db = result.scalar_one_or_none()
+                    
+                    if user_db:
+                        # UserDB를 User 엔티티로 변환
+                        user = User(
+                            id=user_db.id,
+                            username=user_db.username,
+                            email=user_db.email,
+                            full_name=user_db.full_name,
+                            password_hash=user_db.password_hash,
+                            is_active=user_db.is_active,
+                            created_at=user_db.created_at,
+                            updated_at=user_db.updated_at,
+                            last_login=user_db.last_login
+                        )
+                        return user
+                    return None
+                finally:
+                    await session.close()
+            else:
+                logger.error("❌ 데이터베이스 세션을 가져올 수 없습니다.")
                 return None
                 
         except Exception as e:
