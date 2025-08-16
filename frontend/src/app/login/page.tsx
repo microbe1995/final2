@@ -187,7 +187,7 @@ export default function LoginPage() {
               href="/register"
               className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium transition-colors"
             >
-              회원가입하기
+              SignUp
             </a>
           </p>
           
@@ -196,7 +196,7 @@ export default function LoginPage() {
               href="/"
               className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 font-medium transition-colors"
             >
-              ← 홈으로 돌아가기
+              ← Back to Home
             </a>
           </p>
         </div>

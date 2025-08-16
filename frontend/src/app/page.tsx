@@ -24,14 +24,14 @@ export default function HomePage() {
                 href="/register"
                 className="btn btn-primary text-lg px-8 py-4 shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200"
               >
-                🚀 회원가입하기
+                🚀 SignUp
               </a>
               
               <a
                 href="/login"
                 className="btn btn-secondary text-lg px-8 py-4 shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200"
               >
-                🔐 로그인하기
+                🔐 SignIn
               </a>
             </div>
           </div>
@@ -41,7 +41,7 @@ export default function HomePage() {
         <div className="absolute inset-0 -z-10">
           <div className="absolute top-0 left-1/4 w-72 h-72 bg-blue-200 dark:bg-blue-900/30 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob"></div>
           <div className="absolute top-0 right-1/4 w-72 h-72 bg-purple-200 dark:bg-purple-900/30 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-2000"></div>
-          <div className="absolute -bottom-8 left-1/3 w-72 h-72 bg-pink-200 dark:bg-pink-900/30 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-4000"></div>
+          <div className="absolute -bottom-8 left-1/3 w-72 h-72 bg-pink-200 dark:bg-blue-900/30 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-4000"></div>
         </div>
       </section>
 
@@ -159,7 +159,7 @@ export default function HomePage() {
               <div className="text-center">
                 <div className="w-20 h-20 bg-purple-100 dark:bg-purple-900/30 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:bg-purple-200 dark:group-hover:bg-purple-900/50 transition-colors duration-200">
                   <svg className="w-10 h-10 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
                   </svg>
                 </div>
                 <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3 transition-colors duration-200">데이터 저장</h3>
@@ -188,13 +188,13 @@ export default function HomePage() {
               href="/register"
               className="btn btn-primary text-lg px-10 py-4 shadow-xl hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300"
             >
-              🚀 무료로 시작하기
+              🚀 SignUp
             </a>
             <a
               href="/login"
               className="btn btn-secondary text-lg px-10 py-4 shadow-xl hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300"
             >
-              🔐 기존 계정으로 로그인
+              🔐 SignIn
             </a>
           </div>
         </div>

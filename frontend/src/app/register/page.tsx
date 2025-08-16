@@ -366,7 +366,7 @@ export default function RegisterPage() {
               href="/login"
               className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium transition-colors"
             >
-              로그인하기
+              SignIn
             </a>
           </p>
         </div>
