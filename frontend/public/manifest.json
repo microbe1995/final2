@@ -27,22 +27,10 @@
 
   "shortcuts": [
     {
-      "name": "CBAM 계산기",
-      "short_name": "계산기",
-      "description": "CBAM 계산기로 바로 이동",
-      "url": "/cbam",
-      "icons": [
-        {
-          "src": "/icon-192x192.png",
-          "sizes": "192x192"
-        }
-      ]
-    },
-    {
-      "name": "대시보드",
-      "short_name": "대시보드",
-      "description": "사용자 대시보드로 이동",
-      "url": "/dashboard",
+      "name": "프로필 관리",
+      "short_name": "프로필",
+      "description": "사용자 프로필 관리",
+      "url": "/profile",
       "icons": [
         {
           "src": "/icon-192x192.png",

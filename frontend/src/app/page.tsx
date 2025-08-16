@@ -182,20 +182,7 @@ export default function HomePage() {
             CBAM Calculator와 함께 안전하고 편리한 서비스를 경험해보세요.
             회원가입은 단 1분이면 완료됩니다.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <a
-              href="/register"
-              className="btn btn-primary text-lg px-10 py-4 shadow-xl hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300"
-            >
-              🚀 SignUp
-            </a>
-            <a
-              href="/login"
-              className="btn btn-secondary text-lg px-10 py-4 shadow-xl hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300"
-            >
-              🔐 SignIn
-            </a>
-          </div>
+        
         </div>
       </section>
     </div>

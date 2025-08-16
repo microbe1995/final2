@@ -30,6 +30,14 @@ export const metadata: Metadata = {
   themeColor: '#3b82f6',
   colorScheme: 'light dark',
   
+  // PWA 관련 메타데이터
+  applicationName: 'CBAM Calculator',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'CBAM Calculator',
+  },
+  
   // Open Graph
   openGraph: {
     type: 'website',
