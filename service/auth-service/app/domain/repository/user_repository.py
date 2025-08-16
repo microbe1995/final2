@@ -298,8 +298,11 @@ class UserRepository:
                 logger.warning(f"❌ 사용자 없음: {credentials.email}")
                 return None
             
-            # 비밀번호 검증 (실제로는 해시 비교)
-            if user.password_hash == credentials.password:  # 임시 구현
+            # 비밀번호 해싱 후 비교
+            import hashlib
+            hashed_password = hashlib.sha256(credentials.password.encode()).hexdigest()
+            
+            if user.password_hash == hashed_password:
                 user.update_last_login()
                 logger.info(f"✅ 사용자 인증 성공: {credentials.email}")
                 return user
