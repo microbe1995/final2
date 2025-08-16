@@ -62,22 +62,22 @@ def get_auth_service(user_repository: UserRepository = Depends(get_user_reposito
         raise
 
 # ============================================================================
-# 🔐 사용자 인증 엔드포인트
+# 📝 회원가입 엔드포인트
 # ============================================================================
 
-@auth_router.post("/register", response_model=AuthResponse, status_code=status.HTTP_201_CREATED)
-async def register_user(
-    request: UserRegistrationRequest,
-    auth_service: AuthService = Depends(get_auth_service)
-):
+@auth_router.post("/register", response_model=AuthResponse)
+async def register_user(request: UserRegistrationRequest, auth_service: AuthService = Depends(get_auth_service)):
     """
     사용자 회원가입
     
-    - **username**: 사용자명 (한글, 영문, 숫자, 언더스코어 허용)
-    - **email**: 이메일 주소
-    - **full_name**: 전체 이름 (선택사항)
+    - **email**: 사용자 이메일 (고유 식별자)
+    - **full_name**: 사용자 실명
     - **password**: 비밀번호 (최소 6자)
     - **confirm_password**: 비밀번호 확인
+    
+    Returns:
+        - user: 생성된 사용자 정보
+        - token: 인증 토큰
     """
     try:
         logger.info(f"🔐 회원가입 요청: {request.email}")
@@ -87,18 +87,14 @@ async def register_user(
         logger.info(f"✅ 회원가입 성공: {request.email}")
         
         return AuthResponse(
-            access_token=token,
-            token_type="bearer",
             user=UserResponse(
                 id=user.id,
-                username=user.username,
                 email=user.email,
                 full_name=user.full_name,
-                is_active=user.is_active,
-                created_at=user.created_at.isoformat() if user.created_at else None,
-                updated_at=user.updated_at.isoformat() if user.updated_at else None,
-                last_login=user.last_login.isoformat() if user.last_login else None
-            )
+                created_at=user.created_at,
+                updated_at=user.updated_at
+            ),
+            token=token
         )
         
     except ValueError as e:
@@ -111,47 +107,48 @@ async def register_user(
         logger.error(f"❌ 회원가입 오류: {request.email} - {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="사용자 생성 중 오류가 발생했습니다"
+            detail="회원가입 중 오류가 발생했습니다"
         )
 
+# ============================================================================
+# 🔑 로그인 엔드포인트
+# ============================================================================
+
 @auth_router.post("/login", response_model=AuthResponse)
-async def login_user(
-    request: UserLoginRequest,
-    auth_service: AuthService = Depends(get_auth_service)
-):
+async def login_user(request: UserLoginRequest, auth_service: AuthService = Depends(get_auth_service)):
     """
     사용자 로그인
     
-    - **email**: 이메일 주소
-    - **password**: 비밀번호
+    - **email**: 사용자 이메일
+    - **password**: 사용자 비밀번호
+    
+    Returns:
+        - user: 사용자 정보
+        - token: 인증 토큰
     """
     try:
-        logger.info(f"🔐 로그인 요청: {request.email}")
+        logger.info(f"🔑 로그인 요청: {request.email}")
         
         user, token = await auth_service.login_user(request)
         
         logger.info(f"✅ 로그인 성공: {request.email}")
         
         return AuthResponse(
-            access_token=token,
-            token_type="bearer",
             user=UserResponse(
                 id=user.id,
-                username=user.username,
                 email=user.email,
                 full_name=user.full_name,
-                is_active=user.is_active,
-                created_at=user.created_at.isoformat() if user.created_at else None,
-                updated_at=user.updated_at.isoformat() if user.updated_at else None,
-                last_login=user.last_login.isoformat() if user.last_login else None
-            )
+                created_at=user.created_at,
+                updated_at=user.updated_at
+            ),
+            token=token
         )
         
     except ValueError as e:
         logger.warning(f"❌ 로그인 실패: {request.email} - {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="이메일 또는 비밀번호가 잘못되었습니다"
+            detail=str(e)
         )
     except Exception as e:
         logger.error(f"❌ 로그인 오류: {request.email} - {str(e)}")

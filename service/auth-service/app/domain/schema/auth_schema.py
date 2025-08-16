@@ -50,10 +50,15 @@ class UserRegistrationRequest(BaseModel):
 # 🔐 로그인 스키마
 # ============================================================================
 
+class UserCredentials(BaseModel):
+    """사용자 인증 정보 스키마"""
+    email: EmailStr = Field(..., description="사용자 이메일")
+    password: str = Field(..., description="사용자 비밀번호")
+
 class UserLoginRequest(BaseModel):
     """로그인 요청 스키마"""
     email: EmailStr = Field(..., description="사용자 이메일")
-    password: str = Field(..., description="비밀번호")
+    password: str = Field(..., description="사용자 비밀번호")
 
 # ============================================================================
 # 📝 사용자 정보 수정 스키마

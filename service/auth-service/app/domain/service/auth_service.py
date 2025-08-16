@@ -16,15 +16,14 @@
 # ============================================================================
 
 import hashlib
-import secrets
+import uuid
 import logging
 from datetime import datetime
-from typing import Optional, Tuple
-from app.domain.entity.user_entity import User
+from typing import Optional
+
+from app.domain.entity.user_entity import User, UserCredentials
 from app.domain.repository.user_repository import UserRepository
 from app.domain.schema.auth_schema import UserRegistrationRequest, UserLoginRequest, UserUpdateRequest, PasswordChangeRequest, UserDeleteRequest
-import uuid
-from app.domain.schema.auth_schema import UserCredentials
 
 # ============================================================================
 # 🔧 로거 설정
@@ -107,12 +106,16 @@ class AuthService:
             logger.error(f"❌ 회원가입 오류: {request.email} - {str(e)}")
             raise ValueError(f"사용자 생성 중 오류가 발생했습니다: {str(e)}")
     
-    async def login_user(self, credentials: UserCredentials) -> tuple[User, str]:
+    # ============================================================================
+    # 🔑 사용자 로그인
+    # ============================================================================
+
+    async def login_user(self, request: UserLoginRequest) -> tuple[User, str]:
         """
         사용자 로그인
         
         Args:
-            credentials: 로그인 인증 정보
+            request: 로그인 요청 데이터
             
         Returns:
             tuple: (인증된 사용자, 인증 토큰)
@@ -121,22 +124,23 @@ class AuthService:
             ValueError: 인증 실패
         """
         try:
-            logger.info(f"🔑 로그인 시도: {credentials.email}")
+            logger.info(f"🔑 로그인 시도: {request.email}")
             
             # 사용자 조회
-            user = await self.user_repository.get_user_by_email(credentials.email)
+            user = await self.user_repository.get_user_by_email(request.email)
             if not user:
-                logger.warning(f"❌ 사용자 없음: {credentials.email}")
+                logger.warning(f"❌ 사용자 없음: {request.email}")
                 raise ValueError("이메일 또는 비밀번호가 올바르지 않습니다")
             
             # 비밀번호 검증
+            credentials = UserCredentials(email=request.email, password=request.password)
             if not self.user_repository.authenticate_user(credentials, user):
-                logger.warning(f"❌ 비밀번호 불일치: {credentials.email}")
+                logger.warning(f"❌ 비밀번호 불일치: {request.email}")
                 raise ValueError("이메일 또는 비밀번호가 올바르지 않습니다")
             
             # 계정 활성화 상태 확인
             if not user.is_active:
-                logger.warning(f"❌ 비활성 계정: {credentials.email}")
+                logger.warning(f"❌ 비활성 계정: {request.email}")
                 raise ValueError("비활성화된 계정입니다")
             
             # 인증 토큰 생성
@@ -146,13 +150,13 @@ class AuthService:
             user.last_login = datetime.utcnow()
             await self.user_repository.update_user(user)
             
-            logger.info(f"✅ 로그인 성공: {credentials.email}")
+            logger.info(f"✅ 로그인 성공: {request.email}")
             return user, token
             
         except ValueError:
             raise
         except Exception as e:
-            logger.error(f"❌ 로그인 오류: {credentials.email} - {str(e)}")
+            logger.error(f"❌ 로그인 오류: {request.email} - {str(e)}")
             raise ValueError(f"로그인 중 오류가 발생했습니다: {str(e)}")
     
     # ============================================================================
@@ -315,7 +319,7 @@ class AuthService:
         Returns:
             str: 생성된 토큰
         """
-        return secrets.token_urlsafe(32)
+        return uuid.uuid4().hex # Changed from secrets.token_urlsafe(32) to uuid.uuid4().hex
     
     async def get_user_by_id(self, user_id: str) -> Optional[User]:
         """
