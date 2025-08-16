@@ -93,7 +93,7 @@ export default function ProfilePage() {
     }
   };
 
-  const handlePasswordChange = (field: string, value: string) => {
+  const handlePasswordInputChange = (field: string, value: string) => {
     setPasswordData(prev => ({ ...prev, [field]: value }));
     setError('');
     setSuccess('');
@@ -183,7 +183,7 @@ export default function ProfilePage() {
   // 🔐 비밀번호 변경
   // ============================================================================
   
-  const handlePasswordChange = async (e: React.FormEvent) => {
+  const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!validation.current_password.isValid || !validation.new_password.isValid || !validation.confirm_password.isValid) {
@@ -344,7 +344,7 @@ export default function ProfilePage() {
               비밀번호 변경
             </h2>
             
-            <form onSubmit={handlePasswordChange} className="space-y-4">
+            <form onSubmit={handlePasswordSubmit} className="space-y-4">
               {/* 현재 비밀번호 */}
               <div className="form-field">
                 <label htmlFor="current_password" className="form-label">
@@ -354,7 +354,7 @@ export default function ProfilePage() {
                   type="password"
                   id="current_password"
                   value={passwordData.current_password}
-                  onChange={(e) => handlePasswordChange('current_password', e.target.value)}
+                  onChange={(e) => handlePasswordInputChange('current_password', e.target.value)}
                   className={`form-input ${validation.current_password.isValid ? 'border-green-500' : validation.current_password.message ? 'border-red-500' : ''}`}
                   required
                 />
@@ -374,7 +374,7 @@ export default function ProfilePage() {
                   type="password"
                   id="new_password"
                   value={passwordData.new_password}
-                  onChange={(e) => handlePasswordChange('new_password', e.target.value)}
+                  onChange={(e) => handlePasswordInputChange('new_password', e.target.value)}
                   className={`form-input ${validation.new_password.isValid ? 'border-green-500' : validation.new_password.message ? 'border-red-500' : ''}`}
                   required
                 />
@@ -394,7 +394,7 @@ export default function ProfilePage() {
                   type="password"
                   id="confirm_password"
                   value={passwordData.confirm_password}
-                  onChange={(e) => handlePasswordChange('confirm_password', e.target.value)}
+                  onChange={(e) => handlePasswordInputChange('confirm_password', e.target.value)}
                   className={`form-input ${validation.confirm_password.isValid ? 'border-green-500' : validation.confirm_password.message ? 'border-red-500' : ''}`}
                   required
                 />
