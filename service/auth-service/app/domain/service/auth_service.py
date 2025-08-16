@@ -73,13 +73,15 @@ class AuthService:
         try:
             logger.info(f"🔐 회원가입 시작: {request.email}")
             
-            # 기존 사용자 확인
+            # 기존 사용자 확인 (더 엄격한 검증)
             existing_user = await self.user_repository.get_user_by_username(request.username)
             if existing_user:
+                logger.warning(f"❌ 사용자명 중복: {request.username}")
                 raise ValueError(f"사용자명 '{request.username}'이 이미 존재합니다")
             
             existing_email = await self.user_repository.get_user_by_email(request.email)
             if existing_email:
+                logger.warning(f"❌ 이메일 중복: {request.email}")
                 raise ValueError(f"이메일 '{request.email}'이 이미 존재합니다")
             
             # 비밀번호 해싱
@@ -102,9 +104,12 @@ class AuthService:
             logger.info(f"✅ 회원가입 성공: {request.email}")
             return created_user, token
             
-        except Exception as e:
-            logger.error(f"❌ 회원가입 실패: {request.email} - {str(e)}")
+        except ValueError as e:
+            logger.warning(f"❌ 회원가입 실패 (검증 오류): {request.email} - {str(e)}")
             raise
+        except Exception as e:
+            logger.error(f"❌ 회원가입 실패 (시스템 오류): {request.email} - {str(e)}")
+            raise ValueError(f"회원가입 처리 중 오류가 발생했습니다: {str(e)}")
     
     async def login_user(self, request: UserLoginRequest) -> Tuple[User, str]:
         """

@@ -17,6 +17,7 @@
 import logging
 from typing import Optional, List
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import text
 from app.domain.entity.user_entity import User
 from app.domain.model.db_models import UserDB
 from app.common.database.database import database
@@ -297,7 +298,7 @@ class UserRepository:
             session = await database.get_async_session()
             try:
                 result = await session.execute(
-                    "SELECT * FROM users WHERE id = :user_id",
+                    text("SELECT * FROM users WHERE id = :user_id"),
                     {"user_id": user_id}
                 )
                 user_data = result.fetchone()
@@ -329,7 +330,7 @@ class UserRepository:
             session = await database.get_async_session()
             try:
                 result = await session.execute(
-                    "SELECT * FROM users WHERE email = :email",
+                    text("SELECT * FROM users WHERE email = :email"),
                     {"email": email}
                 )
                 user_data = result.fetchone()
@@ -361,7 +362,7 @@ class UserRepository:
             session = await database.get_async_session()
             try:
                 result = await session.execute(
-                    "SELECT * FROM users WHERE username = :username",
+                    text("SELECT * FROM users WHERE username = :username"),
                     {"username": username}
                 )
                 user_data = result.fetchone()
@@ -393,13 +394,13 @@ class UserRepository:
             session = await database.get_async_session()
             try:
                 await session.execute(
-                    """
-                    UPDATE users 
-                    SET username = :username, email = :email, full_name = :full_name,
-                        password_hash = :password_hash, is_active = :is_active,
-                        updated_at = :updated_at, last_login = :last_login
-                    WHERE id = :id
-                    """,
+                    text("""
+                        UPDATE users 
+                        SET username = :username, email = :email, full_name = :full_name,
+                            password_hash = :password_hash, is_active = :is_active,
+                            updated_at = :updated_at, last_login = :last_login
+                        WHERE id = :id
+                    """),
                     {
                         "id": user.id,
                         "username": user.username,
@@ -429,7 +430,7 @@ class UserRepository:
             session = await database.get_async_session()
             try:
                 result = await session.execute(
-                    "DELETE FROM users WHERE id = :user_id",
+                    text("DELETE FROM users WHERE id = :user_id"),
                     {"user_id": user_id}
                 )
                 await session.commit()
@@ -454,7 +455,7 @@ class UserRepository:
         try:
             session = await database.get_async_session()
             try:
-                result = await session.execute("SELECT * FROM users")
+                result = await session.execute(text("SELECT * FROM users"))
                 users_data = result.fetchall()
                 
                 users = []
@@ -488,10 +489,10 @@ class UserRepository:
             try:
                 search_pattern = f"%{query}%"
                 result = await session.execute(
-                    """
-                    SELECT * FROM users 
-                    WHERE username ILIKE :query OR email ILIKE :query OR full_name ILIKE :query
-                    """,
+                    text("""
+                        SELECT * FROM users 
+                        WHERE username ILIKE :query OR email ILIKE :query OR full_name ILIKE :query
+                    """),
                     {"query": search_pattern}
                 )
                 users_data = result.fetchall()
@@ -562,8 +563,8 @@ class UserRepository:
             # 인덱스에서 제거
             if user.email in self._users_by_email:
                 del self._users_by_email[user.email]
-            if user.username in self._users_by_username:
-                del self._users_by_username[user.username]
+            if old_user.username in self._users_by_username:
+                del self._users_by_username[old_user.username]
             
             # 메인 저장소에서 제거
             del self._users[user_id]
