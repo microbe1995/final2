@@ -1,5 +1,5 @@
 import React from 'react';
-import { cn } from '@/lib/utils';
+
 
 // ============================================================================
 // 🧩 Button Atom Component
@@ -31,12 +31,12 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     
     return (
       <button
-        className={cn(
+        className={[
           baseClasses,
           variants[variant],
           sizes[size],
           className
-        )}
+        ].filter(Boolean).join(' ')}
         ref={ref}
         disabled={disabled || isLoading}
         {...props}

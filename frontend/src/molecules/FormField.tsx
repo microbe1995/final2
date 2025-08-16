@@ -1,6 +1,6 @@
 import React from 'react';
 import Input from '@/atoms/Input';
-import { cn } from '@/lib/utils';
+
 
 // ============================================================================
 // 🧩 FormField Molecule Component
@@ -48,7 +48,7 @@ const FormField: React.FC<FormFieldProps> = ({
   };
 
   return (
-    <div className={cn('w-full', className)}>
+    <div className={['w-full', className].filter(Boolean).join(' ')}>
       <Input
         label={label}
         name={name}
