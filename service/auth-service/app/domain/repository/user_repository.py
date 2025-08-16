@@ -56,7 +56,7 @@ class UserRepository:
         self._users_by_email: dict = {}
         self._users_by_username: dict = {}
         
-        logging.info(f"✅ {'PostgreSQL' if use_database else '메모리'} 데이터베이스 저장소 사용")
+        logger.info(f"✅ {'PostgreSQL' if use_database else '메모리'} 데이터베이스 저장소 사용")
     
     # ============================================================================
     # 🔐 사용자 인증 메서드
@@ -73,20 +73,25 @@ class UserRepository:
         Returns:
             Optional[User]: 인증된 사용자 또는 None
         """
-        user = await self.get_user_by_email(email)
-        if not user:
-            return None
-        
-        # 비밀번호 해싱 후 비교
-        import hashlib
-        hashed_password = hashlib.sha256(password.encode()).hexdigest()
-        
-        if user.password_hash == hashed_password:
-            user.update_last_login()
-            logger.info(f"✅ 사용자 인증 성공: {email}")
-            return user
-        else:
-            logger.warning(f"❌ 비밀번호 불일치: {email}")
+        try:
+            user = await self.get_user_by_email(email)
+            if not user:
+                return None
+            
+            # 비밀번호 해싱 후 비교
+            import hashlib
+            hashed_password = hashlib.sha256(password.encode()).hexdigest()
+            
+            if user.password_hash == hashed_password:
+                user.update_last_login()
+                logger.info(f"✅ 사용자 인증 성공: {email}")
+                return user
+            else:
+                logger.warning(f"❌ 비밀번호 불일치: {email}")
+                return None
+                
+        except Exception as e:
+            logger.error(f"❌ 사용자 인증 실패: {email} - {str(e)}")
             return None
     
     # ============================================================================
@@ -103,10 +108,14 @@ class UserRepository:
         Returns:
             User: 생성된 사용자 정보
         """
-        if self.use_database:
-            return await self._create_user_db(user)
-        else:
-            return await self._create_user_memory(user)
+        try:
+            if self.use_database:
+                return await self._create_user_db(user)
+            else:
+                return await self._create_user_memory(user)
+        except Exception as e:
+            logger.error(f"❌ 사용자 생성 실패: {str(e)}")
+            raise
     
     async def get_user_by_id(self, user_id: str) -> Optional[User]:
         """
@@ -118,10 +127,14 @@ class UserRepository:
         Returns:
             Optional[User]: 사용자 정보 또는 None
         """
-        if self.use_database:
-            return await self._get_user_by_id_db(user_id)
-        else:
-            return self._users.get(user_id)
+        try:
+            if self.use_database:
+                return await self._get_user_by_id_db(user_id)
+            else:
+                return self._users.get(user_id)
+        except Exception as e:
+            logger.error(f"❌ 사용자 ID 조회 실패: {user_id} - {str(e)}")
+            return None
     
     async def get_user_by_email(self, email: str) -> Optional[User]:
         """
@@ -133,10 +146,14 @@ class UserRepository:
         Returns:
             Optional[User]: 사용자 정보 또는 None
         """
-        if self.use_database:
-            return await self._get_user_by_email_db(email)
-        else:
-            return self._users_by_email.get(email)
+        try:
+            if self.use_database:
+                return await self._get_user_by_email_db(email)
+            else:
+                return self._users_by_email.get(email)
+        except Exception as e:
+            logger.error(f"❌ 이메일 조회 실패: {email} - {str(e)}")
+            return None
     
     async def get_user_by_username(self, username: str) -> Optional[User]:
         """
@@ -148,10 +165,14 @@ class UserRepository:
         Returns:
             Optional[User]: 사용자 정보 또는 None
         """
-        if self.use_database:
-            return await self._get_user_by_username_db(username)
-        else:
-            return self._users_by_username.get(username)
+        try:
+            if self.use_database:
+                return await self._get_user_by_username_db(username)
+            else:
+                return self._users_by_username.get(username)
+        except Exception as e:
+            logger.error(f"❌ 사용자명 조회 실패: {username} - {str(e)}")
+            return None
     
     async def update_user(self, user: User) -> User:
         """
@@ -163,10 +184,14 @@ class UserRepository:
         Returns:
             User: 업데이트된 사용자 정보
         """
-        if self.use_database:
-            return await self._update_user_db(user)
-        else:
-            return await self._update_user_memory(user)
+        try:
+            if self.use_database:
+                return await self._update_user_db(user)
+            else:
+                return await self._update_user_memory(user)
+        except Exception as e:
+            logger.error(f"❌ 사용자 업데이트 실패: {user.id} - {str(e)}")
+            raise
     
     async def delete_user(self, user_id: str) -> bool:
         """
@@ -178,10 +203,14 @@ class UserRepository:
         Returns:
             bool: 삭제 성공 여부
         """
-        if self.use_database:
-            return await self._delete_user_db(user_id)
-        else:
-            return await self._delete_user_memory(user_id)
+        try:
+            if self.use_database:
+                return await self._delete_user_db(user_id)
+            else:
+                return await self._delete_user_memory(user_id)
+        except Exception as e:
+            logger.error(f"❌ 사용자 삭제 실패: {user_id} - {str(e)}")
+            return False
     
     # ============================================================================
     # 🔍 사용자 검색 메서드
@@ -194,10 +223,14 @@ class UserRepository:
         Returns:
             List[User]: 사용자 목록
         """
-        if self.use_database:
-            return await self._get_all_users_db()
-        else:
-            return list(self._users.values())
+        try:
+            if self.use_database:
+                return await self._get_all_users_db()
+            else:
+                return list(self._users.values())
+        except Exception as e:
+            logger.error(f"❌ 모든 사용자 조회 실패: {str(e)}")
+            return []
     
     async def search_users(self, query: str) -> List[User]:
         """
@@ -209,15 +242,19 @@ class UserRepository:
         Returns:
             List[User]: 검색된 사용자 목록
         """
-        if self.use_database:
-            return await self._search_users_db(query)
-        else:
-            return [
-                user for user in self._users.values()
-                if query.lower() in user.username.lower() or 
-                   query.lower() in user.email.lower() or
-                   (user.full_name and query.lower() in user.full_name.lower())
-            ]
+        try:
+            if self.use_database:
+                return await self._search_users_db(query)
+            else:
+                return [
+                    user for user in self._users.values()
+                    if query.lower() in user.username.lower() or 
+                       query.lower() in user.email.lower() or
+                       (user.full_name and query.lower() in user.full_name.lower())
+                ]
+        except Exception as e:
+            logger.error(f"❌ 사용자 검색 실패: {query} - {str(e)}")
+            return []
     
     # ============================================================================
     # 🗄️ PostgreSQL 데이터베이스 메서드
@@ -244,14 +281,14 @@ class UserRepository:
                 await session.commit()
                 await session.refresh(user_db)
                 
-                logging.info(f"✅ PostgreSQL 사용자 생성 성공: {user.email}")
+                logger.info(f"✅ PostgreSQL 사용자 생성 성공: {user.email}")
                 return user
                 
             finally:
                 await session.close()
                 
         except Exception as e:
-            logging.error(f"❌ PostgreSQL 사용자 생성 실패: {str(e)}")
+            logger.error(f"❌ PostgreSQL 사용자 생성 실패: {str(e)}")
             raise
     
     async def _get_user_by_id_db(self, user_id: str) -> Optional[User]:
@@ -283,7 +320,7 @@ class UserRepository:
                 await session.close()
                 
         except Exception as e:
-            logging.error(f"❌ PostgreSQL 사용자 ID 조회 실패: {str(e)}")
+            logger.error(f"❌ PostgreSQL 사용자 ID 조회 실패: {str(e)}")
             return None
     
     async def _get_user_by_email_db(self, email: str) -> Optional[User]:
@@ -315,7 +352,7 @@ class UserRepository:
                 await session.close()
                 
         except Exception as e:
-            logging.error(f"❌ PostgreSQL 이메일 조회 실패: {str(e)}")
+            logger.error(f"❌ PostgreSQL 이메일 조회 실패: {str(e)}")
             return None
     
     async def _get_user_by_username_db(self, username: str) -> Optional[User]:
@@ -347,7 +384,7 @@ class UserRepository:
                 await session.close()
                 
         except Exception as e:
-            logging.error(f"❌ PostgreSQL 사용자명 조회 실패: {str(e)}")
+            logger.error(f"❌ PostgreSQL 사용자명 조회 실패: {str(e)}")
             return None
     
     async def _update_user_db(self, user: User) -> User:
@@ -376,14 +413,14 @@ class UserRepository:
                 )
                 await session.commit()
                 
-                logging.info(f"✅ PostgreSQL 사용자 업데이트 성공: {user.email}")
+                logger.info(f"✅ PostgreSQL 사용자 업데이트 성공: {user.email}")
                 return user
                 
             finally:
                 await session.close()
                 
         except Exception as e:
-            logging.error(f"❌ PostgreSQL 사용자 업데이트 실패: {str(e)}")
+            logger.error(f"❌ PostgreSQL 사용자 업데이트 실패: {str(e)}")
             raise
     
     async def _delete_user_db(self, user_id: str) -> bool:
@@ -399,17 +436,17 @@ class UserRepository:
                 
                 deleted_count = result.rowcount
                 if deleted_count > 0:
-                    logging.info(f"✅ PostgreSQL 사용자 삭제 성공: {user_id}")
+                    logger.info(f"✅ PostgreSQL 사용자 삭제 성공: {user_id}")
                     return True
                 else:
-                    logging.warning(f"⚠️ PostgreSQL 사용자 삭제 실패: 사용자를 찾을 수 없음 {user_id}")
+                    logger.warning(f"⚠️ PostgreSQL 사용자 삭제 실패: 사용자를 찾을 수 없음 {user_id}")
                     return False
                 
             finally:
                 await session.close()
                 
         except Exception as e:
-            logging.error(f"❌ PostgreSQL 사용자 삭제 실패: {str(e)}")
+            logger.error(f"❌ PostgreSQL 사용자 삭제 실패: {str(e)}")
             return False
     
     async def _get_all_users_db(self) -> List[User]:
@@ -441,7 +478,7 @@ class UserRepository:
                 await session.close()
                 
         except Exception as e:
-            logging.error(f"❌ PostgreSQL 모든 사용자 조회 실패: {str(e)}")
+            logger.error(f"❌ PostgreSQL 모든 사용자 조회 실패: {str(e)}")
             return []
     
     async def _search_users_db(self, query: str) -> List[User]:
@@ -480,7 +517,7 @@ class UserRepository:
                 await session.close()
                 
         except Exception as e:
-            logging.error(f"❌ PostgreSQL 사용자 검색 실패: {str(e)}")
+            logger.error(f"❌ PostgreSQL 사용자 검색 실패: {str(e)}")
             return []
     
     # ============================================================================
@@ -493,7 +530,7 @@ class UserRepository:
         self._users_by_email[user.email] = user
         self._users_by_username[user.username] = user
         
-        logging.info(f"✅ 메모리 사용자 생성 성공: {user.email}")
+        logger.info(f"✅ 메모리 사용자 생성 성공: {user.email}")
         return user
     
     async def _update_user_memory(self, user: User) -> User:
@@ -512,7 +549,7 @@ class UserRepository:
             self._users_by_email[user.email] = user
             self._users_by_username[user.username] = user
             
-            logging.info(f"✅ 메모리 사용자 업데이트 성공: {user.email}")
+            logger.info(f"✅ 메모리 사용자 업데이트 성공: {user.email}")
             return user
         else:
             raise ValueError(f"사용자를 찾을 수 없습니다: {user.id}")
@@ -531,8 +568,8 @@ class UserRepository:
             # 메인 저장소에서 제거
             del self._users[user_id]
             
-            logging.info(f"✅ 메모리 사용자 삭제 성공: {user_id}")
+            logger.info(f"✅ 메모리 사용자 삭제 성공: {user_id}")
             return True
         else:
-            logging.warning(f"⚠️ 메모리 사용자 삭제 실패: 사용자를 찾을 수 없음 {user_id}")
+            logger.warning(f"⚠️ 메모리 사용자 삭제 실패: 사용자를 찾을 수 없음 {user_id}")
             return False

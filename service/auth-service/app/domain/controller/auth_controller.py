@@ -43,11 +43,23 @@ auth_router = APIRouter(prefix="/auth", tags=["인증"])
 
 def get_user_repository() -> UserRepository:
     """사용자 저장소 의존성 주입"""
-    return UserRepository()
+    try:
+        repository = UserRepository()
+        logger.info("✅ UserRepository 의존성 주입 성공")
+        return repository
+    except Exception as e:
+        logger.error(f"❌ UserRepository 의존성 주입 실패: {str(e)}")
+        raise
 
 def get_auth_service(user_repository: UserRepository = Depends(get_user_repository)) -> AuthService:
     """인증 서비스 의존성 주입"""
-    return AuthService(user_repository)
+    try:
+        service = AuthService(user_repository)
+        logger.info("✅ AuthService 의존성 주입 성공")
+        return service
+    except Exception as e:
+        logger.error(f"❌ AuthService 의존성 주입 실패: {str(e)}")
+        raise
 
 # ============================================================================
 # 🔐 사용자 인증 엔드포인트

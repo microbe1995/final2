@@ -15,13 +15,12 @@
 # 📦 필요한 모듈 import
 # ============================================================================
 
-import logging
 import hashlib
 import secrets
-from typing import Optional, Dict, Any, Tuple
-from datetime import datetime, timedelta
-
-from app.domain.entity.user_entity import User, UserCredentials
+import logging
+from datetime import datetime
+from typing import Optional, Tuple
+from app.domain.entity.user_entity import User
 from app.domain.repository.user_repository import UserRepository
 from app.domain.schema.auth_schema import UserRegistrationRequest, UserLoginRequest, UserUpdateRequest, PasswordChangeRequest, UserDeleteRequest
 
@@ -37,235 +36,294 @@ logger = logging.getLogger(__name__)
 
 class AuthService:
     """
-    인증 서비스 클래스
+    인증 서비스
     
     주요 기능:
-    - 사용자 회원가입 및 검증
-    - 사용자 로그인 및 인증
-    - 비밀번호 해싱 및 검증
-    - 토큰 생성 및 관리
-    - 사용자 정보 관리
+    - 사용자 회원가입
+    - 사용자 로그인
+    - 회원 정보 수정
+    - 비밀번호 변경
+    - 회원 탈퇴
+    - 토큰 생성
+    - 비밀번호 해싱
     """
     
-    def __init__(self):
+    def __init__(self, user_repository: UserRepository):
         """인증 서비스 초기화"""
-        self.user_repository = UserRepository()
-        self.secret_key = "your-secret-key-here"  # 실제로는 환경변수에서 가져와야 함
+        self.user_repository = user_repository
+        logger.info("✅ AuthService 초기화 완료")
+    
+    # ============================================================================
+    # 🔐 사용자 인증 관련 메서드
+    # ============================================================================
+    
+    async def register_user(self, request: UserRegistrationRequest) -> Tuple[User, str]:
+        """
+        사용자 회원가입
         
-        logger.info("✅ 인증 서비스 초기화 완료")
+        Args:
+            request: 회원가입 요청 데이터
+            
+        Returns:
+            Tuple[User, str]: 생성된 사용자 정보와 액세스 토큰
+            
+        Raises:
+            ValueError: 사용자명 또는 이메일이 이미 존재하는 경우
+        """
+        try:
+            logger.info(f"🔐 회원가입 시작: {request.email}")
+            
+            # 기존 사용자 확인
+            existing_user = await self.user_repository.get_user_by_username(request.username)
+            if existing_user:
+                raise ValueError(f"사용자명 '{request.username}'이 이미 존재합니다")
+            
+            existing_email = await self.user_repository.get_user_by_email(request.email)
+            if existing_email:
+                raise ValueError(f"이메일 '{request.email}'이 이미 존재합니다")
+            
+            # 비밀번호 해싱
+            password_hash = self._hash_password(request.password)
+            
+            # 사용자 생성
+            user = User(
+                username=request.username,
+                email=request.email,
+                full_name=request.full_name,
+                password_hash=password_hash
+            )
+            
+            # 저장소에 저장
+            created_user = await self.user_repository.create_user(user)
+            
+            # 액세스 토큰 생성
+            token = self._generate_token()
+            
+            logger.info(f"✅ 회원가입 성공: {request.email}")
+            return created_user, token
+            
+        except Exception as e:
+            logger.error(f"❌ 회원가입 실패: {request.email} - {str(e)}")
+            raise
+    
+    async def login_user(self, request: UserLoginRequest) -> Tuple[User, str]:
+        """
+        사용자 로그인
+        
+        Args:
+            request: 로그인 요청 데이터
+            
+        Returns:
+            Tuple[User, str]: 인증된 사용자 정보와 액세스 토큰
+            
+        Raises:
+            ValueError: 이메일 또는 비밀번호가 잘못된 경우
+        """
+        try:
+            logger.info(f"🔐 로그인 시작: {request.email}")
+            
+            # 사용자 조회
+            user = await self.user_repository.get_user_by_email(request.email)
+            if not user:
+                raise ValueError("이메일 또는 비밀번호가 잘못되었습니다")
+            
+            # 비밀번호 검증
+            if not await self.user_repository.authenticate_user(request.email, request.password):
+                raise ValueError("이메일 또는 비밀번호가 잘못되었습니다")
+            
+            # 마지막 로그인 시간 업데이트
+            user.update_last_login()
+            await self.user_repository.update_user(user)
+            
+            # 액세스 토큰 생성
+            token = self._generate_token()
+            
+            logger.info(f"✅ 로그인 성공: {request.email}")
+            return user, token
+            
+        except Exception as e:
+            logger.error(f"❌ 로그인 실패: {request.email} - {str(e)}")
+            raise
+    
+    # ============================================================================
+    # ✏️ 회원 정보 관리 메서드
+    # ============================================================================
+    
+    async def update_user_info(self, user_id: str, request: UserUpdateRequest) -> User:
+        """
+        회원 정보 수정
+        
+        Args:
+            user_id: 수정할 사용자 ID
+            request: 수정 요청 데이터
+            
+        Returns:
+            User: 수정된 사용자 정보
+            
+        Raises:
+            ValueError: 현재 비밀번호가 잘못되었거나 사용자명이 이미 존재하는 경우
+        """
+        try:
+            logger.info(f"✏️ 회원 정보 수정 시작: {user_id}")
+            
+            # 사용자 조회
+            user = await self.user_repository.get_user_by_id(user_id)
+            if not user:
+                raise ValueError("사용자를 찾을 수 없습니다")
+            
+            # 현재 비밀번호 확인
+            if not await self.user_repository.authenticate_user(user.email, request.current_password):
+                raise ValueError("현재 비밀번호가 잘못되었습니다")
+            
+            # 사용자명 중복 확인 (변경하려는 경우)
+            if request.username and request.username != user.username:
+                existing_user = await self.user_repository.get_user_by_username(request.username)
+                if existing_user:
+                    raise ValueError(f"사용자명 '{request.username}'이 이미 존재합니다")
+                user.username = request.username
+            
+            # 전체 이름 업데이트
+            if request.full_name is not None:
+                user.full_name = request.full_name
+            
+            # 새 비밀번호 설정 (제공된 경우)
+            if request.new_password:
+                user.password_hash = self._hash_password(request.new_password)
+            
+            # 사용자 정보 업데이트
+            updated_user = await self.user_repository.update_user(user)
+            
+            logger.info(f"✅ 회원 정보 수정 성공: {user.email}")
+            return updated_user
+            
+        except Exception as e:
+            logger.error(f"❌ 회원 정보 수정 실패: {user_id} - {str(e)}")
+            raise
+    
+    async def change_password(self, user_id: str, request: PasswordChangeRequest) -> User:
+        """
+        비밀번호 변경
+        
+        Args:
+            user_id: 비밀번호를 변경할 사용자 ID
+            request: 비밀번호 변경 요청 데이터
+            
+        Returns:
+            User: 업데이트된 사용자 정보
+            
+        Raises:
+            ValueError: 현재 비밀번호가 잘못된 경우
+        """
+        try:
+            logger.info(f"🔑 비밀번호 변경 시작: {user_id}")
+            
+            # 사용자 조회
+            user = await self.user_repository.get_user_by_id(user_id)
+            if not user:
+                raise ValueError("사용자를 찾을 수 없습니다")
+            
+            # 현재 비밀번호 확인
+            if not await self.user_repository.authenticate_user(user.email, request.current_password):
+                raise ValueError("현재 비밀번호가 잘못되었습니다")
+            
+            # 새 비밀번호 설정
+            user.password_hash = self._hash_password(request.new_password)
+            
+            # 사용자 정보 업데이트
+            updated_user = await self.user_repository.update_user(user)
+            
+            logger.info(f"✅ 비밀번호 변경 성공: {user_id}")
+            return updated_user
+            
+        except Exception as e:
+            logger.error(f"❌ 비밀번호 변경 실패: {user_id} - {str(e)}")
+            raise
+    
+    # ============================================================================
+    # 🗑️ 회원 탈퇴 메서드
+    # ============================================================================
+    
+    async def delete_user(self, user_id: str, request: UserDeleteRequest) -> bool:
+        """
+        회원 탈퇴
+        
+        Args:
+            user_id: 탈퇴할 사용자 ID
+            request: 탈퇴 요청 데이터
+            
+        Returns:
+            bool: 탈퇴 성공 여부
+            
+        Raises:
+            ValueError: 비밀번호가 잘못된 경우
+        """
+        try:
+            logger.info(f"🗑️ 회원 탈퇴 시작: {user_id}")
+            
+            # 사용자 조회
+            user = await self.user_repository.get_user_by_id(user_id)
+            if not user:
+                raise ValueError("사용자를 찾을 수 없습니다")
+            
+            # 비밀번호 확인
+            if not await self.user_repository.authenticate_user(user.email, request.password):
+                raise ValueError("비밀번호가 잘못되었습니다")
+            
+            # 사용자 삭제
+            result = await self.user_repository.delete_user(user_id)
+            
+            logger.info(f"✅ 회원 탈퇴 성공: {user_id}")
+            return result
+            
+        except Exception as e:
+            logger.error(f"❌ 회원 탈퇴 실패: {user_id} - {str(e)}")
+            raise
+    
+    # ============================================================================
+    # 🔧 유틸리티 메서드
+    # ============================================================================
     
     def _hash_password(self, password: str) -> str:
         """
-        비밀번호 해싱
+        비밀번호 해싱 (SHA256)
         
         Args:
             password: 원본 비밀번호
             
         Returns:
-            해시된 비밀번호
+            str: 해시된 비밀번호
         """
-        # 실제로는 bcrypt나 argon2 사용 권장
         return hashlib.sha256(password.encode()).hexdigest()
     
-    def _generate_token(self, user_id: str) -> str:
+    def _generate_token(self) -> str:
         """
-        사용자 토큰 생성
+        액세스 토큰 생성
         
-        Args:
-            user_id: 사용자 ID
-            
         Returns:
-            생성된 토큰
+            str: 생성된 토큰
         """
-        # 실제로는 JWT 토큰 사용 권장
-        token_data = f"{user_id}:{datetime.now().isoformat()}:{self.secret_key}"
-        return hashlib.sha256(token_data.encode()).hexdigest()
-    
-    async def register_user(self, registration_data: UserRegistrationRequest) -> Dict[str, Any]:
-        """
-        사용자 회원가입
-        
-        Args:
-            registration_data: 회원가입 요청 데이터
-            
-        Returns:
-            회원가입 결과
-        """
-        try:
-            logger.info(f"🔐 회원가입 시작: {registration_data.email}")
-            
-            # 비밀번호 해싱
-            hashed_password = self._hash_password(registration_data.password)
-            
-            # 사용자 엔티티 생성
-            user = User(
-                username=registration_data.username,
-                email=registration_data.email,
-                full_name=registration_data.full_name,
-                password_hash=hashed_password
-            )
-            
-            # 사용자 저장
-            created_user = await self.user_repository.create_user(user)
-            if not created_user:
-                logger.error(f"❌ 사용자 생성 실패: {registration_data.email}")
-                return {
-                    "message": "회원가입 실패",
-                    "error": "사용자 생성 중 오류가 발생했습니다",
-                    "status": "error"
-                }
-            
-            logger.info(f"✅ 회원가입 성공: {created_user.email}")
-            
-            return {
-                "message": "회원가입 성공",
-                "user": created_user.to_dict(),
-                "status": "success"
-            }
-            
-        except Exception as e:
-            logger.error(f"❌ 회원가입 실패: {str(e)}")
-            return {
-                "message": "회원가입 실패",
-                "error": str(e),
-                "status": "error"
-            }
-    
-    async def login_user(self, login_data: UserLoginRequest) -> Dict[str, Any]:
-        """
-        사용자 로그인
-        
-        Args:
-            login_data: 로그인 요청 데이터
-            
-        Returns:
-            로그인 결과
-        """
-        try:
-            logger.info(f"🔐 로그인 시작: {login_data.email}")
-            
-            # 사용자 인증 정보 생성
-            credentials = UserCredentials(
-                email=login_data.email,
-                password=login_data.password
-            )
-            
-            # 사용자 인증
-            user = await self.user_repository.authenticate_user(credentials)
-            if not user:
-                logger.warning(f"❌ 로그인 실패: {login_data.email}")
-                return {
-                    "message": "로그인 실패",
-                    "error": "이메일 또는 비밀번호가 올바르지 않습니다",
-                    "status": "error"
-                }
-            
-            # 토큰 생성
-            token = self._generate_token(user.id)
-            
-            logger.info(f"✅ 로그인 성공: {user.email}")
-            
-            return {
-                "message": "로그인 성공",
-                "user": user.to_dict(),
-                "token": token,
-                "status": "success"
-            }
-            
-        except Exception as e:
-            logger.error(f"❌ 로그인 실패: {str(e)}")
-            return {
-                "message": "로그인 실패",
-                "error": str(e),
-                "status": "error"
-            }
+        return secrets.token_urlsafe(32)
     
     async def get_user_by_id(self, user_id: str) -> Optional[User]:
         """
-        사용자 ID로 사용자 정보 조회
+        사용자 ID로 사용자 조회
         
         Args:
-            user_id: 사용자 ID
+            user_id: 조회할 사용자 ID
             
         Returns:
-            사용자 정보 (있으면), None (없으면)
+            Optional[User]: 사용자 정보 또는 None
         """
         return await self.user_repository.get_user_by_id(user_id)
     
     async def get_user_by_email(self, email: str) -> Optional[User]:
         """
-        이메일로 사용자 정보 조회
+        이메일로 사용자 조회
         
         Args:
-            email: 이메일 주소
+            email: 조회할 이메일
             
         Returns:
-            사용자 정보 (있으면), None (없으면)
+            Optional[User]: 사용자 정보 또는 None
         """
         return await self.user_repository.get_user_by_email(email)
-    
-    async def update_user(self, user_id: str, update_data: Dict[str, Any]) -> Optional[User]:
-        """
-        사용자 정보 업데이트
-        
-        Args:
-            user_id: 사용자 ID
-            update_data: 업데이트할 데이터
-            
-        Returns:
-            업데이트된 사용자 정보 (성공 시), None (실패 시)
-        """
-        return await self.user_repository.update_user(user_id, update_data)
-    
-    async def delete_user(self, user_id: str) -> bool:
-        """
-        사용자 삭제
-        
-        Args:
-            user_id: 사용자 ID
-            
-        Returns:
-            삭제 성공 여부
-        """
-        return await self.user_repository.delete_user(user_id)
-    
-    async def get_users_count(self) -> int:
-        """
-        등록된 사용자 수 조회
-        
-        Returns:
-            사용자 수
-        """
-        return await self.user_repository.get_users_count()
-    
-    async def search_users(self, query: str) -> list:
-        """
-        사용자 검색
-        
-        Args:
-            query: 검색 쿼리
-            
-        Returns:
-            검색 결과 사용자 목록
-        """
-        return await self.user_repository.search_users(query)
-    
-    def validate_token(self, token: str) -> Optional[str]:
-        """
-        토큰 검증 (간단한 구현)
-        
-        Args:
-            token: 검증할 토큰
-            
-        Returns:
-            사용자 ID (유효한 경우), None (유효하지 않은 경우)
-        """
-        # 실제로는 JWT 토큰 검증 로직 구현
-        # 현재는 간단한 구현
-        try:
-            # 토큰에서 사용자 ID 추출 (실제로는 더 복잡한 로직)
-            if len(token) == 64:  # SHA256 해시 길이
-                return "valid_user_id"  # 임시 구현
-            return None
-        except Exception:
-            return None
