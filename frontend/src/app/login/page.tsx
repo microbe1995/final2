@@ -81,10 +81,15 @@ export default function LoginPage() {
     setError('');
 
     try {
+      console.log('🔍 로그인 요청 데이터:', formData);
+      console.log('🔍 API URL:', `${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080/api/v1'}/auth/login`);
+      
       const response = await axios.post(
         `${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080/api/v1'}/auth/login`,
         formData
       );
+      
+      console.log('✅ 로그인 응답:', response.data);
 
       if (response.data && response.data.user && response.data.token) {
         // AuthContext를 통해 로그인 상태 업데이트
@@ -94,8 +99,23 @@ export default function LoginPage() {
         router.push('/profile'); // 프로필 페이지로 직접 이동
       }
     } catch (error: any) {
-      console.error('로그인 오류:', error);
-      setError(error.response?.data?.detail || '로그인 중 오류가 발생했습니다');
+      console.error('❌ 로그인 오류:', error);
+      console.error('❌ 에러 응답:', error.response);
+      console.error('❌ 에러 상태:', error.response?.status);
+      console.error('❌ 에러 데이터:', error.response?.data);
+      
+      let errorMessage = '로그인 중 오류가 발생했습니다';
+      if (error.response?.data?.detail) {
+        errorMessage = error.response.data.detail;
+      } else if (error.response?.status === 401) {
+        errorMessage = '이메일 또는 비밀번호가 올바르지 않습니다.';
+      } else if (error.response?.status === 400) {
+        errorMessage = '잘못된 요청 데이터입니다. 입력값을 확인해주세요.';
+      } else if (error.response?.status === 500) {
+        errorMessage = '서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
+      }
+      
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }

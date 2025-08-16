@@ -133,8 +133,7 @@ class AuthService:
                 raise ValueError("이메일 또는 비밀번호가 올바르지 않습니다")
             
             # 비밀번호 검증
-            credentials = UserCredentials(email=request.email, password=request.password)
-            if not self.user_repository.authenticate_user(credentials, user):
+            if not await self.user_repository.authenticate_user(request.email, request.password):
                 logger.warning(f"❌ 비밀번호 불일치: {request.email}")
                 raise ValueError("이메일 또는 비밀번호가 올바르지 않습니다")
             
@@ -232,8 +231,7 @@ class AuthService:
                 raise ValueError("사용자를 찾을 수 없습니다")
             
             # 현재 비밀번호 확인
-            credentials = UserCredentials(email=user.email, password=request.current_password)
-            if not self.user_repository.authenticate_user(credentials, user):
+            if not await self.user_repository.authenticate_user(user.email, request.current_password):
                 raise ValueError("현재 비밀번호가 올바르지 않습니다")
             
             # 새 비밀번호 설정

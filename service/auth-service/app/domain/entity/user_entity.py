@@ -33,6 +33,10 @@ class User(BaseModel):
     created_at: datetime = Field(default_factory=datetime.utcnow, description="계정 생성 시간")
     updated_at: Optional[datetime] = Field(None, description="정보 수정 시간")
     last_login: Optional[datetime] = Field(None, description="마지막 로그인 시간")
+    
+    def update_last_login(self):
+        """마지막 로그인 시간 업데이트"""
+        self.last_login = datetime.utcnow()
 
 # ============================================================================
 # 🔐 사용자 인증 정보 엔티티

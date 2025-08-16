@@ -83,7 +83,6 @@ class UserRepository:
             hashed_password = hashlib.sha256(password.encode()).hexdigest()
             
             if user.password_hash == hashed_password:
-                user.update_last_login()
                 logger.info(f"✅ 사용자 인증 성공: {email}")
                 return user
             else:
