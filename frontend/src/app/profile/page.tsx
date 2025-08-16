@@ -45,18 +45,25 @@ export default function ProfilePage() {
   // ============================================================================
   
   useEffect(() => {
+    // 로딩 중이면 대기
+    if (isLoading) {
+      return;
+    }
+
+    // 인증되지 않은 경우 로그인 페이지로 이동
     if (!isAuthenticated) {
       router.push('/login');
       return;
     }
 
+    // 사용자 정보가 있으면 프로필 데이터 설정
     if (user) {
       setProfileData({
         full_name: user.full_name,
         email: user.email
       });
     }
-  }, [isAuthenticated, user, router]);
+  }, [isAuthenticated, user, router, isLoading]);
 
   // ============================================================================
   // 📝 폼 입력 처리
@@ -262,6 +269,19 @@ export default function ProfilePage() {
   // 🎨 렌더링
   // ============================================================================
   
+  // 로딩 중이면 로딩 화면 표시
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-300">인증 상태 확인 중...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // 인증되지 않은 경우 로그인 페이지로 리다이렉트
   if (!isAuthenticated) {
     return null; // 로그인 페이지로 리다이렉트 중
   }

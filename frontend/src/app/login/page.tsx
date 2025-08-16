@@ -91,7 +91,7 @@ export default function LoginPage() {
         login(response.data.user, response.data.token);
         
         alert('로그인이 완료되었습니다!');
-        router.push('/');
+        router.push('/profile'); // 프로필 페이지로 직접 이동
       }
     } catch (error: any) {
       console.error('로그인 오류:', error);
