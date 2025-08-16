@@ -1,7 +1,18 @@
 """
 Gateway API 메인 파일 - 도메인 구조로 리팩토링
 기존 코드를 도메인 레이어로 분리하여 유지보수성 향상
+
+아키텍처:
+- Controller: HTTP 요청/응답 처리
+- Service: 비즈니스 로직 (서비스 디스커버리, 프록시 처리)
+- Repository: 데이터 접근 로직 (서비스 정보 관리)
+- Entity: 데이터 모델 (서비스 정보, 헬스 체크 결과)
+- Schema: 데이터 검증 및 직렬화
 """
+
+# ============================================================================
+# 📦 필요한 모듈 import
+# ============================================================================
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -15,6 +26,10 @@ from contextlib import asynccontextmanager
 from app.domain.controller.proxy_controller import proxy_router
 from app.domain.service.proxy_service import ProxyService
 
+# ============================================================================
+# 🔧 환경 설정 및 초기화
+# ============================================================================
+
 # 환경 변수 로드 (.env는 로컬에서만 사용, Railway에선 대시보드 변수 사용)
 if not os.getenv("RAILWAY_ENVIRONMENT"):
     load_dotenv()
@@ -27,6 +42,10 @@ logging.basicConfig(
 )
 logger = logging.getLogger("gateway_api")
 
+# ============================================================================
+# 🚀 애플리케이션 생명주기 관리
+# ============================================================================
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """애플리케이션 생명주기 관리"""
@@ -34,7 +53,10 @@ async def lifespan(app: FastAPI):
     yield
     logger.info("🛑 Gateway API 종료")
 
-# FastAPI 앱 생성
+# ============================================================================
+# 🏗️ FastAPI 앱 생성 및 설정
+# ============================================================================
+
 app = FastAPI(
     title="Gateway API",
     description="Gateway API for LCA Final - 도메인 구조로 리팩토링됨",
@@ -43,13 +65,19 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# ---- CORS 설정 (환경변수 기반) ----
+# ============================================================================
+# 🌐 CORS 설정 (Cross-Origin Resource Sharing)
+# ============================================================================
+
 # Railway Variables 예시:
 # CORS_URL = https://lca-final.vercel.app
 allowed_origins = [o.strip() for o in os.getenv("CORS_URL", "").split(",") if o.strip()]
 if not allowed_origins:
     # 안전한 기본값(필요 시 바꿔도 됨)
-    allowed_origins = ["https://lca-final.vercel.app"]
+    allowed_origins = [
+        "https://lca-final.vercel.app",
+        "http://localhost:3000",  # 로컬 개발용
+    ]
 
 allow_credentials = os.getenv("CORS_ALLOW_CREDENTIALS", "false").lower() == "true"
 allow_methods = [m.strip() for m in os.getenv("CORS_ALLOW_METHODS", "GET,POST,PUT,DELETE,OPTIONS,PATCH").split(",")]
@@ -65,11 +93,16 @@ app.add_middleware(
 
 logger.info(f"🔧 CORS origins={allowed_origins}, credentials={allow_credentials}")
 
-# ---- 도메인 라우터 등록 ----
+# ============================================================================
+# 🚪 도메인 라우터 등록
+# ============================================================================
+
 # 프록시 컨트롤러의 라우터를 등록
 app.include_router(proxy_router)
 
-# ---- 기본 엔드포인트 ----
+# ============================================================================
+# 🏠 기본 엔드포인트
+# ============================================================================
 @app.get("/", summary="Gateway 루트")
 async def root():
     """Gateway API 루트 엔드포인트"""
@@ -85,7 +118,10 @@ async def health_check_root():
     """Gateway 서비스 상태 확인"""
     return {"status": "healthy", "service": "gateway", "version": "0.4.0"}
 
-# ---- 요청 로깅 미들웨어 ----
+# ============================================================================
+# 📝 요청 로깅 미들웨어
+# ============================================================================
+
 @app.middleware("http")
 async def log_all_requests(request: Request, call_next):
     """모든 HTTP 요청을 로깅하는 미들웨어"""
@@ -94,7 +130,9 @@ async def log_all_requests(request: Request, call_next):
     logger.info(f"🌐 응답: {response.status_code}")
     return response
 
-# ---- 예외 처리 핸들러 ----
+# ============================================================================
+# 🚨 예외 처리 핸들러
+# ============================================================================
 @app.exception_handler(404)
 async def not_found_handler(request: Request, exc):
     """404 Not Found 예외 처리"""
@@ -123,7 +161,10 @@ async def method_not_allowed_handler(request: Request, exc):
         },
     )
 
-# ---- 애플리케이션 실행 ----
+# ============================================================================
+# 🚀 애플리케이션 실행
+# ============================================================================
+
 if __name__ == "__main__":
     import uvicorn
     port = int(os.getenv("PORT", "8080"))

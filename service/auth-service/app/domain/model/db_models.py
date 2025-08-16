@@ -1,28 +1,47 @@
 """
 데이터베이스 모델 - SQLAlchemy 기반
 PostgreSQL 연결을 위한 테이블 스키마 정의
+
+주요 기능:
+- 사용자 테이블 스키마 정의
+- 자동 UUID 생성
+- 타임스탬프 자동 관리
+- 인덱스 및 제약조건 설정
 """
+
+# ============================================================================
+# 📦 필요한 모듈 import
+# ============================================================================
+
 from sqlalchemy import Column, String, DateTime, Boolean, Text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.sql import func
 import uuid
 
+# ============================================================================
+# 🗄️ SQLAlchemy Base 클래스
+# ============================================================================
+
 Base = declarative_base()
+
+# ============================================================================
+# 👥 사용자 데이터베이스 모델
+# ============================================================================
 
 class UserDB(Base):
     """
     사용자 데이터베이스 모델
     
-    Attributes:
-        id: 사용자 고유 ID (UUID)
-        username: 사용자명 (한글, 영문, 숫자, 언더스코어 허용)
-        email: 이메일 주소 (고유)
-        full_name: 전체 이름
-        password_hash: 해시된 비밀번호
-        is_active: 계정 활성화 상태
-        created_at: 계정 생성 시간
-        updated_at: 계정 수정 시간
-        last_login: 마지막 로그인 시간
+    주요 속성:
+    - id: 사용자 고유 ID (UUID, 자동 생성)
+    - username: 사용자명 (한글, 영문, 숫자, 언더스코어 허용)
+    - email: 이메일 주소 (고유, 인덱스)
+    - full_name: 전체 이름
+    - password_hash: 해시된 비밀번호
+    - is_active: 계정 활성화 상태
+    - created_at: 계정 생성 시간 (자동 설정)
+    - updated_at: 계정 수정 시간 (자동 업데이트)
+    - last_login: 마지막 로그인 시간
     """
     __tablename__ = "users"
     
