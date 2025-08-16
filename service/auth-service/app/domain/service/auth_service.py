@@ -164,7 +164,7 @@ class AuthService:
     
     async def update_user_info(self, user_id: str, request: UserUpdateRequest) -> User:
         """
-        회원 정보 수정
+        회원 정보 수정 (이름만 수정 가능)
         
         Args:
             user_id: 수정할 사용자 ID
@@ -174,7 +174,7 @@ class AuthService:
             User: 수정된 사용자 정보
             
         Raises:
-            ValueError: 이메일이 이미 존재하거나 사용자를 찾을 수 없는 경우
+            ValueError: 사용자를 찾을 수 없는 경우
         """
         try:
             logger.info(f"✏️ 회원 정보 수정 시작: {user_id}")
@@ -184,14 +184,7 @@ class AuthService:
             if not user:
                 raise ValueError("사용자를 찾을 수 없습니다")
             
-            # 이메일 중복 확인 (변경하려는 경우)
-            if request.email and request.email != user.email:
-                existing_user = await self.user_repository.get_user_by_email(request.email)
-                if existing_user:
-                    raise ValueError(f"이메일 '{request.email}'은 이미 사용 중입니다")
-                user.email = request.email
-            
-            # 전체 이름 업데이트
+            # 전체 이름만 업데이트 (이메일은 수정 불가)
             if request.full_name is not None:
                 user.full_name = request.full_name
             

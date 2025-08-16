@@ -67,7 +67,6 @@ class UserLoginRequest(BaseModel):
 class UserUpdateRequest(BaseModel):
     """사용자 정보 수정 요청 스키마"""
     full_name: Optional[str] = Field(None, min_length=2, max_length=100, description="사용자 실명")
-    email: Optional[EmailStr] = Field(None, description="사용자 이메일")
     
     @field_validator('full_name')
     @classmethod
@@ -75,15 +74,6 @@ class UserUpdateRequest(BaseModel):
         """실명 유효성 검증"""
         if v is not None and not re.match(r'^[가-힣a-zA-Z\s]+$', v):
             raise ValueError("실명은 한글, 영문, 공백만 사용 가능합니다")
-        return v
-    
-    @field_validator('email')
-    @classmethod
-    def validate_email(cls, v):
-        """이메일 유효성 검증"""
-        if v is not None:
-            # EmailStr이 이미 기본 검증을 수행하므로 추가 검증만
-            return v
         return v
 
 # ============================================================================

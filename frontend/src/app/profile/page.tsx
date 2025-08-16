@@ -100,16 +100,7 @@ export default function ProfilePage() {
         }));
         break;
 
-      case 'email':
-        const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
-        setValidation(prev => ({
-          ...prev,
-          email: {
-            isValid: emailValid,
-            message: emailValid ? '' : '올바른 이메일 형식을 입력해주세요'
-          }
-        }));
-        break;
+
     }
   };
 
@@ -162,8 +153,8 @@ export default function ProfilePage() {
   const handleProfileUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!validation.full_name.isValid || !validation.email.isValid) {
-      setError('모든 필드를 올바르게 입력해주세요');
+    if (!validation.full_name.isValid) {
+      setError('이름을 올바르게 입력해주세요');
       return;
     }
 
@@ -172,10 +163,9 @@ export default function ProfilePage() {
     setSuccess('');
 
     try {
-      // UserUpdateRequest 스키마에 맞는 데이터만 전송
+      // UserUpdateRequest 스키마에 맞는 데이터만 전송 (이름만)
       const updateData = {
-        full_name: profileData.full_name,
-        email: profileData.email
+        full_name: profileData.full_name
       };
       
       console.log('🔍 프로필 수정 요청 데이터:', updateData);
@@ -389,25 +379,7 @@ export default function ProfilePage() {
                 )}
               </div>
 
-              {/* 이메일 필드 */}
-              <div className="form-field">
-                <label htmlFor="email" className="form-label">
-                  이메일 *
-                </label>
-                <input
-                  type="email"
-                  id="email"
-                  value={profileData.email}
-                  onChange={(e) => handleProfileChange('email', e.target.value)}
-                  className={`form-input ${validation.email.isValid ? 'border-green-500' : validation.email.message ? 'border-red-500' : ''}`}
-                  required
-                />
-                {validation.email.message && (
-                  <div className="form-error">
-                    {validation.email.message}
-                  </div>
-                )}
-              </div>
+
 
               {/* 프로필 수정 버튼 */}
               <button
