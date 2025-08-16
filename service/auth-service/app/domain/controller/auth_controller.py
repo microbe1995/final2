@@ -112,7 +112,8 @@ async def register_user(request: UserRegistrationRequest, auth_service: AuthServ
                 email=user.email,
                 full_name=user.full_name,
                 created_at=user.created_at,
-                updated_at=user.updated_at
+                updated_at=user.updated_at,
+                last_login=user.last_login
             ),
             token=token
         )
@@ -162,7 +163,8 @@ async def login_user(request: UserLoginRequest, auth_service: AuthService = Depe
                 email=user.email,
                 full_name=user.full_name,
                 created_at=user.created_at,
-                updated_at=user.updated_at
+                updated_at=user.updated_at,
+                last_login=user.last_login
             ),
             token=token
         )
@@ -193,11 +195,8 @@ async def update_user_profile(
     """
     회원 정보 수정
     
-    - **username**: 새 사용자명 (선택사항)
     - **full_name**: 새 전체 이름 (선택사항)
-    - **current_password**: 현재 비밀번호
-    - **new_password**: 새 비밀번호 (선택사항)
-    - **confirm_new_password**: 새 비밀번호 확인
+    - **email**: 새 이메일 (선택사항, 중복 체크 포함)
     """
     try:
         logger.info(f"✏️ 회원 정보 수정 요청: {user_id}")
@@ -208,13 +207,11 @@ async def update_user_profile(
         
         return UserResponse(
             id=user.id,
-            username=user.username,
             email=user.email,
             full_name=user.full_name,
-            is_active=user.is_active,
-            created_at=user.created_at.isoformat() if user.created_at else None,
-            updated_at=user.updated_at.isoformat() if user.updated_at else None,
-            last_login=user.last_login.isoformat() if user.last_login else None
+            created_at=user.created_at,
+            updated_at=user.updated_at,
+            last_login=user.last_login
         )
         
     except ValueError as e:

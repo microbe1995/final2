@@ -123,6 +123,7 @@ class UserResponse(BaseModel):
     full_name: str = Field(..., description="사용자 실명")
     created_at: datetime = Field(..., description="계정 생성 시간")
     updated_at: Optional[datetime] = Field(None, description="정보 수정 시간")
+    last_login: Optional[datetime] = Field(None, description="마지막 로그인 시간")
 
 class AuthResponse(BaseModel):
     """인증 응답 스키마"""
