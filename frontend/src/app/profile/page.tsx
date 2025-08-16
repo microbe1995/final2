@@ -62,6 +62,19 @@ export default function ProfilePage() {
         full_name: user.full_name,
         email: user.email
       });
+      
+      // validation 상태도 함께 설정
+      setValidation(prev => ({
+        ...prev,
+        full_name: {
+          isValid: user.full_name.length >= 2 && user.full_name.length <= 100,
+          message: ''
+        },
+        email: {
+          isValid: /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(user.email),
+          message: ''
+        }
+      }));
     }
   }, [isAuthenticated, user, router, isLoading]);
 
@@ -159,9 +172,14 @@ export default function ProfilePage() {
     setSuccess('');
 
     try {
+      // UserUpdateRequest 스키마에 맞는 데이터만 전송
+      const updateData = {
+        full_name: profileData.full_name
+      };
+      
       const response = await axios.put(
         `${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080/api/v1'}/auth/profile`,
-        profileData,
+        updateData,
         {
           headers: {
             'Authorization': `Bearer ${token}`
@@ -203,9 +221,16 @@ export default function ProfilePage() {
     setSuccess('');
 
     try {
+      // PasswordChangeRequest 스키마에 맞는 데이터만 전송
+      const passwordUpdateData = {
+        current_password: passwordData.current_password,
+        new_password: passwordData.new_password,
+        confirm_new_password: passwordData.confirm_password
+      };
+      
       const response = await axios.put(
         `${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080/api/v1'}/auth/password`,
-        passwordData,
+        passwordUpdateData,
         {
           headers: {
             'Authorization': `Bearer ${token}`
