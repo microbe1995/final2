@@ -174,7 +174,8 @@ export default function ProfilePage() {
     try {
       // UserUpdateRequest 스키마에 맞는 데이터만 전송
       const updateData = {
-        full_name: profileData.full_name
+        full_name: profileData.full_name,
+        email: profileData.email
       };
       
       const response = await axios.put(
@@ -211,7 +212,12 @@ export default function ProfilePage() {
   const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!validation.current_password.isValid || !validation.new_password.isValid || !validation.confirm_password.isValid) {
+    // 비밀번호 변경 전 최종 validation 체크
+    const currentValid = passwordData.current_password.length >= 1;
+    const newValid = passwordData.new_password.length >= 6;
+    const confirmValid = passwordData.new_password === passwordData.confirm_password;
+    
+    if (!currentValid || !newValid || !confirmValid) {
       setError('모든 필드를 올바르게 입력해주세요');
       return;
     }
@@ -240,11 +246,21 @@ export default function ProfilePage() {
 
       if (response.data) {
         setSuccess('비밀번호가 성공적으로 변경되었습니다!');
+        
+        // 비밀번호 데이터 초기화
         setPasswordData({
           current_password: '',
           new_password: '',
           confirm_password: ''
         });
+        
+        // validation 상태도 초기화
+        setValidation(prev => ({
+          ...prev,
+          current_password: { isValid: false, message: '' },
+          new_password: { isValid: false, message: '' },
+          confirm_password: { isValid: false, message: '' }
+        }));
       }
     } catch (error: any) {
       console.error('비밀번호 변경 오류:', error);

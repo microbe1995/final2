@@ -230,13 +230,19 @@ async def change_password(
     try:
         logger.info(f"🔑 비밀번호 변경 요청: {user_id}")
         
-        await auth_service.change_password(user_id, request)
+        success = await auth_service.change_password(user_id, request)
         
-        logger.info(f"✅ 비밀번호 변경 성공: {user_id}")
-        
-        return MessageResponse(
-            message="비밀번호가 성공적으로 변경되었습니다"
-        )
+        if success:
+            logger.info(f"✅ 비밀번호 변경 성공: {user_id}")
+            return MessageResponse(
+                message="비밀번호가 성공적으로 변경되었습니다"
+            )
+        else:
+            logger.warning(f"❌ 비밀번호 변경 실패: {user_id}")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="비밀번호 변경에 실패했습니다"
+            )
         
     except ValueError as e:
         logger.warning(f"❌ 비밀번호 변경 실패: {user_id} - {str(e)}")

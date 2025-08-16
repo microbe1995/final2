@@ -175,7 +175,7 @@ class AuthService:
             User: 수정된 사용자 정보
             
         Raises:
-            ValueError: 현재 비밀번호가 잘못되었거나 사용자명이 이미 존재하는 경우
+            ValueError: 이메일이 이미 존재하거나 사용자를 찾을 수 없는 경우
         """
         try:
             logger.info(f"✏️ 회원 정보 수정 시작: {user_id}")
@@ -185,24 +185,19 @@ class AuthService:
             if not user:
                 raise ValueError("사용자를 찾을 수 없습니다")
             
-            # 현재 비밀번호 확인
-            if not await self.user_repository.authenticate_user(user.email, request.current_password):
-                raise ValueError("현재 비밀번호가 잘못되었습니다")
-            
-            # 사용자명 중복 확인 (변경하려는 경우)
-            if request.username and request.username != user.username:
-                existing_user = await self.user_repository.get_user_by_username(request.username)
+            # 이메일 중복 확인 (변경하려는 경우)
+            if request.email and request.email != user.email:
+                existing_user = await self.user_repository.get_user_by_email(request.email)
                 if existing_user:
-                    raise ValueError(f"사용자명 '{request.username}'이 이미 존재합니다")
-                user.username = request.username
+                    raise ValueError(f"이메일 '{request.email}'은 이미 사용 중입니다")
+                user.email = request.email
             
             # 전체 이름 업데이트
             if request.full_name is not None:
                 user.full_name = request.full_name
             
-            # 새 비밀번호 설정 (제공된 경우)
-            if request.new_password:
-                user.password_hash = self._hash_password(request.new_password)
+            # 수정 시간 업데이트
+            user.updated_at = datetime.utcnow()
             
             # 사용자 정보 업데이트
             updated_user = await self.user_repository.update_user(user)
@@ -214,7 +209,7 @@ class AuthService:
             logger.error(f"❌ 회원 정보 수정 실패: {user_id} - {str(e)}")
             raise
     
-    async def change_password(self, user_id: str, request: PasswordChangeRequest) -> User:
+    async def change_password(self, user_id: str, request: PasswordChangeRequest) -> bool:
         """
         비밀번호 변경
         
@@ -223,7 +218,7 @@ class AuthService:
             request: 비밀번호 변경 요청 데이터
             
         Returns:
-            User: 업데이트된 사용자 정보
+            bool: 비밀번호 변경 성공 여부
             
         Raises:
             ValueError: 현재 비밀번호가 잘못된 경우
@@ -237,17 +232,21 @@ class AuthService:
                 raise ValueError("사용자를 찾을 수 없습니다")
             
             # 현재 비밀번호 확인
-            if not await self.user_repository.authenticate_user(user.email, request.current_password):
-                raise ValueError("현재 비밀번호가 잘못되었습니다")
+            credentials = UserCredentials(email=user.email, password=request.current_password)
+            if not self.user_repository.authenticate_user(credentials, user):
+                raise ValueError("현재 비밀번호가 올바르지 않습니다")
             
             # 새 비밀번호 설정
             user.password_hash = self._hash_password(request.new_password)
             
+            # 수정 시간 업데이트
+            user.updated_at = datetime.utcnow()
+            
             # 사용자 정보 업데이트
-            updated_user = await self.user_repository.update_user(user)
+            await self.user_repository.update_user(user)
             
             logger.info(f"✅ 비밀번호 변경 성공: {user_id}")
-            return updated_user
+            return True
             
         except Exception as e:
             logger.error(f"❌ 비밀번호 변경 실패: {user_id} - {str(e)}")

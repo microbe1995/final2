@@ -406,7 +406,6 @@ class UserRepository:
                 for user_data in users_data:
                     user = User(
                         id=user_data.id,
-                        username=user_data.username,
                         email=user_data.email,
                         full_name=user_data.full_name,
                         password_hash=user_data.password_hash,
@@ -435,7 +434,7 @@ class UserRepository:
                 result = await session.execute(
                     text("""
                         SELECT * FROM users 
-                        WHERE username ILIKE :query OR email ILIKE :query OR full_name ILIKE :query
+                        WHERE email ILIKE :query OR full_name ILIKE :query
                     """),
                     {"query": search_pattern}
                 )
@@ -445,7 +444,6 @@ class UserRepository:
                 for user_data in users_data:
                     user = User(
                         id=user_data.id,
-                        username=user_data.username,
                         email=user_data.email,
                         full_name=user_data.full_name,
                         password_hash=user_data.password_hash,
