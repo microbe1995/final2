@@ -285,7 +285,6 @@ class UserRepository:
                 if user_data:
                     return User(
                         id=user_data.id,
-                        username=user_data.username,
                         email=user_data.email,
                         full_name=user_data.full_name,
                         password_hash=user_data.password_hash,
@@ -317,7 +316,6 @@ class UserRepository:
                 if user_data:
                     return User(
                         id=user_data.id,
-                        username=user_data.username,
                         email=user_data.email,
                         full_name=user_data.full_name,
                         password_hash=user_data.password_hash,
@@ -343,14 +341,13 @@ class UserRepository:
                 await session.execute(
                     text("""
                         UPDATE users 
-                        SET username = :username, email = :email, full_name = :full_name,
+                        SET email = :email, full_name = :full_name,
                             password_hash = :password_hash, is_active = :is_active,
                             updated_at = :updated_at, last_login = :last_login
                         WHERE id = :id
                     """),
                     {
                         "id": user.id,
-                        "username": user.username,
                         "email": user.email,
                         "full_name": user.full_name,
                         "password_hash": user.password_hash,
