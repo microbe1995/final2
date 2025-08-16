@@ -1,4 +1,2 @@
 # Service 레이어 초기화 파일
-from app.domain.service.auth_service import AuthService
-
-__all__ = ['AuthService']
+# 순환 참조 방지를 위해 여기서는 import하지 않음

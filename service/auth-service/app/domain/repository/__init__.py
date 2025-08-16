@@ -1,4 +1,2 @@
 # Repository 레이어 초기화 파일
-from app.domain.repository.user_repository import UserRepository
-
-__all__ = ['UserRepository']
+# 순환 참조 방지를 위해 여기서는 import하지 않음
