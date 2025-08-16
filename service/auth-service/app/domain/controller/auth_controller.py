@@ -402,14 +402,11 @@ async def check_email_availability(email: str):
         logger.info(f"🔍 이메일 중복 체크 요청: {email}")
         
         # 이메일 유효성 검증 (Pydantic 2.x 호환)
-        from pydantic import EmailStr, ValidationError
-        try:
-            # Pydantic 2.x에서는 EmailStr() 생성자를 사용
-            validated_email = EmailStr(email)
-            # 검증된 이메일을 사용
-            email = str(validated_email)
-        except ValidationError as e:
-            logger.warning(f"⚠️ 이메일 형식 오류: {email} - {str(e)}")
+        import re
+        email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        
+        if not re.match(email_pattern, email):
+            logger.warning(f"⚠️ 이메일 형식 오류: {email}")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="올바른 이메일 형식이 아닙니다"
