@@ -115,7 +115,7 @@ app.add_middleware(
 # ============================================================================
 
 # 인증 컨트롤러의 라우터를 등록
-from app.domain.controller.auth_controller import auth_router
+from app.domain.controller import auth_router
 
 app.include_router(auth_router)
 

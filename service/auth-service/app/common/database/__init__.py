@@ -3,6 +3,6 @@
 PostgreSQL 연결 및 세션 관리
 """
 
-from .database import Database, database
+from app.common.database.database import Database, database
 
 __all__ = ["Database", "database"]

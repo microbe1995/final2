@@ -21,9 +21,9 @@ import logging
 from datetime import datetime
 from typing import Optional
 
-from app.domain.entity.user_entity import User, UserCredentials
-from app.domain.repository.user_repository import UserRepository
-from app.domain.schema.auth_schema import UserRegistrationRequest, UserLoginRequest, UserUpdateRequest, PasswordChangeRequest, UserDeleteRequest
+from app.domain.entity import User, UserCredentials
+from app.domain.repository import UserRepository
+from app.domain.schema import UserRegistrationRequest, UserLoginRequest, UserUpdateRequest, PasswordChangeRequest, UserDeleteRequest
 
 # ============================================================================
 # 🔧 로거 설정

@@ -3,6 +3,6 @@
 SQLAlchemy ORM 모델 정의
 """
 
-from .db_models import Base, UserDB
+from app.domain.model.db_models import Base, UserDB
 
 __all__ = ["Base", "UserDB"]
