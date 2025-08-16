@@ -13,6 +13,15 @@ from dotenv import load_dotenv
 if os.getenv("RAILWAY_ENVIRONMENT") != "true":
     load_dotenv()
 
+# 환경변수 디버깅 로그
+logger = logging.getLogger("auth_service_main")
+logger.info(f"🔧 RAILWAY_ENVIRONMENT: {os.getenv('RAILWAY_ENVIRONMENT')}")
+logger.info(f"🔧 DATABASE_URL 설정됨: {'DATABASE_URL' in os.environ}")
+if os.getenv("DATABASE_URL"):
+    logger.info(f"🔧 DATABASE_URL: {os.getenv('DATABASE_URL')[:20]}...")
+else:
+    logger.warning("⚠️ DATABASE_URL 환경변수가 설정되지 않았습니다!")
+
 # 로깅 설정
 logging.basicConfig(
     level=logging.INFO,
@@ -28,7 +37,7 @@ async def lifespan(app: FastAPI):
     
     # 데이터베이스 연결 및 테이블 생성
     try:
-        from app.domain.entity.database import database
+        from app.common.database.database import database
         if database.database_url:
             success = database.create_tables()
             if success:
@@ -44,7 +53,7 @@ async def lifespan(app: FastAPI):
     
     # 데이터베이스 연결 종료
     try:
-        from app.domain.entity.database import database
+        from app.common.database.database import database
         database.close()
         logger.info("🔌 데이터베이스 연결 종료")
     except Exception as e:

@@ -11,6 +11,8 @@ services:
       - DISCOVERY_SERVICE_URL=http://discovery-service:8001
       - USER_SERVICE_URL=http://user-service:8002
       - PORT=8080
+      # Railway 배포 시 내부 네트워크 사용
+      - RAILWAY_AUTH_SERVICE_URL=${RAILWAY_AUTH_SERVICE_URL:-http://auth-service:8000}
     depends_on:
       - auth-service
     networks:
@@ -37,11 +39,14 @@ services:
       - "8000:8000"
     environment:
       - PORT=8000
+      # 로컬 개발용 PostgreSQL 설정
       - DB_HOST=postgres
       - DB_PORT=5432
       - DB_NAME=cbam_db
       - DB_USER=cbam_user
       - DB_PASSWORD=cbam_password
+      # Railway 배포 시 내부 네트워크 사용
+      - DATABASE_URL=${DATABASE_URL:-postgresql://cbam_user:cbam_password@postgres:5432/cbam_db}
     depends_on:
       - postgres
     networks:

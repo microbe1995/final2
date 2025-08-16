@@ -9,7 +9,8 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sess
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import NullPool
 
-from .db_models import Base
+from app.domain.model.db_models import Base
+from .config import DatabaseConfig
 
 # 로거 설정
 logger = logging.getLogger(__name__)
@@ -19,15 +20,21 @@ class Database:
     
     def __init__(self):
         """데이터베이스 초기화"""
-        self.database_url = os.getenv("DATABASE_URL")
+        # 환경변수 우선순위에 따른 데이터베이스 URL 설정
+        self.database_url = DatabaseConfig.get_database_url()
         self.engine = None
         self.async_engine = None
         self.SessionLocal = None
         self.AsyncSessionLocal = None
         
         if not self.database_url:
-            logger.warning("⚠️ DATABASE_URL 환경변수가 설정되지 않았습니다. 메모리 저장소를 사용합니다.")
+            logger.warning("⚠️ 데이터베이스 URL이 설정되지 않았습니다. 메모리 저장소를 사용합니다.")
             return
+        
+        # Railway 환경 및 네트워크 타입 로깅
+        if DatabaseConfig.is_railway_environment():
+            network_type = "내부" if DatabaseConfig.is_internal_network() else "퍼블릭"
+            logger.info(f"🔧 Railway 환경 감지 - {network_type} 네트워크 사용")
             
         self._setup_database()
     

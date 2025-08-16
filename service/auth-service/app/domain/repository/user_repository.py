@@ -11,8 +11,8 @@ from sqlalchemy import select, update, delete
 from sqlalchemy.orm import selectinload
 
 from app.domain.entity.user_entity import User, UserCredentials
-from app.domain.entity.db_models import UserDB
-from app.domain.entity.database import database
+from app.domain.model.db_models import UserDB
+from app.common.database.database import database
 
 # 로거 설정
 logger = logging.getLogger(__name__)

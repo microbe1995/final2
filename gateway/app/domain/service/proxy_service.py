@@ -43,10 +43,11 @@ class ProxyService:
             service_type: 서비스 타입
             
         Returns:
-            서비스 URL
+            서비스 URL (Railway 내부 네트워크 우선 사용)
         """
         if service_type == ServiceType.AUTH:
-            return os.getenv("AUTH_SERVICE_URL", "http://localhost:8000")
+            # Railway 내부 네트워크 우선, 없으면 로컬 fallback
+            return os.getenv("RAILWAY_AUTH_SERVICE_URL") or os.getenv("AUTH_SERVICE_URL", "http://localhost:8000")
         elif service_type == ServiceType.DISCOVERY:
             return os.getenv("DISCOVERY_SERVICE_URL", "http://localhost:8001")
         elif service_type == ServiceType.USER:
