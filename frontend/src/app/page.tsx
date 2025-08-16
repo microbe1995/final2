@@ -23,14 +23,14 @@ export default function HomePage() {
                 href="/register"
                 className="btn btn-primary text-lg px-15 py-4 shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200"
               >
-                SignUp
+                SignIn
               </a>
               
               <a
                 href="/login"
                 className="btn btn-secondary text-lg px-15 py-4 shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200"
               >
-                SignIn
+                SignUp
               </a>
             </div>
           </div>

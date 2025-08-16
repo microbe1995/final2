@@ -23,9 +23,9 @@ export default function Navigation() {
   return (
     <nav className="bg-white dark:bg-gray-900 shadow-lg border-b border-gray-200 dark:border-gray-700 transition-colors duration-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center h-16">
+        <div className="flex items-center justify-between h-16">
           {/* 로고 영역 - 왼쪽 */}
-          <div className="flex items-center flex-1">
+          <div className="flex items-center">
             <a
               href="/"
               className="flex-shrink-0 flex items-center hover:opacity-80 transition-opacity duration-200"
@@ -51,52 +51,52 @@ export default function Navigation() {
             </a>
           </div>
 
-          {/* 네비게이션 링크 - 중앙 */}
-          <div className="hidden sm:flex sm:items-center sm:space-x-8">
-            <a
-              href="/"
-              className="border-transparent text-gray-500 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600 hover:text-gray-700 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors duration-200"
-            >
-              Home
-            </a>
-            
-            {isAuthenticated ? (
-              // 로그인된 사용자 메뉴
-              <>
-                <a
-                  href="/profile"
-                  className="border-transparent text-gray-500 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600 hover:text-gray-700 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors duration-200"
-                >
-                  Profile
-                </a>
-                <button
-                  onClick={handleLogout}
-                  className="border-transparent text-gray-500 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600 hover:text-gray-700 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors duration-200 cursor-pointer"
-                >
-                  Logout
-                </button>
-              </>
-            ) : (
-              // 로그인되지 않은 사용자 메뉴
-              <>
-                <a
-                  href="/login"
-                  className="border-transparent text-gray-500 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600 hover:text-gray-700 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors duration-200"
-                >
-                  SignIn
-                </a>
-                <a
-                  href="/register"
-                  className="border-transparent text-gray-500 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600 hover:text-gray-700 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors duration-200"
-                >
-                  SignUp
-                </a>
-              </>
-            )}
-          </div>
+          {/* 우측 영역: 네비게이션 링크 + 테마 토글 + 모바일 메뉴 */}
+          <div className="flex items-center space-x-6">
+            {/* 네비게이션 링크 */}
+            <div className="hidden sm:flex sm:items-center sm:space-x-6">
+              <a
+                href="/"
+                className="border-transparent text-gray-500 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600 hover:text-gray-700 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors duration-200"
+              >
+                Home
+              </a>
+              
+              {isAuthenticated ? (
+                // 로그인된 사용자 메뉴
+                <>
+                  <a
+                    href="/profile"
+                    className="border-transparent text-gray-500 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600 hover:text-gray-700 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors duration-200"
+                  >
+                    Profile
+                  </a>
+                  <button
+                    onClick={handleLogout}
+                    className="border-transparent text-gray-500 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600 hover:text-gray-700 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors duration-200 cursor-pointer"
+                  >
+                    Logout
+                  </button>
+                </>
+              ) : (
+                // 로그인되지 않은 사용자 메뉴
+                <>
+                  <a
+                    href="/login"
+                    className="border-transparent text-gray-500 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600 hover:text-gray-700 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors duration-200"
+                  >
+                    SignIn
+                  </a>
+                  <a
+                    href="/register"
+                    className="border-transparent text-gray-500 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600 hover:text-gray-700 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors duration-200"
+                  >
+                    SignUp
+                  </a>
+                </>
+              )}
+            </div>
 
-          {/* 우측 영역: 테마 토글 + 모바일 메뉴 */}
-          <div className="flex items-center space-x-4 flex-1 justify-end">
             {/* 테마 토글 버튼 */}
             <ThemeToggle />
             
