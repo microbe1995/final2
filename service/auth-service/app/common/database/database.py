@@ -115,7 +115,7 @@ class Database:
             self.database_url = None
     
     def create_tables(self):
-        """테이블 생성 (기존 테이블 강제 삭제 후 새로 생성)"""
+        """테이블 생성 (기존 테이블이 있으면 스키마 확인, 없으면 생성)"""
         if not self.engine:
             logger.warning("⚠️ 데이터베이스 연결이 설정되지 않았습니다.")
             return False
@@ -136,32 +136,72 @@ class Database:
                     table_exists = result.scalar()
                     
                     if table_exists:
-                        logger.info("🗑️ 기존 users 테이블 발견 - 삭제 시작")
+                        logger.info("✅ 기존 users 테이블 발견 - 스키마 확인 중")
                         
-                        # 2. 기존 테이블 삭제 (여러 방법 시도)
+                        # 2. 기존 테이블의 컬럼 구조 확인
+                        columns_result = conn.execute(text("""
+                            SELECT column_name, data_type, is_nullable
+                            FROM information_schema.columns 
+                            WHERE table_schema = 'public' 
+                            AND table_name = 'users'
+                            ORDER BY ordinal_position;
+                        """))
+                        existing_columns = {row[0]: row[1] for row in columns_result.fetchall()}
+                        
+                        logger.info(f"📋 기존 컬럼: {list(existing_columns.keys())}")
+                        
+                        # 3. 필요한 컬럼이 모두 있는지 확인
+                        required_columns = {
+                            'id': 'character varying',
+                            'email': 'character varying', 
+                            'full_name': 'character varying',
+                            'password_hash': 'character varying',
+                            'is_active': 'boolean',
+                            'created_at': 'timestamp without time zone',
+                            'updated_at': 'timestamp without time zone',
+                            'last_login': 'timestamp without time zone'
+                        }
+                        
+                        missing_columns = []
+                        for col, expected_type in required_columns.items():
+                            if col not in existing_columns:
+                                missing_columns.append(col)
+                        
+                        if missing_columns:
+                            logger.warning(f"⚠️ 누락된 컬럼 발견: {missing_columns}")
+                            logger.info("🔨 누락된 컬럼 추가 중...")
+                            
+                            # 누락된 컬럼 추가
+                            for col in missing_columns:
+                                if col == 'id':
+                                    conn.execute(text(f"ALTER TABLE users ADD COLUMN {col} VARCHAR PRIMARY KEY"))
+                                elif col == 'email':
+                                    conn.execute(text(f"ALTER TABLE users ADD COLUMN {col} VARCHAR UNIQUE NOT NULL"))
+                                elif col == 'full_name':
+                                    conn.execute(text(f"ALTER TABLE users ADD COLUMN {col} VARCHAR NOT NULL"))
+                                elif col == 'password_hash':
+                                    conn.execute(text(f"ALTER TABLE users ADD COLUMN {col} VARCHAR NOT NULL"))
+                                elif col == 'is_active':
+                                    conn.execute(text(f"ALTER TABLE users ADD COLUMN {col} BOOLEAN DEFAULT TRUE"))
+                                elif col in ['created_at', 'updated_at', 'last_login']:
+                                    conn.execute(text(f"ALTER TABLE users ADD COLUMN {col} TIMESTAMP"))
+                            
+                            logger.info("✅ 누락된 컬럼 추가 완료")
+                        else:
+                            logger.info("✅ 모든 필요한 컬럼이 존재합니다")
+                        
+                        # 4. 인덱스 확인 및 생성
                         try:
-                            # 방법 1: CASCADE로 삭제
-                            conn.execute(text("DROP TABLE IF EXISTS users CASCADE"))
-                            logger.info("✅ CASCADE로 테이블 삭제 완료")
+                            conn.execute(text("CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)"))
+                            logger.info("✅ 이메일 인덱스 확인/생성 완료")
                         except Exception as e:
-                            logger.warning(f"⚠️ CASCADE 삭제 실패: {str(e)}")
-                            try:
-                                # 방법 2: 강제 삭제
-                                conn.execute(text("DROP TABLE users"))
-                                logger.info("✅ 강제 테이블 삭제 완료")
-                            except Exception as e2:
-                                logger.warning(f"⚠️ 강제 삭제 실패: {str(e2)}")
-                                # 방법 3: 컬럼별로 삭제
-                                try:
-                                    conn.execute(text("ALTER TABLE users DROP COLUMN IF EXISTS username"))
-                                    logger.info("✅ username 컬럼 삭제 완료")
-                                except Exception as e3:
-                                    logger.warning(f"⚠️ 컬럼 삭제 실패: {str(e3)}")
-                
-                    # 3. 새 스키마로 테이블 생성
-                    logger.info("🔨 새로운 스키마로 users 테이블 생성 시작")
-                    Base.metadata.create_all(bind=self.engine)
-                    logger.info("✅ 새로운 스키마로 users 테이블 생성 완료")
+                            logger.warning(f"⚠️ 인덱스 생성 실패: {str(e)}")
+                        
+                    else:
+                        # 5. 테이블이 없으면 새로 생성
+                        logger.info("🔨 users 테이블이 없음 - 새로 생성 시작")
+                        Base.metadata.create_all(bind=self.engine)
+                        logger.info("✅ 새로운 users 테이블 생성 완료")
                     
                     # 트랜잭션 커밋
                     trans.commit()
@@ -170,7 +210,7 @@ class Database:
                 except Exception as e:
                     # 트랜잭션 롤백
                     trans.rollback()
-                    logger.error(f"❌ 테이블 생성 실패: {str(e)}")
+                    logger.error(f"❌ 테이블 생성/업데이트 실패: {str(e)}")
                     return False
                     
         except Exception as e:

@@ -309,7 +309,6 @@ async def get_user_profile(
         
         return UserResponse(
             id=user.id,
-            username=user.username,
             email=user.email,
             full_name=user.full_name,
             is_active=user.is_active,
@@ -332,7 +331,10 @@ async def get_user_profile(
 # ============================================================================
 
 @auth_router.get("/check/email/{email}")
-async def check_email_availability(email: str):
+async def check_email_availability(
+    email: str,
+    auth_service: AuthService = Depends(get_auth_service)
+):
     """
     이메일 중복 체크
     
@@ -356,8 +358,8 @@ async def check_email_availability(email: str):
                 detail="올바른 이메일 형식이 아닙니다"
             )
         
-        # 중복 확인
-        existing_user = await get_user_repository().get_user_by_email(email)
+        # 중복 확인 (AuthService를 통해)
+        existing_user = await auth_service.user_repository.get_user_by_email(email)
         
         if existing_user:
             logger.info(f"❌ 이메일 중복: {email}")

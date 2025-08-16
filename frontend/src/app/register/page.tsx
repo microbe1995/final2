@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
 
@@ -31,9 +31,12 @@ export default function RegisterPage() {
   
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  
+  // 디바운싱을 위한 ref
+  const emailCheckTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // ============================================================================
-  // 🔍 이메일 중복 체크
+  // 🔍 이메일 중복 체크 (디바운싱 적용)
   // ============================================================================
   
   const checkEmailAvailability = useCallback(async (email: string) => {
@@ -78,6 +81,28 @@ export default function RegisterPage() {
       }));
     }
   }, []);
+
+  // ============================================================================
+  // 🔄 이메일 자동 중복 체크 (디바운싱)
+  // ============================================================================
+  
+  useEffect(() => {
+    if (emailCheckTimeoutRef.current) {
+      clearTimeout(emailCheckTimeoutRef.current);
+    }
+    
+    if (formData.email && formData.email.length > 0) {
+      emailCheckTimeoutRef.current = setTimeout(() => {
+        checkEmailAvailability(formData.email);
+      }, 800); // 800ms 디바운싱
+    }
+    
+    return () => {
+      if (emailCheckTimeoutRef.current) {
+        clearTimeout(emailCheckTimeoutRef.current);
+      }
+    };
+  }, [formData.email, checkEmailAvailability]);
 
   // ============================================================================
   // 📝 폼 입력 처리
