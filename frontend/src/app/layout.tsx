@@ -5,6 +5,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import ThemeToggle from '../components/ThemeToggle';
+import Navigation from '../components/Navigation';
 import { AuthProvider } from './contexts/AuthContext';
 
 // ============================================================================
@@ -84,7 +85,8 @@ export const metadata: Metadata = {
 // 🎨 네비게이션 컴포넌트
 // ============================================================================
 
-function Navigation() {
+// 중복 Navigation 함수 - 사용하지 않음 (별도 파일로 분리됨)
+function OldNavigation() {
   return (
     <nav className="bg-white dark:bg-gray-900 shadow-lg border-b border-gray-200 dark:border-gray-700 transition-colors duration-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
