@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
 
@@ -24,33 +24,43 @@ export default function RegisterPage() {
   
   const [validation, setValidation] = useState({
     fullName: { isValid: false, message: '' },
-    email: { isValid: false, message: '', isChecking: false },
+    email: { isValid: false, message: '', isChecking: false, isChecked: false },
     password: { isValid: false, message: '' },
     confirmPassword: { isValid: false, message: '' }
   });
   
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  
-  // 디바운싱을 위한 ref
-  const emailCheckTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // ============================================================================
-  // 🔍 이메일 중복 체크 (디바운싱 적용)
+  // 🔍 이메일 중복 체크 (수동 버튼 클릭)
   // ============================================================================
   
-  const checkEmailAvailability = useCallback(async (email: string) => {
+  const checkEmailAvailability = useCallback(async () => {
+    const email = formData.email;
+    
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       setValidation(prev => ({
         ...prev,
-        email: { isValid: false, message: '올바른 이메일 형식을 입력해주세요', isChecking: false }
+        email: { 
+          ...prev.email, 
+          isValid: false, 
+          message: '올바른 이메일 형식을 입력해주세요', 
+          isChecking: false,
+          isChecked: false
+        }
       }));
       return;
     }
 
     setValidation(prev => ({
       ...prev,
-      email: { ...prev.email, isChecking: true, message: '중복 확인 중...' }
+      email: { 
+        ...prev.email, 
+        isChecking: true, 
+        message: '중복 확인 중...',
+        isChecked: false
+      }
     }));
 
     try {
@@ -61,12 +71,22 @@ export default function RegisterPage() {
       if (response.data.available) {
         setValidation(prev => ({
           ...prev,
-          email: { isValid: true, message: response.data.message, isChecking: false }
+          email: { 
+            isValid: true, 
+            message: response.data.message, 
+            isChecking: false,
+            isChecked: true
+          }
         }));
       } else {
         setValidation(prev => ({
           ...prev,
-          email: { isValid: false, message: response.data.message, isChecking: false }
+          email: { 
+            isValid: false, 
+            message: response.data.message, 
+            isChecking: false,
+            isChecked: true
+          }
         }));
       }
     } catch (error: any) {
@@ -76,33 +96,12 @@ export default function RegisterPage() {
         email: { 
           isValid: false, 
           message: '이메일 중복 체크 중 오류가 발생했습니다', 
-          isChecking: false 
+          isChecking: false,
+          isChecked: false
         }
       }));
     }
-  }, []);
-
-  // ============================================================================
-  // 🔄 이메일 자동 중복 체크 (디바운싱)
-  // ============================================================================
-  
-  useEffect(() => {
-    if (emailCheckTimeoutRef.current) {
-      clearTimeout(emailCheckTimeoutRef.current);
-    }
-    
-    if (formData.email && formData.email.length > 0) {
-      emailCheckTimeoutRef.current = setTimeout(() => {
-        checkEmailAvailability(formData.email);
-      }, 800); // 800ms 디바운싱
-    }
-    
-    return () => {
-      if (emailCheckTimeoutRef.current) {
-        clearTimeout(emailCheckTimeoutRef.current);
-      }
-    };
-  }, [formData.email, checkEmailAvailability]);
+  }, [formData.email]);
 
   // ============================================================================
   // 📝 폼 입력 처리
@@ -167,6 +166,12 @@ export default function RegisterPage() {
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // 이메일 중복체크 완료 여부 확인
+    if (!validation.email.isChecked) {
+      setError('이메일 중복체크를 먼저 진행해주세요');
+      return;
+    }
     
     // 전체 유효성 검사
     if (!validation.fullName.isValid || !validation.email.isValid || 
@@ -261,7 +266,7 @@ export default function RegisterPage() {
                 />
                 <button
                   type="button"
-                  onClick={() => checkEmailAvailability(formData.email)}
+                  onClick={() => checkEmailAvailability()}
                   disabled={!formData.email || validation.email.isChecking}
                   className="btn btn-secondary whitespace-nowrap px-4"
                 >
