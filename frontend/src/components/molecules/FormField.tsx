@@ -10,12 +10,14 @@ export interface FormFieldProps {
   label: string;
   children?: React.ReactNode;
   className?: string;
+  error?: string;
 }
 
 const FormField: React.FC<FormFieldProps> = ({
   label,
   children,
-  className
+  className,
+  error
 }) => {
   return (
     <div className={['w-full', className].filter(Boolean).join(' ')}>
@@ -23,6 +25,11 @@ const FormField: React.FC<FormFieldProps> = ({
         {label}
       </label>
       {children}
+      {error && (
+        <div className="mt-1 text-sm text-red-500">
+          {error}
+        </div>
+      )}
     </div>
   );
 };

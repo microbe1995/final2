@@ -9,6 +9,10 @@ interface ProcessFlowHeaderProps {
   onExport: () => void;
   onSaveToBackend: () => void;
   onLoadFromBackend: () => void;
+  onClearFlow: () => void;
+  savedCanvases: any[];
+  isLoadingCanvases: boolean;
+  currentCanvasId: string | null;
 }
 
 const ProcessFlowHeader: React.FC<ProcessFlowHeaderProps> = ({
@@ -18,6 +22,10 @@ const ProcessFlowHeader: React.FC<ProcessFlowHeaderProps> = ({
   onExport,
   onSaveToBackend,
   onLoadFromBackend,
+  onClearFlow,
+  savedCanvases,
+  isLoadingCanvases,
+  currentCanvasId,
 }) => {
   return (
     <div className="bg-[#1e293b] shadow-sm border-b border-[#334155]">
@@ -71,6 +79,13 @@ const ProcessFlowHeader: React.FC<ProcessFlowHeaderProps> = ({
               className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 text-sm font-medium"
             >
               백엔드 로드
+            </button>
+            
+            <button
+              onClick={onClearFlow}
+              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-medium"
+            >
+              초기화
             </button>
           </div>
         </div>

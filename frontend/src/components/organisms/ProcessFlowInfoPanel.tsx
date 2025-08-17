@@ -11,6 +11,8 @@ interface ProcessFlowInfoPanelProps {
   edges: Edge<any>[];
   selectedNodes: Node<any>[];
   selectedEdges: Edge<any>[];
+  savedCanvases: any[];
+  currentCanvasId: string | null;
   className?: string;
 }
 
@@ -19,6 +21,8 @@ const ProcessFlowInfoPanel: React.FC<ProcessFlowInfoPanelProps> = ({
   edges,
   selectedNodes,
   selectedEdges,
+  savedCanvases,
+  currentCanvasId,
   className = ''
 }) => {
   const baseClasses = 'bg-white rounded-lg shadow-lg p-4';
@@ -44,6 +48,31 @@ const ProcessFlowInfoPanel: React.FC<ProcessFlowInfoPanelProps> = ({
         <Icon name="info" size="sm" />
         공정도 정보
       </h3>
+      
+      {/* 저장된 Canvas 정보 */}
+      {savedCanvases.length > 0 && (
+        <div className="mb-4 p-3 bg-green-50 rounded-lg">
+          <h4 className="text-sm font-medium text-green-800 mb-2">저장된 Canvas</h4>
+          <div className="space-y-2">
+            {savedCanvases.map((canvas) => (
+              <div 
+                key={canvas.id} 
+                className={`text-sm p-2 rounded ${
+                  currentCanvasId === canvas.id 
+                    ? 'bg-green-200 text-green-800' 
+                    : 'bg-gray-100 text-gray-700'
+                }`}
+              >
+                <div className="font-medium">{canvas.name}</div>
+                <div className="text-xs text-gray-500">
+                  노드: {canvas.metadata?.nodeCount || 0}개, 
+                  연결: {canvas.metadata?.edgeCount || 0}개
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
       
       {/* 기본 통계 */}
       <div className="grid grid-cols-2 gap-4 mb-4">
