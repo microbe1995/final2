@@ -24,12 +24,15 @@ const ProcessFlowMain: React.FC<ProcessFlowMainProps> = ({
   return (
     <div className="lg:col-span-3">
       <div className="bg-[#1e293b] rounded-lg shadow-lg p-6 border border-[#334155]">
-        <ProcessFlowEditor
-          initialNodes={nodes}
-          initialEdges={edges}
-          onFlowChange={onFlowChange}
-          readOnly={isReadOnly}
-        />
+        {/* React Flow 에디터 - 명시적 높이 설정 */}
+        <div className="h-[600px] w-full">
+          <ProcessFlowEditor
+            initialNodes={nodes}
+            initialEdges={edges}
+            onFlowChange={onFlowChange}
+            readOnly={isReadOnly}
+          />
+        </div>
         
         {/* 하단 컨트롤 버튼들 */}
         <div className="flex justify-center space-x-4 mt-4">

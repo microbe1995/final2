@@ -58,17 +58,29 @@ const ProcessFlowEditor: React.FC<ProcessFlowEditorProps> = ({
 
   // ✅ 공식 문서 방식: applyNodeChanges, applyEdgeChanges 사용
   const onNodesChange: OnNodesChange = useCallback(
-    (changes) => setNodes((nodesSnapshot) => 
-      applyNodeChanges(changes, nodesSnapshot) as AppNodeType[]
-    ),
-    [],
+    (changes) => {
+      const newNodes = applyNodeChanges(changes, nodes) as AppNodeType[];
+      setNodes(newNodes);
+      
+      // 부모에게 변경사항 알림
+      if (onFlowChange) {
+        onFlowChange(newNodes, edges);
+      }
+    },
+    [nodes, edges, onFlowChange]
   );
 
   const onEdgesChange: OnEdgesChange = useCallback(
-    (changes) => setEdges((edgesSnapshot) => 
-      applyEdgeChanges(changes, edgesSnapshot) as AppEdgeType[]
-    ),
-    [],
+    (changes) => {
+      const newEdges = applyEdgeChanges(changes, edges) as AppEdgeType[];
+      setEdges(newEdges);
+      
+      // 부모에게 변경사항 알림
+      if (onFlowChange) {
+        onFlowChange(nodes, newEdges);
+      }
+    },
+    [nodes, edges, onFlowChange]
   );
 
   // ✅ 공식 문서 방식: addEdge 사용
@@ -86,9 +98,16 @@ const ProcessFlowEditor: React.FC<ProcessFlowEditorProps> = ({
           processType: 'standard',
         },
       };
-      setEdges((eds) => addEdge(newEdge, eds));
+      
+      const newEdges = addEdge(newEdge, edges);
+      setEdges(newEdges);
+      
+      // 부모에게 변경사항 알림
+      if (onFlowChange) {
+        onFlowChange(nodes, newEdges);
+      }
     },
-    [setEdges]
+    [edges, nodes, onFlowChange]
   );
 
   // 외부에서 전달받은 nodes/edges가 변경되면 내부 상태도 업데이트
@@ -107,15 +126,8 @@ const ProcessFlowEditor: React.FC<ProcessFlowEditorProps> = ({
     console.log('🎨 ProcessFlowEditor 렌더링:', { nodes: nodes.length, edges: edges.length });
   }, [nodes, edges]);
 
-  // 노드나 엣지가 변경될 때마다 onFlowChange 콜백 호출
-  React.useEffect(() => {
-    if (onFlowChange) {
-      onFlowChange(nodes, edges);
-    }
-  }, [nodes, edges, onFlowChange]);
-
   return (
-    <div style={{ height: '100%', width: '100%' }}>
+    <div className="w-full h-full">
       <ReactFlow
         nodes={nodes}
         edges={edges}
