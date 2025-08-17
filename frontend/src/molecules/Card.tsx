@@ -39,10 +39,10 @@ const Card: React.FC<CardProps> = ({
   return (
     <div
       className={[
-        'bg-white dark:bg-gray-800 rounded-lg transition-all duration-200',
+        'bg-white rounded-lg transition-all duration-200',
         paddingClasses[padding],
         shadowClasses[shadow],
-        border && 'border border-gray-200 dark:border-gray-700',
+        border && 'border border-gray-200',
         hover && 'hover:shadow-lg hover:-translate-y-1',
         className
       ].filter(Boolean).join(' ')}

@@ -52,6 +52,17 @@ services:
     networks:
       - greensteel-network
 
+  # Cal_boundary 서비스
+  cal-boundary:
+    build: ./service/Cal_boundary
+    ports:
+      - "8001:8001"
+    environment:
+      - PORT=8001
+      - DEBUG_MODE=true
+    networks:
+      - greensteel-network
+
   # 사용자 서비스 (향후 추가 예정)
   # user-service:
   #   build: ./service/user-service
@@ -67,8 +78,10 @@ services:
       - "3000:3000"
     environment:
       - NEXT_PUBLIC_API_URL=http://localhost:8080
+      - NEXT_PUBLIC_CAL_BOUNDARY_URL=http://localhost:8001
     depends_on:
       - gateway
+      - cal-boundary
     networks:
       - greensteel-network
 

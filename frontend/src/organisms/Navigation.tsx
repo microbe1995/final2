@@ -1,7 +1,6 @@
 'use client';
 
 import { useAuth } from '@/app/contexts/AuthContext';
-import ThemeToggle from './ThemeToggle';
 
 // ============================================================================
 // 🧭 네비게이션 컴포넌트
@@ -62,6 +61,13 @@ export default function Navigation() {
                 Home
               </a>
               
+              <a
+                href="/cbam"
+                className="border-transparent text-gray-500 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600 hover:text-gray-700 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors duration-200"
+              >
+                🎨 Cal_boundary
+              </a>
+              
               {isAuthenticated ? (
                 // 로그인된 사용자 메뉴
                 <>
@@ -97,8 +103,7 @@ export default function Navigation() {
               )}
             </div>
 
-            {/* 테마 토글 버튼 */}
-            <ThemeToggle />
+
             
             {/* 모바일 메뉴 버튼 */}
             <div className="sm:hidden">

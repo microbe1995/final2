@@ -29,6 +29,10 @@ const nextConfig = {
     NEXT_PUBLIC_RAILWAY_API_URL: process.env.NEXT_PUBLIC_RAILWAY_API_URL || 'http://localhost:8080',
     NEXT_PUBLIC_RAILWAY_API_BASE_URL: process.env.NEXT_PUBLIC_RAILWAY_API_BASE_URL || 'http://localhost:8080/api/v1',
     
+    // Cal_boundary 서비스 설정
+    NEXT_PUBLIC_CAL_BOUNDARY_API_URL: process.env.NEXT_PUBLIC_CAL_BOUNDARY_API_URL || 'http://localhost:8001',
+    NEXT_PUBLIC_CAL_BOUNDARY_API_BASE_URL: process.env.NEXT_PUBLIC_CAL_BOUNDARY_API_BASE_URL || 'http://localhost:8001/api/v1',
+    
     // 환경 구분 (NODE_ENV 제거 - Vercel에서 자동 설정)
     IS_RAILWAY_DEPLOYED: process.env.IS_RAILWAY_DEPLOYED || 'false'
   },
