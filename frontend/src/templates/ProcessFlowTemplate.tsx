@@ -29,7 +29,6 @@ export interface ProcessFlowTemplateProps {
   gridSize: number;
   showGrid: boolean;
   snapToGrid: boolean;
-  apiStatus: 'connected' | 'disconnected' | 'checking';
   
   // 이벤트 핸들러
   onCanvasClick: (e: React.MouseEvent) => void;
@@ -149,14 +148,6 @@ const ProcessFlowTemplate: React.FC<ProcessFlowTemplateProps> = ({
             )}
             <Badge variant="default" size="sm">
               그리드: {gridSize}px
-            </Badge>
-            {/* API 연결 상태 표시 */}
-            <Badge 
-              variant={apiStatus === 'connected' ? 'success' : apiStatus === 'checking' ? 'warning' : 'error'} 
-              size="sm"
-            >
-              {apiStatus === 'connected' ? 'API 연결됨' : 
-               apiStatus === 'checking' ? 'API 확인 중' : 'API 연결 안됨'}
             </Badge>
           </div>
         </div>

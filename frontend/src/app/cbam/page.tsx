@@ -516,7 +516,6 @@ export default function CBAMPage() {
         gridSize={gridSize}
         showGrid={showGrid}
         snapToGrid={snapToGrid}
-        apiStatus={apiStatus}
         
         // 이벤트 핸들러
         onCanvasClick={handleCanvasClick}
