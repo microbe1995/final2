@@ -9,16 +9,27 @@ import Input from '@/atoms/Input';
 // ============================================================================
 
 export interface ProfileFormProps {
-  user: {
+  // 기본 정보 업데이트용
+  user?: {
     full_name: string;
     email: string;
   };
-  onUpdateProfile: (data: { full_name: string; email: string }) => void;
-  onUpdatePassword: (data: { current_password: string; new_password: string; confirm_password: string }) => void;
+  onUpdateProfile?: (data: { full_name: string; email: string }) => void;
+  
+  // 비밀번호 변경용
+  onUpdatePassword?: (data: { current_password: string; new_password: string; confirm_password: string }) => void;
+  
+  // 공통 props
   isLoading?: boolean;
   error?: string;
   success?: string;
   className?: string;
+  
+  // 폼 타입 구분
+  isPasswordChange?: boolean;
+  
+  // 새로운 인터페이스 (Profile 페이지용)
+  onSubmit?: (data: any) => void;
 }
 
 const ProfileForm: React.FC<ProfileFormProps> = ({
@@ -28,11 +39,17 @@ const ProfileForm: React.FC<ProfileFormProps> = ({
   isLoading = false,
   error,
   success,
-  className
+  className,
+  isPasswordChange = false,
+  onSubmit
 }) => {
+  // ============================================================================
+  // 🎯 상태 관리 - 단일 책임
+  // ============================================================================
+  
   const [profileData, setProfileData] = useState({
-    full_name: user.full_name,
-    email: user.email
+    full_name: user?.full_name || '',
+    email: user?.email || ''
   });
 
   const [passwordData, setPasswordData] = useState({
@@ -43,17 +60,27 @@ const ProfileForm: React.FC<ProfileFormProps> = ({
 
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
+  // ============================================================================
+  // 🔄 부수 효과 - 사용자 정보 동기화
+  // ============================================================================
+  
   useEffect(() => {
-    setProfileData({
-      full_name: user.full_name,
-      email: user.email
-    });
+    if (user) {
+      setProfileData({
+        full_name: user.full_name,
+        email: user.email
+      });
+    }
   }, [user]);
 
+  // ============================================================================
+  // 🎯 이벤트 핸들러 - 단일 책임
+  // ============================================================================
+  
   const handleProfileChange = (field: string, value: string) => {
     setProfileData(prev => ({ ...prev, [field]: value }));
     
-    // Clear validation error when user starts typing
+    // 유효성 검사 에러 클리어
     if (validationErrors[field]) {
       setValidationErrors(prev => ({ ...prev, [field]: '' }));
     }
@@ -62,12 +89,16 @@ const ProfileForm: React.FC<ProfileFormProps> = ({
   const handlePasswordChange = (field: string, value: string) => {
     setPasswordData(prev => ({ ...prev, [field]: value }));
     
-    // Clear validation error when user starts typing
+    // 유효성 검사 에러 클리어
     if (validationErrors[field]) {
       setValidationErrors(prev => ({ ...prev, [field]: '' }));
     }
   };
 
+  // ============================================================================
+  // ✅ 유효성 검사 - 단일 책임
+  // ============================================================================
+  
   const validateProfile = (): boolean => {
     const errors: Record<string, string> = {};
 
@@ -98,22 +129,32 @@ const ProfileForm: React.FC<ProfileFormProps> = ({
       errors.new_password = '새 비밀번호를 입력해주세요';
     } else if (passwordData.new_password.length < 6) {
       errors.new_password = '새 비밀번호는 최소 6자 이상이어야 합니다';
+    } else if (passwordData.new_password === passwordData.current_password) {
+      errors.new_password = '새 비밀번호는 현재 비밀번호와 달라야 합니다';
     }
 
     if (!passwordData.confirm_password) {
-      errors.confirm_password = '새 비밀번호 확인을 입력해주세요';
+      errors.confirm_password = '비밀번호 확인을 입력해주세요';
     } else if (passwordData.new_password !== passwordData.confirm_password) {
-      errors.confirm_password = '새 비밀번호가 일치하지 않습니다';
+      errors.confirm_password = '비밀번호가 일치하지 않습니다';
     }
 
     setValidationErrors(errors);
     return Object.keys(errors).length === 0;
   };
 
+  // ============================================================================
+  // 🚀 제출 핸들러 - 단일 책임
+  // ============================================================================
+  
   const handleProfileSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (validateProfile()) {
+    if (!validateProfile()) return;
+    
+    if (onSubmit) {
+      onSubmit(profileData);
+    } else if (onUpdateProfile) {
       onUpdateProfile(profileData);
     }
   };
@@ -121,128 +162,115 @@ const ProfileForm: React.FC<ProfileFormProps> = ({
   const handlePasswordSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (validatePassword()) {
+    if (!validatePassword()) return;
+    
+    if (onSubmit) {
+      onSubmit(passwordData);
+    } else if (onUpdatePassword) {
       onUpdatePassword(passwordData);
-      // Reset password form after successful submission
-      setPasswordData({
-        current_password: '',
-        new_password: '',
-        confirm_password: ''
-      });
     }
   };
 
+  // ============================================================================
+  // 🎨 렌더링 - 조건부 렌더링
+  // ============================================================================
+  
+  if (isPasswordChange) {
+    return (
+      <Card className={className}>
+        <form onSubmit={handlePasswordSubmit} className="space-y-4">
+          <FormField
+            label="현재 비밀번호"
+            error={validationErrors.current_password}
+          >
+            <Input
+              type="password"
+              value={passwordData.current_password}
+              onChange={(e) => handlePasswordChange('current_password', e.target.value)}
+              placeholder="현재 비밀번호를 입력하세요"
+              disabled={isLoading}
+            />
+          </FormField>
+
+          <FormField
+            label="새 비밀번호"
+            error={validationErrors.new_password}
+          >
+            <Input
+              type="password"
+              value={passwordData.new_password}
+              onChange={(e) => handlePasswordChange('new_password', e.target.value)}
+              placeholder="새 비밀번호를 입력하세요"
+              disabled={isLoading}
+            />
+          </FormField>
+
+          <FormField
+            label="비밀번호 확인"
+            error={validationErrors.confirm_password}
+          >
+            <Input
+              type="password"
+              value={passwordData.confirm_password}
+              onChange={(e) => handlePasswordChange('confirm_password', e.target.value)}
+              placeholder="새 비밀번호를 다시 입력하세요"
+              disabled={isLoading}
+            />
+          </FormField>
+
+          <Button
+            type="submit"
+            variant="primary"
+            className="w-full"
+            disabled={isLoading}
+          >
+            {isLoading ? '변경 중...' : '비밀번호 변경'}
+          </Button>
+        </form>
+      </Card>
+    );
+  }
+
+  // 기본 프로필 폼
   return (
-    <div className={`space-y-8 ${className}`}>
-      {/* 프로필 정보 수정 */}
-      <Card>
-        <div className="p-6">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">프로필 정보</h2>
-          
-          <form onSubmit={handleProfileSubmit} className="space-y-6">
-            <FormField label="이름 *">
-              <Input
-                name="full_name"
-                type="text"
-                placeholder="이름을 입력하세요"
-                value={profileData.full_name}
-                onChange={(e) => handleProfileChange('full_name', e.target.value)}
-                error={validationErrors.full_name}
-                required
-              />
-            </FormField>
+    <Card className={className}>
+      <form onSubmit={handleProfileSubmit} className="space-y-4">
+        <FormField
+          label="이름"
+          error={validationErrors.full_name}
+        >
+          <Input
+            type="text"
+            value={profileData.full_name}
+            onChange={(e) => handleProfileChange('full_name', e.target.value)}
+            placeholder="이름을 입력하세요"
+            disabled={isLoading}
+          />
+        </FormField>
 
-            <FormField label="이메일 *">
-              <Input
-                name="email"
-                type="email"
-                placeholder="이메일을 입력하세요"
-                value={profileData.email}
-                onChange={(e) => handleProfileChange('email', e.target.value)}
-                error={validationErrors.email}
-                required
-              />
-            </FormField>
+        <FormField
+          label="이메일"
+          error={validationErrors.email}
+        >
+          <Input
+            type="email"
+            value={profileData.email}
+            onChange={(e) => handleProfileChange('email', e.target.value)}
+            placeholder="이메일을 입력하세요"
+            disabled={isLoading}
+          />
+        </FormField>
 
-            <Button
-              type="submit"
-              variant="primary"
-              disabled={isLoading}
-              className="w-full"
-            >
-              {isLoading ? '업데이트 중...' : '프로필 업데이트'}
-            </Button>
-          </form>
-        </div>
-      </Card>
-
-      {/* 비밀번호 변경 */}
-      <Card>
-        <div className="p-6">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">비밀번호 변경</h2>
-          
-          <form onSubmit={handlePasswordSubmit} className="space-y-6">
-            <FormField label="현재 비밀번호 *">
-              <Input
-                name="current_password"
-                type="password"
-                placeholder="현재 비밀번호를 입력하세요"
-                value={passwordData.current_password}
-                onChange={(e) => handlePasswordChange('current_password', e.target.value)}
-                error={validationErrors.current_password}
-                required
-              />
-            </FormField>
-
-            <FormField label="새 비밀번호 *">
-              <Input
-                name="new_password"
-                type="password"
-                placeholder="새 비밀번호를 입력하세요 (6자 이상)"
-                value={passwordData.new_password}
-                onChange={(e) => handlePasswordChange('new_password', e.target.value)}
-                error={validationErrors.new_password}
-                required
-              />
-            </FormField>
-
-            <FormField label="새 비밀번호 확인 *">
-              <Input
-                name="confirm_password"
-                type="password"
-                placeholder="새 비밀번호를 다시 입력하세요"
-                value={passwordData.confirm_password}
-                onChange={(e) => handlePasswordChange('confirm_password', e.target.value)}
-                error={validationErrors.confirm_password}
-                required
-              />
-            </FormField>
-
-            <Button
-              type="submit"
-              variant="secondary"
-              disabled={isLoading}
-              className="w-full"
-            >
-              {isLoading ? '변경 중...' : '비밀번호 변경'}
-            </Button>
-          </form>
-        </div>
-      </Card>
-
-      {/* 상태 메시지 */}
-      {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <p className="text-red-600">{error}</p>
-        </div>
-      )}
-
-      {success && (
-        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-          <p className="text-green-600">{success}</p>
-        </div>
-      )}
-    </div>
+        <Button
+          type="submit"
+          variant="primary"
+          className="w-full"
+          disabled={isLoading}
+        >
+          {isLoading ? '업데이트 중...' : '프로필 업데이트'}
+        </Button>
+      </form>
+    </Card>
   );
 };
 

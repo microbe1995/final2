@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   ReactFlow,
   Node,
@@ -107,37 +107,43 @@ const ProcessFlowEditor: React.FC<ProcessFlowEditorProps> = ({
     }
   }, [nodes, edges, setNodes, setEdges]);
 
-  const saveFlow = useCallback(() => {
-    // 부모 컴포넌트에서 API 호출 처리
-    if (onFlowChange) {
-      onFlowChange(nodes, edges);
+  // ============================================================================
+  // 💾 로컬 저장소에 공정도 저장
+  // ============================================================================
+  
+  const saveToLocalStorage = useCallback(() => {
+    try {
+      const flowData = {
+        nodes,
+        edges,
+        timestamp: new Date().toISOString(),
+      };
+      
+      localStorage.setItem('processFlowData', JSON.stringify(flowData));
+      // console.log 제거
+    } catch (error) {
+      console.error('❌ 로컬 저장 실패:', error);
     }
-    
-    // 로컬 스토리지에 백업 저장
-    const flowData = {
-      nodes,
-      edges,
-      timestamp: new Date().toISOString(),
-    };
-    localStorage.setItem('processFlow', JSON.stringify(flowData));
-    
-    console.log('✅ 공정도 로컬 저장 완료');
-  }, [nodes, edges, onFlowChange]);
+  }, [nodes, edges]);
 
-  const loadFlow = useCallback(() => {
-    // 로컬 스토리지에서 로드
-    const savedFlow = localStorage.getItem('processFlow');
-    if (savedFlow) {
-      try {
-        const flowData = JSON.parse(savedFlow);
+  // ============================================================================
+  // 📥 로컬 저장소에서 공정도 로드
+  // ============================================================================
+  
+  const loadFromLocalStorage = useCallback(() => {
+    try {
+      const savedData = localStorage.getItem('processFlowData');
+      
+      if (savedData) {
+        const flowData = JSON.parse(savedData);
         setNodes(flowData.nodes || []);
         setEdges(flowData.edges || []);
-        console.log('✅ 로컬 저장소에서 공정도 로드 완료');
-      } catch (error) {
-        console.error('로컬 저장소 로드 실패:', error);
+        // console.log 제거
+      } else {
+        // console.log 제거
       }
-    } else {
-      console.log('📝 저장된 공정도가 없습니다.');
+    } catch (error) {
+      console.error('❌ 로컬 로드 실패:', error);
     }
   }, [setNodes, setEdges]);
 

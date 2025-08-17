@@ -16,10 +16,15 @@ interface ProcessNodeData {
   parameters: Record<string, any>;
 }
 
-const ProcessNode: React.FC<NodeProps<any>> = ({ 
+interface ProcessNodeProps extends NodeProps<any> {
+  onDelete?: (id: string) => void;
+}
+
+const ProcessNode: React.FC<ProcessNodeProps> = ({ 
   data, 
   selected,
-  id 
+  id,
+  onDelete
 }) => {
   const nodeData = data as ProcessNodeData;
   const [isEditing, setIsEditing] = useState(false);
@@ -36,9 +41,10 @@ const ProcessNode: React.FC<NodeProps<any>> = ({
   }, [isEditing, editLabel, editDescription, nodeData]);
 
   const handleDelete = useCallback(() => {
-    // 노드 삭제 로직은 부모 컴포넌트에서 처리
-    console.log('노드 삭제:', id);
-  }, [id]);
+    if (onDelete) {
+      onDelete(id);
+    }
+  }, [id, onDelete]);
 
   return (
     <div className={`relative ${selected ? 'ring-2 ring-blue-500' : ''}`}>

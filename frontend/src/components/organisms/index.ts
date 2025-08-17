@@ -10,6 +10,8 @@ export { default as ProcessNode } from './ProcessNode';
 export { default as ProcessEdge } from './ProcessEdge';
 export { default as ProcessFlowControls } from './ProcessFlowControls';
 export { default as ProcessFlowInfoPanel } from './ProcessFlowInfoPanel';
+export { default as ProcessFlowHeader } from './ProcessFlowHeader';
+export { default as ProcessFlowMain } from './ProcessFlowMain';
 
 // ============================================================================
 // 📝 Organisms 타입 정의

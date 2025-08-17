@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 import { useAuthStore } from '@/zustand/authStore';
-import axios from 'axios';
+import { useAuthAPI } from '@/hooks/useAuthAPI';
+import { useNavigation } from '@/hooks/useNavigation';
+import { useAsyncOperation } from '@/hooks/useAsyncOperation';
 import ProfileForm from '@/organisms/ProfileForm';
 import Button from '@/atoms/Button';
 
@@ -12,152 +13,150 @@ import Button from '@/atoms/Button';
 // ============================================================================
 
 export default function ProfilePage() {
-  const router = useRouter();
-  const { user, token, isAuthenticated, updateUser, logout } = useAuthStore();
+  // ============================================================================
+  // 🎯 상태 및 훅 사용 - 단일 책임
+  // ============================================================================
   
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const { user, token, isAuthenticated, updateUser, logout } = useAuthStore();
+  const { updateProfile, changePassword } = useAuthAPI();
+  const { goToLogin } = useNavigation();
+  const { isLoading, error, success, executeAsync } = useAsyncOperation();
 
   // ============================================================================
-  // 🔄 초기화 (사용자 정보 로드)
+  // 🔄 초기화 - 인증 상태 확인
   // ============================================================================
   
   useEffect(() => {
-    // 인증되지 않은 경우 로그인 페이지로 이동
     if (!isAuthenticated) {
-      router.push('/login');
-      return;
+      goToLogin();
     }
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, goToLogin]);
 
   // ============================================================================
-  // 🚀 프로필 업데이트
+  // 🚀 프로필 업데이트 - 단일 책임
   // ============================================================================
   
   const handleUpdateProfile = async (data: { full_name: string; email: string }) => {
-    setIsLoading(true);
-    setError('');
-    setSuccess('');
+    if (!token) return;
 
-    try {
-      const response = await axios.put(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080'}/api/v1/auth/profile`,
-        data,
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        }
-      );
-
-      if (response.data) {
-        // AuthStore의 사용자 정보 업데이트
-        updateUser({
-          ...user!,
-          full_name: data.full_name,
-          email: data.email
-        });
+    await executeAsync(
+      async () => {
+        const response = await updateProfile(data, token);
         
-        setSuccess('프로필이 성공적으로 업데이트되었습니다.');
-      }
-    } catch (error: any) {
-      console.error('프로필 업데이트 오류:', error);
-      setError(error.response?.data?.detail || '프로필 업데이트 중 오류가 발생했습니다.');
-    } finally {
-      setIsLoading(false);
-    }
+        if (response?.success && response?.data) {
+          updateUser({
+            ...user!,
+            full_name: data.full_name,
+            email: data.email
+          });
+        }
+        
+        return response;
+      },
+      '프로필이 성공적으로 업데이트되었습니다.'
+    );
   };
 
   // ============================================================================
-  // 🔐 비밀번호 변경
+  // 🔐 비밀번호 변경 - 단일 책임
   // ============================================================================
   
   const handleUpdatePassword = async (data: { current_password: string; new_password: string; confirm_password: string }) => {
-    setIsLoading(true);
-    setError('');
-    setSuccess('');
+    if (!token) return;
 
-    try {
-      const response = await axios.put(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080'}/api/v1/auth/password`,
-        {
-          current_password: data.current_password,
-          new_password: data.new_password
-        },
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        }
-      );
-
-      if (response.data) {
-        setSuccess('비밀번호가 성공적으로 변경되었습니다.');
-      }
-    } catch (error: any) {
-      console.error('비밀번호 변경 오류:', error);
-      setError(error.response?.data?.detail || '비밀번호 변경 중 오류가 발생했습니다.');
-    } finally {
-      setIsLoading(false);
-    }
+    await executeAsync(
+      async () => {
+        const response = await changePassword(data, token);
+        return response;
+      },
+      '비밀번호가 성공적으로 변경되었습니다.'
+    );
   };
 
   // ============================================================================
-  // 🚪 로그아웃
+  // 🚪 로그아웃 - 단일 책임
   // ============================================================================
   
   const handleLogout = () => {
     logout();
-    router.push('/login');
+    goToLogin();
   };
 
   // ============================================================================
-  // 🎨 렌더링
+  // 🎨 렌더링 - 조건부 렌더링
   // ============================================================================
   
-  if (!user) {
-    return (
-      <div className="min-h-screen bg-[#0b0c0f] flex items-center justify-center p-4">
-        <div className="text-center">
-          <p className="text-gray-600 mb-4">사용자 정보를 불러오는 중...</p>
-        </div>
-      </div>
-    );
+  if (!isAuthenticated || !user) {
+    return null; // 로그인 페이지로 리다이렉트 중
   }
 
   return (
-    <div className="min-h-screen bg-[#0b0c0f]">
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        {/* 헤더 */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-white mb-2">
-            프로필 관리
-          </h1>
-          <p className="text-[#cbd5e1]">
-            개인정보와 비밀번호를 안전하게 관리하세요
-          </p>
-        </div>
+    <div className="min-h-screen bg-[#0b0c0f] flex items-center justify-center p-4">
+      <div className="w-full max-w-2xl">
+        <div className="bg-[#1e293b] rounded-lg shadow-lg p-6 border border-[#334155]">
+          {/* 헤더 */}
+          <div className="text-center mb-6">
+            <h1 className="text-2xl font-bold text-white mb-2">프로필 관리</h1>
+            <p className="text-[#cbd5e1]">사용자 정보를 관리하고 업데이트하세요</p>
+          </div>
 
-        {/* 프로필 폼 */}
-        <ProfileForm
-          user={user}
-          onUpdateProfile={handleUpdateProfile}
-          onUpdatePassword={handleUpdatePassword}
-          isLoading={isLoading}
-          error={error}
-          success={success}
-        />
+          {/* 사용자 정보 표시 */}
+          <div className="mb-6 p-4 bg-[#334155] rounded-lg">
+            <h2 className="text-lg font-semibold text-white mb-3">현재 정보</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-[#cbd5e1]">
+              <div>
+                <span className="font-medium">이름:</span> {user.full_name}
+              </div>
+              <div>
+                <span className="font-medium">이메일:</span> {user.email}
+              </div>
+              <div>
+                <span className="font-medium">역할:</span> {user.role}
+              </div>
+              <div>
+                <span className="font-medium">ID:</span> {user.id}
+              </div>
+            </div>
+          </div>
 
-        {/* 로그아웃 버튼 */}
-        <div className="mt-8 text-center">
-          <Button
-            onClick={handleLogout}
-            variant="danger"
-            className="px-8 py-3"
-          >
-            로그아웃
-          </Button>
+          {/* 상태 메시지 */}
+          {isLoading && (
+            <div className="mb-4 text-center text-blue-500">처리 중...</div>
+          )}
+          {error && (
+            <div className="mb-4 text-center text-red-500">{error}</div>
+          )}
+          {success && (
+            <div className="mb-4 text-center text-green-500">{success}</div>
+          )}
+
+          {/* 프로필 폼 */}
+          <ProfileForm
+            user={user}
+            onSubmit={handleUpdateProfile}
+            isLoading={isLoading}
+          />
+
+          {/* 비밀번호 변경 폼 */}
+          <div className="mt-8 pt-6 border-t border-[#475569]">
+            <h3 className="text-lg font-semibold text-white mb-4">비밀번호 변경</h3>
+            <ProfileForm
+              onSubmit={handleUpdatePassword}
+              isLoading={isLoading}
+              isPasswordChange={true}
+            />
+          </div>
+
+          {/* 로그아웃 버튼 */}
+          <div className="mt-8 text-center">
+            <Button
+              onClick={handleLogout}
+              variant="danger"
+              className="px-6 py-2"
+            >
+              로그아웃
+            </Button>
+          </div>
         </div>
       </div>
     </div>

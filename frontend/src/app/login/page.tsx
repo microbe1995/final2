@@ -1,47 +1,41 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/zustand/authStore';
+import { useAuthAPI } from '@/hooks/useAuthAPI';
+import { useNavigation } from '@/hooks/useNavigation';
+import { useAsyncOperation } from '@/hooks/useAsyncOperation';
 import AuthForm from '@/organisms/AuthForm';
-import axios from 'axios';
 
 // ============================================================================
 // 🔑 로그인 페이지 컴포넌트
 // ============================================================================
 
 export default function LoginPage() {
-  const router = useRouter();
   const { login } = useAuthStore();
+  const { login: loginAPI } = useAuthAPI();
+  const { goToProfile } = useNavigation();
+  const { isLoading, error, success, executeAsync } = useAsyncOperation();
   
   // ============================================================================
   // 🚀 로그인 제출
   // ============================================================================
   
   const handleSubmit = async (data: { email: string; password: string }) => {
-    try {
-      console.log('🔍 로그인 요청 데이터:', data);
-      console.log('🔍 API URL:', `${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080'}/api/v1/auth/login`);
-      
-      const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080'}/api/v1/auth/login`,
-        data
-      );
-      
-      console.log('✅ 로그인 응답:', response.data);
-
-      if (response.data && response.data.user && response.data.token) {
-        // AuthStore를 통해 로그인 상태 업데이트
-        login(response.data.user, response.data.token);
+    const result = await executeAsync(
+      async () => {
+        const response = await loginAPI(data);
         
-        alert('로그인이 완료되었습니다!');
-        router.push('/profile'); // 프로필 페이지로 직접 이동
-      } else {
-        throw new Error(response.data.message || '로그인에 실패했습니다');
-      }
-    } catch (error: any) {
-      console.error('❌ 로그인 오류:', error);
-      alert(error.message || '로그인에 실패했습니다');
-    }
+        if (response.success && response.data) {
+          // AuthStore를 통해 로그인 상태 업데이트
+          login(response.data.user, response.data.token);
+          alert(response.message);
+          goToProfile(); // 프로필 페이지로 이동
+        }
+        
+        return response;
+      },
+      '로그인이 완료되었습니다!'
+    );
   };
 
   // ============================================================================
@@ -56,6 +50,17 @@ export default function LoginPage() {
           onSubmit={handleSubmit}
           className="w-full"
         />
+        
+        {/* 상태 메시지 표시 */}
+        {isLoading && (
+          <div className="mt-4 text-center text-blue-500">로그인 중...</div>
+        )}
+        {error && (
+          <div className="mt-4 text-center text-red-500">{error}</div>
+        )}
+        {success && (
+          <div className="mt-4 text-center text-green-500">{success}</div>
+        )}
       </div>
     </div>
   );

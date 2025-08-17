@@ -1,42 +1,37 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
+import { useAuthAPI } from '@/hooks/useAuthAPI';
+import { useNavigation } from '@/hooks/useNavigation';
+import { useAsyncOperation } from '@/hooks/useAsyncOperation';
 import AuthForm from '@/organisms/AuthForm';
-import axios from 'axios';
 
 // ============================================================================
 // 🎯 회원가입 페이지 컴포넌트
 // ============================================================================
 
 export default function RegisterPage() {
-  const router = useRouter();
+  const { register } = useAuthAPI();
+  const { goToLogin } = useNavigation();
+  const { isLoading, error, success, executeAsync } = useAsyncOperation();
   
   // ============================================================================
   // 🚀 회원가입 제출
   // ============================================================================
   
   const handleSubmit = async (data: { email: string; password: string; fullName?: string; confirmPassword?: string }) => {
-    try {
-      console.log('🔍 회원가입 요청 데이터:', data);
-      console.log('🔍 API URL:', `${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080'}/api/v1/auth/register`);
-      
-      const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080'}/api/v1/auth/register`,
-        data
-      );
-      
-      console.log('✅ 회원가입 응답:', response.data);
-
-      if (response.status === 200 || response.status === 201) {
-        alert('회원가입이 완료되었습니다! 로그인 페이지로 이동합니다.');
-        router.push('/login');
-      } else {
-        throw new Error(response.data.message || '회원가입에 실패했습니다');
-      }
-    } catch (error: any) {
-      console.error('❌ 회원가입 오류:', error);
-      alert(error.message || '회원가입에 실패했습니다');
-    }
+    const result = await executeAsync(
+      async () => {
+        const response = await register(data);
+        
+        if (response.success) {
+          alert(response.message);
+          goToLogin(); // 로그인 페이지로 이동
+        }
+        
+        return response;
+      },
+      '회원가입이 완료되었습니다!'
+    );
   };
 
   // ============================================================================
@@ -51,6 +46,17 @@ export default function RegisterPage() {
           onSubmit={handleSubmit}
           className="w-full"
         />
+        
+        {/* 상태 메시지 표시 */}
+        {isLoading && (
+          <div className="mt-4 text-center text-blue-500">회원가입 중...</div>
+        )}
+        {error && (
+          <div className="mt-4 text-center text-red-500">{error}</div>
+        )}
+        {success && (
+          <div className="mt-4 text-center text-green-500">{success}</div>
+        )}
       </div>
     </div>
   );
