@@ -7,12 +7,10 @@ services:
     ports:
       - "8080:8080"
     environment:
-      - AUTH_SERVICE_URL=http://auth-service:8000
-      - PORT=8080
-      # Railway 배포 시 내부 네트워크 사용
-      - RAILWAY_AUTH_SERVICE_URL=${RAILWAY_AUTH_SERVICE_URL:-http://auth-service:8000}
+      - AUTH_SERVICE_URL=${AUTH_SERVICE_URL:-http://auth-service:8000}
       - CAL_BOUNDRY_URL=${CAL_BOUNDRY_URL:-http://cal-boundary:8001}
-      - RAILWAY_CAL_BOUNDARY_URL=${RAILWAY_CAL_BOUNDARY_URL:-http://cal-boundary:8001}
+      - CORS_URL=${CORS_URL:-http://localhost:3000}
+      - PORT=8080
     depends_on:
       - auth-service
       - cal-boundary

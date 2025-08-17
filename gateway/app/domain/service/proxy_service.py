@@ -51,15 +51,15 @@ class ProxyService:
     def _get_service_url(self, service_type: ServiceType) -> str:
         """서비스 타입에 따른 URL 반환"""
         if service_type == ServiceType.AUTH:
-            url = os.getenv("RAILWAY_AUTH_SERVICE_URL") or os.getenv("AUTH_SERVICE_URL")
+            url = os.getenv("AUTH_SERVICE_URL")
             if not url:
-                raise ValueError("Auth 서비스 URL이 설정되지 않았습니다. RAILWAY_AUTH_SERVICE_URL 또는 AUTH_SERVICE_URL 환경변수를 확인하세요.")
+                raise ValueError("Auth 서비스 URL이 설정되지 않았습니다. AUTH_SERVICE_URL 환경변수를 확인하세요.")
             logger.info(f"🔧 Auth 서비스 URL: {url}")
             return url
         elif service_type == ServiceType.CAL_BOUNDARY:
-            url = os.getenv("CAL_BOUNDRY_URL") or os.getenv("RAILWAY_CAL_BOUNDARY_URL")
+            url = os.getenv("CAL_BOUNDRY_URL")
             if not url:
-                raise ValueError("Cal_boundary 서비스 URL이 설정되지 않았습니다. CAL_BOUNDRY_URL 또는 RAILWAY_CAL_BOUNDARY_URL 환경변수를 확인하세요.")
+                raise ValueError("Cal_boundary 서비스 URL이 설정되지 않았습니다. CAL_BOUNDRY_URL 환경변수를 확인하세요.")
             logger.info(f"🔧 Cal_boundary 서비스 URL: {url}")
             return url
         
