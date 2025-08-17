@@ -102,7 +102,8 @@ export default function CBAMPage() {
       SERVICE_NAME,
       fullUrl: `${API_BASE_URL}${API_PREFIX}/${SERVICE_NAME}/canvas`,
       note: 'MSA 구조: Gateway → Cal_boundary 프록시 (HTTPS 필수)',
-      security: 'Mixed Content 방지를 위해 HTTPS 사용'
+      security: 'Mixed Content 방지를 위해 HTTPS 사용',
+      backendPath: '/api/v1/canvas' // Cal_boundary 서비스의 실제 경로
     });
   }, []);
 
@@ -144,6 +145,7 @@ export default function CBAMPage() {
     try {
       setIsLoading(true);
       // MSA 구조: Gateway를 거쳐 Cal_boundary의 canvas 엔드포인트 호출
+      // Cal_boundary 서비스의 실제 경로: /api/v1/canvas
       const canvasUrl = `${API_BASE_URL}${API_PREFIX}/${SERVICE_NAME}/canvas`;
       console.log('🔄 공정 필드 로딩 시작 (MSA Gateway 경유):', canvasUrl);
       
