@@ -98,50 +98,19 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   ];
 
   return (
-    <Card className={`p-6 ${className}`}>
+    <Card className={`p-6 rounded-[12px] shadow-[0_1px_2px_rgba(0,0,0,.06)] ${className}`}>
       <div className="space-y-6">
-        {/* 메인 액션 버튼들 */}
+        {/* Main Action Buttons */}
         <div className="flex flex-wrap gap-3">
-          <Button 
-            onClick={onCanvasCreate} 
-            variant="primary"
-            className="flex items-center gap-2"
-          >
-            <Icon name="add" size="sm" />
-            새 Canvas
-          </Button>
-          
-          <Button 
-            onClick={onShapeCreate} 
-            variant="success"
-            className="flex items-center gap-2"
-          >
-            <Icon name="add" size="sm" />
-            도형 추가
-          </Button>
-          
-          <Button 
-            onClick={onArrowCreate} 
-            variant="warning"
-            className="flex items-center gap-2"
-          >
-            <Icon name="add" size="sm" />
-            화살표 추가
-          </Button>
-          
-          <Button 
-            onClick={onConnectModeToggle} 
-            variant={isConnecting ? "success" : "info"}
-            className="flex items-center gap-2"
-          >
-            <Icon name="connect" size="sm" />
-            {isConnecting ? '연결 모드' : '연결 모드'}
-          </Button>
+          <Button onClick={onCanvasCreate} variant="primary" className="flex items-center gap-2"><Icon name="add" size="sm" />새 공정 필드</Button>
+          <Button onClick={onShapeCreate} variant="success" className="flex items-center gap-2"><Icon name="add" size="sm" />도형 추가</Button>
+          <Button onClick={onArrowCreate} variant="warning" className="flex items-center gap-2"><Icon name="add" size="sm" />화살표 추가</Button>
+          <Button onClick={onConnectModeToggle} variant={isConnecting ? "success" : "info"} className="flex items-center gap-2"><Icon name="connect" size="sm" />{isConnecting ? '연결 모드' : '연결 모드'}</Button>
         </div>
 
         {/* 그리드 설정 */}
         <div className="border-t pt-4">
-          <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+          <h4 className="text-[14px] font-semibold text-[#0f172a] mb-3 flex items-center gap-2 leading-[1.5]">
             <Icon name="grid" size="sm" />
             그리드 설정
           </h4>
@@ -152,10 +121,10 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                 type="checkbox"
                 checked={showGrid}
                 onChange={(e) => onShowGridChange(e.target.checked)}
-                className="rounded border-gray-300"
+                className="rounded-[8px] border-[#e2e8f0]"
                 id="show-grid"
               />
-              <label htmlFor="show-grid" className="text-sm text-gray-600">
+              <label htmlFor="show-grid" className="text-[14px] text-[#475569] leading-[1.5]">
                 그리드 표시
               </label>
             </div>
@@ -165,20 +134,20 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                 type="checkbox"
                 checked={snapToGrid}
                 onChange={(e) => onSnapToGridChange(e.target.checked)}
-                className="rounded border-gray-300"
+                className="rounded-[8px] border-[#e2e8f0]"
                 id="snap-grid"
               />
-              <label htmlFor="snap-grid" className="text-sm text-gray-600">
+              <label htmlFor="snap-grid" className="text-[14px] text-[#475569] leading-[1.5]">
                 그리드 스냅
               </label>
             </div>
             
             <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-600">크기:</span>
+              <span className="text-[14px] text-[#475569] leading-[1.5]">크기:</span>
               <select
                 value={gridSize}
                 onChange={(e) => onGridSizeChange(Number(e.target.value))}
-                className="border border-gray-300 rounded px-2 py-1 text-xs w-16"
+                className="border border-[#e2e8f0] rounded-[8px] px-2 py-1 text-[12px] w-16"
               >
                 {gridSizeOptions.map(size => (
                   <option key={size} value={size}>{size}</option>
@@ -190,7 +159,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
 
         {/* 그리기 모드 설정 */}
         <div className="border-t pt-4">
-          <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+          <h4 className="text-[14px] font-semibold text-[#0f172a] mb-3 flex items-center gap-2 leading-[1.5]">
             <Icon name="select" size="sm" />
             그리기 모드
           </h4>
@@ -218,7 +187,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
         {/* 도형 타입 선택 */}
         {drawMode === 'shape' && (
           <div className="border-t pt-4">
-            <h4 className="text-sm font-semibold text-gray-700 mb-3">도형 타입</h4>
+            <h4 className="text-[14px] font-semibold text-[#0f172a] mb-3 leading-[1.5]">도형 타입</h4>
             <div className="flex flex-wrap gap-2">
               {shapeTypeOptions.map(({ value, label, color }) => (
                 <Button
@@ -242,7 +211,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
         {/* 화살표 타입 선택 */}
         {drawMode === 'arrow' && (
           <div className="border-t pt-4">
-            <h4 className="text-sm font-semibold text-gray-700 mb-3">화살표 타입</h4>
+            <h4 className="text-[14px] font-semibold text-[#0f172a] mb-3 leading-[1.5]">화살표 타입</h4>
             <div className="flex flex-wrap gap-2">
               {arrowTypeOptions.map(({ value, label, color }) => (
                 <Button
@@ -266,7 +235,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
         {/* 선택된 요소 수정/삭제 */}
         {(selectedShape || selectedArrow) && (
           <div className="border-t pt-4">
-            <h4 className="text-sm font-semibold text-gray-700 mb-3">선택된 요소</h4>
+            <h4 className="text-[14px] font-semibold text-[#0f172a] mb-3 leading-[1.5]">선택된 요소</h4>
             <div className="flex flex-wrap gap-2">
               {selectedShape && (
                 <>
@@ -320,9 +289,9 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
         {/* 연결 모드 상태 표시 */}
         {isConnecting && (
           <div className="border-t pt-4">
-            <div className="flex items-center gap-2 px-3 py-2 bg-green-100 text-green-800 rounded-lg">
+            <div className="flex items-center gap-2 px-3 py-2 bg-[#16a34a]/10 text-[#16a34a] rounded-[8px]">
               <Icon name="connect" size="sm" />
-              <span className="text-sm font-medium">연결 모드 활성화</span>
+              <span className="text-[14px] font-medium leading-[1.5]">연결 모드 활성화</span>
               <Badge variant="success" size="sm">
                 연결 중
               </Badge>

@@ -88,6 +88,7 @@ export default function CBAMPage() {
   // ============================================================================
   
   const API_BASE_URL = process.env.NEXT_PUBLIC_CAL_BOUNDARY_URL || 'https://lcafinal-production.up.railway.app';
+  const API_PREFIX = '/api/v1';
 
   // ============================================================================
   // 🔄 데이터 로딩
@@ -100,29 +101,28 @@ export default function CBAMPage() {
   const loadCanvases = async () => {
     try {
       setIsLoading(true);
-      const response = await axios.get(`${API_BASE_URL}/canvases`);
-      setCanvases(response.data);
+      const response = await axios.get(`${API_BASE_URL}${API_PREFIX}/canvas`);
+      setCanvases(response.data.canvases || response.data || []);
       
-      if (response.data.length > 0 && !selectedCanvas) {
-        setSelectedCanvas(response.data[0]);
+      if ((response.data.canvases || response.data || []).length > 0 && !selectedCanvas) {
+        setSelectedCanvas((response.data.canvases || response.data || [])[0]);
       }
     } catch (error) {
-      console.error('Canvas 로딩 실패:', error);
-      showToast('error', 'Canvas 로딩에 실패했습니다.');
+      console.error('공정 필드 로딩 실패:', error);
+      showToast('error', '공정 필드 로딩에 실패했습니다.');
     } finally {
       setIsLoading(false);
     }
   };
 
   // ============================================================================
-  // 🎨 Canvas 관리
+  // 🎨 공정 필드 관리
   // ============================================================================
   
   const handleCanvasCreate = async () => {
     try {
-      const newCanvas: Canvas = {
-        id: `canvas_${Date.now()}`,
-        name: `새 Canvas ${canvases.length + 1}`,
+      const newCanvas = {
+        name: `새 공정 필드 ${canvases.length + 1}`,
         width: 800,
         height: 600,
         backgroundColor: '#ffffff',
@@ -130,15 +130,15 @@ export default function CBAMPage() {
         arrows: []
       };
       
-      const response = await axios.post(`${API_BASE_URL}/canvases`, newCanvas);
+      const response = await axios.post(`${API_BASE_URL}${API_PREFIX}/canvas`, newCanvas);
       const createdCanvas: Canvas = response.data;
       
       setCanvases(prev => [...prev, createdCanvas]);
       setSelectedCanvas(createdCanvas);
-      showToast('success', '새 Canvas가 생성되었습니다.');
+      showToast('success', '새 공정 필드가 생성되었습니다.');
     } catch (error) {
-      console.error('Canvas 생성 실패:', error);
-      showToast('error', 'Canvas 생성에 실패했습니다.');
+      console.error('공정 필드 생성 실패:', error);
+      showToast('error', '공정 필드 생성에 실패했습니다.');
     }
   };
 
@@ -152,7 +152,7 @@ export default function CBAMPage() {
 
   const handleCanvasDelete = async (canvasId: string) => {
     try {
-      await axios.delete(`${API_BASE_URL}/canvases/${canvasId}`);
+      await axios.delete(`${API_BASE_URL}${API_PREFIX}/canvas/${canvasId}`);
       setCanvases(prev => prev.filter(c => c.id !== canvasId));
       
       if (selectedCanvas?.id === canvasId) {
@@ -196,7 +196,7 @@ export default function CBAMPage() {
         shapes: [...selectedCanvas.shapes, newShape]
       };
 
-      await axios.put(`${API_BASE_URL}/canvases/${selectedCanvas.id}`, updatedCanvas);
+      await axios.put(`${API_BASE_URL}${API_PREFIX}/canvas/${selectedCanvas.id}`, updatedCanvas);
       setSelectedCanvas(updatedCanvas);
       setCanvases(prev => prev.map(c => c.id === selectedCanvas.id ? updatedCanvas : c));
       
@@ -235,7 +235,7 @@ export default function CBAMPage() {
         )
       };
 
-      await axios.put(`${API_BASE_URL}/canvases/${selectedCanvas.id}`, updatedCanvas);
+      await axios.put(`${API_BASE_URL}${API_PREFIX}/canvas/${selectedCanvas.id}`, updatedCanvas);
       setSelectedCanvas(updatedCanvas);
       setCanvases(prev => prev.map(c => c.id === selectedCanvas.id ? updatedCanvas : c));
       setSelectedShape(null);
@@ -276,7 +276,7 @@ export default function CBAMPage() {
         arrows: [...selectedCanvas.arrows, newArrow]
       };
 
-      await axios.put(`${API_BASE_URL}/canvases/${selectedCanvas.id}`, updatedCanvas);
+      await axios.put(`${API_BASE_URL}${API_PREFIX}/canvas/${selectedCanvas.id}`, updatedCanvas);
       setSelectedCanvas(updatedCanvas);
       setCanvases(prev => prev.map(c => c.id === selectedCanvas.id ? updatedCanvas : c));
       
@@ -311,7 +311,7 @@ export default function CBAMPage() {
         arrows: [...selectedCanvas.arrows, newArrow]
       };
 
-      await axios.put(`${API_BASE_URL}/canvases/${selectedCanvas.id}`, updatedCanvas);
+      await axios.put(`${API_BASE_URL}${API_PREFIX}/canvas/${selectedCanvas.id}`, updatedCanvas);
       setSelectedCanvas(updatedCanvas);
       setCanvases(prev => prev.map(c => c.id === selectedCanvas.id ? updatedCanvas : c));
       
@@ -336,7 +336,7 @@ export default function CBAMPage() {
         arrows: selectedCanvas.arrows.filter(a => a.id !== selectedArrow.id)
       };
 
-      await axios.put(`${API_BASE_URL}/canvases/${selectedCanvas.id}`, updatedCanvas);
+      await axios.put(`${API_BASE_URL}${API_PREFIX}/canvas/${selectedCanvas.id}`, updatedCanvas);
       setSelectedCanvas(updatedCanvas);
       setCanvases(prev => prev.map(c => c.id === selectedCanvas.id ? updatedCanvas : c));
       setSelectedArrow(null);

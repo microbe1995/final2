@@ -18,13 +18,13 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     const baseClasses = 'inline-flex items-center justify-center font-medium rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed';
     
     const variants = {
-      primary: 'bg-blue-600 hover:bg-blue-700 text-white focus:ring-blue-500 shadow-sm hover:shadow-md',
-      secondary: 'bg-gray-600 hover:bg-gray-700 text-white focus:ring-gray-500 shadow-sm hover:shadow-md',
-      danger: 'bg-red-600 hover:bg-red-700 text-white focus:ring-red-500 shadow-sm hover:shadow-md',
-      ghost: 'bg-transparent hover:bg-gray-100 text-gray-700 hover:text-gray-900',
-      success: 'bg-green-600 hover:bg-green-700 text-white focus:ring-green-500 shadow-sm hover:shadow-md',
-      warning: 'bg-yellow-600 hover:bg-yellow-700 text-white focus:ring-yellow-500 shadow-sm hover:shadow-md',
-      info: 'bg-cyan-600 hover:bg-cyan-700 text-white focus:ring-cyan-500 shadow-sm hover:shadow-md'
+      primary: 'bg-[#2563eb] hover:bg-[#1d4ed8] text-white focus:ring-[#2563eb] shadow-[0_1px_2px_rgba(0,0,0,.06)] hover:shadow-[0_4px_12px_rgba(0,0,0,.10)]',
+      secondary: 'bg-[#475569] hover:bg-[#374151] text-white focus:ring-[#475569] shadow-[0_1px_2px_rgba(0,0,0,.06)] hover:shadow-[0_4px_12px_rgba(0,0,0,.10)]',
+      danger: 'bg-[#dc2626] hover:bg-[#b91c1c] text-white focus:ring-[#dc2626] shadow-[0_1px_2px_rgba(0,0,0,.06)] hover:shadow-[0_4px_12px_rgba(0,0,0,.10)]',
+      ghost: 'bg-transparent hover:bg-[#f1f5f9] text-[#475569] hover:text-[#0f172a]',
+      success: 'bg-[#16a34a] hover:bg-[#15803d] text-white focus:ring-[#16a34a] shadow-[0_1px_2px_rgba(0,0,0,.06)] hover:shadow-[0_4px_12px_rgba(0,0,0,.10)]',
+      warning: 'bg-[#d97706] hover:bg-[#b45309] text-white focus:ring-[#d97706] shadow-[0_1px_2px_rgba(0,0,0,.06)] hover:shadow-[0_4px_12px_rgba(0,0,0,.10)]',
+      info: 'bg-[#06b6d4] hover:bg-[#0891b2] text-white focus:ring-[#06b6d4] shadow-[0_1px_2px_rgba(0,0,0,.06)] hover:shadow-[0_4px_12px_rgba(0,0,0,.10)]'
     };
     
     const sizes = {

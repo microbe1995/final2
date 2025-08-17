@@ -113,22 +113,32 @@ const ProcessFlowTemplate: React.FC<ProcessFlowTemplateProps> = ({
       <div className="max-w-7xl mx-auto">
         {/* 헤더 */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-[#ffffff] mb-2 flex items-center gap-3">
+          <h1 className="text-[28px] font-bold text-[#ffffff] mb-2 flex items-center gap-3 leading-[1.3]">
             <Icon name="process" size="lg" />
             Cal_boundary - 공정도 기반 탄소배출량 계산
           </h1>
-          <p className="text-[#475569]">
+          <p className="text-[16px] text-[#475569] leading-[1.5]">
             공정도를 그리고 산정경계를 설정하여 탄소배출량을 계산할 수 있는 전문 도구입니다.
           </p>
           
           {/* 상태 표시 */}
-          <div className="mt-4 flex flex-wrap gap-2">
+          <div className="mt-6 flex flex-wrap gap-3">
             <Badge variant="info" size="sm">
-              Canvas: {canvases.length}개
+              공정 필드: {canvases.length}개
             </Badge>
             {selectedCanvas && (
+              <Badge variant="default" size="sm">
+                선택된 공정 필드: {selectedCanvas.name}
+              </Badge>
+            )}
+            {selectedShape && (
               <Badge variant="success" size="sm">
-                선택됨: {selectedCanvas.name}
+                선택된 도형: {selectedShape.label}
+              </Badge>
+            )}
+            {selectedArrow && (
+              <Badge variant="warning" size="sm">
+                선택된 화살표: {selectedArrow.label || selectedArrow.id}
               </Badge>
             )}
             {isConnecting && (
@@ -178,18 +188,18 @@ const ProcessFlowTemplate: React.FC<ProcessFlowTemplateProps> = ({
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* Canvas 목록 */}
               <div className="lg:col-span-1">
-                <Card className="p-4 bg-[#ffffff] text-[#0f172a]">
-                  <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <Card className="p-4 bg-[#ffffff] text-[#0f172a] rounded-[12px] shadow-[0_1px_2px_rgba(0,0,0,.06)]">
+                  <h3 className="text-[18px] font-semibold mb-4 flex items-center gap-2 leading-[1.3]">
                     <Icon name="select" size="sm" />
-                    Canvas 목록
+                    공정 필드 목록
                   </h3>
                   
                   {canvases.length === 0 ? (
                     <div className="text-center py-8 text-[#475569]">
                       <Icon name="add" size="xl" className="mx-auto mb-3 text-[#475569]" />
-                      <p className="text-sm">생성된 Canvas가 없습니다.</p>
-                      <p className="text-xs text-[#475569] mt-1">
-                        새 Canvas를 생성하여 공정도를 시작하세요
+                      <p className="text-[14px] leading-[1.5]">생성된 공정 필드가 없습니다.</p>
+                      <p className="text-[12px] text-[#475569] mt-1 leading-[1.5]">
+                        새 공정 필드를 생성하여 공정도를 시작하세요
                       </p>
                     </div>
                   ) : (
@@ -197,27 +207,23 @@ const ProcessFlowTemplate: React.FC<ProcessFlowTemplateProps> = ({
                       {canvases.map((canvas) => (
                         <div
                           key={canvas.id}
-                          className={`p-3 border rounded-lg transition-all cursor-pointer ${
+                          className={`p-3 border rounded-[8px] transition-all cursor-pointer ${
                             selectedCanvas?.id === canvas.id
-                              ? 'border-[#2563eb] bg-[#2563eb]/10 shadow-md'
-                              : 'border-[#e2e8f0] hover:border-[#475569] hover:shadow-sm'
+                              ? 'border-[#2563eb] bg-[#2563eb]/10 shadow-[0_4px_12px_rgba(0,0,0,.10)]'
+                              : 'border-[#e2e8f0] hover:border-[#475569] hover:shadow-[0_1px_2px_rgba(0,0,0,.06)]'
                           }`}
                           onClick={() => onCanvasSelect(canvas)}
                         >
                           <div className="flex items-start justify-between">
                             <div className="flex-1">
-                              <h4 className="font-medium text-[#0f172a] mb-1">
+                              <h4 className="font-medium text-[#0f172a] mb-1 text-[14px] leading-[1.5]">
                                 {canvas.name}
                               </h4>
-                              <div className="text-xs text-[#475569] space-y-1">
+                              <div className="text-[12px] text-[#475569] space-y-1 leading-[1.5]">
                                 <p>{canvas.width} × {canvas.height}</p>
                                 <div className="flex gap-2">
-                                  <Badge variant="info" size="sm">
-                                    {canvas.shapes.length}개 도형
-                                  </Badge>
-                                  <Badge variant="warning" size="sm">
-                                    {canvas.arrows.length}개 화살표
-                                  </Badge>
+                                  <Badge variant="default" size="sm">도형: {canvas.shapes.length}</Badge>
+                                  <Badge variant="default" size="sm">화살표: {canvas.arrows.length}</Badge>
                                 </div>
                               </div>
                             </div>
@@ -226,12 +232,12 @@ const ProcessFlowTemplate: React.FC<ProcessFlowTemplateProps> = ({
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                if (confirm('정말로 이 Canvas를 삭제하시겠습니까?')) {
+                                if (window.confirm(`'${canvas.name}' 공정 필드를 삭제하시겠습니까?`)) {
                                   onCanvasDelete(canvas.id);
                                 }
                               }}
-                              className="text-[#dc2626] hover:text-[#dc2626]/80 p-1 rounded hover:bg-[#dc2626]/10 transition-colors"
-                              title="Canvas 삭제"
+                              className="text-[#dc2626] hover:text-[#dc2626]/80 p-1 rounded-[8px] hover:bg-[#dc2626]/10 transition-all duration-[120ms]"
+                              title="공정 필드 삭제"
                             >
                               <Icon name="delete" size="sm" />
                             </button>
