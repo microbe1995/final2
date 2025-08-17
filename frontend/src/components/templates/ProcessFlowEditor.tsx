@@ -60,12 +60,22 @@ const ProcessFlowEditor: React.FC<ProcessFlowEditorProps> = ({
 
   // 외부에서 전달받은 nodes/edges가 변경되면 내부 상태도 업데이트
   React.useEffect(() => {
-    setNodes(initialNodes);
-  }, [initialNodes, setNodes]);
+    console.log('🔄 ProcessFlowEditor - initialNodes 변경 감지:', initialNodes);
+    if (initialNodes.length !== nodes.length || 
+        JSON.stringify(initialNodes) !== JSON.stringify(nodes)) {
+      console.log('✅ ProcessFlowEditor - nodes 상태 업데이트:', initialNodes);
+      setNodes(initialNodes);
+    }
+  }, [initialNodes, nodes, setNodes]);
 
   React.useEffect(() => {
-    setEdges(initialEdges);
-  }, [initialEdges, setEdges]);
+    console.log('🔄 ProcessFlowEditor - initialEdges 변경 감지:', initialEdges);
+    if (initialEdges.length !== edges.length || 
+        JSON.stringify(initialEdges) !== JSON.stringify(edges)) {
+      console.log('✅ ProcessFlowEditor - edges 상태 업데이트:', initialEdges);
+      setEdges(initialEdges);
+    }
+  }, [initialEdges, edges, setEdges]);
 
   // ============================================================================
   // 🎯 이벤트 핸들러들

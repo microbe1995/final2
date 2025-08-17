@@ -45,12 +45,14 @@ export const useProcessFlow = () => {
   // ============================================================================
   
   const handleFlowChange = useCallback((newNodes: AppNodeType[], newEdges: AppEdgeType[]) => {
+    console.log('🔄 useProcessFlow - handleFlowChange 호출됨:', { newNodes, newEdges });
     setNodes(newNodes);
     setEdges(newEdges);
     
     // 선택된 요소들 업데이트
     setSelectedNodes(newNodes.filter(node => node.selected));
     setSelectedEdges(newEdges.filter(edge => edge.selected));
+    console.log('✅ useProcessFlow - 상태 업데이트 완료');
   }, []);
 
   // ============================================================================
