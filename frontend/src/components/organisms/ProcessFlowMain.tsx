@@ -2,13 +2,13 @@
 
 import React from 'react';
 import ProcessFlowEditor from '@/templates/ProcessFlowEditor';
-import { Node, Edge } from '@xyflow/react';
+import type { AppNodeType, AppEdgeType } from '@/types/reactFlow';
 
 interface ProcessFlowMainProps {
-  nodes: Node<any>[];
-  edges: Edge<any>[];
+  nodes: AppNodeType[];
+  edges: AppEdgeType[];
   isReadOnly: boolean;
-  onFlowChange: (nodes: Node[], edges: Edge[]) => void;
+  onFlowChange: (nodes: AppNodeType[], edges: AppEdgeType[]) => void;
   onAddElement: () => void;
   onDeleteSelected: () => void;
 }

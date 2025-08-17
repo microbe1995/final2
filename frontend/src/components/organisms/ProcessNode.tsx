@@ -8,17 +8,19 @@ import ProcessTypeBadge from '../atoms/ProcessTypeBadge';
 import ProcessStatusIndicator from '../atoms/ProcessStatusIndicator';
 import ProcessNodeContent from '../molecules/ProcessNodeContent';
 import ProcessNodeToolbar from '../molecules/ProcessNodeToolbar';
+import type { ProcessNodeData } from '@/types/reactFlow';
 
-interface ProcessNodeData {
-  label: string;
-  description: string;
-  processType: string;
-  parameters: Record<string, any>;
-}
+// ============================================================================
+// 🎯 ProcessNode Props 인터페이스
+// ============================================================================
 
-interface ProcessNodeProps extends NodeProps<any> {
+interface ProcessNodeProps extends NodeProps<ProcessNodeData> {
   onDelete?: (id: string) => void;
 }
+
+// ============================================================================
+// 🎯 ProcessNode 컴포넌트
+// ============================================================================
 
 const ProcessNode: React.FC<ProcessNodeProps> = ({ 
   data, 
@@ -26,19 +28,18 @@ const ProcessNode: React.FC<ProcessNodeProps> = ({
   id,
   onDelete
 }) => {
-  const nodeData = data as ProcessNodeData;
   const [isEditing, setIsEditing] = useState(false);
-  const [editLabel, setEditLabel] = useState(nodeData.label);
-  const [editDescription, setEditDescription] = useState(nodeData.description);
+  const [editLabel, setEditLabel] = useState(data.label);
+  const [editDescription, setEditDescription] = useState(data.description);
 
   const handleLabelEdit = useCallback(() => {
     if (isEditing) {
       // 편집 완료 시 데이터 업데이트
-      nodeData.label = editLabel;
-      nodeData.description = editDescription;
+      data.label = editLabel;
+      data.description = editDescription;
     }
     setIsEditing(!isEditing);
-  }, [isEditing, editLabel, editDescription, nodeData]);
+  }, [isEditing, editLabel, editDescription, data]);
 
   const handleDelete = useCallback(() => {
     if (onDelete) {
@@ -65,7 +66,7 @@ const ProcessNode: React.FC<ProcessNodeProps> = ({
         {/* 공정 타입 및 상태 표시 */}
         <div className="flex items-center justify-between mb-3">
           <ProcessTypeBadge
-            processType={nodeData.processType}
+            processType={data.processType}
             size="sm"
           />
           <ProcessStatusIndicator
@@ -76,7 +77,7 @@ const ProcessNode: React.FC<ProcessNodeProps> = ({
 
         {/* 노드 내용 */}
         <ProcessNodeContent
-          data={nodeData}
+          data={data}
           isEditing={isEditing}
           editLabel={editLabel}
           editDescription={editDescription}
@@ -88,7 +89,7 @@ const ProcessNode: React.FC<ProcessNodeProps> = ({
         <div className="mt-3 pt-2 border-t border-gray-200">
           <div className="flex justify-between text-xs text-gray-500">
             <span>ID: {id}</span>
-            <span>타입: {nodeData.processType}</span>
+            <span>타입: {data.processType}</span>
           </div>
         </div>
       </div>

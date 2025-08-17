@@ -3,7 +3,8 @@
 import { useCallback } from 'react';
 import { Node, Edge } from '@xyflow/react';
 import { apiMethods } from '@/api/apiClient';
-import { transformFlowToCanvas, transformCanvasToFlow } from '@/utils/transformers';
+import { transformFlowToCanvas, transformCanvasToFlow } from '@/types/transformers';
+import type { AppNodeType, AppEdgeType } from '@/types/reactFlow';
 
 // ============================================================================
 // 🎯 Process Flow API 관련 타입 정의
@@ -52,8 +53,8 @@ export const useProcessFlowAPI = () => {
   // ============================================================================
   
   const saveToBackend = useCallback(async (
-    nodes: Node[],
-    edges: Edge[],
+    nodes: AppNodeType[],
+    edges: AppEdgeType[],
     name?: string
   ): Promise<boolean> => {
     try {
@@ -82,7 +83,7 @@ export const useProcessFlowAPI = () => {
   
   const loadFromBackend = useCallback(async (
     canvasId?: string
-  ): Promise<{ nodes: Node[]; edges: Edge[]; metadata?: any } | null> => {
+  ): Promise<{ nodes: AppNodeType[]; edges: AppEdgeType[]; metadata?: any } | null> => {
     try {
       if (canvasId) {
         // 특정 Canvas 로드
@@ -141,8 +142,8 @@ export const useProcessFlowAPI = () => {
   
   const updateCanvas = useCallback(async (
     canvasId: string,
-    nodes: Node[],
-    edges: Edge[],
+    nodes: AppNodeType[],
+    edges: AppEdgeType[],
     name?: string
   ): Promise<boolean> => {
     try {

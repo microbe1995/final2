@@ -3,8 +3,6 @@
 import React, { useState, useCallback } from 'react';
 import {
   ReactFlow,
-  Node,
-  Edge,
   addEdge,
   Connection,
   useNodesState,
@@ -14,27 +12,42 @@ import {
   MiniMap,
   NodeTypes,
   EdgeTypes,
+  type OnConnect,
+  type OnNodesChange,
+  type OnEdgesChange,
 } from '@xyflow/react';
-import ProcessNode from '../organisms/ProcessNode';
-import ProcessEdge from '../organisms/ProcessEdge';
-import ProcessFlowControls from '../organisms/ProcessFlowControls';
-// API는 page.tsx에 통합되어 있음
+import ProcessNodeComponent from '../organisms/ProcessNode';
+import ProcessEdgeComponent from '../organisms/ProcessEdge';
+import type { AppNodeType, AppEdgeType, ProcessNode, ProcessEdge } from '@/types/reactFlow';
 
+// ============================================================================
+// 🎯 노드 및 엣지 타입 정의
+// ============================================================================
 
 const nodeTypes: NodeTypes = {
-  processNode: ProcessNode as any,
+  // React Flow의 타입 시스템과 호환성을 위해 타입 단언 사용
+  processNode: ProcessNodeComponent as any,
 };
 
 const edgeTypes: EdgeTypes = {
-  processEdge: ProcessEdge as any,
+  // React Flow의 타입 시스템과 호환성을 위해 타입 단언 사용
+  processEdge: ProcessEdgeComponent as any,
 };
 
+// ============================================================================
+// 🎯 Props 인터페이스
+// ============================================================================
+
 interface ProcessFlowEditorProps {
-  initialNodes?: Node<any>[];
-  initialEdges?: Edge<any>[];
-  onFlowChange?: (nodes: Node[], edges: Edge[]) => void;
+  initialNodes?: AppNodeType[];
+  initialEdges?: AppEdgeType[];
+  onFlowChange?: (nodes: AppNodeType[], edges: AppEdgeType[]) => void;
   readOnly?: boolean;
 }
+
+// ============================================================================
+// 🎯 ProcessFlowEditor 컴포넌트
+// ============================================================================
 
 const ProcessFlowEditor: React.FC<ProcessFlowEditorProps> = ({
   initialNodes = [],
@@ -42,8 +55,8 @@ const ProcessFlowEditor: React.FC<ProcessFlowEditorProps> = ({
   onFlowChange,
   readOnly = false,
 }) => {
-  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+  const [nodes, setNodes, onNodesChange] = useNodesState<AppNodeType>(initialNodes);
+  const [edges, setEdges, onEdgesChange] = useEdgesState<AppEdgeType>(initialEdges);
 
   // 외부에서 전달받은 nodes/edges가 변경되면 내부 상태도 업데이트
   React.useEffect(() => {
@@ -54,19 +67,25 @@ const ProcessFlowEditor: React.FC<ProcessFlowEditorProps> = ({
     setEdges(initialEdges);
   }, [initialEdges, setEdges]);
 
-  const onConnect = useCallback(
+  // ============================================================================
+  // 🎯 이벤트 핸들러들
+  // ============================================================================
+
+  const onConnect: OnConnect = useCallback(
     (params: Connection) => {
-      const newEdge: Edge<any> = {
+      if (!params.source || !params.target) return;
+      
+      const newEdge: ProcessEdge = {
         id: `edge-${Date.now()}`,
-        source: params.source!,
-        target: params.target!,
+        source: params.source,
+        target: params.target,
         type: 'processEdge',
         data: {
           label: '공정 흐름',
           processType: 'standard',
         },
       };
-      setEdges((eds: any) => addEdge(newEdge, eds));
+      setEdges((eds) => addEdge(newEdge, eds));
     },
     [setEdges]
   );
@@ -83,7 +102,7 @@ const ProcessFlowEditor: React.FC<ProcessFlowEditorProps> = ({
   }, [nodes, edges, onFlowChangeHandler]);
 
   const addProcessNode = useCallback(() => {
-    const newNode: Node<any> = {
+    const newNode: ProcessNode = {
       id: `node-${Date.now()}`,
       type: 'processNode',
       position: { x: 250, y: 250 },
@@ -94,16 +113,16 @@ const ProcessFlowEditor: React.FC<ProcessFlowEditorProps> = ({
         parameters: {},
       },
     };
-    setNodes((nds: any) => [...nds, newNode]);
+    setNodes((nds) => [...nds, newNode]);
   }, [setNodes]);
 
   const deleteSelectedElements = useCallback(() => {
-    const selectedNodes = nodes.filter((node: any) => node.selected);
-    const selectedEdges = edges.filter((edge: any) => edge.selected);
+    const selectedNodes = nodes.filter((node) => node.selected);
+    const selectedEdges = edges.filter((edge) => edge.selected);
     
     if (selectedNodes.length > 0 || selectedEdges.length > 0) {
-      setNodes((nds: any) => nds.filter((node: any) => !node.selected));
-      setEdges((eds: any) => eds.filter((edge: any) => !edge.selected));
+      setNodes((nds) => nds.filter((node) => !node.selected));
+      setEdges((eds) => eds.filter((edge) => !edge.selected));
     }
   }, [nodes, edges, setNodes, setEdges]);
 

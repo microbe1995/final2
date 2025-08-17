@@ -4,6 +4,11 @@ import React from 'react';
 import { BaseEdge, getBezierPath, EdgeProps } from '@xyflow/react';
 
 import ProcessEdgeLabel from '../molecules/ProcessEdgeLabel';
+import type { ProcessEdgeData } from '@/types/reactFlow';
+
+// ============================================================================
+// 🎯 ProcessEdge 컴포넌트
+// ============================================================================
 
 const ProcessEdge: React.FC<EdgeProps<any>> = ({
   id,
@@ -29,10 +34,12 @@ const ProcessEdge: React.FC<EdgeProps<any>> = ({
     switch (type) {
       case 'standard':
         return selected ? '#3b82f6' : '#6b7280';
-      case 'critical':
+      case 'conditional':
         return selected ? '#ef4444' : '#dc2626';
-      case 'optional':
+      case 'parallel':
         return selected ? '#10b981' : '#059669';
+      case 'sequential':
+        return selected ? '#f59e0b' : '#d97706';
       default:
         return selected ? '#3b82f6' : '#6b7280';
     }
@@ -40,22 +47,24 @@ const ProcessEdge: React.FC<EdgeProps<any>> = ({
 
   const getEdgeStyle = (type: string) => {
     switch (type) {
-      case 'critical':
+      case 'conditional':
         return 'stroke-dasharray-5,5';
-      case 'optional':
+      case 'parallel':
         return 'stroke-dasharray-2,2';
       default:
         return '';
     }
   };
 
+  const edgeData = data || { label: '공정 흐름', processType: 'standard' };
+
   return (
     <>
       <BaseEdge
         path={edgePath}
-        className={`${getEdgeStyle(data?.processType || 'standard')}`}
+        className={`${getEdgeStyle(edgeData.processType)}`}
         style={{
-          stroke: getEdgeColor(data?.processType || 'standard'),
+          stroke: getEdgeColor(edgeData.processType),
           strokeWidth: selected ? 3 : 2,
         }}
       />
@@ -63,7 +72,7 @@ const ProcessEdge: React.FC<EdgeProps<any>> = ({
       <ProcessEdgeLabel
         labelX={labelX}
         labelY={labelY}
-        data={data || { label: '공정 흐름', processType: 'standard' }}
+        data={edgeData}
       />
     </>
   );
