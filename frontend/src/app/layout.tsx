@@ -4,7 +4,6 @@
 
 import type { Metadata } from 'next';
 import './globals.css';
-import ThemeToggle from '@/organisms/ThemeToggle';
 import Navigation from '@/organisms/Navigation';
 import { AuthProvider } from './contexts/AuthContext';
 
@@ -28,7 +27,6 @@ export const metadata: Metadata = {
   // PWA 메타데이터
   manifest: '/manifest.json',
   themeColor: '#3b82f6',
-  colorScheme: 'light dark',
   
   // PWA 관련 메타데이터
   applicationName: 'CBAM Calculator',
@@ -96,18 +94,18 @@ export const metadata: Metadata = {
 // 중복 Navigation 함수 - 사용하지 않음 (별도 파일로 분리됨)
 function OldNavigation() {
   return (
-    <nav className="bg-white dark:bg-gray-900 shadow-lg border-b border-gray-200 dark:border-gray-700 transition-colors duration-200">
+    <nav className="bg-white shadow-lg border-b border-gray-200 transition-colors duration-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           {/* 로고 및 브랜드 */}
           <div className="flex items-center">
             <a href="/" className="flex-shrink-0 flex items-center hover:opacity-80 transition-opacity duration-200">
-              <div className="w-8 h-8 bg-blue-600 dark:bg-blue-500 rounded-lg flex items-center justify-center mr-3">
+              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center mr-3">
                 <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                 </svg>
               </div>
-              <h1 className="text-xl font-bold text-gray-900 dark:text-white transition-colors duration-200">
+              <h1 className="text-xl font-bold text-gray-900 transition-colors duration-200">
                 CBAM Calculator
               </h1>
             </a>
@@ -117,19 +115,19 @@ function OldNavigation() {
           <div className="hidden sm:ml-6 sm:flex sm:items-center sm:space-x-8">
             <a
               href="/"
-              className="border-transparent text-gray-500 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600 hover:text-gray-700 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors duration-200"
+              className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors duration-200"
             >
               Home
             </a>
             <a
               href="/login"
-              className="border-transparent text-gray-500 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600 hover:text-gray-700 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors duration-200"
+              className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors duration-200"
             >
               SignIn
             </a>
             <a
               href="/register"
-              className="border-transparent text-gray-500 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600 hover:text-gray-700 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors duration-200"
+              className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors duration-200"
             >
               SignUp
             </a>
@@ -137,14 +135,14 @@ function OldNavigation() {
 
           {/* 우측 영역: 테마 토글 + 모바일 메뉴 */}
           <div className="flex items-center space-x-4">
-            {/* 테마 토글 버튼 */}
-            <ThemeToggle />
+            {/* 테마 토글 버튼 - 임시 제거 */}
+            {/* <ThemeToggle /> */}
             
             {/* 모바일 메뉴 버튼 */}
             <div className="sm:hidden">
               <button
                 type="button"
-                className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 dark:text-gray-300 hover:text-gray-500 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500 transition-colors duration-200"
+                className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500 transition-colors duration-200"
                 aria-controls="mobile-menu"
                 aria-expanded="false"
               >
@@ -167,22 +165,22 @@ function OldNavigation() {
 
       {/* 모바일 메뉴 */}
       <div className="sm:hidden" id="mobile-menu">
-        <div className="pt-2 pb-3 space-y-1 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700">
+        <div className="pt-2 pb-3 space-y-1 bg-white border-t border-gray-200">
           <a
             href="/"
-            className="bg-blue-50 dark:bg-blue-900/20 border-blue-500 text-blue-700 dark:text-blue-300 block pl-3 pr-4 py-2 border-l-4 text-base font-medium transition-colors duration-200"
+            className="bg-blue-50 border-blue-500 text-blue-700 block pl-3 pr-4 py-2 border-l-4 text-base font-medium transition-colors duration-200"
           >
             Home
           </a>
           <a
             href="/login"
-            className="border-transparent text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 hover:border-gray-300 dark:hover:border-gray-600 hover:text-gray-700 dark:hover:text-white block pl-3 pr-4 py-2 border-l-4 text-base font-medium transition-colors duration-200"
+            className="border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700 block pl-3 pr-4 py-2 border-l-4 text-base font-medium transition-colors duration-200"
           >
             SignIn
           </a>
           <a
             href="/register"
-            className="border-transparent text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 hover:border-gray-300 dark:hover:border-gray-600 hover:text-gray-700 dark:hover:text-white block pl-3 pr-4 py-2 border-l-4 text-base font-medium transition-colors duration-200"
+            className="border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700 block pl-3 pr-4 py-2 border-l-4 text-base font-medium transition-colors duration-200"
           >
             SignUp
           </a>
@@ -220,24 +218,24 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
       </head>
       
-      <body className="h-full bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
+      <body className="h-full bg-gray-50 transition-colors duration-200">
         <AuthProvider>
           {/* 네비게이션 */}
           <Navigation />
           
           {/* 메인 콘텐츠 */}
-          <main className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
+          <main className="min-h-screen bg-gray-50 transition-colors duration-200">
         {children}
           </main>
           
           {/* 푸터 */}
-          <footer className="bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 mt-auto transition-colors duration-200">
+          <footer className="bg-white border-t border-gray-200 mt-auto transition-colors duration-200">
             <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
               <div className="text-center">
-                <p className="text-gray-500 dark:text-gray-400 text-sm transition-colors duration-200">
+                <p className="text-gray-500 text-sm transition-colors duration-200">
                   © 2024 CBAM Calculator. 모든 권리 보유.
                 </p>
-                <p className="text-gray-400 dark:text-gray-500 text-xs mt-2 transition-colors duration-200">
+                <p className="text-gray-400 text-xs mt-2 transition-colors duration-200">
                   PostgreSQL 기반 안전한 사용자 데이터 관리
                 </p>
               </div>
