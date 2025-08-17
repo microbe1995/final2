@@ -28,11 +28,11 @@ const HeroSection: React.FC<HeroSectionProps> = ({
     <section className={`relative overflow-hidden ${className}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
         <div className="text-center">
-          <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6 leading-tight transition-colors duration-200">
+          <h1 className="text-[28px] md:text-[32px] font-bold text-[#0f172a] mb-6 leading-[1.3] transition-colors duration-200">
             {title}
           </h1>
           
-          <p className="text-xl md:text-2xl text-gray-600 mb-12 max-w-4xl mx-auto leading-relaxed transition-colors duration-200">
+          <p className="text-[16px] md:text-[18px] text-[#475569] mb-12 max-w-4xl mx-auto leading-[1.5] transition-colors duration-200">
             {description}
           </p>
           

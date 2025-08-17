@@ -27,13 +27,13 @@ const FeaturesSection: React.FC<FeaturesSectionProps> = ({
   className
 }) => {
   return (
-    <section className={`py-24 bg-gray-50 transition-colors duration-200 ${className}`}>
+    <section className={`py-24 bg-[#0b0c0f] transition-colors duration-200 ${className}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
-          <h2 className="text-3xl font-bold text-gray-900 mb-4 transition-colors duration-200">
+          <h2 className="text-[22px] font-bold text-[#0f172a] mb-4 transition-colors duration-200 leading-[1.3]">
             {title}
           </h2>
-          <p className="text-lg text-gray-600 transition-colors duration-200">
+          <p className="text-[16px] text-[#475569] transition-colors duration-200 leading-[1.5]">
             {subtitle}
           </p>
         </div>

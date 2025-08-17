@@ -19,7 +19,7 @@ const FormField: React.FC<FormFieldProps> = ({
 }) => {
   return (
     <div className={['w-full', className].filter(Boolean).join(' ')}>
-      <label className="block text-sm font-medium text-gray-700 mb-2">
+      <label className="block text-[14px] font-medium text-[#0f172a] mb-2 leading-[1.5]">
         {label}
       </label>
       {children}
