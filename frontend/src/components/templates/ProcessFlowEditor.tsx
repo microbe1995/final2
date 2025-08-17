@@ -5,17 +5,16 @@ import {
   ReactFlow,
   addEdge,
   Connection,
-  useNodesState,
-  useEdgesState,
-  Controls,
+  applyNodeChanges,
+  applyEdgeChanges,
   Background,
+  Controls,
   MiniMap,
-  NodeTypes,
-  EdgeTypes,
   type OnConnect,
   type OnNodesChange,
   type OnEdgesChange,
 } from '@xyflow/react';
+import '@xyflow/react/dist/style.css';
 import ProcessNodeComponent from '../organisms/ProcessNode';
 import ProcessEdgeComponent from '../organisms/ProcessEdge';
 import type { AppNodeType, AppEdgeType, ProcessNode, ProcessEdge } from '@/types/reactFlow';
@@ -24,13 +23,11 @@ import type { AppNodeType, AppEdgeType, ProcessNode, ProcessEdge } from '@/types
 // 🎯 노드 및 엣지 타입 정의
 // ============================================================================
 
-const nodeTypes: NodeTypes = {
-  // React Flow의 타입 시스템과 호환성을 위해 타입 단언 사용
+const nodeTypes = {
   processNode: ProcessNodeComponent as any,
 };
 
-const edgeTypes: EdgeTypes = {
-  // React Flow의 타입 시스템과 호환성을 위해 타입 단언 사용
+const edgeTypes = {
   processEdge: ProcessEdgeComponent as any,
 };
 
@@ -55,24 +52,26 @@ const ProcessFlowEditor: React.FC<ProcessFlowEditorProps> = ({
   onFlowChange,
   readOnly = false,
 }) => {
-  const [nodes, setNodes, onNodesChange] = useNodesState<AppNodeType>(initialNodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState<AppEdgeType>(initialEdges);
+  // ✅ 공식 문서 방식: useState 사용
+  const [nodes, setNodes] = useState<AppNodeType[]>(initialNodes);
+  const [edges, setEdges] = useState<AppEdgeType[]>(initialEdges);
 
-  // 외부에서 전달받은 nodes/edges가 변경되면 내부 상태도 업데이트
-  React.useEffect(() => {
-    console.log('🔄 ProcessFlowEditor - initialNodes 변경 감지:', initialNodes);
-    setNodes(initialNodes);
-  }, [initialNodes, setNodes]);
+  // ✅ 공식 문서 방식: applyNodeChanges, applyEdgeChanges 사용
+  const onNodesChange: OnNodesChange = useCallback(
+    (changes) => setNodes((nodesSnapshot) => 
+      applyNodeChanges(changes, nodesSnapshot) as AppNodeType[]
+    ),
+    [],
+  );
 
-  React.useEffect(() => {
-    console.log('🔄 ProcessFlowEditor - initialEdges 변경 감지:', initialEdges);
-    setEdges(initialEdges);
-  }, [initialEdges, setEdges]);
+  const onEdgesChange: OnEdgesChange = useCallback(
+    (changes) => setEdges((edgesSnapshot) => 
+      applyEdgeChanges(changes, edgesSnapshot) as AppEdgeType[]
+    ),
+    [],
+  );
 
-  // ============================================================================
-  // 🎯 이벤트 핸들러들
-  // ============================================================================
-
+  // ✅ 공식 문서 방식: addEdge 사용
   const onConnect: OnConnect = useCallback(
     (params: Connection) => {
       if (!params.source || !params.target) return;
@@ -92,80 +91,31 @@ const ProcessFlowEditor: React.FC<ProcessFlowEditorProps> = ({
     [setEdges]
   );
 
-  // ⚠️ 무한 루프 방지를 위해 onFlowChangeHandler 제거
-  // const onFlowChangeHandler = useCallback(() => {
-  //   if (onFlowChange) {
-  //     onFlowChange(nodes, edges);
-  //   }
-  // }, [nodes, edges, onFlowChange]);
+  // 외부에서 전달받은 nodes/edges가 변경되면 내부 상태도 업데이트
+  React.useEffect(() => {
+    console.log('🔄 ProcessFlowEditor - initialNodes 변경 감지:', initialNodes);
+    setNodes(initialNodes);
+  }, [initialNodes]);
 
-  const addProcessNode = useCallback(() => {
-    const newNode: ProcessNode = {
-      id: `node-${Date.now()}`,
-      type: 'processNode',
-      position: { x: 250, y: 250 },
-      data: {
-        label: '새 공정 단계',
-        processType: 'manufacturing',
-        description: '공정 단계 설명을 입력하세요',
-        parameters: {},
-      },
-    };
-    setNodes((nds) => [...nds, newNode]);
-  }, [setNodes]);
+  React.useEffect(() => {
+    console.log('🔄 ProcessFlowEditor - initialEdges 변경 감지:', initialEdges);
+    setEdges(initialEdges);
+  }, [initialEdges]);
 
-  const deleteSelectedElements = useCallback(() => {
-    const selectedNodes = nodes.filter((node) => node.selected);
-    const selectedEdges = edges.filter((edge) => edge.selected);
-    
-    if (selectedNodes.length > 0 || selectedEdges.length > 0) {
-      setNodes((nds) => nds.filter((node) => !node.selected));
-      setEdges((eds) => eds.filter((edge) => !edge.selected));
-    }
-  }, [nodes, edges, setNodes, setEdges]);
-
-  // ============================================================================
-  // 💾 로컬 저장소에 공정도 저장
-  // ============================================================================
-  
-  const saveToLocalStorage = useCallback(() => {
-    try {
-      const flowData = {
-        nodes,
-        edges,
-        timestamp: new Date().toISOString(),
-      };
-      
-      localStorage.setItem('processFlowData', JSON.stringify(flowData));
-      // console.log 제거
-    } catch (error) {
-      console.error('❌ 로컬 저장 실패:', error);
-    }
+  // 렌더링 시점에 현재 상태 로그
+  React.useEffect(() => {
+    console.log('🎨 ProcessFlowEditor 렌더링:', { nodes: nodes.length, edges: edges.length });
   }, [nodes, edges]);
 
-  // ============================================================================
-  // 📥 로컬 저장소에서 공정도 로드
-  // ============================================================================
-  
-  const loadFromLocalStorage = useCallback(() => {
-    try {
-      const savedData = localStorage.getItem('processFlowData');
-      
-      if (savedData) {
-        const flowData = JSON.parse(savedData);
-        setNodes(flowData.nodes || []);
-        setEdges(flowData.edges || []);
-        // console.log 제거
-      } else {
-        // console.log 제거
-      }
-    } catch (error) {
-      console.error('❌ 로컬 로드 실패:', error);
+  // 노드나 엣지가 변경될 때마다 onFlowChange 콜백 호출
+  React.useEffect(() => {
+    if (onFlowChange) {
+      onFlowChange(nodes, edges);
     }
-  }, [setNodes, setEdges]);
+  }, [nodes, edges, onFlowChange]);
 
   return (
-    <div className="w-full h-full min-h-[600px] bg-[#0b0c0f] rounded-lg overflow-hidden">
+    <div style={{ height: '100%', width: '100%' }}>
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -179,8 +129,8 @@ const ProcessFlowEditor: React.FC<ProcessFlowEditorProps> = ({
         className="bg-[#0b0c0f]"
         style={{ backgroundColor: '#0b0c0f' }}
       >
-        <Controls />
         <Background variant={"dots" as any} color="#334155" />
+        <Controls />
         <MiniMap
           nodeStrokeColor={(n) => {
             if (n.type === 'processNode') return '#1a192b';
