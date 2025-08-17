@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState, useCallback } from 'react';
-import ProcessFlowEditor from '../../components/templates/ProcessFlowEditor';
-import ProcessFlowInfoPanel from '../../components/organisms/ProcessFlowInfoPanel';
+import ProcessFlowEditor from '@/templates/ProcessFlowEditor';
+import ProcessFlowInfoPanel from '@/organisms/ProcessFlowInfoPanel';
 import { Node, Edge } from '@xyflow/react';
 import axios from 'axios';
 

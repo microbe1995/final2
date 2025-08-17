@@ -1,10 +1,18 @@
 'use client';
 
+import { useAuthStore } from '@/zustand/authStore';
+
 // ============================================================================
 // 🧭 네비게이션 컴포넌트
 // ============================================================================
 
 export default function Navigation() {
+  const { isAuthenticated, user, logout } = useAuthStore();
+
+  const handleLogout = () => {
+    logout();
+  };
+
   return (
     <nav className="bg-white dark:bg-gray-900 shadow-lg border-b border-gray-200 dark:border-gray-700 transition-colors duration-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -47,12 +55,49 @@ export default function Navigation() {
                 Home
               </a>
               
-              <a
-                href="/process-flow"
-                className="border-transparent text-gray-500 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600 hover:text-gray-700 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors duration-200"
-              >
-                🔄 공정도
-              </a>
+              {isAuthenticated && (
+                <a
+                  href="/process-flow"
+                  className="border-transparent text-gray-500 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600 hover:text-gray-700 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors duration-200"
+                >
+                  🔄 공정도
+                </a>
+              )}
+            </div>
+
+            {/* 인증 상태에 따른 우측 메뉴 */}
+            <div className="flex items-center space-x-4">
+              {isAuthenticated ? (
+                <>
+                  <a
+                    href="/profile"
+                    className="text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-white text-sm font-medium transition-colors duration-200"
+                  >
+                    👤 {user?.full_name || '프로필'}
+                  </a>
+                  <button
+                    onClick={handleLogout}
+                    className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200"
+                  >
+                    로그아웃
+                  </button>
+                </>
+              ) : (
+                <>
+                  <a
+                    href="/login"
+                    className="text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-white text-sm font-medium transition-colors duration-200"
+                  >
+                    로그인
+                  </a>
+                  <a
+                    href="/register"
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200"
+                  >
+                    회원가입
+                  </a>
+                </>
+              )}
             </div>
 
             {/* 모바일 메뉴 버튼 */}
@@ -90,12 +135,46 @@ export default function Navigation() {
             Home
           </a>
           
-          <a
-            href="/process-flow"
-            className="border-transparent text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 hover:border-gray-300 dark:hover:border-gray-600 hover:text-gray-700 dark:hover:text-white block pl-3 pr-4 py-2 border-l-4 text-base font-medium transition-colors duration-200"
-          >
-            🔄 공정도
-          </a>
+          {isAuthenticated && (
+            <a
+              href="/process-flow"
+              className="border-transparent text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 hover:border-gray-300 dark:hover:border-gray-600 hover:text-gray-700 dark:hover:text-white block pl-3 pr-4 py-2 border-l-4 text-base font-medium transition-colors duration-200"
+            >
+              🔄 공정도
+            </a>
+          )}
+
+          {isAuthenticated ? (
+            <>
+              <a
+                href="/profile"
+                className="border-transparent text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 hover:border-gray-300 dark:hover:border-gray-600 hover:text-gray-700 dark:hover:text-white block pl-3 pr-4 py-2 border-l-4 text-base font-medium transition-colors duration-200"
+              >
+                👤 {user?.full_name || '프로필'}
+              </a>
+              <button
+                onClick={handleLogout}
+                className="w-full text-left bg-red-50 dark:bg-red-900/20 border-red-500 text-red-700 dark:text-red-300 block pl-3 pr-4 py-2 border-l-4 text-base font-medium transition-colors duration-200"
+              >
+                로그아웃
+              </button>
+            </>
+          ) : (
+            <>
+              <a
+                href="/login"
+                className="border-transparent text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 hover:border-gray-300 dark:hover:border-gray-600 hover:text-gray-700 dark:hover:text-white block pl-3 pr-4 py-2 border-l-4 text-base font-medium transition-colors duration-200"
+              >
+                로그인
+              </a>
+              <a
+                href="/register"
+                className="border-transparent text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 hover:border-gray-300 dark:hover:border-gray-600 hover:text-gray-700 dark:hover:text-white block pl-3 pr-4 py-2 border-l-4 text-base font-medium transition-colors duration-200"
+              >
+                회원가입
+              </a>
+            </>
+          )}
         </div>
       </div>
     </nav>
