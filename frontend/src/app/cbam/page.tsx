@@ -88,16 +88,20 @@ export default function CBAMPage() {
   // 🌐 API 설정
   // ============================================================================
   
-  const API_BASE_URL = process.env.NEXT_PUBLIC_CAL_BOUNDARY_URL || 'https://lcafinal-production.up.railway.app';
+  // MSA 구조: Gateway를 거쳐 Cal_boundary 서비스 호출
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://gateway-production-22ef.up.railway.app';
   const API_PREFIX = '/api/v1';
+  const SERVICE_NAME = 'cal-boundary'; // Cal_boundary 서비스명
 
   // API 설정 정보를 콘솔에 출력
   useEffect(() => {
-    console.log('🔧 API 설정 정보:', {
-      NEXT_PUBLIC_CAL_BOUNDARY_URL: process.env.NEXT_PUBLIC_CAL_BOUNDARY_URL,
+    console.log('🔧 MSA API 설정 정보:', {
+      NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL,
       API_BASE_URL,
       API_PREFIX,
-      fullUrl: `${API_BASE_URL}${API_PREFIX}/canvas`
+      SERVICE_NAME,
+      fullUrl: `${API_BASE_URL}${API_PREFIX}/${SERVICE_NAME}/canvas`,
+      note: 'MSA 구조: Gateway → Cal_boundary 프록시'
     });
   }, []);
 
@@ -107,29 +111,30 @@ export default function CBAMPage() {
   
   useEffect(() => {
     testApiConnection();
-    loadCanvases();
   }, []);
 
   const testApiConnection = async () => {
     try {
       setApiStatus('checking');
-      console.log('🔄 API 연결 테스트 시작:', `${API_BASE_URL}/health`);
+      // Gateway의 health 엔드포인트 사용
+      const healthUrl = `${API_BASE_URL}/health`;
+      console.log('🔄 Gateway 연결 테스트 시작:', healthUrl);
       
-      const response = await axios.get(`${API_BASE_URL}/health`);
-      console.log('✅ API 연결 테스트 성공:', response.data);
+      const response = await axios.get(healthUrl);
+      console.log('✅ Gateway 연결 테스트 성공:', response.data);
       setApiStatus('connected');
       
       // 연결 성공 후 공정 필드 로딩
       loadCanvases();
     } catch (error: any) {
-      console.error('❌ API 연결 테스트 실패:', error);
+      console.error('❌ Gateway 연결 테스트 실패:', error);
       setApiStatus('disconnected');
       
       // 연결 실패 시 사용자에게 안내
       if (error.response?.status === 404) {
-        showToast('error', '백엔드 서비스에 연결할 수 없습니다. Railway 배포 설정을 확인해주세요.');
+        showToast('error', 'Gateway 서비스에 연결할 수 없습니다. Railway 배포 설정을 확인해주세요.');
       } else {
-        showToast('error', '백엔드 서비스 연결에 실패했습니다. 서비스 상태를 확인해주세요.');
+        showToast('error', 'Gateway 서비스 연결에 실패했습니다. 서비스 상태를 확인해주세요.');
       }
     }
   };
@@ -137,9 +142,11 @@ export default function CBAMPage() {
   const loadCanvases = async () => {
     try {
       setIsLoading(true);
-      console.log('🔄 공정 필드 로딩 시작:', `${API_BASE_URL}${API_PREFIX}/canvas`);
+      // MSA 구조: Gateway를 거쳐 Cal_boundary의 canvas 엔드포인트 호출
+      const canvasUrl = `${API_BASE_URL}${API_PREFIX}/${SERVICE_NAME}/canvas`;
+      console.log('🔄 공정 필드 로딩 시작 (MSA Gateway 경유):', canvasUrl);
       
-      const response = await axios.get(`${API_BASE_URL}${API_PREFIX}/canvas`);
+      const response = await axios.get(canvasUrl);
       console.log('✅ API 응답:', response.data);
       
       // 응답 구조에 맞게 데이터 추출
@@ -184,11 +191,11 @@ export default function CBAMPage() {
       // 사용자에게 더 구체적인 에러 메시지 표시
       let errorMessage = '공정 필드 로딩에 실패했습니다.';
       if (error.response?.status === 404) {
-        errorMessage = 'API 엔드포인트를 찾을 수 없습니다. 백엔드 서비스를 확인해주세요.';
+        errorMessage = 'API 엔드포인트를 찾을 수 없습니다. Gateway 서비스를 확인해주세요.';
       } else if (error.response?.status === 405) {
         errorMessage = '지원하지 않는 HTTP 메서드입니다. API 엔드포인트를 확인해주세요.';
       } else if (error.code === 'ECONNREFUSED') {
-        errorMessage = '백엔드 서비스에 연결할 수 없습니다. 서비스가 실행 중인지 확인해주세요.';
+        errorMessage = 'Gateway 서비스에 연결할 수 없습니다. 서비스가 실행 중인지 확인해주세요.';
       }
       
       showToast('error', errorMessage);
@@ -214,7 +221,7 @@ export default function CBAMPage() {
         arrows: []
       };
       
-      const response = await axios.post(`${API_BASE_URL}${API_PREFIX}/canvas`, newCanvas);
+      const response = await axios.post(`${API_BASE_URL}${API_PREFIX}/${SERVICE_NAME}/canvas`, newCanvas);
       const createdCanvas: Canvas = response.data;
       
       setCanvases(prev => [...prev, createdCanvas]);
@@ -236,7 +243,7 @@ export default function CBAMPage() {
 
   const handleCanvasDelete = async (canvasId: string) => {
     try {
-      await axios.delete(`${API_BASE_URL}${API_PREFIX}/canvas/${canvasId}`);
+      await axios.delete(`${API_BASE_URL}${API_PREFIX}/${SERVICE_NAME}/canvas/${canvasId}`);
       setCanvases(prev => prev.filter(c => c.id !== canvasId));
       
       if (selectedCanvas?.id === canvasId) {
@@ -280,7 +287,7 @@ export default function CBAMPage() {
         shapes: [...selectedCanvas.shapes, newShape]
       };
 
-      await axios.put(`${API_BASE_URL}${API_PREFIX}/canvas/${selectedCanvas.id}`, updatedCanvas);
+      await axios.put(`${API_BASE_URL}${API_PREFIX}/${SERVICE_NAME}/canvas/${selectedCanvas.id}`, updatedCanvas);
       setSelectedCanvas(updatedCanvas);
       setCanvases(prev => prev.map(c => c.id === selectedCanvas.id ? updatedCanvas : c));
       
@@ -319,7 +326,7 @@ export default function CBAMPage() {
         )
       };
 
-      await axios.put(`${API_BASE_URL}${API_PREFIX}/canvas/${selectedCanvas.id}`, updatedCanvas);
+      await axios.put(`${API_BASE_URL}${API_PREFIX}/${SERVICE_NAME}/canvas/${selectedCanvas.id}`, updatedCanvas);
       setSelectedCanvas(updatedCanvas);
       setCanvases(prev => prev.map(c => c.id === selectedCanvas.id ? updatedCanvas : c));
       setSelectedShape(null);
@@ -360,7 +367,7 @@ export default function CBAMPage() {
         arrows: [...selectedCanvas.arrows, newArrow]
       };
 
-      await axios.put(`${API_BASE_URL}${API_PREFIX}/canvas/${selectedCanvas.id}`, updatedCanvas);
+      await axios.put(`${API_BASE_URL}${API_PREFIX}/${SERVICE_NAME}/canvas/${selectedCanvas.id}`, updatedCanvas);
       setSelectedCanvas(updatedCanvas);
       setCanvases(prev => prev.map(c => c.id === selectedCanvas.id ? updatedCanvas : c));
       
@@ -395,7 +402,7 @@ export default function CBAMPage() {
         arrows: [...selectedCanvas.arrows, newArrow]
       };
 
-      await axios.put(`${API_BASE_URL}${API_PREFIX}/canvas/${selectedCanvas.id}`, updatedCanvas);
+      await axios.put(`${API_BASE_URL}${API_PREFIX}/${SERVICE_NAME}/canvas/${selectedCanvas.id}`, updatedCanvas);
       setSelectedCanvas(updatedCanvas);
       setCanvases(prev => prev.map(c => c.id === selectedCanvas.id ? updatedCanvas : c));
       
@@ -420,7 +427,7 @@ export default function CBAMPage() {
         arrows: selectedCanvas.arrows.filter(a => a.id !== selectedArrow.id)
       };
 
-      await axios.put(`${API_BASE_URL}${API_PREFIX}/canvas/${selectedCanvas.id}`, updatedCanvas);
+      await axios.put(`${API_BASE_URL}${API_PREFIX}/${SERVICE_NAME}/canvas/${selectedCanvas.id}`, updatedCanvas);
       setSelectedCanvas(updatedCanvas);
       setCanvases(prev => prev.map(c => c.id === selectedCanvas.id ? updatedCanvas : c));
       setSelectedArrow(null);
@@ -496,7 +503,7 @@ export default function CBAMPage() {
   // ============================================================================
   
   return (
-    <div className="min-h-screen bg-[#0b0c0f] text-[#0f172a]">
+    <div className="min-h-screen bg-gray-50 text-gray-900">
       {/* ProcessFlowTemplate 활용 */}
       <ProcessFlowTemplate
         // Canvas 관련
@@ -562,9 +569,9 @@ export default function CBAMPage() {
       {/* 로딩 상태 */}
       {isLoading && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-[#ffffff] p-6 rounded-lg">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#2563eb] mx-auto"></div>
-            <p className="mt-2 text-[#0f172a]">로딩 중...</p>
+          <div className="bg-white p-6 rounded-lg">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="mt-2 text-gray-900">로딩 중...</p>
           </div>
         </div>
       )}

@@ -41,6 +41,7 @@ class ServiceType(str, Enum):
     AUTH = "auth"
     DISCOVERY = "discovery"
     USER = "user"
+    CAL_BOUNDARY = "cal-boundary"  # Cal_boundary 서비스 추가
 
 # ============================================================================
 # 🔄 프록시 서비스 클래스
@@ -80,6 +81,9 @@ class ProxyService:
             return os.getenv("DISCOVERY_SERVICE_URL", "http://localhost:8001")
         elif service_type == ServiceType.USER:
             return os.getenv("USER_SERVICE_URL", "http://localhost:8002")
+        elif service_type == ServiceType.CAL_BOUNDARY:
+            # Cal_boundary 서비스 URL (Railway 내부 네트워크 우선)
+            return os.getenv("RAILWAY_CAL_BOUNDARY_URL") or os.getenv("CAL_BOUNDARY_SERVICE_URL", "http://localhost:8001")
         # fallback
         return os.getenv("AUTH_SERVICE_URL", "http://localhost:8000")
     
