@@ -114,10 +114,10 @@ export default function Modal({
         role="document"
       >
         {/* 헤더 */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+        <div className="flex items-center justify-between p-6 border-b border-[#334155]">
           <h2
             id="modal-title"
-            className="text-xl font-semibold text-gray-900"
+            className="text-xl font-semibold text-[#ffffff]"
           >
             {title}
           </h2>
@@ -125,7 +125,7 @@ export default function Modal({
           {showCloseButton && (
             <button
               onClick={onClose}
-              className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+              className="p-2 text-[#94a3b8] hover:text-[#cbd5e1] hover:bg-[#1e293b] rounded-lg transition-colors"
               aria-label="모달 닫기"
             >
               <svg

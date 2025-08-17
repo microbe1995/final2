@@ -109,15 +109,15 @@ const ProcessFlowTemplate: React.FC<ProcessFlowTemplateProps> = ({
   className = ''
 }) => {
   return (
-    <div className={`min-h-screen bg-[#0b0c0f] text-[#0f172a] p-6 ${className}`}>
+    <div className={`min-h-screen bg-[#0b0c0f] text-[#ffffff] p-6 ${className}`}>
       <div className="max-w-7xl mx-auto">
         {/* 헤더 */}
         <div className="mb-8">
-          <h1 className="text-[28px] font-bold text-[#0f172a] mb-2 flex items-center gap-3 leading-[1.3]">
+          <h1 className="text-[28px] font-bold text-[#ffffff] mb-2 flex items-center gap-3 leading-[1.3]">
             <Icon name="process" size="lg" />
             Cal_boundary - 공정도 기반 탄소배출량 계산
           </h1>
-          <p className="text-[16px] text-[#475569] leading-[1.5]">
+          <p className="text-[16px] text-[#cbd5e1] leading-[1.5]">
             공정도를 그리고 산정경계를 설정하여 탄소배출량을 계산할 수 있는 전문 도구입니다.
           </p>
           

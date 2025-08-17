@@ -19,7 +19,7 @@ from ..schema.arrow_schema import (
 )
 
 # 라우터 생성
-arrow_router = APIRouter(prefix="/arrows", tags=["arrows"])
+arrow_router = APIRouter(tags=["arrows"])
 
 # 서비스 의존성
 def get_arrow_service() -> ArrowService:

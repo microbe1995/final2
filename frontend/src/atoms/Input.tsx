@@ -20,7 +20,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
     return (
       <div className="w-full">
         {label && (
-          <label htmlFor={inputId} className="block text-[14px] font-medium text-[#0f172a] mb-2 leading-[1.5]">
+          <label htmlFor={inputId} className="block text-[14px] font-medium text-[#ffffff] mb-2 leading-[1.5]">
             {label}
           </label>
         )}
@@ -28,7 +28,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
         <div className="relative">
           {leftIcon && (
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <div className="h-5 w-5 text-[#475569]">
+              <div className="h-5 w-5 text-[#94a3b8]">
                 {leftIcon}
               </div>
             </div>
@@ -37,13 +37,13 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
           <input
             id={inputId}
             className={[
-              'block w-full rounded-[12px] border border-[#e2e8f0] px-3 py-2 text-[#0f172a] placeholder-[#64748b]',
-              'focus:border-[#2563eb] focus:outline-none focus:ring-2 focus:ring-[#2563eb]/20',
-              'disabled:bg-[#f1f5f9] disabled:cursor-not-allowed',
+              'block w-full rounded-[12px] border border-[#334155] px-3 py-2 text-[#ffffff] placeholder-[#64748b]',
+              'focus:border-[#60a5fa] focus:outline-none focus:ring-2 focus:ring-[#60a5fa]/20',
+              'disabled:bg-[#1e293b] disabled:cursor-not-allowed',
               'transition-colors duration-[160ms]',
               leftIcon && 'pl-10',
               rightIcon && 'pr-10',
-              error && 'border-[#dc2626] focus:border-[#dc2626] focus:ring-[#dc2626]/20',
+              error && 'border-[#f87171] focus:border-[#f87171] focus:ring-[#f87171]/20',
               className
             ].filter(Boolean).join(' ')}
             ref={ref}
@@ -52,7 +52,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
           
           {rightIcon && (
             <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-              <div className="h-5 w-5 text-[#475569]">
+              <div className="h-5 w-5 text-[#94a3b8]">
                 {rightIcon}
               </div>
             </div>
@@ -60,13 +60,13 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
         </div>
         
         {error && (
-          <p className="mt-1 text-[14px] text-[#dc2626] leading-[1.5]">
+          <p className="mt-1 text-[14px] text-[#f87171] leading-[1.5]">
             {error}
           </p>
         )}
         
         {helperText && !error && (
-          <p className="mt-1 text-[14px] text-[#64748b] leading-[1.5]">
+          <p className="mt-1 text-[14px] text-[#94a3b8] leading-[1.5]">
             {helperText}
           </p>
         )}

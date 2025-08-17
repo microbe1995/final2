@@ -30,10 +30,10 @@ const FeatureCard: React.FC<FeatureCardProps> = ({
             {icon}
           </div>
         </div>
-        <h3 className="text-[18px] font-semibold text-[#0f172a] mb-3 transition-colors duration-200 leading-[1.3]">
+        <h3 className="text-[18px] font-semibold text-[#ffffff] mb-3 transition-colors duration-200 leading-[1.3]">
           {title}
         </h3>
-        <p className="text-[#475569] leading-[1.5] transition-colors duration-200">
+        <p className="text-[#cbd5e1] leading-[1.5] transition-colors duration-200">
           {description}
         </p>
       </div>

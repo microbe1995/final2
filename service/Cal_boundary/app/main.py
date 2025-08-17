@@ -105,13 +105,13 @@ async def log_requests(request: Request, call_next):
 # ============================================================================
 
 # 도형 관련 API (Gateway와 경로 맞춤)
-app.include_router(shape_router)
+app.include_router(shape_router, prefix="/shapes")
 
 # 화살표 관련 API (Gateway와 경로 맞춤)
-app.include_router(arrow_router)
+app.include_router(arrow_router, prefix="/arrows")
 
 # Canvas 관련 API (Gateway와 경로 맞춤)
-app.include_router(canvas_router)
+app.include_router(canvas_router, prefix="/canvas")
 
 # ============================================================================
 # 🏥 헬스체크 엔드포인트

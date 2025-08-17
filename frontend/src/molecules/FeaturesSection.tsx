@@ -30,10 +30,10 @@ const FeaturesSection: React.FC<FeaturesSectionProps> = ({
     <section className={`py-24 bg-[#0b0c0f] transition-colors duration-200 ${className}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
-          <h2 className="text-[22px] font-bold text-[#0f172a] mb-4 transition-colors duration-200 leading-[1.3]">
+          <h2 className="text-[22px] font-bold text-[#ffffff] mb-4 transition-colors duration-200 leading-[1.3]">
             {title}
           </h2>
-          <p className="text-[16px] text-[#475569] transition-colors duration-200 leading-[1.5]">
+          <p className="text-[16px] text-[#cbd5e1] transition-colors duration-200 leading-[1.5]">
             {subtitle}
           </p>
         </div>

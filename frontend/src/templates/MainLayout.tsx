@@ -17,7 +17,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
   className
 }) => {
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
+    <div className="min-h-screen bg-[#0b0c0f] transition-colors duration-200">
       {showNavigation && <Navigation />}
       
       <main className={className}>

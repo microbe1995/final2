@@ -21,7 +21,7 @@ from ..schema.canvas_schema import (
 )
 
 # 라우터 생성
-canvas_router = APIRouter(prefix="/canvas", tags=["canvas"])
+canvas_router = APIRouter(tags=["canvas"])
 
 # 서비스 의존성
 def get_canvas_service() -> CanvasService:

@@ -101,10 +101,10 @@ const AuthForm: React.FC<AuthFormProps> = ({
   return (
     <Card className={className}>
       <div className="text-center mb-6">
-        <h2 className="text-[22px] font-bold text-[#0f172a] leading-[1.3]">
+        <h2 className="text-[22px] font-bold text-[#ffffff] leading-[1.3]">
           {type === 'login' ? '로그인' : '회원가입'}
         </h2>
-        <p className="text-[#475569] mt-2 leading-[1.5]">
+        <p className="text-[#cbd5e1] mt-2 leading-[1.5]">
           {type === 'login' 
             ? 'CBAM Calculator 계정으로 로그인하세요'
             : '새로운 계정을 만들어보세요'

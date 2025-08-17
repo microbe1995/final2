@@ -42,10 +42,10 @@ export default function Toast({
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
         </svg>
       ),
-      bgColor: 'bg-green-50',
-      borderColor: 'border-green-200',
-      textColor: 'text-green-800',
-      iconColor: 'text-green-400'
+      bgColor: 'bg-[#16a34a]/10',
+      borderColor: 'border-[#16a34a]/20',
+      textColor: 'text-[#16a34a]',
+      iconColor: 'text-[#16a34a]'
     },
     error: {
       icon: (
@@ -53,10 +53,10 @@ export default function Toast({
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
         </svg>
       ),
-      bgColor: 'bg-red-50',
-      borderColor: 'border-red-200',
-      textColor: 'text-red-800',
-      iconColor: 'text-red-400'
+      bgColor: 'bg-[#dc2626]/10',
+      borderColor: 'border-[#dc2626]/20',
+      textColor: 'text-[#dc2626]',
+      iconColor: 'text-[#dc2626]'
     },
     warning: {
       icon: (
@@ -64,10 +64,10 @@ export default function Toast({
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" />
         </svg>
       ),
-      bgColor: 'bg-yellow-50',
-      borderColor: 'border-yellow-200',
-      textColor: 'text-yellow-800',
-      iconColor: 'text-yellow-400'
+      bgColor: 'bg-[#d97706]/10',
+      borderColor: 'border-[#d97706]/20',
+      textColor: 'text-[#d97706]',
+      iconColor: 'text-[#d97706]'
     },
     info: {
       icon: (
@@ -75,10 +75,10 @@ export default function Toast({
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
       ),
-      bgColor: 'bg-blue-50',
-      borderColor: 'border-blue-200',
-      textColor: 'text-blue-800',
-      iconColor: 'text-blue-400'
+      bgColor: 'bg-[#2563eb]/10',
+      borderColor: 'border-[#2563eb]/20',
+      textColor: 'text-[#2563eb]',
+      iconColor: 'text-[#2563eb]'
     }
   };
 

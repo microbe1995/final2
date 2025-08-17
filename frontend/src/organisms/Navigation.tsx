@@ -79,7 +79,7 @@ export default function Navigation() {
                   </a>
                   <button
                     onClick={handleLogout}
-                    className="border-transparent text-gray-500 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600 hover:text-gray-700 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors duration-200 cursor-pointer"
+                    className="border-transparent text-[#cbd5e1] hover:border-[#64748b] hover:text-[#ffffff] inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors duration-200 cursor-pointer"
                   >
                     Logout
                   </button>
@@ -89,13 +89,13 @@ export default function Navigation() {
                 <>
                   <a
                     href="/login"
-                    className="border-transparent text-gray-500 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600 hover:text-gray-700 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors duration-200"
+                    className="border-transparent text-[#cbd5e1] hover:border-[#64748b] hover:text-[#ffffff] inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors duration-200"
                   >
                     SignIn
                   </a>
                   <a
                     href="/register"
-                    className="border-transparent text-gray-500 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600 hover:text-gray-700 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors duration-200"
+                    className="border-transparent text-[#cbd5e1] hover:border-[#64748b] hover:text-[#ffffff] inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors duration-200"
                   >
                     SignUp
                   </a>

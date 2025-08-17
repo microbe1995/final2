@@ -17,7 +17,7 @@ from ..schema.shape_schema import (
 )
 
 # 라우터 생성
-shape_router = APIRouter(prefix="/shapes", tags=["shapes"])
+shape_router = APIRouter(tags=["shapes"])
 
 # 서비스 의존성
 def get_shape_service() -> ShapeService:

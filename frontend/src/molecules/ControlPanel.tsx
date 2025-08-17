@@ -109,8 +109,8 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
         </div>
 
         {/* 그리드 설정 */}
-        <div className="border-t pt-4">
-          <h4 className="text-[14px] font-semibold text-[#0f172a] mb-3 flex items-center gap-2 leading-[1.5]">
+        <div className="border-t border-[#334155] pt-4">
+          <h4 className="text-[14px] font-semibold text-[#ffffff] mb-3 flex items-center gap-2 leading-[1.5]">
             <Icon name="grid" size="sm" />
             그리드 설정
           </h4>
@@ -121,10 +121,10 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                 type="checkbox"
                 checked={showGrid}
                 onChange={(e) => onShowGridChange(e.target.checked)}
-                className="rounded-[8px] border-[#e2e8f0]"
+                className="rounded-[8px] border-[#334155] bg-[#1e293b]"
                 id="show-grid"
               />
-              <label htmlFor="show-grid" className="text-[14px] text-[#475569] leading-[1.5]">
+              <label htmlFor="show-grid" className="text-[14px] text-[#cbd5e1] leading-[1.5]">
                 그리드 표시
               </label>
             </div>
@@ -134,20 +134,20 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                 type="checkbox"
                 checked={snapToGrid}
                 onChange={(e) => onSnapToGridChange(e.target.checked)}
-                className="rounded-[8px] border-[#e2e8f0]"
+                className="rounded-[8px] border-[#334155] bg-[#1e293b]"
                 id="snap-grid"
               />
-              <label htmlFor="snap-grid" className="text-[14px] text-[#475569] leading-[1.5]">
+              <label htmlFor="snap-grid" className="text-[14px] text-[#cbd5e1] leading-[1.5]">
                 그리드 스냅
               </label>
             </div>
             
             <div className="flex items-center gap-2">
-              <span className="text-[14px] text-[#475569] leading-[1.5]">크기:</span>
+              <span className="text-[14px] text-[#cbd5e1] leading-[1.5]">크기:</span>
               <select
                 value={gridSize}
                 onChange={(e) => onGridSizeChange(Number(e.target.value))}
-                className="border border-[#e2e8f0] rounded-[8px] px-2 py-1 text-[12px] w-16"
+                className="border border-[#334155] rounded-[8px] px-2 py-1 text-[12px] w-16 bg-[#1e293b] text-[#ffffff]"
               >
                 {gridSizeOptions.map(size => (
                   <option key={size} value={size}>{size}</option>
@@ -158,8 +158,8 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
         </div>
 
         {/* 그리기 모드 설정 */}
-        <div className="border-t pt-4">
-          <h4 className="text-[14px] font-semibold text-[#0f172a] mb-3 flex items-center gap-2 leading-[1.5]">
+        <div className="border-t border-[#334155] pt-4">
+          <h4 className="text-[14px] font-semibold text-[#ffffff] mb-3 flex items-center gap-2 leading-[1.5]">
             <Icon name="select" size="sm" />
             그리기 모드
           </h4>
@@ -186,8 +186,8 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
 
         {/* 도형 타입 선택 */}
         {drawMode === 'shape' && (
-          <div className="border-t pt-4">
-            <h4 className="text-[14px] font-semibold text-[#0f172a] mb-3 leading-[1.5]">도형 타입</h4>
+          <div className="border-t border-[#334155] pt-4">
+            <h4 className="text-[14px] font-semibold text-[#ffffff] mb-3 leading-[1.5]">도형 타입</h4>
             <div className="flex flex-wrap gap-2">
               {shapeTypeOptions.map(({ value, label, color }) => (
                 <Button
@@ -210,8 +210,8 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
 
         {/* 화살표 타입 선택 */}
         {drawMode === 'arrow' && (
-          <div className="border-t pt-4">
-            <h4 className="text-[14px] font-semibold text-[#0f172a] mb-3 leading-[1.5]">화살표 타입</h4>
+          <div className="border-t border-[#334155] pt-4">
+            <h4 className="text-[14px] font-semibold text-[#ffffff] mb-3 leading-[1.5]">화살표 타입</h4>
             <div className="flex flex-wrap gap-2">
               {arrowTypeOptions.map(({ value, label, color }) => (
                 <Button
@@ -234,8 +234,8 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
 
         {/* 선택된 요소 수정/삭제 */}
         {(selectedShape || selectedArrow) && (
-          <div className="border-t pt-4">
-            <h4 className="text-[14px] font-semibold text-[#0f172a] mb-3 leading-[1.5]">선택된 요소</h4>
+          <div className="border-t border-[#334155] pt-4">
+            <h4 className="text-[14px] font-semibold text-[#ffffff] mb-3 leading-[1.5]">선택된 요소</h4>
             <div className="flex flex-wrap gap-2">
               {selectedShape && (
                 <>
