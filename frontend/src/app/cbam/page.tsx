@@ -6,6 +6,49 @@ import Toast from '@/molecules/Toast';
 import axios from 'axios';
 
 // ============================================================================
+// 📝 타입 정의
+// ============================================================================
+
+interface Canvas {
+  id: string;
+  name: string;
+  width: number;
+  height: number;
+  backgroundColor: string;
+  shapes: any[];
+  arrows: any[];
+}
+
+interface Shape {
+  id: string;
+  type: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  color: string;
+  label: string;
+  processType?: string;
+  materialType?: string;
+  energyType?: string;
+}
+
+interface Arrow {
+  id: string;
+  type: string;
+  startX: number;
+  startY: number;
+  endX: number;
+  endY: number;
+  color: string;
+  strokeWidth: number;
+  flowType?: string;
+  direction?: string;
+  fromShapeId?: string;
+  toShapeId?: string;
+}
+
+// ============================================================================
 // 🎯 CBAM 페이지 - 공정도 기반 탄소배출량 계산
 // ============================================================================
 
@@ -15,30 +58,30 @@ export default function CBAMPage() {
   // ============================================================================
   
   // Canvas 관련 상태
-  const [canvases, setCanvases] = useState([]);
-  const [selectedCanvas, setSelectedCanvas] = useState(null);
+  const [canvases, setCanvases] = useState<Canvas[]>([]);
+  const [selectedCanvas, setSelectedCanvas] = useState<Canvas | null>(null);
   
   // 선택된 요소 상태
-  const [selectedShape, setSelectedShape] = useState(null);
-  const [selectedArrow, setSelectedArrow] = useState(null);
+  const [selectedShape, setSelectedShape] = useState<Shape | null>(null);
+  const [selectedArrow, setSelectedArrow] = useState<Arrow | null>(null);
   
   // 그리기 모드 상태
-  const [drawMode, setDrawMode] = useState('select');
-  const [shapeType, setShapeType] = useState('process');
-  const [arrowType, setArrowType] = useState('straight');
+  const [drawMode, setDrawMode] = useState<'select' | 'shape' | 'arrow'>('select');
+  const [shapeType, setShapeType] = useState<string>('process');
+  const [arrowType, setArrowType] = useState<string>('straight');
   
   // 그리드 설정 상태
-  const [gridSize, setGridSize] = useState(20);
-  const [showGrid, setShowGrid] = useState(true);
-  const [snapToGrid, setSnapToGrid] = useState(true);
+  const [gridSize, setGridSize] = useState<number>(20);
+  const [showGrid, setShowGrid] = useState<boolean>(true);
+  const [snapToGrid, setSnapToGrid] = useState<boolean>(true);
   
   // 연결 모드 상태
-  const [isConnecting, setConnecting] = useState(false);
-  const [connectionStart, setConnectionStart] = useState(null);
+  const [isConnecting, setConnecting] = useState<boolean>(false);
+  const [connectionStart, setConnectionStart] = useState<Shape | null>(null);
   
   // UI 상태
-  const [toast, setToast] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [toast, setToast] = useState<{ type: 'success' | 'error' | 'info'; message: string } | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
   // ============================================================================
   // 🌐 API 설정
@@ -77,7 +120,8 @@ export default function CBAMPage() {
   
   const handleCanvasCreate = async () => {
     try {
-      const newCanvas = {
+      const newCanvas: Canvas = {
+        id: `canvas_${Date.now()}`,
         name: `새 Canvas ${canvases.length + 1}`,
         width: 800,
         height: 600,
@@ -87,7 +131,7 @@ export default function CBAMPage() {
       };
       
       const response = await axios.post(`${API_BASE_URL}/canvases`, newCanvas);
-      const createdCanvas = response.data;
+      const createdCanvas: Canvas = response.data;
       
       setCanvases(prev => [...prev, createdCanvas]);
       setSelectedCanvas(createdCanvas);
@@ -98,7 +142,7 @@ export default function CBAMPage() {
     }
   };
 
-  const handleCanvasSelect = (canvas) => {
+  const handleCanvasSelect = (canvas: Canvas) => {
     setSelectedCanvas(canvas);
     setSelectedShape(null);
     setSelectedArrow(null);
@@ -106,13 +150,13 @@ export default function CBAMPage() {
     setConnectionStart(null);
   };
 
-  const handleCanvasDelete = async (canvasId) => {
+  const handleCanvasDelete = async (canvasId: string) => {
     try {
       await axios.delete(`${API_BASE_URL}/canvases/${canvasId}`);
       setCanvases(prev => prev.filter(c => c.id !== canvasId));
       
       if (selectedCanvas?.id === canvasId) {
-        setSelectedCanvas(canvases.length > 1 ? canvases.find(c => c.id !== canvasId) : null);
+        setSelectedCanvas(canvases.length > 1 ? canvases.find(c => c.id !== canvasId) || null : null);
       }
       
       showToast('success', 'Canvas가 삭제되었습니다.');
@@ -133,7 +177,7 @@ export default function CBAMPage() {
     }
 
     try {
-      const newShape = {
+      const newShape: Shape = {
         id: `shape_${Date.now()}`,
         type: shapeType,
         x: 100,
@@ -147,7 +191,7 @@ export default function CBAMPage() {
         energyType: shapeType === 'energy' ? 'electricity' : undefined
       };
 
-      const updatedCanvas = {
+      const updatedCanvas: Canvas = {
         ...selectedCanvas,
         shapes: [...selectedCanvas.shapes, newShape]
       };
@@ -163,7 +207,7 @@ export default function CBAMPage() {
     }
   };
 
-  const handleShapeClick = (shape) => {
+  const handleShapeClick = (shape: Shape) => {
     if (isConnecting) {
       if (!connectionStart) {
         setConnectionStart(shape);
@@ -183,7 +227,7 @@ export default function CBAMPage() {
     if (!selectedShape || !selectedCanvas) return;
 
     try {
-      const updatedCanvas = {
+      const updatedCanvas: Canvas = {
         ...selectedCanvas,
         shapes: selectedCanvas.shapes.filter(s => s.id !== selectedShape.id),
         arrows: selectedCanvas.arrows.filter(a => 
@@ -214,7 +258,7 @@ export default function CBAMPage() {
     }
 
     try {
-      const newArrow = {
+      const newArrow: Arrow = {
         id: `arrow_${Date.now()}`,
         type: arrowType,
         startX: 200,
@@ -227,7 +271,7 @@ export default function CBAMPage() {
         direction: 'forward'
       };
 
-      const updatedCanvas = {
+      const updatedCanvas: Canvas = {
         ...selectedCanvas,
         arrows: [...selectedCanvas.arrows, newArrow]
       };
@@ -243,11 +287,11 @@ export default function CBAMPage() {
     }
   };
 
-  const createArrow = async (fromShape, toShape) => {
+  const createArrow = async (fromShape: Shape, toShape: Shape) => {
     if (!selectedCanvas) return;
 
     try {
-      const newArrow = {
+      const newArrow: Arrow = {
         id: `arrow_${Date.now()}`,
         type: arrowType,
         startX: fromShape.x + fromShape.width / 2,
@@ -262,7 +306,7 @@ export default function CBAMPage() {
         toShapeId: toShape.id
       };
 
-      const updatedCanvas = {
+      const updatedCanvas: Canvas = {
         ...selectedCanvas,
         arrows: [...selectedCanvas.arrows, newArrow]
       };
@@ -278,7 +322,7 @@ export default function CBAMPage() {
     }
   };
 
-  const handleArrowClick = (arrow) => {
+  const handleArrowClick = (arrow: Arrow) => {
     setSelectedArrow(arrow);
     setSelectedShape(null);
   };
@@ -287,7 +331,7 @@ export default function CBAMPage() {
     if (!selectedArrow || !selectedCanvas) return;
 
     try {
-      const updatedCanvas = {
+      const updatedCanvas: Canvas = {
         ...selectedCanvas,
         arrows: selectedCanvas.arrows.filter(a => a.id !== selectedArrow.id)
       };
@@ -300,7 +344,7 @@ export default function CBAMPage() {
       showToast('success', '화살표가 삭제되었습니다.');
     } catch (error) {
       console.error('화살표 삭제 실패:', error);
-      showToast('error', '화살표 삭제에 실패했습니다.');
+      showToast('error', '화살표 생성에 실패했습니다.');
     }
   };
 
@@ -308,8 +352,8 @@ export default function CBAMPage() {
   // 🎨 유틸리티 함수
   // ============================================================================
   
-  const getShapeColor = (type) => {
-    const colorMap = {
+  const getShapeColor = (type: string): string => {
+    const colorMap: Record<string, string> = {
       process: '#8B5CF6',
       material: '#06B6D4',
       energy: '#F97316',
@@ -319,7 +363,7 @@ export default function CBAMPage() {
     return colorMap[type] || '#6B7280';
   };
 
-  const showToast = (type, message) => {
+  const showToast = (type: 'success' | 'error' | 'info', message: string) => {
     setToast({ type, message });
     setTimeout(() => setToast(null), 3000);
   };
@@ -328,14 +372,14 @@ export default function CBAMPage() {
   // 🎭 이벤트 핸들러
   // ============================================================================
   
-  const handleCanvasClick = (e) => {
+  const handleCanvasClick = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget) {
       setSelectedShape(null);
       setSelectedArrow(null);
     }
   };
 
-  const handleMouseMove = (e) => {
+  const handleMouseMove = (e: React.MouseEvent) => {
     // 드래그 앤 드롭 로직은 ProcessFlowTemplate에서 처리
   };
 
@@ -343,11 +387,11 @@ export default function CBAMPage() {
     // 드래그 앤 드롭 로직은 ProcessFlowTemplate에서 처리
   };
 
-  const handleShapeMouseDown = (e, shape) => {
+  const handleShapeMouseDown = (e: React.MouseEvent, shape: Shape) => {
     // 드래그 앤 드롭 로직은 ProcessFlowTemplate에서 처리
   };
 
-  const handleShapeMouseEnter = (shape) => {
+  const handleShapeMouseEnter = (shape: Shape) => {
     // 호버 효과는 ProcessFlowTemplate에서 처리
   };
 
@@ -355,7 +399,7 @@ export default function CBAMPage() {
     // 호버 효과는 ProcessFlowTemplate에서 처리
   };
 
-  const handleArrowMouseEnter = (arrow) => {
+  const handleArrowMouseEnter = (arrow: Arrow) => {
     // 호버 효과는 ProcessFlowTemplate에서 처리
   };
 
