@@ -83,7 +83,7 @@ export default function ProcessFlowPage() {
   const loadSavedCanvases = useCallback(async () => {
     try {
       setIsLoadingCanvases(true);
-      const response = await apiClient.get('/cal-boundary/canvas');
+      const response = await apiClient.get('/api/v1/cal-boundary/canvas');
       setSavedCanvases(response.data || []);
     } catch (error) {
       console.error('저장된 Canvas 목록 조회 실패:', error);
@@ -123,7 +123,7 @@ export default function ProcessFlowPage() {
         },
       };
 
-      const response = await apiClient.post('/cal-boundary/canvas', canvasData);
+      const response = await apiClient.post('/api/v1/cal-boundary/canvas', canvasData);
       console.log('✅ 백엔드 저장 완료:', response.data);
       alert('공정도가 성공적으로 저장되었습니다!');
       
@@ -141,7 +141,7 @@ export default function ProcessFlowPage() {
     try {
       if (canvasId) {
         // 특정 Canvas 로드
-        const response = await apiClient.get(`/cal-boundary/canvas/${canvasId}`);
+        const response = await apiClient.get(`/api/v1/cal-boundary/canvas/${canvasId}`);
         const canvas = response.data;
         
         // React Flow 형식으로 변환
@@ -163,10 +163,10 @@ export default function ProcessFlowPage() {
         console.log('✅ 백엔드에서 공정도 로드 완료');
       } else {
         // 최신 Canvas 로드
-        const canvases = await apiClient.get('/cal-boundary/canvas');
+        const canvases = await apiClient.get('/api/v1/cal-boundary/canvas');
         if (canvases.data && canvases.data.length > 0) {
           const latestCanvas = canvases.data[0];
-          const flowResponse = await apiClient.get(`/cal-boundary/canvas/${latestCanvas.id}`);
+          const flowResponse = await apiClient.get(`/api/v1/cal-boundary/canvas/${latestCanvas.id}`);
           const canvas = flowResponse.data;
           
           const flowData = {
@@ -200,7 +200,7 @@ export default function ProcessFlowPage() {
   // 서비스 상태 확인
   const checkServiceStatus = useCallback(async () => {
     try {
-      const response = await apiClient.get('/gateway/services/health');
+      const response = await apiClient.get('/api/v1/gateway/services/health');
       setServiceStatus(response.data);
     } catch (error) {
       console.error('서비스 상태 확인 실패:', error);
