@@ -1,182 +1,137 @@
 'use client';
 
+import React, { useState } from 'react';
+import Link from 'next/link';
 import { useAuthStore } from '@/zustand/authStore';
 
 // ============================================================================
-// 🧭 네비게이션 컴포넌트
+// 🎯 Navigation 컴포넌트
 // ============================================================================
 
-export default function Navigation() {
-  const { isAuthenticated, user, logout } = useAuthStore();
+const Navigation: React.FC = () => {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { user, logout } = useAuthStore();
 
   const handleLogout = () => {
     logout();
   };
 
   return (
-    <nav className="bg-white dark:bg-gray-900 shadow-lg border-b border-gray-200 dark:border-gray-700 transition-colors duration-200">
+    <nav className="bg-[#1e293b] dark:bg-gray-900 shadow-lg border-b border-[#334155] dark:border-gray-700 transition-colors duration-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
-          {/* 로고 영역 - 왼쪽 */}
+        <div className="flex items-center justify-between h-20"> {/* 높이를 h-16에서 h-20으로 증가 */}
+          {/* 로고 및 브랜드 */}
           <div className="flex items-center">
-            <a
+            <Link href="/" className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+                <span className="text-white font-bold text-lg">C</span>
+              </div>
+              <span className="text-white font-bold text-xl">CBAM Calculator</span>
+            </Link>
+          </div>
+
+          {/* 데스크톱 네비게이션 */}
+          <div className="hidden sm:flex sm:items-center sm:space-x-8">
+            <Link
               href="/"
-              className="flex-shrink-0 flex items-center hover:opacity-80 transition-opacity duration-200"
+              className="text-white hover:text-blue-300 px-3 py-2 rounded-md text-base font-medium transition-colors duration-200"
             >
-              <div className="w-8 h-8 bg-blue-600 dark:bg-blue-500 rounded-lg flex items-center justify-center mr-3">
-                <svg
-                  className="w-5 h-5 text-white"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
+              Home
+            </Link>
+            
+            <Link
+              href="/process-flow"
+              className="text-white hover:text-blue-300 px-3 py-2 rounded-md text-base font-medium transition-colors duration-200"
+            >
+              공정도
+            </Link>
+            
+            {user && (
+              <Link
+                href="/profile"
+                className="text-white hover:text-blue-300 px-3 py-2 rounded-md text-base font-medium transition-colors duration-200"
+              >
+                {user.full_name}
+              </Link>
+            )}
+            
+            <button
+              onClick={handleLogout}
+              className="text-white hover:text-red-300 px-3 py-2 rounded-md text-base font-medium transition-colors duration-200"
+            >
+              로그아웃
+            </button>
+          </div>
+
+          {/* 모바일 메뉴 버튼 */}
+          <div className="sm:hidden">
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="text-white hover:text-blue-300 p-2 rounded-md text-base font-medium focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500 transition-colors duration-200"
+            >
+              <svg
+                className="h-6 w-6"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                {isMobileMenuOpen ? (
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
                     strokeWidth={2}
-                    d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2zm0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                    d="M6 18L18 6M6 6l12 12"
                   />
-                </svg>
-              </div>
-              <h1 className="text-xl font-bold text-gray-900 dark:text-white transition-colors duration-200">
-                CBAM Calculator
-              </h1>
-            </a>
-          </div>
-
-          {/* 우측 영역: 네비게이션 링크 + 모바일 메뉴 */}
-          <div className="flex items-center space-x-6">
-            {/* 네비게이션 링크 */}
-            <div className="hidden sm:flex sm:items-center sm:space-x-6">
-              <a
-                href="/"
-                className="border-transparent text-gray-500 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600 hover:text-gray-700 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors duration-200"
-              >
-                Home
-              </a>
-              
-              {isAuthenticated && (
-                <a
-                  href="/process-flow"
-                  className="border-transparent text-gray-500 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600 hover:text-gray-700 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors duration-200"
-                >
-                  🔄 공정도
-                </a>
-              )}
-            </div>
-
-            {/* 인증 상태에 따른 우측 메뉴 */}
-            <div className="flex items-center space-x-4">
-              {isAuthenticated ? (
-                <>
-                  <a
-                    href="/profile"
-                    className="text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-white text-sm font-medium transition-colors duration-200"
-                  >
-                    👤 {user?.full_name || '프로필'}
-                  </a>
-                  <button
-                    onClick={handleLogout}
-                    className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200"
-                  >
-                    로그아웃
-                  </button>
-                </>
-              ) : (
-                <>
-                  <a
-                    href="/login"
-                    className="text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-white text-sm font-medium transition-colors duration-200"
-                  >
-                    로그인
-                  </a>
-                  <a
-                    href="/register"
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200"
-                  >
-                    회원가입
-                  </a>
-                </>
-              )}
-            </div>
-
-            {/* 모바일 메뉴 버튼 */}
-            <div className="sm:hidden">
-              <button
-                type="button"
-                className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 dark:text-gray-300 hover:text-gray-500 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500 transition-colors duration-200"
-                aria-controls="mobile-menu"
-                aria-expanded="false"
-              >
-                <span className="sr-only">메뉴 열기</span>
-                <svg
-                  className="block h-6 w-6"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  aria-hidden="true"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-              </button>
-            </div>
+                ) : (
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 6h16M4 12h16M4 18h16"
+                  />
+                )}
+              </svg>
+            </button>
           </div>
         </div>
       </div>
 
       {/* 모바일 메뉴 */}
       <div className="sm:hidden" id="mobile-menu">
-        <div className="pt-2 pb-3 space-y-1 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700">
+        <div className="pt-2 pb-3 space-y-1 bg-[#1e293b] dark:bg-gray-900 border-t border-[#334155] dark:border-gray-700">
           <a
             href="/"
-            className="bg-blue-50 dark:bg-blue-900/20 border-blue-500 text-blue-700 dark:text-blue-300 block pl-3 pr-4 py-2 border-l-4 text-base font-medium transition-colors duration-200"
+            className="border-transparent text-white hover:bg-[#334155] dark:hover:bg-gray-800 hover:border-[#475569] dark:hover:border-gray-600 hover:text-blue-300 dark:hover:text-white block pl-3 pr-4 py-3 border-l-4 text-base font-medium transition-colors duration-200"
           >
             Home
           </a>
           
-          {isAuthenticated && (
+          <a
+            href="/process-flow"
+            className="border-transparent text-white hover:bg-[#334155] dark:hover:bg-gray-800 hover:border-[#475569] dark:hover:border-gray-600 hover:text-blue-300 dark:hover:text-white block pl-3 pr-4 py-3 border-l-4 text-base font-medium transition-colors duration-200"
+          >
+            공정도
+          </a>
+          
+          {user && (
             <a
-              href="/process-flow"
-              className="border-transparent text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 hover:border-gray-300 dark:hover:border-gray-600 hover:text-gray-700 dark:hover:text-white block pl-3 pr-4 py-2 border-l-4 text-base font-medium transition-colors duration-200"
+              href="/profile"
+              className="border-transparent text-white hover:bg-[#334155] dark:hover:bg-gray-800 hover:border-[#475569] dark:hover:border-gray-600 hover:text-blue-300 dark:hover:text-white block pl-3 pr-4 py-3 border-l-4 text-base font-medium transition-colors duration-200"
             >
-              🔄 공정도
+              {user.full_name}
             </a>
           )}
-
-          {isAuthenticated ? (
-            <>
-              <a
-                href="/profile"
-                className="border-transparent text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 hover:border-gray-300 dark:hover:border-gray-600 hover:text-gray-700 dark:hover:text-white block pl-3 pr-4 py-2 border-l-4 text-base font-medium transition-colors duration-200"
-              >
-                👤 {user?.full_name || '프로필'}
-              </a>
-              <button
-                onClick={handleLogout}
-                className="w-full text-left bg-red-50 dark:bg-red-900/20 border-red-500 text-red-700 dark:text-red-300 block pl-3 pr-4 py-2 border-l-4 text-base font-medium transition-colors duration-200"
-              >
-                로그아웃
-              </button>
-            </>
-          ) : (
-            <>
-              <a
-                href="/login"
-                className="border-transparent text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 hover:border-gray-300 dark:hover:border-gray-600 hover:text-gray-700 dark:hover:text-white block pl-3 pr-4 py-2 border-l-4 text-base font-medium transition-colors duration-200"
-              >
-                로그인
-              </a>
-              <a
-                href="/register"
-                className="border-transparent text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 hover:border-gray-300 dark:hover:border-gray-600 hover:text-gray-700 dark:hover:text-white block pl-3 pr-4 py-2 border-l-4 text-base font-medium transition-colors duration-200"
-              >
-                회원가입
-              </a>
-            </>
-          )}
+          
+          <button
+            onClick={handleLogout}
+            className="border-transparent text-white hover:bg-[#334155] dark:hover:bg-gray-800 hover:border-[#475569] dark:hover:border-gray-600 hover:text-red-300 dark:hover:text-red-300 block pl-3 pr-4 py-3 border-l-4 text-base font-medium transition-colors duration-200 w-full text-left"
+          >
+            로그아웃
+          </button>
         </div>
       </div>
     </nav>
   );
-}
+};
+
+export default Navigation;

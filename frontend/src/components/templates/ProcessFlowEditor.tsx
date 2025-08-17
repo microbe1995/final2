@@ -7,7 +7,6 @@ import {
   Connection,
   applyNodeChanges,
   applyEdgeChanges,
-  Background,
   Controls,
   MiniMap,
   type OnConnect,
@@ -17,6 +16,7 @@ import {
 import '@xyflow/react/dist/style.css';
 import ProcessNodeComponent from '../organisms/ProcessNode';
 import ProcessEdgeComponent from '../organisms/ProcessEdge';
+import CustomBackground from '../atoms/CustomBackground';
 import type { AppNodeType, AppEdgeType, ProcessNode, ProcessEdge } from '@/types/reactFlow';
 
 // ============================================================================
@@ -141,7 +141,7 @@ const ProcessFlowEditor: React.FC<ProcessFlowEditorProps> = ({
         className="bg-[#0b0c0f]"
         style={{ backgroundColor: '#0b0c0f' }}
       >
-        <Background variant={"dots" as any} color="#334155" />
+        <CustomBackground />
         <Controls />
         <MiniMap
           nodeStrokeColor={(n) => {

@@ -15,7 +15,7 @@ const ProcessEdgeLabel: React.FC<ProcessEdgeLabelProps> = ({
   data,
   className = ''
 }) => {
-  const baseClasses = 'bg-white px-2 py-1 rounded border shadow-sm';
+  const baseClasses = 'bg-[#1e293b] border border-[#334155] px-2 py-1 rounded shadow-sm text-white';
   const finalClasses = `${baseClasses} ${className}`.trim();
 
   const getProcessTypeIcon = (type: string) => {

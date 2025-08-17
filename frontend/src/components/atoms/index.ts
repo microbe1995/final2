@@ -10,6 +10,7 @@ export { default as Tooltip } from './Tooltip';
 export { default as ProcessHandle } from './ProcessHandle';
 export { default as ProcessTypeBadge } from './ProcessTypeBadge';
 export { default as ProcessStatusIndicator } from './ProcessStatusIndicator';
+export { default as CustomBackground } from './CustomBackground';
 
 // ============================================================================
 // 📝 Atoms 타입 정의

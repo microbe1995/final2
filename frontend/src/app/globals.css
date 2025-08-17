@@ -475,13 +475,21 @@ h3 { font-size: var(--font-size-h3); }
   border-radius: 8px;
 }
 
+/* React Flow Background 패턴 강화 */
 .react-flow__background {
   background: #0b0c0f;
 }
 
 .react-flow__background-pattern {
-  stroke: #334155;
-  stroke-width: 1;
+  stroke: #475569 !important;
+  stroke-width: 1 !important;
+  opacity: 0.6 !important;
+}
+
+/* 점형태 패턴이 더 명확하게 보이도록 */
+.react-flow__background-pattern circle {
+  fill: #475569 !important;
+  opacity: 0.8 !important;
 }
 
 /* React Flow Canvas 영역 완전 다크 테마 */

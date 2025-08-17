@@ -17,7 +17,7 @@ const ProcessNodeToolbar: React.FC<ProcessNodeToolbarProps> = ({
   onDelete,
   className = ''
 }) => {
-  const baseClasses = 'bg-white p-2 rounded-lg shadow-lg border';
+  const baseClasses = 'bg-[#1e293b] border border-[#334155] p-2 rounded-lg shadow-lg text-white';
   const finalClasses = `${baseClasses} ${className}`.trim();
 
   return (
