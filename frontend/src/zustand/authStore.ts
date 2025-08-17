@@ -37,11 +37,22 @@ export const useAuthStore = create<AuthState>()(
         isAuthenticated: true,
       }),
       
-      logout: () => set({
-        user: null,
-        token: null,
-        isAuthenticated: false,
-      }),
+      logout: () => {
+        console.log('🔄 AuthStore - 로그아웃 실행');
+        
+        // 로컬 스토리지 정리
+        localStorage.removeItem('auth-storage');
+        sessionStorage.clear();
+        
+        // 상태 초기화
+        set({
+          user: null,
+          token: null,
+          isAuthenticated: false,
+        });
+        
+        console.log('✅ AuthStore - 로그아웃 완료, 상태 초기화됨');
+      },
       
       updateUser: (updates) => {
         const currentUser = get().user;

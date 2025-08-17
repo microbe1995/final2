@@ -2,19 +2,35 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/zustand/authStore';
 
 const Navigation: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { user, logout } = useAuthStore();
+  const router = useRouter();
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    try {
+      console.log('🔄 로그아웃 시도 중...');
+      
+      // 로그아웃 실행
+      logout();
+      
+      console.log('✅ 로그아웃 완료');
+      
+      // 홈페이지로 리다이렉션
+      router.push('/');
+      
+      console.log('🔄 홈페이지로 리다이렉션 완료');
+    } catch (error) {
+      console.error('❌ 로그아웃 중 오류 발생:', error);
+    }
   };
 
   return (
     <nav className="bg-[#1e293b] dark:bg-gray-900 shadow-lg border-b border-[#334155] dark:border-gray-700 transition-colors duration-200">
-      <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-10">
+      <div className="w-full px-8 sm:px-12 lg:px-16 xl:px-20"> {/* max-w-7xl 제거하고 패딩 대폭 증가 */}
         <div className="flex items-center justify-between h-20">
           {/* 로고 및 브랜드 */}
           <div className="flex items-center">
