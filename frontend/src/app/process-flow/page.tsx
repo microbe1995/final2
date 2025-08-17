@@ -3,6 +3,7 @@
 import React, { useState, useCallback } from 'react';
 import ProcessFlowEditor from '@/templates/ProcessFlowEditor';
 import ProcessFlowInfoPanel from '@/organisms/ProcessFlowInfoPanel';
+import ProcessTypeModal from '@/molecules/ProcessTypeModal';
 import { Node, Edge } from '@xyflow/react';
 import axios from 'axios';
 
@@ -45,6 +46,9 @@ export default function ProcessFlowPage() {
   const [savedCanvases, setSavedCanvases] = useState<any[]>([]);
   const [isLoadingCanvases, setIsLoadingCanvases] = useState(false);
   const [serviceStatus, setServiceStatus] = useState<any>(null);
+
+  // 모달 상태
+  const [isProcessTypeModalOpen, setIsProcessTypeModalOpen] = useState(false);
 
   // ============================================================================
   // 🔄 이벤트 핸들러
@@ -208,7 +212,7 @@ export default function ProcessFlowPage() {
     }
   }, []);
 
-  // 공정 단계 추가 함수
+  // 공정 단계 추가 함수 (기존)
   const addProcessNode = useCallback(() => {
     const newNode: Node<any> = {
       id: `node-${Date.now()}`,
@@ -224,6 +228,42 @@ export default function ProcessFlowPage() {
     setNodes((prevNodes) => [...prevNodes, newNode]);
     console.log('✅ 공정 단계 추가됨:', newNode);
   }, [setNodes]);
+
+  // 공정 연결(엣지) 추가 함수
+  const addProcessEdge = useCallback(() => {
+    // 최소 2개의 노드가 있어야 엣지 추가 가능
+    if (nodes.length < 2) {
+      alert('엣지를 추가하려면 최소 2개의 노드가 필요합니다.');
+      return;
+    }
+
+    const newEdge: Edge<any> = {
+      id: `edge-${Date.now()}`,
+      source: nodes[0].id, // 첫 번째 노드
+      target: nodes[1].id, // 두 번째 노드
+      type: 'processEdge',
+      data: {
+        label: '공정 흐름',
+        processType: 'standard',
+      },
+    };
+    setEdges((prevEdges) => [...prevEdges, newEdge]);
+    console.log('✅ 공정 연결 추가됨:', newEdge);
+  }, [nodes, setEdges]);
+
+  // 공정 요소 추가 모달 열기
+  const openProcessTypeModal = useCallback(() => {
+    setIsProcessTypeModalOpen(true);
+  }, []);
+
+  // 공정 요소 유형 선택 처리
+  const handleProcessTypeSelect = useCallback((type: 'node' | 'edge') => {
+    if (type === 'node') {
+      addProcessNode();
+    } else if (type === 'edge') {
+      addProcessEdge();
+    }
+  }, [addProcessNode, addProcessEdge]);
 
   // 선택된 요소 삭제 함수
   const deleteSelectedElements = useCallback(() => {
@@ -335,10 +375,10 @@ export default function ProcessFlowPage() {
               {/* 하단 컨트롤 버튼들 */}
               <div className="flex justify-center space-x-4 mt-4">
                 <button
-                  onClick={addProcessNode}
+                  onClick={openProcessTypeModal}
                   className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition-colors"
                 >
-                  공정 단계 추가
+                  공정 요소 추가
                 </button>
                 <button
                   onClick={deleteSelectedElements}
@@ -351,6 +391,13 @@ export default function ProcessFlowPage() {
           </div>
         </div>
       </div>
+
+      {/* 공정 요소 유형 선택 모달 */}
+      <ProcessTypeModal
+        isOpen={isProcessTypeModalOpen}
+        onClose={() => setIsProcessTypeModalOpen(false)}
+        onSelectType={handleProcessTypeSelect}
+      />
     </div>
   );
 }

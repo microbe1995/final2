@@ -15,6 +15,7 @@ export { default as ControlPanel } from './ControlPanel';
 export { default as ProcessNodeContent } from './ProcessNodeContent';
 export { default as ProcessNodeToolbar } from './ProcessNodeToolbar';
 export { default as ProcessEdgeLabel } from './ProcessEdgeLabel';
+export { default as ProcessTypeModal } from './ProcessTypeModal';
 
 // ============================================================================
 // 📝 Molecules 타입 정의

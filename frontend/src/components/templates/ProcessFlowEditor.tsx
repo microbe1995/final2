@@ -45,6 +45,15 @@ const ProcessFlowEditor: React.FC<ProcessFlowEditorProps> = ({
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
 
+  // 외부에서 전달받은 nodes/edges가 변경되면 내부 상태도 업데이트
+  React.useEffect(() => {
+    setNodes(initialNodes);
+  }, [initialNodes, setNodes]);
+
+  React.useEffect(() => {
+    setEdges(initialEdges);
+  }, [initialEdges, setEdges]);
+
   const onConnect = useCallback(
     (params: Connection) => {
       const newEdge: Edge<any> = {
