@@ -105,14 +105,14 @@ async def log_requests(request: Request, call_next):
 # 🎯 라우터 등록
 # ============================================================================
 
-# 도형 관련 API
-app.include_router(shape_router, prefix="/api/v1")
+# 도형 관련 API (prefix 제거 - Gateway에서 이미 /api/v1을 처리)
+app.include_router(shape_router)
 
-# 화살표 관련 API
-app.include_router(arrow_router, prefix="/api/v1")
+# 화살표 관련 API (prefix 제거 - Gateway에서 이미 /api/v1을 처리)
+app.include_router(arrow_router)
 
-# Canvas 관련 API
-app.include_router(canvas_router, prefix="/api/v1")
+# Canvas 관련 API (prefix 제거 - Gateway에서 이미 /api/v1을 처리)
+app.include_router(canvas_router)
 
 # ============================================================================
 # 🏥 헬스체크 엔드포인트

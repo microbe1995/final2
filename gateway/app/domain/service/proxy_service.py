@@ -126,10 +126,9 @@ class ProxyService:
             # 경로 정리 (앞의 슬래시 제거)
             clean_path = path.lstrip('/')
             
-            # Cal_boundary 서비스의 경우 /api/v1 prefix 제거 (이미 포함되어 있음)
-            if service == "cal-boundary" and clean_path.startswith("api/v1/"):
-                clean_path = clean_path[7:]  # "api/v1/" 제거
-                logger.info(f"🔧 Cal_boundary 경로 정리: {path} -> {clean_path}")
+            # Cal_boundary 서비스의 경우 경로 그대로 사용 (prefix 중복 제거됨)
+            if service == "cal-boundary":
+                logger.info(f"🔧 Cal_boundary 경로 처리: {path} -> {clean_path}")
             
             # auth 서비스의 경우 /auth prefix 추가
             elif service == "auth" and not clean_path.startswith("auth/"):
