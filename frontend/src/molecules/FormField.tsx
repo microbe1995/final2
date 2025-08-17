@@ -8,62 +8,21 @@ import Input from '@/atoms/Input';
 
 export interface FormFieldProps {
   label: string;
-  name: string;
-  type?: 'text' | 'email' | 'password' | 'number';
-  placeholder?: string;
-  value: string;
-  onChange: (value: string) => void;
-  onBlur?: () => void;
-  error?: string;
-  helperText?: string;
-  required?: boolean;
-  disabled?: boolean;
-  leftIcon?: React.ReactNode;
-  rightIcon?: React.ReactNode;
+  children?: React.ReactNode;
   className?: string;
 }
 
 const FormField: React.FC<FormFieldProps> = ({
   label,
-  name,
-  type = 'text',
-  placeholder,
-  value,
-  onChange,
-  onBlur,
-  error,
-  helperText,
-  required = false,
-  disabled = false,
-  leftIcon,
-  rightIcon,
+  children,
   className
 }) => {
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    onChange(e.target.value);
-  };
-
-  const handleBlur = () => {
-    onBlur?.();
-  };
-
   return (
     <div className={['w-full', className].filter(Boolean).join(' ')}>
-      <Input
-        label={label}
-        name={name}
-        type={type}
-        placeholder={placeholder}
-        value={value}
-        onChange={handleChange}
-        onBlur={handleBlur}
-        error={error}
-        helperText={helperText}
-        required={required}
-        disabled={disabled}
-        leftIcon={leftIcon}
-        rightIcon={rightIcon}
-      />
+      <label className="block text-sm font-medium text-gray-700 mb-2">
+        {label}
+      </label>
+      {children}
     </div>
   );
 };
