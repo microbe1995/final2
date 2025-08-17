@@ -1,5 +1,5 @@
 // ============================================================================
-// 🧩 Molecules Index
+// 🧬 Molecules - 복합 UI 컴포넌트
 // ============================================================================
 
 export { default as Card } from './Card';
@@ -9,7 +9,14 @@ export { default as Toast } from './Toast';
 export { default as HeroSection } from './HeroSection';
 export { default as FeatureCard } from './FeatureCard';
 export { default as FeaturesSection } from './FeaturesSection';
-export type { FormFieldProps } from './FormField';
-export type { CardProps } from './Card';
-export type { ToastProps } from './Toast';
-export type { ModalProps } from './Modal';
+export { default as ProcessShape } from './ProcessShape';
+export { default as FlowArrow } from './FlowArrow';
+export { default as ControlPanel } from './ControlPanel';
+
+// ============================================================================
+// 📝 Molecules 타입 정의
+// ============================================================================
+
+export type { ProcessShapeProps } from './ProcessShape';
+export type { FlowArrowProps } from './FlowArrow';
+export type { ControlPanelProps } from './ControlPanel';
