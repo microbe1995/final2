@@ -482,4 +482,21 @@ h3 { font-size: var(--font-size-h3); }
 .react-flow__background-pattern {
   stroke: #334155;
   stroke-width: 1;
+}
+
+/* React Flow Canvas 영역 완전 다크 테마 */
+.react-flow {
+  background-color: #0b0c0f !important;
+}
+
+.react-flow__viewport {
+  background-color: #0b0c0f !important;
+}
+
+.react-flow__renderer {
+  background-color: #0b0c0f !important;
+}
+
+.react-flow__pane {
+  background-color: #0b0c0f !important;
 } 

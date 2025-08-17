@@ -208,6 +208,37 @@ export default function ProcessFlowPage() {
     }
   }, []);
 
+  // 공정 단계 추가 함수
+  const addProcessNode = useCallback(() => {
+    const newNode: Node<any> = {
+      id: `node-${Date.now()}`,
+      type: 'processNode',
+      position: { x: 250, y: 250 },
+      data: {
+        label: '새 공정 단계',
+        processType: 'manufacturing',
+        description: '공정 단계 설명을 입력하세요',
+        parameters: {},
+      },
+    };
+    setNodes((prevNodes) => [...prevNodes, newNode]);
+    console.log('✅ 공정 단계 추가됨:', newNode);
+  }, [setNodes]);
+
+  // 선택된 요소 삭제 함수
+  const deleteSelectedElements = useCallback(() => {
+    const selectedNodes = nodes.filter((node) => node.selected);
+    const selectedEdges = edges.filter((edge) => edge.selected);
+    
+    if (selectedNodes.length > 0 || selectedEdges.length > 0) {
+      setNodes((prevNodes) => prevNodes.filter((node) => !node.selected));
+      setEdges((prevEdges) => prevEdges.filter((edge) => !edge.selected));
+      console.log('✅ 선택된 요소 삭제됨');
+    } else {
+      alert('삭제할 요소를 선택해주세요.');
+    }
+  }, [nodes, edges, setNodes, setEdges]);
+
   // 컴포넌트 마운트 시 실행
   React.useEffect(() => {
     loadSavedCanvases();
@@ -300,6 +331,22 @@ export default function ProcessFlowPage() {
                 onFlowChange={handleFlowChange}
                 readOnly={isReadOnly}
               />
+              
+              {/* 하단 컨트롤 버튼들 */}
+              <div className="flex justify-center space-x-4 mt-4">
+                <button
+                  onClick={addProcessNode}
+                  className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition-colors"
+                >
+                  공정 단계 추가
+                </button>
+                <button
+                  onClick={deleteSelectedElements}
+                  className="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium transition-colors"
+                >
+                  선택 삭제
+                </button>
+              </div>
             </div>
           </div>
         </div>

@@ -133,7 +133,7 @@ const ProcessFlowEditor: React.FC<ProcessFlowEditorProps> = ({
   }, [setNodes, setEdges]);
 
   return (
-    <div className="w-full h-full min-h-[600px]">
+    <div className="w-full h-full min-h-[600px] bg-[#0b0c0f] rounded-lg overflow-hidden">
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -145,9 +145,10 @@ const ProcessFlowEditor: React.FC<ProcessFlowEditorProps> = ({
         fitView
         attributionPosition="bottom-left"
         className="bg-[#0b0c0f]"
+        style={{ backgroundColor: '#0b0c0f' }}
       >
         <Controls />
-        <Background variant={"dots" as any} />
+        <Background variant={"dots" as any} color="#334155" />
         <MiniMap
           nodeStrokeColor={(n) => {
             if (n.type === 'processNode') return '#1a192b';
@@ -157,14 +158,6 @@ const ProcessFlowEditor: React.FC<ProcessFlowEditorProps> = ({
             if (n.selected) return '#ff0072';
             return '#fff';
           }}
-        />
-        
-        <ProcessFlowControls
-          onAddNode={addProcessNode}
-          onDeleteSelected={deleteSelectedElements}
-          onSave={saveFlow}
-          onLoad={loadFlow}
-          readOnly={readOnly}
         />
       </ReactFlow>
     </div>
