@@ -613,9 +613,11 @@ export default function CalBoundaryPage() {
         {/* 토스트 */}
         {toast && (
           <Toast
+            id="main-toast"
             type={toast.type}
+            title={toast.type === 'success' ? '성공' : '오류'}
             message={toast.message}
-            onClose={() => setToast(null)}
+            onClose={(id) => setToast(null)}
           />
         )}
       </div>
