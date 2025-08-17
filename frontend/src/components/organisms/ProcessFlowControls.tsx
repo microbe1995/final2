@@ -40,7 +40,7 @@ const ProcessFlowControls: React.FC<ProcessFlowControlsProps> = ({
         <Button
           onClick={onDeleteSelected}
           disabled={readOnly}
-          variant="destructive"
+          variant="danger"
           size="sm"
           className="w-full"
         >

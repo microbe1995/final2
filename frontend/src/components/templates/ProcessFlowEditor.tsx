@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, useCallback, useMemo } from 'react';
-import ReactFlow, {
+import {
+  ReactFlow,
   Node,
   Edge,
   addEdge,
@@ -22,11 +23,11 @@ import ProcessFlowControls from '../organisms/ProcessFlowControls';
 
 
 const nodeTypes: NodeTypes = {
-  processNode: ProcessNode,
+  processNode: ProcessNode as any,
 };
 
 const edgeTypes: EdgeTypes = {
-  processEdge: ProcessEdge,
+  processEdge: ProcessEdge as any,
 };
 
 interface ProcessFlowEditorProps {
@@ -147,7 +148,7 @@ const ProcessFlowEditor: React.FC<ProcessFlowEditorProps> = ({
         className="bg-gray-50"
       >
         <Controls />
-        <Background variant="dots" gap={12} size={1} />
+        <Background variant={"dots" as any} />
         <MiniMap
           nodeStrokeColor={(n) => {
             if (n.type === 'processNode') return '#1a192b';

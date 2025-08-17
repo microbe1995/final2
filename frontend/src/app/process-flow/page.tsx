@@ -383,6 +383,23 @@ export default function ProcessFlowPage() {
     link.click();
   }, [nodes, edges]);
 
+  // Canvas 목록 조회
+  const [savedCanvases, setSavedCanvases] = useState<any[]>([]);
+  const [isLoadingCanvases, setIsLoadingCanvases] = useState(false);
+
+  const loadSavedCanvases = useCallback(async () => {
+    try {
+      setIsLoadingCanvases(true);
+      const canvases = await canvasApi.getAll();
+      setSavedCanvases(canvases || []);
+    } catch (error) {
+      console.error('저장된 Canvas 목록 조회 실패:', error);
+      setSavedCanvases([]);
+    } finally {
+      setIsLoadingCanvases(false);
+    }
+  }, []);
+
   // 백엔드 저장 기능
   const saveToBackend = useCallback(async () => {
     try {
@@ -431,23 +448,6 @@ export default function ProcessFlowPage() {
       alert('백엔드 로드에 실패했습니다. 다시 시도해주세요.');
     }
   }, [setNodes, setEdges]);
-
-  // Canvas 목록 조회
-  const [savedCanvases, setSavedCanvases] = useState<any[]>([]);
-  const [isLoadingCanvases, setIsLoadingCanvases] = useState(false);
-
-  const loadSavedCanvases = useCallback(async () => {
-    try {
-      setIsLoadingCanvases(true);
-      const canvases = await canvasApi.getAll();
-      setSavedCanvases(canvases || []);
-    } catch (error) {
-      console.error('저장된 Canvas 목록 조회 실패:', error);
-      setSavedCanvases([]);
-    } finally {
-      setIsLoadingCanvases(false);
-    }
-  }, []);
 
   // 서비스 상태 확인
   const [serviceStatus, setServiceStatus] = useState<any>(null);

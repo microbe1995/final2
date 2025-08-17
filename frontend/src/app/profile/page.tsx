@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/app/contexts/AuthContext';
+import { useAuthStore } from '@/zustand/authStore';
 import axios from 'axios';
 import ProfileForm from '@/organisms/ProfileForm';
 import Button from '@/atoms/Button';
@@ -13,7 +13,7 @@ import Button from '@/atoms/Button';
 
 export default function ProfilePage() {
   const router = useRouter();
-  const { user, token, isAuthenticated, updateUser, logout } = useAuth();
+  const { user, token, isAuthenticated, updateUser, logout } = useAuthStore();
   
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -52,7 +52,7 @@ export default function ProfilePage() {
       );
 
       if (response.data) {
-        // AuthContext의 사용자 정보 업데이트
+        // AuthStore의 사용자 정보 업데이트
         updateUser({
           ...user!,
           full_name: data.full_name,

@@ -63,7 +63,7 @@ const ProcessNodeContent: React.FC<ProcessNodeContentProps> = ({
             {Object.entries(data.parameters).map(([key, value]) => (
               <div key={key} className="flex justify-between text-xs">
                 <span className="text-gray-600">{key}:</span>
-                <span className="text-gray-800 font-medium">{value}</span>
+                <span className="text-gray-800 font-medium">{value as any}</span>
               </div>
             ))}
           </div>

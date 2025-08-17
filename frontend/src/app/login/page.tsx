@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/app/contexts/AuthContext';
+import { useAuthStore } from '@/zustand/authStore';
 import AuthForm from '@/organisms/AuthForm';
 import axios from 'axios';
 
@@ -11,7 +11,7 @@ import axios from 'axios';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login } = useAuth();
+  const { login } = useAuthStore();
   
   // ============================================================================
   // 🚀 로그인 제출
@@ -30,7 +30,7 @@ export default function LoginPage() {
       console.log('✅ 로그인 응답:', response.data);
 
       if (response.data && response.data.user && response.data.token) {
-        // AuthContext를 통해 로그인 상태 업데이트
+        // AuthStore를 통해 로그인 상태 업데이트
         login(response.data.user, response.data.token);
         
         alert('로그인이 완료되었습니다!');

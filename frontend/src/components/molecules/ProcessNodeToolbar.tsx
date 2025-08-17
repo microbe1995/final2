@@ -36,7 +36,7 @@ const ProcessNodeToolbar: React.FC<ProcessNodeToolbarProps> = ({
         </Button>
         <Button
           onClick={onDelete}
-          variant="destructive"
+          variant="danger"
           size="sm"
           className="px-3 py-1"
         >
