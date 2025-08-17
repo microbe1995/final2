@@ -82,8 +82,8 @@ class ProxyService:
             # 경로 정리 (앞의 슬래시 제거)
             clean_path = path.lstrip('/')
             
-            # 최종 URL 생성
-            url = f"{base_url}/{clean_path}"
+            # 최종 URL 생성 - 서비스명을 경로에 포함
+            url = f"{base_url}/{service}/{clean_path}"
             
             logger.info(f"➡️  proxy -> {service}: {method} {url}")
             
