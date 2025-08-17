@@ -403,3 +403,83 @@ h3 { font-size: var(--font-size-h3); }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: var(--color-text-secondary);
 } 
+
+/* React Flow 기본 스타일 */
+.react-flow__node {
+  cursor: grab;
+}
+
+.react-flow__node:active {
+  cursor: grabbing;
+}
+
+.react-flow__handle {
+  width: 8px;
+  height: 8px;
+  background: #1a192b;
+  border: 1px solid #fff;
+  border-radius: 50%;
+}
+
+.react-flow__handle:hover {
+  background: #555;
+}
+
+.react-flow__handle.connecting {
+  background: #ff6060;
+}
+
+.react-flow__edge {
+  stroke: #b1b1b7;
+  stroke-width: 2;
+}
+
+.react-flow__edge.selected {
+  stroke: #ff0072;
+}
+
+.react-flow__edge.animated {
+  stroke-dasharray: 5;
+  animation: dashdraw 0.5s linear infinite;
+}
+
+@keyframes dashdraw {
+  from {
+    stroke-dashoffset: 10;
+  }
+}
+
+.react-flow__controls {
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  padding: 4px;
+}
+
+.react-flow__controls button {
+  background: #334155;
+  border: none;
+  color: white;
+  border-radius: 4px;
+  padding: 4px;
+  margin: 2px;
+}
+
+.react-flow__controls button:hover {
+  background: #475569;
+}
+
+.react-flow__minimap {
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 8px;
+}
+
+.react-flow__background {
+  background: #0b0c0f;
+}
+
+.react-flow__background-pattern {
+  stroke: #334155;
+  stroke-width: 1;
+} 

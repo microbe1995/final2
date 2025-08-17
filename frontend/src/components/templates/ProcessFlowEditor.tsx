@@ -15,7 +15,6 @@ import {
   NodeTypes,
   EdgeTypes,
 } from '@xyflow/react';
-import '@xyflow/react/dist/style.css';
 import ProcessNode from '../organisms/ProcessNode';
 import ProcessEdge from '../organisms/ProcessEdge';
 import ProcessFlowControls from '../organisms/ProcessFlowControls';
@@ -145,7 +144,7 @@ const ProcessFlowEditor: React.FC<ProcessFlowEditorProps> = ({
         edgeTypes={edgeTypes}
         fitView
         attributionPosition="bottom-left"
-        className="bg-gray-50"
+        className="bg-[#0b0c0f]"
       >
         <Controls />
         <Background variant={"dots" as any} />

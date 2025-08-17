@@ -55,7 +55,7 @@ const ProcessNode: React.FC<NodeProps<any>> = ({
       />
 
       {/* 노드 본체 */}
-      <div className="bg-white border-2 border-gray-300 rounded-lg shadow-lg p-4 min-w-[200px]">
+      <div className="bg-[#1e293b] border-2 border-[#334155] rounded-lg shadow-lg p-4 min-w-[200px] text-white">
         {/* 공정 타입 및 상태 표시 */}
         <div className="flex items-center justify-between mb-3">
           <ProcessTypeBadge

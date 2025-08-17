@@ -118,7 +118,7 @@ export default function ProfilePage() {
   
   if (!user) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-[#0b0c0f] flex items-center justify-center p-4">
         <div className="text-center">
           <p className="text-gray-600 mb-4">사용자 정보를 불러오는 중...</p>
         </div>
@@ -127,14 +127,14 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+    <div className="min-h-screen bg-[#0b0c0f]">
       <div className="max-w-4xl mx-auto px-4 py-8">
         {/* 헤더 */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+          <h1 className="text-3xl font-bold text-white mb-2">
             프로필 관리
           </h1>
-          <p className="text-gray-600">
+          <p className="text-[#cbd5e1]">
             개인정보와 비밀번호를 안전하게 관리하세요
           </p>
         </div>

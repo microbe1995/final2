@@ -469,14 +469,14 @@ export default function ProcessFlowPage() {
   }, [loadSavedCanvases, checkServiceStatus]);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#0b0c0f]">
       {/* 헤더 */}
-      <div className="bg-white shadow-sm border-b">
+      <div className="bg-[#1e293b] shadow-sm border-b border-[#334155]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">공정도 관리</h1>
-              <p className="text-sm text-gray-600">
+              <h1 className="text-2xl font-bold text-white">공정도 관리</h1>
+              <p className="text-sm text-[#cbd5e1]">
                 React Flow 기반의 인터랙티브 공정도 에디터
               </p>
             </div>
@@ -550,7 +550,7 @@ export default function ProcessFlowPage() {
 
           {/* 메인 공정도 에디터 */}
           <div className="lg:col-span-3">
-            <div className="bg-white rounded-lg shadow-lg p-6">
+            <div className="bg-[#1e293b] rounded-lg shadow-lg p-6 border border-[#334155]">
               <ProcessFlowEditor
                 initialNodes={nodes}
                 initialEdges={edges}
