@@ -96,20 +96,78 @@ export default function CBAMPage() {
   
   useEffect(() => {
     loadCanvases();
+    testApiConnection(); // API 연결 테스트 추가
   }, []);
+
+  const testApiConnection = async () => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/test`);
+      console.log('✅ API 연결 테스트 성공:', response.data);
+    } catch (error) {
+      console.error('❌ API 연결 테스트 실패:', error);
+    }
+  };
 
   const loadCanvases = async () => {
     try {
       setIsLoading(true);
-      const response = await axios.get(`${API_BASE_URL}${API_PREFIX}/canvas`);
-      setCanvases(response.data.canvases || response.data || []);
+      console.log('🔄 공정 필드 로딩 시작:', `${API_BASE_URL}${API_PREFIX}/canvas`);
       
-      if ((response.data.canvases || response.data || []).length > 0 && !selectedCanvas) {
-        setSelectedCanvas((response.data.canvases || response.data || [])[0]);
+      const response = await axios.get(`${API_BASE_URL}${API_PREFIX}/canvas`);
+      console.log('✅ API 응답:', response.data);
+      
+      // 응답 구조에 맞게 데이터 추출
+      let canvasData = [];
+      if (response.data && response.data.canvases) {
+        // CanvasListResponse 구조
+        canvasData = response.data.canvases;
+        console.log('📋 CanvasListResponse 구조 사용:', canvasData.length, '개');
+      } else if (Array.isArray(response.data)) {
+        // 배열 형태로 직접 응답
+        canvasData = response.data;
+        console.log('📋 배열 형태 응답 사용:', canvasData.length, '개');
+      } else {
+        // 빈 배열로 초기화
+        canvasData = [];
+        console.log('📋 빈 배열로 초기화');
       }
-    } catch (error) {
-      console.error('공정 필드 로딩 실패:', error);
-      showToast('error', '공정 필드 로딩에 실패했습니다.');
+      
+      setCanvases(canvasData);
+      
+      if (canvasData.length > 0 && !selectedCanvas) {
+        setSelectedCanvas(canvasData[0]);
+        console.log('🎯 첫 번째 공정 필드 선택:', canvasData[0].name);
+      }
+    } catch (error: any) {
+      console.error('❌ 공정 필드 로딩 실패:', error);
+      
+      // 에러 상세 정보 로깅
+      if (error.response) {
+        console.error('📡 서버 응답 에러:', {
+          status: error.response.status,
+          statusText: error.response.statusText,
+          data: error.response.data,
+          headers: error.response.headers
+        });
+      } else if (error.request) {
+        console.error('🌐 네트워크 에러:', error.request);
+      } else {
+        console.error('⚙️ 요청 설정 에러:', error.message);
+      }
+      
+      // 사용자에게 더 구체적인 에러 메시지 표시
+      let errorMessage = '공정 필드 로딩에 실패했습니다.';
+      if (error.response?.status === 404) {
+        errorMessage = 'API 엔드포인트를 찾을 수 없습니다. 백엔드 서비스를 확인해주세요.';
+      } else if (error.response?.status === 405) {
+        errorMessage = '지원하지 않는 HTTP 메서드입니다. API 엔드포인트를 확인해주세요.';
+      } else if (error.code === 'ECONNREFUSED') {
+        errorMessage = '백엔드 서비스에 연결할 수 없습니다. 서비스가 실행 중인지 확인해주세요.';
+      }
+      
+      showToast('error', errorMessage);
+      // 에러 시 빈 배열로 초기화
+      setCanvases([]);
     } finally {
       setIsLoading(false);
     }
