@@ -3,10 +3,10 @@
 // ============================================================================
 
 export { default as MainLayout } from './MainLayout';
-export { default as ProcessFlowTemplate } from './ProcessFlowTemplate';
+export { default as ProcessFlowEditor } from './ProcessFlowEditor';
 
 // ============================================================================
 // 📝 Templates 타입 정의
 // ============================================================================
 
-export type { ProcessFlowTemplateProps } from './ProcessFlowTemplate';
+

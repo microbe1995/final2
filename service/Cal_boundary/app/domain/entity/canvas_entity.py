@@ -19,6 +19,9 @@ class Canvas:
         background_color: str = "#FFFFFF",
         shapes: Optional[List[Shape]] = None,
         arrows: Optional[List[Arrow]] = None,
+        # React Flow 데이터 지원
+        nodes: Optional[List[Dict[str, Any]]] = None,
+        edges: Optional[List[Dict[str, Any]]] = None,
         zoom_level: float = 1.0,
         pan_x: float = 0.0,
         pan_y: float = 0.0,
@@ -33,6 +36,9 @@ class Canvas:
         self.background_color = background_color
         self.shapes = shapes or []
         self.arrows = arrows or []
+        # React Flow 데이터
+        self.nodes = nodes or []
+        self.edges = edges or []
         self.zoom_level = zoom_level
         self.pan_x = pan_x
         self.pan_y = pan_y
@@ -134,9 +140,12 @@ class Canvas:
         return distance <= threshold
     
     def clear(self) -> None:
-        """Canvas의 모든 요소를 제거합니다"""
+        """Canvas의 모든 요소를 제거합니다 - React Flow 지원"""
         self.shapes.clear()
         self.arrows.clear()
+        # React Flow 데이터 정리
+        self.nodes.clear()
+        self.edges.clear()
         self.updated_at = datetime.utcnow()
     
     def resize(self, new_width: float, new_height: float) -> None:
@@ -157,21 +166,35 @@ class Canvas:
         self.updated_at = datetime.utcnow()
     
     def get_bounds(self) -> Dict[str, float]:
-        """Canvas의 경계를 계산합니다"""
-        if not self.shapes and not self.arrows:
+        """Canvas의 경계를 계산합니다 - React Flow 지원"""
+        if not self.shapes and not self.arrows and not self.nodes and not self.edges:
             return {"min_x": 0, "min_y": 0, "max_x": self.width, "max_y": self.height}
         
         min_x = min_y = float('inf')
         max_x = max_y = float('-inf')
         
-        # 도형 경계 계산
+        # React Flow 노드 경계 계산
+        for node in self.nodes:
+            if 'position' in node:
+                pos = node['position']
+                min_x = min(min_x, pos.get('x', 0))
+                min_y = min(min_y, pos.get('y', 0))
+                max_x = max(max_x, pos.get('x', 0) + 200)  # 노드 기본 너비
+                max_y = max(max_y, pos.get('y', 0) + 100)  # 노드 기본 높이
+        
+        # React Flow 엣지 경계 계산
+        for edge in self.edges:
+            # 엣지는 노드 위치에 따라 경계가 결정되므로 별도 계산 불필요
+            pass
+        
+        # 도형 경계 계산 (하위 호환성)
         for shape in self.shapes:
             min_x = min(min_x, shape.x)
             min_y = min(min_y, shape.y)
             max_x = max(max_x, shape.x + shape.width)
             max_y = max(max_y, shape.y + shape.height)
         
-        # 화살표 경계 계산
+        # 화살표 경계 계산 (하위 호환성)
         for arrow in self.arrows:
             min_x = min(min_x, arrow.start_x, arrow.end_x)
             min_y = min(min_y, arrow.start_y, arrow.end_y)
@@ -186,13 +209,17 @@ class Canvas:
         }
     
     def to_dict(self) -> Dict[str, Any]:
-        """Canvas를 딕셔너리로 변환합니다"""
+        """Canvas를 딕셔너리로 변환합니다 - React Flow 지원"""
         return {
             "id": self.id,
             "name": self.name,
             "width": self.width,
             "height": self.height,
             "background_color": self.background_color,
+            # React Flow 데이터
+            "nodes": self.nodes,
+            "edges": self.edges,
+            # 기존 데이터 (하위 호환성)
             "shapes": [shape.to_dict() for shape in self.shapes],
             "arrows": [arrow.to_dict() for arrow in self.arrows],
             "zoom_level": self.zoom_level,
@@ -205,7 +232,7 @@ class Canvas:
     
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> 'Canvas':
-        """딕셔너리에서 Canvas를 생성합니다"""
+        """딕셔너리에서 Canvas를 생성합니다 - React Flow 지원"""
         from .shape_entity import Shape
         from .arrow_entity import Arrow
         
@@ -215,6 +242,10 @@ class Canvas:
             width=data.get("width", 800.0),
             height=data.get("height", 600.0),
             background_color=data.get("background_color", "#FFFFFF"),
+            # React Flow 데이터
+            nodes=data.get("nodes", []),
+            edges=data.get("edges", []),
+            # 기존 데이터 (하위 호환성)
             shapes=[Shape.from_dict(shape_data) for shape_data in data.get("shapes", [])],
             arrows=[Arrow.from_dict(arrow_data) for arrow_data in data.get("arrows", [])],
             zoom_level=data.get("zoom_level", 1.0),

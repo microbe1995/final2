@@ -12,6 +12,9 @@ export { default as FeaturesSection } from './FeaturesSection';
 export { default as ProcessShape } from './ProcessShape';
 export { default as FlowArrow } from './FlowArrow';
 export { default as ControlPanel } from './ControlPanel';
+export { default as ProcessNodeContent } from './ProcessNodeContent';
+export { default as ProcessNodeToolbar } from './ProcessNodeToolbar';
+export { default as ProcessEdgeLabel } from './ProcessEdgeLabel';
 
 // ============================================================================
 // 📝 Molecules 타입 정의

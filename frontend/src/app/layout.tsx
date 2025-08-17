@@ -4,8 +4,8 @@
 
 import type { Metadata } from 'next';
 import './globals.css';
-import Navigation from '@/organisms/Navigation';
-import { AuthProvider } from './contexts/AuthContext';
+import Navigation from '@/components/organisms/Navigation';
+
 
 // ============================================================================
 // 🎯 메타데이터 설정
@@ -219,7 +219,6 @@ export default function RootLayout({
       </head>
       
       <body className="h-full bg-gray-50 transition-colors duration-200">
-        <AuthProvider>
           {/* 네비게이션 */}
           <Navigation />
           
@@ -236,12 +235,11 @@ export default function RootLayout({
                   © 2024 CBAM Calculator. 모든 권리 보유.
                 </p>
                 <p className="text-gray-400 text-xs mt-2 transition-colors duration-200">
-                  PostgreSQL 기반 안전한 사용자 데이터 관리
+                  공정도 관리 시스템
                 </p>
               </div>
             </div>
           </footer>
-        </AuthProvider>
       </body>
     </html>
   );

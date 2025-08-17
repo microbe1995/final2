@@ -36,10 +36,28 @@ class CanvasService:
     # ============================================================================
     
     async def create_canvas(self, request: CanvasCreateRequest) -> CanvasResponse:
-        """새 Canvas를 생성합니다"""
+        """새 Canvas를 생성합니다 - React Flow 지원"""
         try:
             # 고유 ID 생성
             canvas_id = str(uuid.uuid4())
+            
+            # 현재 시간
+            now = datetime.utcnow().isoformat()
+            
+            # React Flow 데이터 처리
+            nodes = request.nodes or []
+            edges = request.edges or []
+            
+            # 메타데이터 구성
+            metadata = request.metadata or {}
+            metadata.update({
+                'description': request.description,
+                'nodeCount': len(nodes),
+                'edgeCount': len(edges),
+                'reactFlowVersion': '12.8.3',
+                'createdAt': now,
+                'updatedAt': now
+            })
             
             # Canvas 엔티티 생성
             canvas = Canvas(
@@ -48,12 +66,16 @@ class CanvasService:
                 width=request.width,
                 height=request.height,
                 background_color=request.background_color,
-                metadata=request.metadata or {}
+                metadata=metadata
             )
+            
+            # React Flow 데이터 저장
+            canvas.nodes = nodes
+            canvas.edges = edges
             
             # 저장
             self._canvases[canvas_id] = canvas
-            logger.info(f"✅ Canvas 생성 완료: {canvas_id} ({request.name})")
+            logger.info(f"✅ Canvas 생성 완료: {canvas_id} ({request.name}) - 노드: {len(nodes)}개, 엣지: {len(edges)}개")
             
             return CanvasResponse(**canvas.to_dict())
             

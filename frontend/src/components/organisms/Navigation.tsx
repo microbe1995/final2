@@ -1,24 +1,10 @@
 'use client';
 
-import { useAuth } from '@/app/contexts/AuthContext';
-
 // ============================================================================
 // 🧭 네비게이션 컴포넌트
 // ============================================================================
 
 export default function Navigation() {
-  const { user, isAuthenticated, logout } = useAuth();
-
-  // ============================================================================
-  // 🚪 로그아웃 처리
-  // ============================================================================
-  
-  const handleLogout = () => {
-    logout();
-    // 홈페이지로 리다이렉트
-    window.location.href = '/';
-  };
-
   return (
     <nav className="bg-white dark:bg-gray-900 shadow-lg border-b border-gray-200 dark:border-gray-700 transition-colors duration-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -50,7 +36,7 @@ export default function Navigation() {
             </a>
           </div>
 
-          {/* 우측 영역: 네비게이션 링크 + 테마 토글 + 모바일 메뉴 */}
+          {/* 우측 영역: 네비게이션 링크 + 모바일 메뉴 */}
           <div className="flex items-center space-x-6">
             {/* 네비게이션 링크 */}
             <div className="hidden sm:flex sm:items-center sm:space-x-6">
@@ -62,49 +48,13 @@ export default function Navigation() {
               </a>
               
               <a
-                href="/cbam"
+                href="/process-flow"
                 className="border-transparent text-gray-500 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600 hover:text-gray-700 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors duration-200"
               >
-                🎨 Cal_boundary
+                🔄 공정도
               </a>
-              
-              {isAuthenticated ? (
-                // 로그인된 사용자 메뉴
-                <>
-                  <a
-                    href="/profile"
-                    className="border-transparent text-gray-500 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600 hover:text-gray-700 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors duration-200"
-                  >
-                    Profile
-                  </a>
-                  <button
-                    onClick={handleLogout}
-                    className="border-transparent text-[#cbd5e1] hover:border-[#64748b] hover:text-[#ffffff] inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors duration-200 cursor-pointer"
-                  >
-                    Logout
-                  </button>
-                </>
-              ) : (
-                // 로그인되지 않은 사용자 메뉴
-                <>
-                  <a
-                    href="/login"
-                    className="border-transparent text-[#cbd5e1] hover:border-[#64748b] hover:text-[#ffffff] inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors duration-200"
-                  >
-                    SignIn
-                  </a>
-                  <a
-                    href="/register"
-                    className="border-transparent text-[#cbd5e1] hover:border-[#64748b] hover:text-[#ffffff] inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors duration-200"
-                  >
-                    SignUp
-                  </a>
-                </>
-              )}
             </div>
 
-
-            
             {/* 모바일 메뉴 버튼 */}
             <div className="sm:hidden">
               <button
@@ -140,39 +90,12 @@ export default function Navigation() {
             Home
           </a>
           
-          {isAuthenticated ? (
-            // 로그인된 사용자 모바일 메뉴
-            <>
-              <a
-                href="/profile"
-                className="border-transparent text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 hover:border-gray-300 dark:hover:border-gray-600 hover:text-gray-700 dark:hover:text-white block pl-3 pr-4 py-2 border-l-4 text-base font-medium transition-colors duration-200"
-              >
-                Profile
-              </a>
-              <button
-                onClick={handleLogout}
-                className="w-full text-left border-transparent text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 hover:border-gray-300 dark:hover:border-gray-600 hover:text-gray-700 dark:hover:text-white block pl-3 pr-4 py-2 border-l-4 text-base font-medium transition-colors duration-200 cursor-pointer"
-              >
-                Logout
-              </button>
-            </>
-          ) : (
-            // 로그인되지 않은 사용자 모바일 메뉴
-            <>
-              <a
-                href="/login"
-                className="border-transparent text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 hover:border-gray-300 dark:hover:border-gray-600 hover:text-gray-700 dark:hover:text-white block pl-3 pr-4 py-2 border-l-4 text-base font-medium transition-colors duration-200"
-              >
-                SignIn
-              </a>
-              <a
-                href="/register"
-                className="border-transparent text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 hover:border-gray-300 dark:hover:border-gray-600 hover:text-gray-700 dark:hover:text-white block pl-3 pr-4 py-2 border-l-4 text-base font-medium transition-colors duration-200"
-              >
-                SignUp
-              </a>
-            </>
-          )}
+          <a
+            href="/process-flow"
+            className="border-transparent text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 hover:border-gray-300 dark:hover:border-gray-600 hover:text-gray-700 dark:hover:text-white block pl-3 pr-4 py-2 border-l-4 text-base font-medium transition-colors duration-200"
+          >
+            🔄 공정도
+          </a>
         </div>
       </div>
     </nav>

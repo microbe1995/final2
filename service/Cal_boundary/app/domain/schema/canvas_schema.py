@@ -12,11 +12,16 @@ from .arrow_schema import ArrowResponse
 # ============================================================================
 
 class CanvasCreateRequest(BaseModel):
-    """Canvas 생성 요청 스키마"""
+    """Canvas 생성 요청 스키마 - React Flow 기준"""
     name: str = Field(..., min_length=1, max_length=100, description="Canvas 이름")
-    width: float = Field(default=800.0, gt=0, le=10000, description="Canvas 너비")
-    height: float = Field(default=600.0, gt=0, le=10000, description="Canvas 높이")
-    background_color: str = Field(default="#FFFFFF", description="배경 색상")
+    description: Optional[str] = Field(default=None, description="Canvas 설명")
+    # React Flow 데이터 구조
+    nodes: Optional[List[Dict[str, Any]]] = Field(default_factory=list, description="React Flow 노드 목록")
+    edges: Optional[List[Dict[str, Any]]] = Field(default_factory=list, description="React Flow 엣지 목록")
+    # 기존 Canvas 속성 (선택적)
+    width: Optional[float] = Field(default=1200.0, gt=0, le=10000, description="Canvas 너비")
+    height: Optional[float] = Field(default=800.0, gt=0, le=10000, description="Canvas 높이")
+    background_color: Optional[str] = Field(default="#FFFFFF", description="배경 색상")
     metadata: Optional[Dict[str, Any]] = Field(default=None, description="추가 메타데이터")
 
     @field_validator('background_color')
@@ -28,8 +33,13 @@ class CanvasCreateRequest(BaseModel):
         return v
 
 class CanvasUpdateRequest(BaseModel):
-    """Canvas 수정 요청 스키마"""
+    """Canvas 수정 요청 스키마 - React Flow 기준"""
     name: Optional[str] = Field(default=None, min_length=1, max_length=100, description="Canvas 이름")
+    description: Optional[str] = Field(default=None, description="Canvas 설명")
+    # React Flow 데이터 구조
+    nodes: Optional[List[Dict[str, Any]]] = Field(default=None, description="React Flow 노드 목록")
+    edges: Optional[List[Dict[str, Any]]] = Field(default=None, description="React Flow 엣지 목록")
+    # 기존 Canvas 속성 (선택적)
     width: Optional[float] = Field(default=None, gt=0, le=10000, description="Canvas 너비")
     height: Optional[float] = Field(default=None, gt=0, le=10000, description="Canvas 높이")
     background_color: Optional[str] = Field(default=None, description="배경 색상")
@@ -53,14 +63,17 @@ class CanvasUpdateRequest(BaseModel):
 # ============================================================================
 
 class CanvasResponse(BaseModel):
-    """Canvas 응답 스키마"""
+    """Canvas 응답 스키마 - React Flow 기준"""
     id: str = Field(..., description="Canvas ID")
     name: str = Field(..., description="Canvas 이름")
+    description: Optional[str] = Field(default=None, description="Canvas 설명")
+    # React Flow 데이터 구조
+    nodes: List[Dict[str, Any]] = Field(default_factory=list, description="React Flow 노드 목록")
+    edges: List[Dict[str, Any]] = Field(default_factory=list, description="React Flow 엣지 목록")
+    # 기존 Canvas 속성 (선택적)
     width: float = Field(..., description="Canvas 너비")
     height: float = Field(..., description="Canvas 높이")
     background_color: str = Field(..., description="배경 색상")
-    shapes: List[ShapeResponse] = Field(default_factory=list, description="도형 목록")
-    arrows: List[ArrowResponse] = Field(default_factory=list, description="화살표 목록")
     zoom_level: float = Field(..., description="확대/축소 레벨")
     pan_x: float = Field(..., description="X축 이동 거리")
     pan_y: float = Field(..., description="Y축 이동 거리")

@@ -17,9 +17,22 @@
 ```
 LCA_final-main/
 ├── frontend/                 # Next.js 프론트엔드
+│   └── src/
+│       ├── app/             # Next.js App Router
+│       │   ├── process-flow/ # 공정도 관리 (React Flow)
+│       │   │   └── page.tsx # 메인 페이지 + API 서비스 통합
+│       │   ├── login/       # 로그인 페이지
+│       │   ├── register/    # 회원가입 페이지
+│       │   └── profile/     # 프로필 관리 페이지
+│       └── components/      # 아토믹 디자인 패턴
+│           ├── atoms/       # 최소 단위 컴포넌트
+│           ├── molecules/   # atoms의 조합
+│           ├── organisms/   # molecules의 조합
+│           └── templates/   # 페이지 레이아웃
 ├── gateway/                  # API Gateway (FastAPI)
 ├── service/
-│   └── auth-service/        # 인증 서비스 (FastAPI)
+│   ├── auth-service/        # 인증 서비스 (FastAPI)
+│   └── Cal_boundary/        # 공정도 관리 서비스 (FastAPI)
 ├── docker-compose.yml       # Docker Compose 설정
 ├── start-dev.bat           # 개발 환경 시작
 └── stop-dev.bat            # 개발 환경 중지
@@ -67,12 +80,36 @@ docker-compose down
 
 ## 🔧 환경 변수
 
-### Gateway
+### **프론트엔드 환경변수**
+프론트엔드 루트에 `.env.local` 파일을 생성하고 다음 내용을 추가하세요:
+
+```bash
+# API 기본 URL (게이트웨이)
+NEXT_PUBLIC_API_BASE_URL=http://localhost:8080/api/v1
+
+# Cal_boundary 서비스 직접 URL (개발용)
+NEXT_PUBLIC_CAL_BOUNDARY_URL=http://localhost:8001
+
+# 개발 모드
+NODE_ENV=development
+NEXT_PUBLIC_DEBUG_MODE=true
+```
+
+### **백엔드 환경변수**
+
+#### Gateway
 - `PORT`: 8080 (기본값)
 - `AUTH_SERVICE_URL`: http://localhost:8000 (기본값)
+- `CAL_BOUNDRY_URL`: http://localhost:8001 (기본값)
+- `CORS_URL`: http://localhost:3000 (기본값)
 
-### Auth Service
+#### Auth Service
 - `PORT`: 8000 (기본값)
+- `DATABASE_URL`: PostgreSQL 연결 문자열
+
+#### Cal_boundary Service
+- `PORT`: 8001 (기본값)
+- `DEBUG_MODE`: true (개발용)
 
 ## 📝 주요 기능
 
