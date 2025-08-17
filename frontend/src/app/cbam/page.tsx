@@ -82,6 +82,7 @@ export default function CBAMPage() {
   // UI 상태
   const [toast, setToast] = useState<{ type: 'success' | 'error' | 'info'; message: string } | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [apiStatus, setApiStatus] = useState<'connected' | 'disconnected' | 'checking'>('checking');
 
   // ============================================================================
   // 🌐 API 설정
@@ -90,21 +91,46 @@ export default function CBAMPage() {
   const API_BASE_URL = process.env.NEXT_PUBLIC_CAL_BOUNDARY_URL || 'https://lcafinal-production.up.railway.app';
   const API_PREFIX = '/api/v1';
 
+  // API 설정 정보를 콘솔에 출력
+  useEffect(() => {
+    console.log('🔧 API 설정 정보:', {
+      NEXT_PUBLIC_CAL_BOUNDARY_URL: process.env.NEXT_PUBLIC_CAL_BOUNDARY_URL,
+      API_BASE_URL,
+      API_PREFIX,
+      fullUrl: `${API_BASE_URL}${API_PREFIX}/canvas`
+    });
+  }, []);
+
   // ============================================================================
   // 🔄 데이터 로딩
   // ============================================================================
   
   useEffect(() => {
+    testApiConnection();
     loadCanvases();
-    testApiConnection(); // API 연결 테스트 추가
   }, []);
 
   const testApiConnection = async () => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/test`);
+      setApiStatus('checking');
+      console.log('🔄 API 연결 테스트 시작:', `${API_BASE_URL}/health`);
+      
+      const response = await axios.get(`${API_BASE_URL}/health`);
       console.log('✅ API 연결 테스트 성공:', response.data);
-    } catch (error) {
+      setApiStatus('connected');
+      
+      // 연결 성공 후 공정 필드 로딩
+      loadCanvases();
+    } catch (error: any) {
       console.error('❌ API 연결 테스트 실패:', error);
+      setApiStatus('disconnected');
+      
+      // 연결 실패 시 사용자에게 안내
+      if (error.response?.status === 404) {
+        showToast('error', '백엔드 서비스에 연결할 수 없습니다. Railway 배포 설정을 확인해주세요.');
+      } else {
+        showToast('error', '백엔드 서비스 연결에 실패했습니다. 서비스 상태를 확인해주세요.');
+      }
     }
   };
 
@@ -490,6 +516,7 @@ export default function CBAMPage() {
         gridSize={gridSize}
         showGrid={showGrid}
         snapToGrid={snapToGrid}
+        apiStatus={apiStatus}
         
         // 이벤트 핸들러
         onCanvasClick={handleCanvasClick}

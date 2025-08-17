@@ -65,9 +65,16 @@ app = FastAPI(
 # 🌐 CORS 미들웨어 설정
 # ============================================================================
 
+# 허용할 도메인 목록
+ALLOWED_ORIGINS = [
+    "http://localhost:3000",  # 로컬 개발
+    "https://lca-final.vercel.app",  # Vercel 배포
+    "https://*.vercel.app",  # Vercel 서브도메인
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # 프로덕션에서는 특정 도메인으로 제한
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -108,49 +115,6 @@ app.include_router(arrow_router, prefix="/api/v1")
 app.include_router(canvas_router, prefix="/api/v1")
 
 # ============================================================================
-# 🧪 테스트용 엔드포인트
-# ============================================================================
-
-@app.get("/test", tags=["test"])
-async def test_endpoint():
-    """테스트용 엔드포인트"""
-    return {
-        "message": "Cal_boundary 서비스가 정상적으로 작동 중입니다!",
-        "status": "success",
-        "timestamp": time.time()
-    }
-
-@app.get("/api/v1/test", tags=["test"])
-async def test_api_endpoint():
-    """API 테스트용 엔드포인트"""
-    return {
-        "message": "API v1 엔드포인트가 정상적으로 작동 중입니다!",
-        "status": "success",
-        "timestamp": time.time()
-    }
-
-# ============================================================================
-# 🏠 루트 엔드포인트
-# ============================================================================
-
-@app.get("/", tags=["root"])
-async def root():
-    """서비스 루트 엔드포인트"""
-    return {
-        "service": APP_NAME,
-        "version": APP_VERSION,
-        "description": APP_DESCRIPTION,
-        "status": "running",
-        "endpoints": {
-            "shapes": "/api/v1/shapes",
-            "arrows": "/api/v1/arrows",
-            "canvas": "/api/v1/canvas",
-            "docs": "/docs" if DEBUG_MODE else "disabled",
-            "health": "/health"
-        }
-    }
-
-# ============================================================================
 # 🏥 헬스체크 엔드포인트
 # ============================================================================
 
@@ -162,30 +126,6 @@ async def health_check():
         "service": APP_NAME,
         "version": APP_VERSION,
         "timestamp": time.time()
-    }
-
-# ============================================================================
-# 🔍 서비스 정보 엔드포인트
-# ============================================================================
-
-@app.get("/info", tags=["info"])
-async def service_info():
-    """서비스 상세 정보"""
-    return {
-        "service": APP_NAME,
-        "version": APP_VERSION,
-        "description": APP_DESCRIPTION,
-        "debug_mode": DEBUG_MODE,
-        "environment": os.getenv("ENVIRONMENT", "development"),
-        "api_version": "v1",
-        "features": [
-            "도형 관리 (생성, 조회, 수정, 삭제)",
-            "화살표 관리 (생성, 조회, 수정, 삭제)",
-            "Canvas 관리 (생성, 조회, 수정, 삭제)",
-            "도형 및 화살표 검색 및 필터링",
-            "Canvas 템플릿 및 내보내기/가져오기",
-            "통계 및 분석 기능"
-        ]
     }
 
 # ============================================================================
@@ -203,38 +143,4 @@ async def global_exception_handler(request: Request, exc: Exception):
             "message": "서버 내부 오류가 발생했습니다",
             "detail": str(exc) if DEBUG_MODE else "오류 세부 정보는 숨겨집니다"
         }
-    )
-
-# ============================================================================
-# 🧪 개발용 디버그 엔드포인트
-# ============================================================================
-
-if DEBUG_MODE:
-    @app.get("/debug/routes", tags=["debug"])
-    async def debug_routes():
-        """등록된 모든 라우트 정보"""
-        routes = []
-        for route in app.routes:
-            if hasattr(route, "methods") and hasattr(route, "path"):
-                routes.append({
-                    "path": route.path,
-                    "methods": list(route.methods),
-                    "name": getattr(route, "name", "Unknown")
-                })
-        return {"routes": routes}
-
-# ============================================================================
-# 🚀 애플리케이션 실행 (개발용)
-# ============================================================================
-
-if __name__ == "__main__":
-    import uvicorn
-    
-    logger.info("🚀 개발 모드로 서버 시작...")
-    uvicorn.run(
-        "app.main:app",
-        host="0.0.0.0",
-        port=8001,
-        reload=True,
-        log_level="info"
     )

@@ -29,6 +29,7 @@ export interface ProcessFlowTemplateProps {
   gridSize: number;
   showGrid: boolean;
   snapToGrid: boolean;
+  apiStatus: 'connected' | 'disconnected' | 'checking';
   
   // 이벤트 핸들러
   onCanvasClick: (e: React.MouseEvent) => void;
@@ -117,7 +118,7 @@ const ProcessFlowTemplate: React.FC<ProcessFlowTemplateProps> = ({
             <Icon name="process" size="lg" />
             Cal_boundary - 공정도 기반 탄소배출량 계산
           </h1>
-          <p className="text-[16px] text-[#ffffff] leading-[1.5]">
+          <p className="text-[16px] text-[#ffffff] leading-[1.5] font-medium">
             공정도를 그리고 산정경계를 설정하여 탄소배출량을 계산할 수 있는 전문 도구입니다.
           </p>
           
@@ -148,6 +149,14 @@ const ProcessFlowTemplate: React.FC<ProcessFlowTemplateProps> = ({
             )}
             <Badge variant="default" size="sm">
               그리드: {gridSize}px
+            </Badge>
+            {/* API 연결 상태 표시 */}
+            <Badge 
+              variant={apiStatus === 'connected' ? 'success' : apiStatus === 'checking' ? 'warning' : 'error'} 
+              size="sm"
+            >
+              {apiStatus === 'connected' ? 'API 연결됨' : 
+               apiStatus === 'checking' ? 'API 확인 중' : 'API 연결 안됨'}
             </Badge>
           </div>
         </div>
