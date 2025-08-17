@@ -69,7 +69,6 @@ app = FastAPI(
 ALLOWED_ORIGINS = [
     "http://localhost:3000",  # 로컬 개발
     "https://lca-final.vercel.app",  # Vercel 배포
-    "https://*.vercel.app",  # Vercel 서브도메인
 ]
 
 app.add_middleware(
@@ -105,14 +104,14 @@ async def log_requests(request: Request, call_next):
 # 🎯 라우터 등록
 # ============================================================================
 
-# 도형 관련 API (prefix 제거 - Gateway에서 이미 /api/v1을 처리)
-app.include_router(shape_router)
+# 도형 관련 API (Gateway와 경로 맞춤)
+app.include_router(shape_router, prefix="/api/v1")
 
-# 화살표 관련 API (prefix 제거 - Gateway에서 이미 /api/v1을 처리)
-app.include_router(arrow_router)
+# 화살표 관련 API (Gateway와 경로 맞춤)
+app.include_router(arrow_router, prefix="/api/v1")
 
-# Canvas 관련 API (prefix 제거 - Gateway에서 이미 /api/v1을 처리)
-app.include_router(canvas_router)
+# Canvas 관련 API (Gateway와 경로 맞춤)
+app.include_router(canvas_router, prefix="/api/v1")
 
 # ============================================================================
 # 🏥 헬스체크 엔드포인트

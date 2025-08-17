@@ -8,7 +8,6 @@ Gateway의 핵심 비즈니스 로직을 담당
 - CORS preflight 요청 처리
 - 서비스 헬스 체크
 - 에러 처리 및 로깅
-- Railway 내부/퍼블릭 네트워크 우선순위 관리
 """
 
 # ============================================================================
@@ -18,13 +17,10 @@ Gateway의 핵심 비즈니스 로직을 담당
 import os
 import logging
 import httpx
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 from fastapi import Request
 from fastapi.responses import JSONResponse
 from enum import Enum
-
-from app.domain.entity.service_entity import ServiceInfo
-from app.domain.repository.service_repository import ServiceRepository
 
 # ============================================================================
 # 🔧 로거 설정
@@ -39,65 +35,36 @@ logger = logging.getLogger(__name__)
 class ServiceType(str, Enum):
     """서비스 타입 Enum"""
     AUTH = "auth"
-    DISCOVERY = "discovery"
-    USER = "user"
-    CAL_BOUNDARY = "cal-boundary"  # Cal_boundary 서비스 추가
+    CAL_BOUNDARY = "cal-boundary"
 
 # ============================================================================
 # 🔄 프록시 서비스 클래스
 # ============================================================================
 
 class ProxyService:
-    """
-    프록시 서비스 클래스
-    
-    주요 기능:
-    - 서비스 디스커버리 및 URL 관리
-    - HTTP 요청 프록시 처리
-    - CORS preflight 요청 처리
-    - 서비스 헬스 체크
-    - 에러 처리 및 로깅
-    """
+    """프록시 서비스 클래스"""
     
     def __init__(self):
         """프록시 서비스 초기화"""
-        self.service_repository = ServiceRepository()
         self.timeout = 30.0
         
     def _get_service_url(self, service_type: ServiceType) -> str:
-        """
-        서비스 타입에 따른 URL 반환
-        
-        Args:
-            service_type: 서비스 타입
-            
-        Returns:
-            서비스 URL (Railway 내부 네트워크 우선 사용)
-        """
+        """서비스 타입에 따른 URL 반환"""
         if service_type == ServiceType.AUTH:
-            # Railway 내부 네트워크 우선, 없으면 로컬 fallback
-            url = os.getenv("RAILWAY_AUTH_SERVICE_URL") or os.getenv("AUTH_SERVICE_URL", "http://localhost:8000")
+            url = os.getenv("RAILWAY_AUTH_SERVICE_URL") or os.getenv("AUTH_SERVICE_URL")
+            if not url:
+                raise ValueError("Auth 서비스 URL이 설정되지 않았습니다. RAILWAY_AUTH_SERVICE_URL 또는 AUTH_SERVICE_URL 환경변수를 확인하세요.")
             logger.info(f"🔧 Auth 서비스 URL: {url}")
             return url
-        elif service_type == ServiceType.DISCOVERY:
-            url = os.getenv("DISCOVERY_SERVICE_URL", "http://localhost:8001")
-            logger.info(f"🔧 Discovery 서비스 URL: {url}")
-            return url
-        elif service_type == ServiceType.USER:
-            url = os.getenv("USER_SERVICE_URL", "http://localhost:8002")
-            logger.info(f"🔧 User 서비스 URL: {url}")
-            return url
         elif service_type == ServiceType.CAL_BOUNDARY:
-            # Cal_boundary 서비스 URL (Railway 내부 네트워크 우선)
-            # Railway에 설정된 환경변수: CAL_BOUNDRY_URL
-            url = os.getenv("CAL_BOUNDRY_URL") or os.getenv("RAILWAY_CAL_BOUNDARY_URL") or os.getenv("CAL_BOUNDARY_SERVICE_URL", "http://localhost:8001")
+            url = os.getenv("CAL_BOUNDRY_URL") or os.getenv("RAILWAY_CAL_BOUNDARY_URL")
+            if not url:
+                raise ValueError("Cal_boundary 서비스 URL이 설정되지 않았습니다. CAL_BOUNDRY_URL 또는 RAILWAY_CAL_BOUNDARY_URL 환경변수를 확인하세요.")
             logger.info(f"🔧 Cal_boundary 서비스 URL: {url}")
-            logger.info(f"🔧 환경변수 확인: CAL_BOUNDRY_URL={os.getenv('CAL_BOUNDRY_URL')}, RAILWAY_CAL_BOUNDARY_URL={os.getenv('RAILWAY_CAL_BOUNDARY_URL')}")
             return url
-        # fallback
-        url = os.getenv("AUTH_SERVICE_URL", "http://localhost:8000")
-        logger.info(f"🔧 Fallback 서비스 URL: {url}")
-        return url
+        
+        # 지원하지 않는 서비스 타입
+        raise ValueError(f"지원하지 않는 서비스 타입: {service_type}")
     
     async def proxy_request(
         self, 
@@ -106,18 +73,7 @@ class ProxyService:
         path: str, 
         request: Request
     ) -> JSONResponse:
-        """
-        HTTP 요청을 대상 서비스로 프록시
-        
-        Args:
-            method: HTTP 메서드 (GET, POST, PUT, DELETE, PATCH)
-            service: 대상 서비스명
-            path: 요청 경로
-            request: HTTP 요청 객체
-            
-        Returns:
-            대상 서비스의 응답
-        """
+        """HTTP 요청을 대상 서비스로 프록시"""
         try:
             # 서비스 타입 검증
             service_type = ServiceType(service)
@@ -126,19 +82,10 @@ class ProxyService:
             # 경로 정리 (앞의 슬래시 제거)
             clean_path = path.lstrip('/')
             
-            # Cal_boundary 서비스의 경우 경로 그대로 사용 (prefix 중복 제거됨)
-            if service == "cal-boundary":
-                logger.info(f"🔧 Cal_boundary 경로 처리: {path} -> {clean_path}")
-            
-            # auth 서비스의 경우 /auth prefix 추가
-            elif service == "auth" and not clean_path.startswith("auth/"):
-                clean_path = f"auth/{clean_path}"
-                
+            # 최종 URL 생성
             url = f"{base_url}/{clean_path}"
             
             logger.info(f"➡️  proxy -> {service}: {method} {url}")
-            logger.info(f"🔧 base_url: {base_url}, path: {path}, clean_path: {clean_path}")
-            logger.info(f"🔧 최종 URL: {url}")
             
             # 요청 본문 및 헤더 준비
             body = await request.body() if method in ["POST", "PUT", "DELETE", "PATCH"] else None
@@ -152,7 +99,6 @@ class ProxyService:
                 )
                 
                 logger.info(f"✅  {service} 응답: {response.status_code}")
-                logger.info(f"🔧 응답 헤더: {dict(response.headers)}")
                 
                 # 응답 반환
                 return JSONResponse(
@@ -191,23 +137,10 @@ class ProxyService:
         method: str, 
         url: str, 
         headers: dict, 
-        body: Optional[bytes], 
+        body: bytes | None, 
         params: dict
     ) -> httpx.Response:
-        """
-        HTTP 클라이언트를 사용하여 요청 전송
-        
-        Args:
-            client: HTTP 클라이언트
-            method: HTTP 메서드
-            url: 요청 URL
-            headers: 요청 헤더
-            body: 요청 본문
-            params: 쿼리 파라미터
-            
-        Returns:
-            HTTP 응답
-        """
+        """HTTP 클라이언트를 사용하여 요청 전송"""
         method_upper = method.upper()
         
         if method_upper == "GET":
@@ -224,15 +157,7 @@ class ProxyService:
             raise ValueError(f"지원하지 않는 HTTP 메서드: {method}")
     
     def _clean_forward_headers(self, headers: dict) -> dict:
-        """
-        전달할 헤더 정리 (불필요한 헤더 제거)
-        
-        Args:
-            headers: 원본 헤더
-            
-        Returns:
-            정리된 헤더
-        """
+        """전달할 헤더 정리 (불필요한 헤더 제거)"""
         cleaned = dict(headers)
         # 프록시에서 제거해야 할 헤더들
         cleaned.pop("host", None)
@@ -245,17 +170,7 @@ class ProxyService:
         service: str, 
         path: str
     ) -> JSONResponse:
-        """
-        CORS preflight 요청 처리
-        
-        Args:
-            request: HTTP 요청 객체
-            service: 대상 서비스명
-            path: 요청 경로
-            
-        Returns:
-            CORS 헤더가 포함된 응답
-        """
+        """CORS preflight 요청 처리"""
         # CORS 설정 가져오기
         allowed_origins = [o.strip() for o in os.getenv("CORS_URL", "").split(",") if o.strip()]
         if not allowed_origins:
@@ -280,23 +195,19 @@ class ProxyService:
         )
     
     async def check_all_services_health(self) -> Dict[str, Any]:
-        """
-        연결된 모든 서비스의 상태 확인
-        
-        Returns:
-            각 서비스의 상태 정보
-        """
+        """연결된 모든 서비스의 상태 확인"""
         services_status = {}
         
         # Auth Service 헬스 체크
         try:
-            auth_factory = ServiceProxyFactory(service_type=ServiceType.AUTH)
-            auth_resp = await auth_factory.request("GET", "health")
-            services_status["auth"] = {
-                "status": "healthy" if auth_resp.status_code == 200 else "unhealthy",
-                "status_code": auth_resp.status_code,
-                "url": auth_factory.base_url
-            }
+            auth_url = self._get_service_url(ServiceType.AUTH)
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                auth_resp = await client.get(f"{auth_url}/health")
+                services_status["auth"] = {
+                    "status": "healthy" if auth_resp.status_code == 200 else "unhealthy",
+                    "status_code": auth_resp.status_code,
+                    "url": auth_url
+                }
         except Exception as e:
             services_status["auth"] = {
                 "status": "error",
@@ -304,52 +215,25 @@ class ProxyService:
                 "url": self._get_service_url(ServiceType.AUTH)
             }
         
+        # Cal_boundary Service 헬스 체크
+        try:
+            cal_url = self._get_service_url(ServiceType.CAL_BOUNDARY)
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                cal_resp = await client.get(f"{cal_url}/health")
+                services_status["cal_boundary"] = {
+                    "status": "healthy" if cal_resp.status_code == 200 else "unhealthy",
+                    "status_code": cal_resp.status_code,
+                    "url": cal_url
+                }
+        except Exception as e:
+            services_status["cal_boundary"] = {
+                "status": "error",
+                "error": str(e),
+                "url": self._get_service_url(ServiceType.CAL_BOUNDARY)
+            }
+        
         return {
             "gateway": "healthy",
             "services": services_status,
             "timestamp": "2024-01-01T00:00:00Z"
         }
-
-# 기존 ServiceProxyFactory 클래스 (호환성을 위해 유지)
-class ServiceProxyFactory:
-    """기존 코드와의 호환성을 위한 ServiceProxyFactory 클래스"""
-    
-    def __init__(self, service_type: ServiceType):
-        self.service_type = service_type
-        self.base_url = self._get_service_url()
-
-    def _get_service_url(self) -> str:
-        if self.service_type == ServiceType.AUTH:
-            return os.getenv("AUTH_SERVICE_URL", "http://localhost:8000")
-        elif self.service_type == ServiceType.DISCOVERY:
-            return os.getenv("DISCOVERY_SERVICE_URL", "http://localhost:8001")
-        elif self.service_type == ServiceType.USER:
-            return os.getenv("USER_SERVICE_URL", "http://localhost:8002")
-        return os.getenv("AUTH_SERVICE_URL", "http://localhost:8000")
-
-    async def request(
-        self,
-        method: str,
-        path: str,
-        headers: dict | None = None,
-        body: bytes | None = None,
-        params: dict | None = None,
-    ):
-        # 기존 로직 유지
-        clean_path = path.lstrip('/')
-        url = f"{self.base_url}/{clean_path}"
-        
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            m = method.upper()
-            if m == "GET":
-                return await client.get(url, headers=headers, params=params)
-            elif m == "POST":
-                return await client.post(url, content=body, headers=headers, params=params)
-            elif m == "PUT":
-                return await client.put(url, content=body, headers=headers, params=params)
-            elif m == "DELETE":
-                return await client.delete(url, content=body, headers=headers, params=params)
-            elif m == "PATCH":
-                return await client.patch(url, content=body, headers=headers, params=params)
-            else:
-                raise ValueError(f"지원하지 않는 HTTP 메서드: {method}")
