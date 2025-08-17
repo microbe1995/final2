@@ -1,8 +1,8 @@
-# LCA Final Project
+# Final Project
 
 ## 🚀 프로젝트 개요
 
-이 프로젝트는 마이크로서비스 아키텍처를 기반으로 한 LCA(Life Cycle Assessment) 시스템입니다.
+이 프로젝트는 마이크로서비스 아키텍처를 기반으로 한 CBAM(Carbon Border Adjustment Mechanism) 시스템입니다.
 
 ## 🏗️ 아키텍처
 
