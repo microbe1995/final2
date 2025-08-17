@@ -193,9 +193,30 @@ export default function CBAMPage() {
       // Cal_boundary 서비스의 실제 경로: /api/v1/canvas
       const canvasUrl = `${API_BASE_URL}${API_PREFIX}/${SERVICE_NAME}/canvas`;
       console.log('🔄 공정 필드 로딩 시작 (MSA Gateway 경유):', canvasUrl);
+      console.log('🔧 요청 상세 정보:', {
+        method: 'GET',
+        url: canvasUrl,
+        service: SERVICE_NAME,
+        path: 'canvas',
+        fullPath: `${API_PREFIX}/${SERVICE_NAME}/canvas`
+      });
       
-      const response = await axios.get(canvasUrl);
+      const response = await axios.get(canvasUrl, {
+        timeout: 15000, // 15초 타임아웃
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        }
+      });
+      
       console.log('✅ API 응답:', response.data);
+      console.log('🔧 응답 상세 정보:', {
+        status: response.status,
+        statusText: response.statusText,
+        headers: response.headers,
+        dataType: typeof response.data,
+        hasCanvases: !!response.data?.canvases
+      });
       
       // 응답 구조에 맞게 데이터 추출
       let canvasData = [];
@@ -228,7 +249,9 @@ export default function CBAMPage() {
           status: error.response.status,
           statusText: error.response.statusText,
           data: error.response.data,
-          headers: error.response.headers
+          headers: error.response.headers,
+          url: error.config?.url,
+          method: error.config?.method
         });
       } else if (error.request) {
         console.error('🌐 네트워크 에러:', error.request);
@@ -240,6 +263,12 @@ export default function CBAMPage() {
       let errorMessage = '공정 필드 로딩에 실패했습니다.';
       if (error.response?.status === 404) {
         errorMessage = 'API 엔드포인트를 찾을 수 없습니다. Gateway 서비스를 확인해주세요.';
+        console.error('🔍 404 에러 상세 정보:', {
+          requestedUrl: error.config?.url,
+          serviceName: SERVICE_NAME,
+          apiPrefix: API_PREFIX,
+          baseUrl: API_BASE_URL
+        });
       } else if (error.response?.status === 405) {
         errorMessage = '지원하지 않는 HTTP 메서드입니다. API 엔드포인트를 확인해주세요.';
       } else if (error.code === 'ECONNREFUSED') {

@@ -76,17 +76,28 @@ class ProxyService:
         """
         if service_type == ServiceType.AUTH:
             # Railway 내부 네트워크 우선, 없으면 로컬 fallback
-            return os.getenv("RAILWAY_AUTH_SERVICE_URL") or os.getenv("AUTH_SERVICE_URL", "http://localhost:8000")
+            url = os.getenv("RAILWAY_AUTH_SERVICE_URL") or os.getenv("AUTH_SERVICE_URL", "http://localhost:8000")
+            logger.info(f"🔧 Auth 서비스 URL: {url}")
+            return url
         elif service_type == ServiceType.DISCOVERY:
-            return os.getenv("DISCOVERY_SERVICE_URL", "http://localhost:8001")
+            url = os.getenv("DISCOVERY_SERVICE_URL", "http://localhost:8001")
+            logger.info(f"🔧 Discovery 서비스 URL: {url}")
+            return url
         elif service_type == ServiceType.USER:
-            return os.getenv("USER_SERVICE_URL", "http://localhost:8002")
+            url = os.getenv("USER_SERVICE_URL", "http://localhost:8002")
+            logger.info(f"🔧 User 서비스 URL: {url}")
+            return url
         elif service_type == ServiceType.CAL_BOUNDARY:
             # Cal_boundary 서비스 URL (Railway 내부 네트워크 우선)
-            # Railway에 설정된 환경변수 이름: CAL_BOUNDRY_URL
-            return os.getenv("CAL_BOUNDRY_URL") or os.getenv("RAILWAY_CAL_BOUNDARY_URL") or os.getenv("CAL_BOUNDARY_SERVICE_URL", "http://localhost:8001")
+            # Railway에 설정된 환경변수: CAL_BOUNDRY_URL
+            url = os.getenv("CAL_BOUNDRY_URL") or os.getenv("RAILWAY_CAL_BOUNDARY_URL") or os.getenv("CAL_BOUNDARY_SERVICE_URL", "http://localhost:8001")
+            logger.info(f"🔧 Cal_boundary 서비스 URL: {url}")
+            logger.info(f"🔧 환경변수 확인: CAL_BOUNDRY_URL={os.getenv('CAL_BOUNDRY_URL')}, RAILWAY_CAL_BOUNDARY_URL={os.getenv('RAILWAY_CAL_BOUNDARY_URL')}")
+            return url
         # fallback
-        return os.getenv("AUTH_SERVICE_URL", "http://localhost:8000")
+        url = os.getenv("AUTH_SERVICE_URL", "http://localhost:8000")
+        logger.info(f"🔧 Fallback 서비스 URL: {url}")
+        return url
     
     async def proxy_request(
         self, 
@@ -118,6 +129,7 @@ class ProxyService:
             # Cal_boundary 서비스의 경우 /api/v1 prefix 제거 (이미 포함되어 있음)
             if service == "cal-boundary" and clean_path.startswith("api/v1/"):
                 clean_path = clean_path[7:]  # "api/v1/" 제거
+                logger.info(f"🔧 Cal_boundary 경로 정리: {path} -> {clean_path}")
             
             # auth 서비스의 경우 /auth prefix 추가
             elif service == "auth" and not clean_path.startswith("auth/"):
@@ -127,6 +139,7 @@ class ProxyService:
             
             logger.info(f"➡️  proxy -> {service}: {method} {url}")
             logger.info(f"🔧 base_url: {base_url}, path: {path}, clean_path: {clean_path}")
+            logger.info(f"🔧 최종 URL: {url}")
             
             # 요청 본문 및 헤더 준비
             body = await request.body() if method in ["POST", "PUT", "DELETE", "PATCH"] else None
