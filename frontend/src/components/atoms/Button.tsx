@@ -21,7 +21,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       primary: 'bg-[#2563eb] hover:bg-[#1d4ed8] text-white focus:ring-[#2563eb] shadow-[0_1px_2px_rgba(0,0,0,.06)] hover:shadow-[0_4px_12px_rgba(0,0,0,.10)]',
       secondary: 'bg-[#475569] hover:bg-[#374151] text-white focus:ring-[#475569] shadow-[0_1px_2px_rgba(0,0,0,.06)] hover:shadow-[0_4px_12px_rgba(0,0,0,.10)]',
       danger: 'bg-[#dc2626] hover:bg-[#b91c1c] text-white focus:ring-[#dc2626] shadow-[0_1px_2px_rgba(0,0,0,.06)] hover:shadow-[0_4px_12px_rgba(0,0,0,.10)]',
-      ghost: 'bg-transparent hover:bg-[#f1f5f9] text-[#475569] hover:text-[#0f172a]',
+      ghost: 'bg-transparent hover:bg-[#334155] text-[#cbd5e1] hover:text-white border border-[#334155]',
       success: 'bg-[#16a34a] hover:bg-[#15803d] text-white focus:ring-[#16a34a] shadow-[0_1px_2px_rgba(0,0,0,.06)] hover:shadow-[0_4px_12px_rgba(0,0,0,.10)]',
       warning: 'bg-[#d97706] hover:bg-[#b45309] text-white focus:ring-[#d97706] shadow-[0_1px_2px_rgba(0,0,0,.06)] hover:shadow-[0_4px_12px_rgba(0,0,0,.10)]',
       info: 'bg-[#06b6d4] hover:bg-[#0891b2] text-white focus:ring-[#06b6d4] shadow-[0_1px_2px_rgba(0,0,0,.06)] hover:shadow-[0_4px_12px_rgba(0,0,0,.10)]'

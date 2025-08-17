@@ -20,7 +20,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
     return (
       <div className="w-full">
         {label && (
-          <label htmlFor={inputId} className="block text-[14px] font-medium text-[#ffffff] mb-2 leading-[1.5]">
+          <label htmlFor={inputId} className="block text-[14px] font-medium text-white mb-2 leading-[1.5]">
             {label}
           </label>
         )}
@@ -37,7 +37,8 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
           <input
             id={inputId}
             className={[
-              'block w-full rounded-[12px] border border-[#334155] px-3 py-2 text-[#ffffff] placeholder-[#64748b]',
+              'block w-full rounded-[12px] border border-[#334155] px-3 py-2 text-white placeholder-[#94a3b8]',
+              'bg-[#1e293b] focus:bg-[#1e293b]',
               'focus:border-[#60a5fa] focus:outline-none focus:ring-2 focus:ring-[#60a5fa]/20',
               'disabled:bg-[#1e293b] disabled:cursor-not-allowed',
               'transition-colors duration-[160ms]',
