@@ -109,15 +109,15 @@ const ProcessFlowTemplate: React.FC<ProcessFlowTemplateProps> = ({
   className = ''
 }) => {
   return (
-    <div className={`min-h-screen bg-gray-50 p-6 ${className}`}>
+    <div className={`min-h-screen bg-[#0b0c0f] text-[#0f172a] p-6 ${className}`}>
       <div className="max-w-7xl mx-auto">
         {/* 헤더 */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2 flex items-center gap-3">
+          <h1 className="text-3xl font-bold text-[#ffffff] mb-2 flex items-center gap-3">
             <Icon name="process" size="lg" />
             Cal_boundary - 공정도 기반 탄소배출량 계산
           </h1>
-          <p className="text-gray-600">
+          <p className="text-[#475569]">
             공정도를 그리고 산정경계를 설정하여 탄소배출량을 계산할 수 있는 전문 도구입니다.
           </p>
           
@@ -178,17 +178,17 @@ const ProcessFlowTemplate: React.FC<ProcessFlowTemplateProps> = ({
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* Canvas 목록 */}
               <div className="lg:col-span-1">
-                <Card className="p-4">
+                <Card className="p-4 bg-[#ffffff] text-[#0f172a]">
                   <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
                     <Icon name="select" size="sm" />
                     Canvas 목록
                   </h3>
                   
                   {canvases.length === 0 ? (
-                    <div className="text-center py-8 text-gray-500">
-                      <Icon name="add" size="xl" className="mx-auto mb-3 text-gray-400" />
+                    <div className="text-center py-8 text-[#475569]">
+                      <Icon name="add" size="xl" className="mx-auto mb-3 text-[#475569]" />
                       <p className="text-sm">생성된 Canvas가 없습니다.</p>
-                      <p className="text-xs text-gray-400 mt-1">
+                      <p className="text-xs text-[#475569] mt-1">
                         새 Canvas를 생성하여 공정도를 시작하세요
                       </p>
                     </div>
@@ -199,17 +199,17 @@ const ProcessFlowTemplate: React.FC<ProcessFlowTemplateProps> = ({
                           key={canvas.id}
                           className={`p-3 border rounded-lg transition-all cursor-pointer ${
                             selectedCanvas?.id === canvas.id
-                              ? 'border-blue-500 bg-blue-50 shadow-md'
-                              : 'border-gray-200 hover:border-gray-300 hover:shadow-sm'
+                              ? 'border-[#2563eb] bg-[#2563eb]/10 shadow-md'
+                              : 'border-[#e2e8f0] hover:border-[#475569] hover:shadow-sm'
                           }`}
                           onClick={() => onCanvasSelect(canvas)}
                         >
                           <div className="flex items-start justify-between">
                             <div className="flex-1">
-                              <h4 className="font-medium text-gray-900 mb-1">
+                              <h4 className="font-medium text-[#0f172a] mb-1">
                                 {canvas.name}
                               </h4>
-                              <div className="text-xs text-gray-600 space-y-1">
+                              <div className="text-xs text-[#475569] space-y-1">
                                 <p>{canvas.width} × {canvas.height}</p>
                                 <div className="flex gap-2">
                                   <Badge variant="info" size="sm">
@@ -230,7 +230,7 @@ const ProcessFlowTemplate: React.FC<ProcessFlowTemplateProps> = ({
                                   onCanvasDelete(canvas.id);
                                 }
                               }}
-                              className="text-red-500 hover:text-red-700 p-1 rounded hover:bg-red-50 transition-colors"
+                              className="text-[#dc2626] hover:text-[#dc2626]/80 p-1 rounded hover:bg-[#dc2626]/10 transition-colors"
                               title="Canvas 삭제"
                             >
                               <Icon name="delete" size="sm" />

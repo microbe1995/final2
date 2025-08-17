@@ -412,7 +412,7 @@ export default function CBAMPage() {
   // ============================================================================
   
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#0b0c0f] text-[#0f172a]">
       {/* ProcessFlowTemplate 활용 */}
       <ProcessFlowTemplate
         // Canvas 관련
@@ -478,9 +478,9 @@ export default function CBAMPage() {
       {/* 로딩 상태 */}
       {isLoading && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-2 text-gray-600">로딩 중...</p>
+          <div className="bg-[#ffffff] p-6 rounded-lg">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#2563eb] mx-auto"></div>
+            <p className="mt-2 text-[#0f172a]">로딩 중...</p>
           </div>
         </div>
       )}
