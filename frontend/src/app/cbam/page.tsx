@@ -101,7 +101,8 @@ export default function CBAMPage() {
       API_PREFIX,
       SERVICE_NAME,
       fullUrl: `${API_BASE_URL}${API_PREFIX}/${SERVICE_NAME}/canvas`,
-      note: 'MSA 구조: Gateway → Cal_boundary 프록시'
+      note: 'MSA 구조: Gateway → Cal_boundary 프록시 (HTTPS 필수)',
+      security: 'Mixed Content 방지를 위해 HTTPS 사용'
     });
   }, []);
 

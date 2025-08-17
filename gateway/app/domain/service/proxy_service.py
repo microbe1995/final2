@@ -83,7 +83,8 @@ class ProxyService:
             return os.getenv("USER_SERVICE_URL", "http://localhost:8002")
         elif service_type == ServiceType.CAL_BOUNDARY:
             # Cal_boundary 서비스 URL (Railway 내부 네트워크 우선)
-            return os.getenv("RAILWAY_CAL_BOUNDARY_URL") or os.getenv("CAL_BOUNDARY_SERVICE_URL", "http://localhost:8001")
+            # Railway에 설정된 환경변수 이름: CAL_BOUNDRY_URL
+            return os.getenv("CAL_BOUNDRY_URL") or os.getenv("RAILWAY_CAL_BOUNDARY_URL") or os.getenv("CAL_BOUNDARY_SERVICE_URL", "http://localhost:8001")
         # fallback
         return os.getenv("AUTH_SERVICE_URL", "http://localhost:8000")
     
