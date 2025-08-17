@@ -15,18 +15,27 @@ import Toast from '@/molecules/Toast';
 
 interface Shape {
   id: string;
-  type: 'rectangle' | 'circle' | 'triangle';
+  type: 'rectangle' | 'circle' | 'triangle' | 'process' | 'material' | 'energy' | 'storage' | 'transport';
   x: number;
   y: number;
   width: number;
   height: number;
   color: string;
   rotation: number;
+  // 공정도 특화 속성 추가
+  label?: string;
+  processType?: 'manufacturing' | 'assembly' | 'packaging' | 'transport' | 'storage';
+  materialType?: 'raw' | 'intermediate' | 'final' | 'waste';
+  energyType?: 'electricity' | 'gas' | 'steam' | 'fuel';
+  capacity?: number;
+  unit?: string;
+  efficiency?: number;
+  metadata?: Record<string, any>;
 }
 
 interface Arrow {
   id: string;
-  type: 'straight' | 'curved';
+  type: 'straight' | 'curved' | 'bidirectional' | 'dashed';
   startX: number;
   startY: number;
   endX: number;
@@ -35,6 +44,12 @@ interface Arrow {
   strokeWidth: number;
   fromShapeId?: string;
   toShapeId?: string;
+  // 공정도 특화 속성 추가
+  flowType?: 'material' | 'energy' | 'information' | 'waste';
+  flowRate?: number;
+  flowUnit?: string;
+  direction?: 'forward' | 'backward' | 'bidirectional';
+  label?: string;
 }
 
 interface Canvas {
@@ -46,6 +61,11 @@ interface Canvas {
   zoom: number;
   shapes: Shape[];
   arrows: Arrow[];
+  // 공정도 특화 속성 추가
+  canvasType?: 'process_flow' | 'material_flow' | 'energy_flow' | 'general';
+  gridSize?: number;
+  snapToGrid?: boolean;
+  showGrid?: boolean;
 }
 
 // ============================================================================
@@ -60,15 +80,24 @@ export default function CalBoundaryPage() {
   const [selectedArrow, setSelectedArrow] = useState<Arrow | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [drawMode, setDrawMode] = useState<'shape' | 'arrow' | 'select'>('select');
-  const [shapeType, setShapeType] = useState<Shape['type']>('rectangle');
+  const [shapeType, setShapeType] = useState<Shape['type']>('process');
   const [arrowType, setArrowType] = useState<Arrow['type']>('straight');
   const [showShapeModal, setShowShapeModal] = useState(false);
   const [showArrowModal, setShowArrowModal] = useState(false);
   const [showCanvasModal, setShowCanvasModal] = useState(false);
   const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
+  // 공정도 특화 상태 추가
+  const [gridSize, setGridSize] = useState(20);
+  const [snapToGrid, setSnapToGrid] = useState(true);
+  const [showGrid, setShowGrid] = useState(true);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [isConnecting, setIsConnecting] = useState(false);
+  const [connectionStart, setConnectionStart] = useState<Shape | null>(null);
+
   // API 기본 URL
-  const API_BASE_URL = process.env.NEXT_PUBLIC_CAL_BOUNDARY_URL || 'http://localhost:8001';
+  const API_BASE_URL = process.env.NEXT_PUBLIC_CAL_BOUNDARY_URL || 'https://lcafinal-production.up.railway.app';
 
   // ============================================================================
   // 🔧 유틸리티 함수들
@@ -80,6 +109,50 @@ export default function CalBoundaryPage() {
   };
 
   const generateId = () => Math.random().toString(36).substr(2, 9);
+
+  // 공정도 특화 유틸리티 함수들
+  const snapToGridPosition = (value: number): number => {
+    if (!snapToGrid) return value;
+    return Math.round(value / gridSize) * gridSize;
+  };
+
+  const getShapeColor = (type: Shape['type']): string => {
+    const colorMap: Record<Shape['type'], string> = {
+      rectangle: '#3B82F6',
+      circle: '#10B981',
+      triangle: '#F59E0B',
+      process: '#8B5CF6',
+      material: '#06B6D4',
+      energy: '#F97316',
+      storage: '#84CC16',
+      transport: '#EF4444'
+    };
+    return colorMap[type] || '#3B82F6';
+  };
+
+  const getArrowColor = (type: Arrow['type']): string => {
+    const colorMap: Record<Arrow['type'], string> = {
+      straight: '#EF4444',
+      curved: '#8B5CF6',
+      bidirectional: '#F59E0B',
+      dashed: '#6B7280'
+    };
+    return colorMap[type] || '#EF4444';
+  };
+
+  const getShapeIcon = (type: Shape['type']): string => {
+    const iconMap: Record<Shape['type'], string> = {
+      rectangle: '⬜',
+      circle: '⭕',
+      triangle: '🔺',
+      process: '⚙️',
+      material: '📦',
+      energy: '⚡',
+      storage: '🏭',
+      transport: '🚚'
+    };
+    return iconMap[type] || '⬜';
+  };
 
   // ============================================================================
   // 🌐 API 호출 함수들
@@ -268,6 +341,9 @@ export default function CalBoundaryPage() {
   // ============================================================================
 
   const renderShape = (shape: Shape) => {
+    const isSelected = selectedShape?.id === shape.id;
+    const isConnectionStart = connectionStart?.id === shape.id;
+    
     const style = {
       position: 'absolute' as const,
       left: shape.x,
@@ -276,13 +352,47 @@ export default function CalBoundaryPage() {
       height: shape.height,
       backgroundColor: shape.color,
       transform: `rotate(${shape.rotation}deg)`,
-      cursor: 'pointer',
-      border: selectedShape?.id === shape.id ? '2px solid #3B82F6' : '1px solid #ccc'
+      cursor: isConnecting ? 'crosshair' : 'pointer',
+      border: isSelected ? '3px solid #3B82F6' : 
+              isConnectionStart ? '3px solid #10B981' : '2px solid #374151',
+      borderRadius: shape.type === 'circle' ? '50%' : '4px',
+      display: 'flex',
+      flexDirection: 'column' as const,
+      alignItems: 'center',
+      justifyContent: 'center',
+      fontSize: '12px',
+      fontWeight: 'bold',
+      color: '#FFFFFF',
+      textShadow: '1px 1px 2px rgba(0,0,0,0.8)',
+      boxShadow: isSelected ? '0 4px 12px rgba(59, 130, 246, 0.4)' : '0 2px 8px rgba(0,0,0,0.2)',
+      transition: 'all 0.2s ease-in-out'
     };
+
+    const icon = getShapeIcon(shape.type);
+    const label = shape.label || shape.type;
 
     switch (shape.type) {
       case 'rectangle':
-        return <div key={shape.id} style={style} onClick={() => setSelectedShape(shape)} />;
+      case 'process':
+      case 'material':
+      case 'energy':
+      case 'storage':
+      case 'transport':
+        return (
+          <div 
+            key={shape.id} 
+            style={style}
+            onClick={() => handleShapeClick(shape)}
+            onMouseDown={(e) => handleMouseDown(e, shape)}
+            onMouseEnter={() => !isSelected && setSelectedShape(shape)}
+            onMouseLeave={() => !isSelected && setSelectedShape(null)}
+          >
+            <div style={{ fontSize: '16px', marginBottom: '2px' }}>{icon}</div>
+            <div style={{ fontSize: '10px', textAlign: 'center', lineHeight: '1.2' }}>
+              {label}
+            </div>
+          </div>
+        );
       case 'circle':
         return (
           <div
@@ -293,8 +403,16 @@ export default function CalBoundaryPage() {
               width: shape.width,
               height: shape.height
             }}
-            onClick={() => setSelectedShape(shape)}
-          />
+            onClick={() => handleShapeClick(shape)}
+            onMouseDown={(e) => handleMouseDown(e, shape)}
+            onMouseEnter={() => !isSelected && setSelectedShape(shape)}
+            onMouseLeave={() => !isSelected && setSelectedShape(null)}
+          >
+            <div style={{ fontSize: '16px', marginBottom: '2px' }}>{icon}</div>
+            <div style={{ fontSize: '10px', textAlign: 'center', lineHeight: '1.2' }}>
+              {label}
+            </div>
+          </div>
         );
       case 'triangle':
         return (
@@ -307,10 +425,21 @@ export default function CalBoundaryPage() {
               borderLeft: `${shape.width / 2}px solid transparent`,
               borderRight: `${shape.width / 2}px solid transparent`,
               borderBottom: `${shape.height}px solid ${shape.color}`,
-              backgroundColor: 'transparent'
+              backgroundColor: 'transparent',
+              display: 'flex',
+              alignItems: 'flex-end',
+              justifyContent: 'center',
+              paddingBottom: '8px'
             }}
-            onClick={() => setSelectedShape(shape)}
-          />
+            onClick={() => handleShapeClick(shape)}
+            onMouseDown={(e) => handleMouseDown(e, shape)}
+            onMouseEnter={() => !isSelected && setSelectedShape(shape)}
+            onMouseLeave={() => !isSelected && setSelectedShape(null)}
+          >
+            <div style={{ fontSize: '12px', color: '#FFFFFF', textShadow: '1px 1px 2px rgba(0,0,0,0.8)' }}>
+              {icon} {label}
+            </div>
+          </div>
         );
       default:
         return null;
@@ -318,6 +447,7 @@ export default function CalBoundaryPage() {
   };
 
   const renderArrow = (arrow: Arrow) => {
+    const isSelected = selectedArrow?.id === arrow.id;
     const length = Math.sqrt(
       Math.pow(arrow.endX - arrow.startX, 2) + Math.pow(arrow.endY - arrow.startY, 2)
     );
@@ -333,7 +463,9 @@ export default function CalBoundaryPage() {
       transform: `rotate(${angle}deg)`,
       transformOrigin: '0 50%',
       cursor: 'pointer',
-      border: selectedArrow?.id === arrow.id ? '2px solid #3B82F6' : 'none'
+      border: isSelected ? '2px solid #3B82F6' : 'none',
+      boxShadow: isSelected ? '0 2px 8px rgba(59, 130, 246, 0.4)' : '0 1px 4px rgba(0,0,0,0.2)',
+      transition: 'all 0.2s ease-in-out'
     };
 
     return (
@@ -341,8 +473,58 @@ export default function CalBoundaryPage() {
         key={arrow.id}
         style={style}
         onClick={() => setSelectedArrow(arrow)}
+        onMouseEnter={() => !isSelected && setSelectedArrow(arrow)}
+        onMouseLeave={() => !isSelected && setSelectedArrow(null)}
       />
     );
+  };
+
+  // 그리드 렌더링 함수
+  const renderGrid = () => {
+    if (!showGrid || !selectedCanvas) return null;
+
+    const gridLines = [];
+    const { width, height } = selectedCanvas;
+
+    // 세로선
+    for (let x = 0; x <= width; x += gridSize) {
+      gridLines.push(
+        <div
+          key={`v-${x}`}
+          style={{
+            position: 'absolute',
+            left: x,
+            top: 0,
+            width: 1,
+            height: height,
+            backgroundColor: '#E5E7EB',
+            opacity: 0.3,
+            pointerEvents: 'none'
+          }}
+        />
+      );
+    }
+
+    // 가로선
+    for (let y = 0; y <= height; y += gridSize) {
+      gridLines.push(
+        <div
+          key={`h-${y}`}
+          style={{
+            position: 'absolute',
+            left: 0,
+            top: y,
+            width: width,
+            height: 1,
+            backgroundColor: '#E5E7EB',
+            opacity: 0.3,
+            pointerEvents: 'none'
+          }}
+        />
+      );
+    }
+
+    return gridLines;
   };
 
   // ============================================================================
@@ -352,21 +534,88 @@ export default function CalBoundaryPage() {
   const handleCanvasClick = (e: React.MouseEvent) => {
     if (drawMode === 'shape') {
       const rect = e.currentTarget.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
+      const x = snapToGridPosition(e.clientX - rect.left);
+      const y = snapToGridPosition(e.clientY - rect.top);
       
       createShape({
         type: shapeType,
         x,
         y,
-        width: 100,
-        height: 100,
-        color: '#3B82F6'
+        width: 120,
+        height: 80,
+        color: getShapeColor(shapeType),
+        label: `${shapeType.charAt(0).toUpperCase() + shapeType.slice(1)} ${selectedCanvas?.shapes.length + 1 || 1}`
       });
     } else if (drawMode === 'arrow') {
       // 화살표 그리기 로직
       setIsDrawing(true);
     }
+  };
+
+  // 드래그 앤 드롭 이벤트 핸들러
+  const handleMouseDown = (e: React.MouseEvent, shape: Shape) => {
+    if (drawMode === 'select') {
+      setIsDragging(true);
+      setDragStart({ x: e.clientX - shape.x, y: e.clientY - shape.y });
+      setSelectedShape(shape);
+    }
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (isDragging && selectedShape && selectedCanvas) {
+      const rect = e.currentTarget.getBoundingClientRect();
+      const newX = snapToGridPosition(e.clientX - rect.left - dragStart.x);
+      const newY = snapToGridPosition(e.clientY - rect.top - dragStart.y);
+      
+      // 도형 업데이트
+      updateShape(selectedShape.id, { x: newX, y: newY });
+    }
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  // 연결 기능 이벤트 핸들러
+  const handleShapeClick = (shape: Shape) => {
+    if (isConnecting) {
+      if (!connectionStart) {
+        // 첫 번째 공정 선택
+        setConnectionStart(shape);
+        showToast('success', '첫 번째 공정이 선택되었습니다. 이제 연결할 두 번째 공정을 클릭하세요.');
+      } else if (connectionStart.id !== shape.id) {
+        // 두 번째 공정 선택 - 화살표 생성
+        createArrow({
+          type: arrowType,
+          startX: connectionStart.x + connectionStart.width / 2,
+          startY: connectionStart.y + connectionStart.height / 2,
+          endX: shape.x + shape.width / 2,
+          endY: shape.y + shape.height / 2,
+          color: getArrowColor(arrowType),
+          fromShapeId: connectionStart.id,
+          toShapeId: shape.id,
+          flowType: 'material',
+          label: `${connectionStart.label || connectionStart.type} → ${shape.label || shape.type}`
+        });
+        
+        // 연결 모드 종료
+        setIsConnecting(false);
+        setConnectionStart(null);
+        setDrawMode('select');
+        showToast('success', '공정 간 연결이 생성되었습니다.');
+      } else {
+        // 같은 공정을 두 번 클릭한 경우
+        showToast('error', '같은 공정을 연결할 수 없습니다.');
+      }
+    } else {
+      setSelectedShape(shape);
+    }
+  };
+
+  const handleConnectMode = () => {
+    setDrawMode('select');
+    setIsConnecting(true);
+    showToast('success', '연결 모드: 첫 번째 공정을 클릭하세요.');
   };
 
   const handleCanvasCreate = () => {
@@ -406,87 +655,148 @@ export default function CalBoundaryPage() {
           </p>
         </div>
 
-                 {/* 컨트롤 패널 */}
-         <Card className="mb-6 p-4">
-           <div className="flex flex-wrap gap-4 items-center">
-             <Button onClick={handleCanvasCreate} variant="primary">
-               🖼️ 새 Canvas
-             </Button>
-             <Button onClick={handleShapeCreate} variant="success">
-               🎨 도형 추가
-             </Button>
-             <Button onClick={handleArrowCreate} variant="warning">
-               ➡️ 화살표 추가
-             </Button>
-             
-             {/* 선택된 요소 수정/삭제 버튼 */}
-             {selectedShape && (
-               <div className="flex gap-2">
-                 <Button 
-                   onClick={() => setShowShapeModal(true)} 
-                   variant="info"
-                   size="sm"
-                 >
-                   ✏️ 도형 수정
-                 </Button>
-                 <Button 
-                   onClick={() => deleteShape(selectedShape.id)} 
-                   variant="danger"
-                   size="sm"
-                 >
-                   🗑️ 도형 삭제
-                 </Button>
-               </div>
-             )}
-             
-             {selectedArrow && (
-               <div className="flex gap-2">
-                 <Button 
-                   onClick={() => setShowArrowModal(true)} 
-                   variant="info"
-                   size="sm"
-                 >
-                   ✏️ 화살표 수정
-                 </Button>
-                 <Button 
-                   onClick={() => deleteArrow(selectedArrow.id)} 
-                   variant="danger"
-                   size="sm"
-                 >
-                   🗑️ 화살표 삭제
-                 </Button>
-               </div>
-             )}
-             
-             <div className="flex items-center gap-2">
-               <span className="text-sm font-medium text-gray-700">그리기 모드:</span>
-               <select
-                 value={drawMode}
-                 onChange={(e) => setDrawMode(e.target.value as any)}
-                 className="border border-gray-300 rounded px-3 py-1 text-sm"
-               >
-                 <option value="select">선택</option>
-                 <option value="shape">도형</option>
-                 <option value="arrow">화살표</option>
-               </select>
-             </div>
+        {/* 컨트롤 패널 */}
+        <Card className="mb-6 p-4">
+          <div className="flex flex-wrap gap-4 items-center">
+            <Button onClick={handleCanvasCreate} variant="primary">
+              🖼️ 새 Canvas
+            </Button>
+            <Button onClick={handleShapeCreate} variant="success">
+              🎨 도형 추가
+            </Button>
+            <Button onClick={handleArrowCreate} variant="warning">
+              ➡️ 화살표 추가
+            </Button>
+            <Button onClick={handleConnectMode} variant="info">
+              🔗 연결 모드
+            </Button>
+            
+            {/* 선택된 요소 수정/삭제 버튼 */}
+            {selectedShape && (
+              <div className="flex gap-2">
+                <Button 
+                  onClick={() => setShowShapeModal(true)} 
+                  variant="info"
+                  size="sm"
+                >
+                  ✏️ 도형 수정
+                </Button>
+                <Button 
+                  onClick={() => deleteShape(selectedShape.id)} 
+                  variant="danger"
+                  size="sm"
+                >
+                  🗑️ 도형 삭제
+                </Button>
+              </div>
+            )}
+            
+            {selectedArrow && (
+              <div className="flex gap-2">
+                <Button 
+                  onClick={() => setShowArrowModal(true)} 
+                  variant="info"
+                  size="sm"
+                >
+                  ✏️ 화살표 수정
+                </Button>
+                <Button 
+                  onClick={() => deleteArrow(selectedArrow.id)} 
+                  variant="danger"
+                  size="sm"
+                >
+                  🗑️ 화살표 삭제
+                </Button>
+              </div>
+            )}
+            
+            {/* 그리드 설정 */}
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-gray-700">그리드:</span>
+              <input
+                type="checkbox"
+                checked={showGrid}
+                onChange={(e) => setShowGrid(e.target.checked)}
+                className="rounded border-gray-300"
+              />
+              <span className="text-sm text-gray-600">표시</span>
+              <input
+                type="checkbox"
+                checked={snapToGrid}
+                onChange={(e) => setSnapToGrid(e.target.checked)}
+                className="rounded border-gray-300"
+              />
+              <span className="text-sm text-gray-600">스냅</span>
+              <select
+                value={gridSize}
+                onChange={(e) => setGridSize(Number(e.target.value))}
+                className="border border-gray-300 rounded px-2 py-1 text-xs w-16"
+              >
+                <option value={10}>10</option>
+                <option value={20}>20</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+              </select>
+            </div>
 
-             {drawMode === 'shape' && (
-               <div className="flex items-center gap-2">
-                 <span className="text-sm font-medium text-gray-700">도형 타입:</span>
-                 <select
-                   value={shapeType}
-                   onChange={(e) => setShapeType(e.target.value as Shape['type'])}
-                   className="border border-gray-300 rounded px-3 py-1 text-sm"
-                 >
-                   <option value="rectangle">사각형</option>
-                   <option value="circle">원</option>
-                   <option value="triangle">삼각형</option>
-                 </select>
-               </div>
-             )}
-           </div>
-         </Card>
+            {/* 도형 타입 선택 */}
+            {drawMode === 'shape' && (
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-gray-700">도형 타입:</span>
+                <select
+                  value={shapeType}
+                  onChange={(e) => setShapeType(e.target.value as Shape['type'])}
+                  className="border border-gray-300 rounded px-3 py-1 text-sm"
+                >
+                  <option value="process">⚙️ 공정</option>
+                  <option value="material">📦 자재</option>
+                  <option value="energy">⚡ 에너지</option>
+                  <option value="storage">🏭 저장소</option>
+                  <option value="transport">🚚 운송</option>
+                  <option value="rectangle">⬜ 사각형</option>
+                  <option value="circle">⭕ 원</option>
+                  <option value="triangle">🔺 삼각형</option>
+                </select>
+              </div>
+            )}
+
+            {/* 화살표 타입 선택 */}
+            {drawMode === 'arrow' && (
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-gray-700">화살표 타입:</span>
+                <select
+                  value={arrowType}
+                  onChange={(e) => setArrowType(e.target.value as Arrow['type'])}
+                  className="border border-gray-300 rounded px-3 py-1 text-sm"
+                >
+                  <option value="straight">➡️ 직선</option>
+                  <option value="curved">🔄 곡선</option>
+                  <option value="bidirectional">↔️ 양방향</option>
+                  <option value="dashed">➖ 점선</option>
+                </select>
+              </div>
+            )}
+
+            {/* 연결 모드 상태 표시 */}
+            {isConnecting && (
+              <div className="flex items-center gap-2 px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">
+                🔗 연결 모드 활성화
+                <Button
+                  onClick={() => {
+                    setIsConnecting(false);
+                    setConnectionStart(null);
+                    setDrawMode('select');
+                  }}
+                  variant="ghost"
+                  size="sm"
+                  className="text-green-800 hover:bg-green-200"
+                >
+                  ✕
+                </Button>
+              </div>
+            )}
+          </div>
+        </Card>
 
         {/* Canvas 영역 */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -557,6 +867,8 @@ export default function CalBoundaryPage() {
                     backgroundColor: selectedCanvas.backgroundColor
                   }}
                   onClick={handleCanvasClick}
+                  onMouseMove={handleMouseMove}
+                  onMouseUp={handleMouseUp}
                 >
                   {/* 도형들 렌더링 */}
                   {selectedCanvas.shapes.map(renderShape)}
@@ -564,17 +876,51 @@ export default function CalBoundaryPage() {
                   {/* 화살표들 렌더링 */}
                   {selectedCanvas.arrows.map(renderArrow)}
                   
+                  {/* 그리드 렌더링 */}
+                  {renderGrid()}
+                  
                   {/* 선택된 요소 정보 */}
                   {selectedShape && (
-                    <div className="absolute top-2 right-2 bg-white p-3 border rounded shadow-lg">
-                      <h4 className="font-medium text-sm">선택된 도형</h4>
-                      <p className="text-xs text-gray-600">
-                        타입: {selectedShape.type}<br/>
-                        위치: ({selectedShape.x}, {selectedShape.y})<br/>
-                        크기: {selectedShape.width} × {selectedShape.height}
-                      </p>
+                    <div className="absolute top-2 right-2 bg-white p-3 border rounded shadow-lg max-w-xs">
+                      <h4 className="font-medium text-sm mb-2">선택된 공정</h4>
+                      <div className="text-xs text-gray-600 space-y-1">
+                        <p><strong>타입:</strong> {selectedShape.type}</p>
+                        <p><strong>라벨:</strong> {selectedShape.label || '없음'}</p>
+                        <p><strong>위치:</strong> ({selectedShape.x}, {selectedShape.y})</p>
+                        <p><strong>크기:</strong> {selectedShape.width} × {selectedShape.height}</p>
+                        {selectedShape.processType && (
+                          <p><strong>공정 유형:</strong> {selectedShape.processType}</p>
+                        )}
+                        {selectedShape.materialType && (
+                          <p><strong>자재 유형:</strong> {selectedShape.materialType}</p>
+                        )}
+                        {selectedShape.energyType && (
+                          <p><strong>에너지 유형:</strong> {selectedShape.energyType}</p>
+                        )}
+                        {selectedShape.capacity && (
+                          <p><strong>용량:</strong> {selectedShape.capacity} {selectedShape.unit || ''}</p>
+                        )}
+                      </div>
                     </div>
                   )}
+
+                  {/* 연결 모드 안내 */}
+                  {isConnecting && !connectionStart && (
+                    <div className="absolute top-2 left-2 bg-green-100 text-green-800 px-3 py-2 rounded-lg text-sm font-medium">
+                      🔗 연결할 첫 번째 공정을 클릭하세요
+                    </div>
+                  )}
+
+                  {isConnecting && connectionStart && (
+                    <div className="absolute top-2 left-2 bg-blue-100 text-blue-800 px-3 py-2 rounded-lg text-sm font-medium">
+                      🔗 연결할 두 번째 공정을 클릭하세요
+                    </div>
+                  )}
+
+                  {/* 그리드 정보 */}
+                  <div className="absolute bottom-2 left-2 bg-gray-100 text-gray-600 px-2 py-1 rounded text-xs">
+                    그리드: {gridSize}px | 스냅: {snapToGrid ? 'ON' : 'OFF'}
+                  </div>
                 </div>
               ) : (
                 <div className="text-center py-16 text-gray-500">
