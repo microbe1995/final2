@@ -61,6 +61,7 @@ const Icon: React.FC<IconProps> = ({
     'rectangle': '⬜',
     'circle': '⭕',
     'triangle': '🔺',
+    'square': '⬜',
     
     // 액션
     'add': '➕',

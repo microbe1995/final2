@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Icon } from '@/atoms/Icon';
+import Icon from '@/atoms/Icon';
 
 interface ProcessTypeModalProps {
   isOpen: boolean;
