@@ -25,13 +25,13 @@ const Badge: React.FC<BadgeProps> = ({
   className = '',
   onClick 
 }) => {
-  // variant별 스타일 매핑
+  // variant별 스타일 매핑 - 다크 테마에 맞게 조정
   const variantStyles = {
-    default: 'bg-[#f1f5f9] text-[#0f172a] border-[#e2e8f0]',
-    success: 'bg-[#16a34a]/10 text-[#16a34a] border-[#16a34a]/20',
-    warning: 'bg-[#d97706]/10 text-[#d97706] border-[#d97706]/20',
-    error: 'bg-[#dc2626]/10 text-[#dc2626] border-[#dc2626]/20',
-    info: 'bg-[#2563eb]/10 text-[#2563eb] border-[#2563eb]/20'
+    default: 'bg-[#334155] text-white border-[#475569]',
+    success: 'bg-green-900/30 text-green-300 border-green-500/50',
+    warning: 'bg-yellow-900/30 text-yellow-300 border-yellow-500/50',
+    error: 'bg-red-900/30 text-red-300 border-red-500/50',
+    info: 'bg-blue-900/30 text-blue-300 border-blue-500/50'
   };
 
   // size별 스타일 매핑
