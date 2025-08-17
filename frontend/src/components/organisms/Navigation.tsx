@@ -15,29 +15,29 @@ const Navigation: React.FC = () => {
   return (
     <nav className="bg-[#1e293b] dark:bg-gray-900 shadow-lg border-b border-[#334155] dark:border-gray-700 transition-colors duration-200">
       <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-10">
-        <div className="flex items-center justify-between h-24">
+        <div className="flex items-center justify-between h-20">
           {/* 로고 및 브랜드 */}
           <div className="flex items-center">
             <Link href="/" className="flex items-center space-x-4">
-              <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
-                <span className="text-white font-bold text-xl">C</span>
+              <div className="w-9 h-9 bg-blue-600 rounded-full flex items-center justify-center">
+                <span className="text-white font-bold text-lg">C</span>
               </div>
-              <span className="text-white font-bold text-2xl">CBAM Calculator</span>
+              <span className="text-white font-bold text-xl">CBAM Calculator</span>
             </Link>
           </div>
 
           {/* 데스크톱 네비게이션 */}
-          <div className="hidden sm:flex sm:items-center sm:space-x-10">
+          <div className="hidden sm:flex sm:items-center sm:space-x-8">
             <Link
               href="/"
-              className="text-white hover:text-blue-300 px-4 py-3 rounded-md text-lg font-medium transition-colors duration-200"
+              className="text-white hover:text-blue-300 px-3 py-2 rounded-md text-base font-medium transition-colors duration-200"
             >
               Home
             </Link>
             
             <Link
               href="/process-flow"
-              className="text-white hover:text-blue-300 px-4 py-3 rounded-md text-lg font-medium transition-colors duration-200"
+              className="text-white hover:text-blue-300 px-3 py-2 rounded-md text-base font-medium transition-colors duration-200"
             >
               공정도
             </Link>
@@ -45,7 +45,7 @@ const Navigation: React.FC = () => {
             {user && (
               <Link
                 href="/profile"
-                className="text-white hover:text-blue-300 px-4 py-3 rounded-md text-lg font-medium transition-colors duration-200"
+                className="text-white hover:text-blue-300 px-3 py-2 rounded-md text-base font-medium transition-colors duration-200"
               >
                 {user.full_name}
               </Link>
@@ -53,7 +53,7 @@ const Navigation: React.FC = () => {
             
             <button
               onClick={handleLogout}
-              className="text-white hover:text-red-300 px-4 py-3 rounded-md text-lg font-medium transition-colors duration-200"
+              className="text-white hover:text-red-300 px-3 py-2 rounded-md text-base font-medium transition-colors duration-200"
             >
               로그아웃
             </button>
@@ -63,10 +63,10 @@ const Navigation: React.FC = () => {
           <div className="sm:hidden">
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="text-white hover:text-blue-300 p-3 rounded-md text-lg font-medium focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500 transition-colors duration-200"
+              className="text-white hover:text-blue-300 p-2 rounded-md text-base font-medium focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500 transition-colors duration-200"
             >
               <svg
-                className="h-7 w-7"
+                className="h-6 w-6"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
