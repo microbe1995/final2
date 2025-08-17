@@ -166,7 +166,7 @@ const AuthForm: React.FC<AuthFormProps> = ({
         )}
 
         {error && (
-          <div className="text-red-600 text-sm text-center p-3 bg-red-50 rounded-lg">
+          <div className="text-[#f87171] text-sm text-center p-3 bg-[#1e293b] border border-[#dc2626] rounded-lg">
             {error}
           </div>
         )}
@@ -186,11 +186,11 @@ const AuthForm: React.FC<AuthFormProps> = ({
       </form>
 
       <div className="text-center mt-6">
-        <p className="text-gray-600">
+        <p className="text-[#cbd5e1]">
           {type === 'login' ? '계정이 없으신가요?' : '이미 계정이 있으신가요?'}
           <a
             href={type === 'login' ? '/register' : '/login'}
-            className="text-blue-600 hover:text-blue-700 font-medium ml-1"
+            className="text-[#60a5fa] hover:text-[#93c5fd] font-medium ml-1"
           >
             {type === 'login' ? 'SignUp' : 'SignIn'}
           </a>

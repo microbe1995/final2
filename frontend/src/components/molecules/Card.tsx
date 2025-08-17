@@ -39,7 +39,7 @@ const Card: React.FC<CardProps> = ({
   return (
     <div
       className={[
-        'bg-[#1e293b] rounded-[12px] transition-all duration-[160ms]',
+        'bg-[#1e293b] text-white rounded-[12px] transition-all duration-[160ms]',
         paddingClasses[padding],
         shadowClasses[shadow],
         border && 'border border-[#334155]',
