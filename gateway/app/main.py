@@ -170,29 +170,3 @@ if __name__ == "__main__":
     port = int(os.getenv("PORT", "8080"))
     logger.info(f"🚀 Gateway API 시작 - 포트: {port}")
     uvicorn.run(app, host="0.0.0.0", port=port)
-
-# ============================================================================
-# 🚫 기존 코드 (참고용으로 보존, 실제로는 사용되지 않음)
-# ============================================================================
-"""
-기존 main.py의 코드를 도메인 구조로 분리한 내용:
-
-1. ServiceProxyFactory 클래스 → domain/service/proxy_service.py로 이동
-2. 프록시 라우터 → domain/controller/proxy_controller.py로 이동
-3. CORS 처리 → domain/service/proxy_service.py의 handle_cors_preflight로 이동
-4. 서비스 헬스 체크 → domain/service/proxy_service.py의 check_all_services_health로 이동
-
-도메인 구조의 장점:
-- 관심사 분리 (Separation of Concerns)
-- 단일 책임 원칙 (Single Responsibility Principle)
-- 코드 재사용성 향상
-- 테스트 용이성 향상
-- 유지보수성 향상
-
-각 레이어의 역할:
-- Controller: HTTP 요청/응답 처리
-- Service: 비즈니스 로직 (서비스 디스커버리, 프록시 처리)
-- Repository: 데이터 접근 로직 (서비스 정보 관리)
-- Entity: 데이터 모델 (서비스 정보, 헬스 체크 결과)
-- Schema: 데이터 검증 및 직렬화
-"""

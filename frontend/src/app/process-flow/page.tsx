@@ -10,7 +10,7 @@ import axios from 'axios';
 // 🔗 Cal_boundary API 서비스 - Process Flow 전용
 // ============================================================================
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080/api/v1';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
 const CAL_BOUNDARY_URL = process.env.NEXT_PUBLIC_CAL_BOUNDARY_URL || 'http://localhost:8001';
 
 // API 클라이언트 설정

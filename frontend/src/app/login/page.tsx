@@ -20,10 +20,10 @@ export default function LoginPage() {
   const handleSubmit = async (data: { email: string; password: string }) => {
     try {
       console.log('🔍 로그인 요청 데이터:', data);
-      console.log('🔍 API URL:', `${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080/api/v1'}/auth/login`);
+      console.log('🔍 API URL:', `${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080'}/api/v1/auth/login`);
       
       const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080/api/v1'}/auth/login`,
+        `${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080'}/api/v1/auth/login`,
         data
       );
       

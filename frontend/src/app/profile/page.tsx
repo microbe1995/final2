@@ -42,7 +42,7 @@ export default function ProfilePage() {
 
     try {
       const response = await axios.put(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080/api/v1'}/auth/profile`,
+        `${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080'}/api/v1/auth/profile`,
         data,
         {
           headers: {
@@ -80,7 +80,7 @@ export default function ProfilePage() {
 
     try {
       const response = await axios.put(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080/api/v1'}/auth/password`,
+        `${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080'}/api/v1/auth/password`,
         {
           current_password: data.current_password,
           new_password: data.new_password

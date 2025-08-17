@@ -18,10 +18,10 @@ export default function RegisterPage() {
   const handleSubmit = async (data: { email: string; password: string; fullName?: string; confirmPassword?: string }) => {
     try {
       console.log('🔍 회원가입 요청 데이터:', data);
-      console.log('🔍 API URL:', `${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080/api/v1'}/auth/register`);
+      console.log('🔍 API URL:', `${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080'}/api/v1/auth/register`);
       
       const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080/api/v1'}/auth/register`,
+        `${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080'}/api/v1/auth/register`,
         data
       );
       
