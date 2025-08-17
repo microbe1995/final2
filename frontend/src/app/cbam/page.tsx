@@ -89,7 +89,26 @@ export default function CBAMPage() {
   // ============================================================================
   
   // MSA 구조: Gateway를 거쳐 Cal_boundary 서비스 호출
-  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://gateway-production-22ef.up.railway.app';
+  // 보안: HTTPS만 사용하여 Mixed Content 에러 방지
+  const getApiBaseUrl = () => {
+    const envUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+    
+    if (envUrl) {
+      // 환경변수가 설정된 경우 HTTPS 확인
+      if (envUrl.startsWith('http://')) {
+        console.warn('⚠️ HTTP URL 감지됨. HTTPS로 자동 변환:', envUrl);
+        return envUrl.replace('http://', 'https://');
+      }
+      return envUrl;
+    }
+    
+    // fallback URL (HTTPS만 사용)
+    const fallbackUrl = 'https://gateway-production-22ef.up.railway.app';
+    console.warn('⚠️ 환경변수 NEXT_PUBLIC_API_BASE_URL이 설정되지 않음. fallback URL 사용:', fallbackUrl);
+    return fallbackUrl;
+  };
+
+  const API_BASE_URL = getApiBaseUrl();
   const API_PREFIX = '/api/v1';
   const SERVICE_NAME = 'cal-boundary'; // Cal_boundary 서비스명
 
@@ -103,8 +122,15 @@ export default function CBAMPage() {
       fullUrl: `${API_BASE_URL}${API_PREFIX}/${SERVICE_NAME}/canvas`,
       note: 'MSA 구조: Gateway → Cal_boundary 프록시 (HTTPS 필수)',
       security: 'Mixed Content 방지를 위해 HTTPS 사용',
-      backendPath: '/api/v1/canvas' // Cal_boundary 서비스의 실제 경로
+      backendPath: '/api/v1/canvas', // Cal_boundary 서비스의 실제 경로
+      protocol: API_BASE_URL.startsWith('https://') ? 'HTTPS ✅' : 'HTTP ❌'
     });
+    
+    // 보안 검증
+    if (!API_BASE_URL.startsWith('https://')) {
+      console.error('❌ 보안 위험: HTTP URL 사용 중. HTTPS로 변경 필요!');
+      showToast('error', '보안 설정 오류: HTTPS 연결이 필요합니다.');
+    }
   }, []);
 
   // ============================================================================
@@ -118,11 +144,24 @@ export default function CBAMPage() {
   const testApiConnection = async () => {
     try {
       setApiStatus('checking');
+      
+      // 보안 검증: HTTPS URL 확인
+      if (!API_BASE_URL.startsWith('https://')) {
+        throw new Error('보안 위험: HTTP URL 사용 중. HTTPS 연결이 필요합니다.');
+      }
+      
       // Gateway의 health 엔드포인트 사용
       const healthUrl = `${API_BASE_URL}/health`;
       console.log('🔄 Gateway 연결 테스트 시작:', healthUrl);
       
-      const response = await axios.get(healthUrl);
+      const response = await axios.get(healthUrl, {
+        timeout: 10000, // 10초 타임아웃
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        }
+      });
+      
       console.log('✅ Gateway 연결 테스트 성공:', response.data);
       setApiStatus('connected');
       
@@ -133,11 +172,17 @@ export default function CBAMPage() {
       setApiStatus('disconnected');
       
       // 연결 실패 시 사용자에게 안내
-      if (error.response?.status === 404) {
-        showToast('error', 'Gateway 서비스에 연결할 수 없습니다. Railway 배포 설정을 확인해주세요.');
-      } else {
-        showToast('error', 'Gateway 서비스 연결에 실패했습니다. 서비스 상태를 확인해주세요.');
+      let errorMessage = 'Gateway 서비스 연결에 실패했습니다.';
+      
+      if (error.message.includes('보안 위험')) {
+        errorMessage = '보안 설정 오류: HTTPS 연결이 필요합니다.';
+      } else if (error.response?.status === 404) {
+        errorMessage = 'Gateway 서비스에 연결할 수 없습니다. Railway 배포 설정을 확인해주세요.';
+      } else if (error.code === 'ECONNABORTED') {
+        errorMessage = 'Gateway 서비스 응답 시간 초과. 서비스 상태를 확인해주세요.';
       }
+      
+      showToast('error', errorMessage);
     }
   };
 
