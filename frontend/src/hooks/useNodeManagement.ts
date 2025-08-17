@@ -1,15 +1,15 @@
 'use client';
 
 import { useCallback } from 'react';
-import { Node, Edge } from '@xyflow/react';
+import type { AppNodeType, AppEdgeType, ProcessNode, ProcessEdge } from '@/types/reactFlow';
 
 export const useNodeManagement = (
-  nodes: Node<any>[],
-  edges: Edge<any>[],
-  onFlowChange: (nodes: Node[], edges: Edge[]) => void
+  nodes: AppNodeType[],
+  edges: AppEdgeType[],
+  onFlowChange: (nodes: AppNodeType[], edges: AppEdgeType[]) => void
 ) => {
   const addProcessNode = useCallback(() => {
-    const newNode: Node<any> = {
+    const newNode: ProcessNode = {
       id: `node-${Date.now()}`,
       type: 'processNode',
       position: { x: 250, y: 250 },
@@ -33,7 +33,7 @@ export const useNodeManagement = (
       return;
     }
 
-    const newEdge: Edge<any> = {
+    const newEdge: ProcessEdge = {
       id: `edge-${Date.now()}`,
       source: nodes[0].id, // 첫 번째 노드
       target: nodes[1].id, // 두 번째 노드

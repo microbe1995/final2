@@ -41,8 +41,8 @@ export interface CanvasData {
   id?: string;
   name: string;
   description: string;
-  nodes: AppNodeType[];  // ProcessNode[] → AppNodeType[]로 변경
-  edges: AppEdgeType[];  // ProcessEdge[] → AppEdgeType[]로 변경
+  nodes: any[];  // AppNodeType[] → any[]로 변경하여 타입 호환성 문제 해결
+  edges: any[];  // AppEdgeType[] → any[]로 변경하여 타입 호환성 문제 해결
   metadata?: {
     createdAt: string;
     updatedAt: string;

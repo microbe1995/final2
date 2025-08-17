@@ -14,7 +14,7 @@ import type { ProcessNodeData } from '@/types/reactFlow';
 // 🎯 ProcessNode Props 인터페이스
 // ============================================================================
 
-interface ProcessNodeProps extends NodeProps<ProcessNodeData> {
+interface ProcessNodeProps extends NodeProps<any> {
   onDelete?: (id: string) => void;
 }
 

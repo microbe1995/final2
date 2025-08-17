@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
-import { Node, Edge } from '@xyflow/react';
 import { useProcessFlowAPI } from './useProcessFlowAPI';
 import { CanvasListItem, ServiceHealthStatus } from './useProcessFlowAPI';
+import type { AppNodeType, AppEdgeType } from '@/types/reactFlow';
 
 // ============================================================================
 // 🎯 Process Flow 상태 관리 훅
@@ -14,11 +14,11 @@ export const useProcessFlow = () => {
   // 🎨 React Flow 상태
   // ============================================================================
   
-  const [nodes, setNodes] = useState<Node<any>[]>([]);
-  const [edges, setEdges] = useState<Edge<any>[]>([]);
+  const [nodes, setNodes] = useState<AppNodeType[]>([]);
+  const [edges, setEdges] = useState<AppEdgeType[]>([]);
   const [isReadOnly, setIsReadOnly] = useState(false);
-  const [selectedNodes, setSelectedNodes] = useState<Node<any>[]>([]);
-  const [selectedEdges, setSelectedEdges] = useState<Edge<any>[]>([]);
+  const [selectedNodes, setSelectedNodes] = useState<AppNodeType[]>([]);
+  const [selectedEdges, setSelectedEdges] = useState<AppEdgeType[]>([]);
 
   // ============================================================================
   // 🔗 백엔드 관련 상태
@@ -44,7 +44,7 @@ export const useProcessFlow = () => {
   // 🔄 Flow 변경 처리
   // ============================================================================
   
-  const handleFlowChange = useCallback((newNodes: Node[], newEdges: Edge[]) => {
+  const handleFlowChange = useCallback((newNodes: AppNodeType[], newEdges: AppEdgeType[]) => {
     setNodes(newNodes);
     setEdges(newEdges);
     
