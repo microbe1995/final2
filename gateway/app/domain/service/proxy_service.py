@@ -57,9 +57,9 @@ class ProxyService:
             logger.info(f"🔧 Auth 서비스 URL: {url}")
             return url
         elif service_type == ServiceType.CAL_BOUNDARY:
-            url = os.getenv("CAL_BOUNDRY_URL")
+            url = os.getenv("CAL_BOUNDARY_URL")
             if not url:
-                raise ValueError("Cal_boundary 서비스 URL이 설정되지 않았습니다. CAL_BOUNDRY_URL 환경변수를 확인하세요.")
+                raise ValueError("Cal_boundary 서비스 URL이 설정되지 않았습니다. CAL_BOUNDARY_URL 환경변수를 확인하세요.")
             logger.info(f"🔧 Cal_boundary 서비스 URL: {url}")
             return url
         
