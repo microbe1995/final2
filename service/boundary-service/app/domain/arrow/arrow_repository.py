@@ -16,7 +16,8 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sess
 from sqlalchemy.ext.asyncio import AsyncEngine
 from sqlalchemy.pool import NullPool
 
-from app.domain.arrow.arrow_entity import Arrow, ArrowType, Base
+from app.domain.arrow.arrow_entity import Arrow, ArrowType
+from app.common.database_base import Base
 from app.domain.arrow.arrow_schema import (
     ArrowCreateRequest,
     ArrowUpdateRequest,

@@ -9,10 +9,7 @@ from typing import Optional, Dict, Any
 from enum import Enum
 from sqlalchemy import String, Float, Text, DateTime, Enum as SQLEnum
 from sqlalchemy.orm import Mapped, mapped_column, validates
-from sqlalchemy.ext.declarative import declarative_base
-
-# Shape 도메인 전용 Base
-Base = declarative_base()
+from app.common.database_base import Base
 
 class ShapeType(str, Enum):
     """도형 타입 열거형"""

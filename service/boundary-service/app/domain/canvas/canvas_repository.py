@@ -18,7 +18,8 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sess
 from sqlalchemy.ext.asyncio import AsyncEngine
 from sqlalchemy.pool import NullPool
 
-from app.domain.canvas.canvas_entity import Canvas, Base
+from app.domain.canvas.canvas_entity import Canvas
+from app.common.database_base import Base
 from app.domain.canvas.canvas_schema import CanvasCreateRequest, CanvasUpdateRequest, CanvasResponse, CanvasListResponse
 
 # Canvas 도메인 전용 DB 연결 클래스

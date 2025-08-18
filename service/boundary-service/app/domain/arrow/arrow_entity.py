@@ -9,10 +9,7 @@ from typing import Optional, Dict, Any, List, Tuple
 from enum import Enum
 from sqlalchemy import String, Float, Text, DateTime, Enum as SQLEnum
 from sqlalchemy.orm import Mapped, mapped_column, validates
-from sqlalchemy.ext.declarative import declarative_base
-
-# Arrow 도메인 전용 Base
-Base = declarative_base()
+from app.common.database_base import Base
 
 class ArrowType(str, Enum):
     """화살표 타입 열거형"""

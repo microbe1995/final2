@@ -3,14 +3,11 @@
 # ============================================================================
 
 from sqlalchemy import Column, String, Integer, Float, Boolean, DateTime, Text, JSON
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.sql import func
 from typing import Dict, Any
 import uuid
 import re
-
-# Boundary 도메인 전용 Base
-Base = declarative_base()
+from app.common.database_base import Base
 
 # ============================================================================
 # 🔧 유틸리티 함수들 (구 utility에서 이동)

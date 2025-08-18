@@ -16,7 +16,8 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sess
 from sqlalchemy.ext.asyncio import AsyncEngine
 from sqlalchemy.pool import NullPool
 
-from app.domain.shape.shape_entity import Shape, ShapeType, Base
+from app.domain.shape.shape_entity import Shape, ShapeType
+from app.common.database_base import Base
 from app.domain.shape.shape_schema import (
     ShapeCreateRequest,
     ShapeUpdateRequest,

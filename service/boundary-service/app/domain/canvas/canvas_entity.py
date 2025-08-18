@@ -8,10 +8,7 @@ from datetime import datetime
 from typing import Optional, Dict, Any, List
 from sqlalchemy import String, Float, Text, DateTime
 from sqlalchemy.orm import Mapped, mapped_column, validates
-from sqlalchemy.ext.declarative import declarative_base
-
-# Canvas 도메인 전용 Base
-Base = declarative_base()
+from app.common.database_base import Base
 
 class Canvas(Base):
     """Canvas를 표현하는 엔티티 클래스 (SQLAlchemy 모델)"""
