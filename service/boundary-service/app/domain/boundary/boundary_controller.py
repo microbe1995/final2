@@ -20,8 +20,8 @@ from app.domain.boundary.boundary_service import CBAMBoundaryMainService
 # 🚀 CBAM 라우터 생성
 # ============================================================================
 
-cbam_router = APIRouter(
-    prefix="/cbam",
+boundary_router = APIRouter(
+    prefix="/boundary",
     tags=["CBAM 산정경계 설정"],
     responses={
         404: {"description": "Not found"},
@@ -51,7 +51,7 @@ def get_cbam_service() -> CBAMBoundaryMainService:
 # 📦 CBAM 제품 관리 API
 # ============================================================================
 
-@cbam_router.post("/products/validate", response_model=Dict[str, Any])
+@boundary_router.post("/products/validate", response_model=Dict[str, Any])
 async def validate_cbam_products(products: List[CBAMProduct]):
     """CBAM 제품 정보 검증"""
     try:
@@ -79,7 +79,7 @@ async def validate_cbam_products(products: List[CBAMProduct]):
             detail=f"CBAM 제품 검증 중 오류가 발생했습니다: {str(e)}"
         )
 
-@cbam_router.get("/products/hs-codes", response_model=Dict[str, str])
+@boundary_router.get("/products/hs-codes", response_model=Dict[str, str])
 async def get_cbam_hs_codes():
     """CBAM 대상 HS 코드 목록 조회"""
     try:
@@ -92,7 +92,7 @@ async def get_cbam_hs_codes():
             detail=f"HS 코드 조회 중 오류가 발생했습니다: {str(e)}"
         )
 
-@cbam_router.post("/products/check-target", response_model=Dict[str, Any])
+@boundary_router.post("/products/check-target", response_model=Dict[str, Any])
 async def check_cbam_target(hs_code: str, cn_code: str):
     """CBAM 대상 여부 확인"""
     try:
@@ -116,7 +116,7 @@ async def check_cbam_target(hs_code: str, cn_code: str):
 # ⚙️ 생산 공정 관리 API
 # ============================================================================
 
-@cbam_router.post("/processes/validate", response_model=Dict[str, Any])
+@boundary_router.post("/processes/validate", response_model=Dict[str, Any])
 async def validate_production_processes(processes: List[ProductionProcess]):
     """생산 공정 정보 검증"""
     try:
@@ -150,7 +150,7 @@ async def validate_production_processes(processes: List[ProductionProcess]):
             detail=f"생산 공정 검증 중 오류가 발생했습니다: {str(e)}"
         )
 
-@cbam_router.post("/processes/flow-analysis", response_model=Dict[str, Any])
+@boundary_router.post("/processes/flow-analysis", response_model=Dict[str, Any])
 async def analyze_process_flow(processes: List[ProductionProcess]):
     """생산 공정 흐름 분석"""
     try:
@@ -211,7 +211,7 @@ async def analyze_process_flow(processes: List[ProductionProcess]):
 # 📅 보고 기간 관리 API
 # ============================================================================
 
-@cbam_router.post("/periods/validate", response_model=Dict[str, Any])
+@boundary_router.post("/periods/validate", response_model=Dict[str, Any])
 async def validate_reporting_period(period: ReportingPeriod):
     """보고 기간 검증"""
     try:
@@ -232,7 +232,7 @@ async def validate_reporting_period(period: ReportingPeriod):
             detail=f"보고 기간 검증 중 오류가 발생했습니다: {str(e)}"
         )
 
-@cbam_router.get("/periods/templates", response_model=Dict[str, Any])
+@boundary_router.get("/periods/templates", response_model=Dict[str, Any])
 async def get_period_templates():
     """보고 기간 템플릿 제공"""
     try:
@@ -278,7 +278,7 @@ async def get_period_templates():
 # 🌍 산정경계 설정 API
 # ============================================================================
 
-@cbam_router.post("/boundary/create", response_model=CBAMBoundaryResponse)
+@boundary_router.post("/boundary/create", response_model=CBAMBoundaryResponse)
 async def create_cbam_boundary(
     request: CBAMBoundaryRequest,
     cbam_service: CBAMBoundaryMainService = Depends(get_cbam_service)
@@ -300,7 +300,7 @@ async def create_cbam_boundary(
             detail=f"CBAM 산정경계 설정 생성 중 오류가 발생했습니다: {str(e)}"
         )
 
-@cbam_router.post("/boundary/emission-sources", response_model=List[EmissionSource])
+@boundary_router.post("/boundary/emission-sources", response_model=List[EmissionSource])
 async def identify_emission_sources(
     boundary: CalculationBoundary,
     processes: List[ProductionProcess]
@@ -323,7 +323,7 @@ async def identify_emission_sources(
             detail=f"배출원 식별 중 오류가 발생했습니다: {str(e)}"
         )
 
-@cbam_router.post("/boundary/source-streams", response_model=List[SourceStream])
+@boundary_router.post("/boundary/source-streams", response_model=List[SourceStream])
 async def identify_source_streams(
     boundary: CalculationBoundary,
     processes: List[ProductionProcess]
@@ -350,7 +350,7 @@ async def identify_source_streams(
 # 🔄 데이터 할당 API
 # ============================================================================
 
-@cbam_router.post("/allocation/create-plan", response_model=List[DataAllocation])
+@boundary_router.post("/allocation/create-plan", response_model=List[DataAllocation])
 async def create_allocation_plan(
     boundary: CalculationBoundary,
     processes: List[ProductionProcess],
@@ -382,7 +382,7 @@ async def create_allocation_plan(
 # 📋 상태 확인 API
 # ============================================================================
 
-@cbam_router.get("/health", response_model=Dict[str, Any])
+@boundary_router.get("/health", response_model=Dict[str, Any])
 async def health_check():
     """서비스 상태 확인"""
     return {
@@ -392,7 +392,7 @@ async def health_check():
         "version": "1.0.0"
     }
 
-@cbam_router.get("/info", response_model=Dict[str, Any])
+@boundary_router.get("/info", response_model=Dict[str, Any])
 async def service_info():
     """서비스 정보 조회"""
     return {

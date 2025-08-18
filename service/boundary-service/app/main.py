@@ -19,7 +19,7 @@ import os
 from app.domain.shape.shape_controller import shape_router
 from app.domain.arrow.arrow_controller import arrow_router
 from app.domain.canvas.canvas_controller import canvas_router
-from app.domain.boundary.boundary_controller import cbam_router
+from app.domain.boundary.boundary_controller import boundary_router
 from app.common.database.connection import db_connection
 
 # ============================================================================
@@ -100,7 +100,7 @@ app.include_router(arrow_router, prefix="/arrows")
 app.include_router(canvas_router, prefix="/canvas")
 
 # CBAM 산정경계 설정 관련 API
-app.include_router(cbam_router, prefix="/api/v1")
+app.include_router(boundary_router)
 
 # ============================================================================
 # 🏥 헬스체크 엔드포인트
