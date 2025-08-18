@@ -4,11 +4,12 @@ services:
   # API Gateway 서비스
   gateway:
     build: ./gateway
+    container_name: greensteel-gateway
     ports:
       - "8080:8080"
     environment:
       - AUTH_SERVICE_URL=${AUTH_SERVICE_URL:-http://auth-service:8000}
-      - CAL_BOUNDRY_URL=${CAL_BOUNDRY_URL:-http://cal-boundary:8001}
+      - CAL_BOUNDARY_URL=${CAL_BOUNDARY_URL:-http://cal-boundary:8001}
       - CORS_URL=${CORS_URL:-http://localhost:3000}
       - PORT=8080
     depends_on:
@@ -16,10 +17,12 @@ services:
       - cal-boundary
     networks:
       - greensteel-network
+    restart: unless-stopped
 
   # PostgreSQL 데이터베이스
   postgres:
     image: postgres:15-alpine
+    container_name: greensteel-postgres
     ports:
       - "5432:5432"
     environment:
@@ -30,10 +33,12 @@ services:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - greensteel-network
+    restart: unless-stopped
 
   # 인증 서비스
   auth-service:
     build: ./service/auth-service
+    container_name: greensteel-auth-service
     ports:
       - "8000:8000"
     environment:
@@ -50,43 +55,51 @@ services:
       - postgres
     networks:
       - greensteel-network
+    restart: unless-stopped
 
-  # Cal_boundary 서비스
+  # Cal_boundary 서비스 (실제 폴더명에 맞춤)
   cal-boundary:
     build: ./service/Cal_boundary
+    container_name: greensteel-cal-boundary
     ports:
       - "8001:8001"
     environment:
       - PORT=8001
       - DEBUG_MODE=true
+      - DATABASE_URL=${DATABASE_URL:-postgresql://cbam_user:cbam_password@postgres:5432/cbam_db}
+    depends_on:
+      - postgres
     networks:
       - greensteel-network
-
-  # 사용자 서비스 (향후 추가 예정)
-  # user-service:
-  #   build: ./service/user-service
-  #   ports:
-  #     - "8002:8000"
-  #   networks:
-  #     - greensteel-network
+    restart: unless-stopped
 
   # Frontend 서비스 (개발용)
   frontend:
     build: ./frontend
+    container_name: greensteel-frontend
     ports:
       - "3000:3000"
     environment:
       - NEXT_PUBLIC_API_BASE_URL=http://localhost:8080/api/v1
       - NEXT_PUBLIC_CAL_BOUNDARY_URL=http://localhost:8001
+      - NODE_ENV=development
     depends_on:
       - gateway
       - cal-boundary
     networks:
       - greensteel-network
+    restart: unless-stopped
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
 
 networks:
   greensteel-network:
     driver: bridge
+    ipam:
+      config:
+        - subnet: 172.25.0.0/16
 
 volumes:
   postgres_data:
+    driver: local

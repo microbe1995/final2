@@ -1,151 +1,176 @@
-# Final Project
+# GreenSteel MSA 프로젝트
 
-## 🚀 프로젝트 개요
+GreenSteel은 Next.js + TypeScript + React + FastAPI + PostgreSQL을 기반으로 한 마이크로서비스 아키텍처 프로젝트입니다.
 
-이 프로젝트는 마이크로서비스 아키텍처를 기반으로 한 CBAM(Carbon Border Adjustment Mechanism) 시스템입니다.
-
-## 🏗️ 아키텍처
-
-```
-프론트엔드 (Next.js) → Gateway (FastAPI) → Auth Service (FastAPI)
-     ↓                    ↓                    ↓
-  localhost:3000    localhost:8080      localhost:8000
-```
-
-## 📁 프로젝트 구조
+## 🏗️ 프로젝트 구조
 
 ```
 LCA_final-main/
-├── frontend/                 # Next.js 프론트엔드
-│   └── src/
-│       ├── app/             # Next.js App Router
-│       │   ├── process-flow/ # 공정도 관리 (React Flow)
-│       │   │   └── page.tsx # 메인 페이지 + API 서비스 통합
-│       │   ├── login/       # 로그인 페이지
-│       │   ├── register/    # 회원가입 페이지
-│       │   └── profile/     # 프로필 관리 페이지
-│       └── components/      # 아토믹 디자인 패턴
-│           ├── atoms/       # 최소 단위 컴포넌트
-│           ├── molecules/   # atoms의 조합
-│           ├── organisms/   # molecules의 조합
-│           └── templates/   # 페이지 레이아웃
-├── gateway/                  # API Gateway (FastAPI)
-├── service/
-│   ├── auth-service/        # 인증 서비스 (FastAPI)
-│   └── Cal_boundary/        # 공정도 관리 서비스 (FastAPI)
-├── docker-compose.yml       # Docker Compose 설정
-├── start-dev.bat           # 개발 환경 시작
-└── stop-dev.bat            # 개발 환경 중지
+├── frontend/              # Next.js 프론트엔드 애플리케이션
+│   ├── src/               # 소스 코드
+│   ├── public/            # 정적 파일
+│   ├── package.json       # 프론트엔드 의존성
+│   └── Dockerfile         # 프론트엔드 Docker 이미지
+├── gateway/               # FastAPI API Gateway
+│   ├── app/               # 게이트웨이 애플리케이션 코드
+│   ├── main.py            # 게이트웨이 메인 파일
+│   └── Dockerfile         # 게이트웨이 Docker 이미지
+├── service/               # 마이크로서비스들
+│   ├── auth-service/      # 인증 서비스
+│   │   ├── app/           # 서비스 코드
+│   │   └── Dockerfile     # 인증 서비스 Docker 이미지
+│   └── Cal_boundary/      # 계산 경계 서비스
+│       ├── app/           # 서비스 코드
+│       └── Dockerfile     # 계산 경계 서비스 Docker 이미지
+├── docker-compose.yml     # Docker Compose 설정
+├── start-docker.bat       # Windows Docker 시작 스크립트
+├── stop-docker.bat        # Windows Docker 중지 스크립트
+└── README.md              # 프로젝트 문서
 ```
 
-## 🔄 데이터 흐름
+## 🚀 기술 스택
 
-### 회원가입 흐름
-1. **프론트엔드** (`/register`): 사용자 입력 수집
-2. **Gateway** (`/api/v1/auth/register`): CORS 처리 및 라우팅
-3. **Auth Service** (`/auth/register`): 실제 회원 생성 로직
+### Frontend
+- **Next.js 14** - React 프레임워크
+- **TypeScript** - 타입 안전성
+- **React 18** - UI 라이브러리
+- **Tailwind CSS** - 스타일링
+- **PWA** - Progressive Web App
 
-### API 엔드포인트
-- **Gateway**: `http://localhost:8080/api/v1/{service}/{path}`
-- **Auth Service**: `http://localhost:8000/auth/{endpoint}`
+### Backend
+- **FastAPI** - API Gateway 및 서비스
+- **Python 3.11** - 백엔드 언어
+- **PostgreSQL 15** - 데이터베이스
+- **SQLAlchemy** - ORM
 
-## 🚀 빠른 시작
+### DevOps
+- **Docker** - 컨테이너화
+- **Docker Compose** - 로컬 개발 환경
+- **GitHub Actions** - CI/CD
 
-### 1. 개발 환경 시작
+## 🛠️ 개발 환경 설정
+
+### 1. Docker 설치
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) 설치
+- Docker Compose가 포함되어 있어야 함
+
+### 2. 프로젝트 클론
 ```bash
-# Windows
-start-dev.bat
-
-# 또는 수동으로
-docker-compose up --build -d
+git clone <repository-url>
+cd LCA_final-main
 ```
 
-### 2. 서비스 접속
-- **프론트엔드**: http://localhost:3000
-- **Gateway**: http://localhost:8080
-- **Auth Service**: http://localhost:8000
+### 3. Docker 서비스 실행
 
-### 3. API 문서
-- **Gateway API Docs**: http://localhost:8080/docs
-- **Auth Service API Docs**: http://localhost:8000/docs
-
-### 4. 개발 환경 중지
+#### Windows
 ```bash
-# Windows
-stop-dev.bat
+# 서비스 시작
+start-docker.bat
 
-# 또는 수동으로
+# 서비스 중지
+stop-docker.bat
+```
+
+#### Linux/Mac
+```bash
+# 서비스 시작
+docker-compose up -d
+
+# 서비스 중지
 docker-compose down
 ```
 
-## 🔧 환경 변수
-
-### **프론트엔드 환경변수**
-프론트엔드 루트에 `.env.local` 파일을 생성하고 다음 내용을 추가하세요:
-
+### 4. 개별 서비스 실행 (개발용)
 ```bash
-# API 기본 URL (게이트웨이)
-NEXT_PUBLIC_API_BASE_URL=http://localhost:8080/api/v1
+# 프론트엔드
+cd frontend
+npm install
+npm run dev
 
-# Cal_boundary 서비스 직접 URL (개발용)
-NEXT_PUBLIC_CAL_BOUNDARY_URL=http://localhost:8001
+# 게이트웨이
+cd gateway
+pip install -r requirements.txt
+python -m uvicorn app.main:app --host 0.0.0.0 --port 8080
 
-# 개발 모드
-NODE_ENV=development
-NEXT_PUBLIC_DEBUG_MODE=true
+# 인증 서비스
+cd service/auth-service
+pip install -r requirements.txt
+python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
+
+# 계산 경계 서비스
+cd service/Cal_boundary
+pip install -r requirements.txt
+python -m uvicorn app.main:app --host 0.0.0.0 --port 8001
 ```
 
-### **백엔드 환경변수**
+## 📦 서비스 정보
 
-#### Gateway
-- `PORT`: 8080 (기본값)
-- `AUTH_SERVICE_URL`: http://localhost:8000 (기본값)
-- `CAL_BOUNDRY_URL`: http://localhost:8001 (기본값)
-- `CORS_URL`: http://localhost:3000 (기본값)
+### 서비스 포트
+- **Frontend**: http://localhost:3000
+- **Gateway**: http://localhost:8080
+- **Auth Service**: http://localhost:8000
+- **Cal Boundary**: http://localhost:8001
+- **PostgreSQL**: localhost:5432
 
-#### Auth Service
-- `PORT`: 8000 (기본값)
-- `DATABASE_URL`: PostgreSQL 연결 문자열
+### API 문서
+- **Gateway Swagger**: http://localhost:8080/docs
+- **Auth Service Swagger**: http://localhost:8000/docs
+- **Cal Boundary Swagger**: http://localhost:8001/docs
 
-#### Cal_boundary Service
-- `PORT`: 8001 (기본값)
-- `DEBUG_MODE`: true (개발용)
+## 🔄 개발 워크플로우
 
-## 📝 주요 기능
-
-### 회원가입
-- 이메일, 사용자명, 비밀번호, 전체 이름 입력
-- 비밀번호 해싱 및 저장
-- 중복 이메일/사용자명 검증
-
-### 로그인
-- 이메일/비밀번호 인증
-- JWT 토큰 발급 (향후 구현 예정)
+1. **코드 수정** → 소스 코드 편집
+2. **Docker 재빌드** → `docker-compose build`
+3. **서비스 재시작** → `docker-compose up -d`
+4. **로그 확인** → `docker-compose logs -f [service-name]`
 
 ## 🐛 문제 해결
 
-### 서비스가 시작되지 않는 경우
-1. Docker가 실행 중인지 확인
-2. 포트 충돌 확인 (3000, 8080, 8000)
-3. `docker-compose logs`로 로그 확인
+### 포트 충돌
+```bash
+# 포트 사용 확인
+netstat -ano | findstr :3000
+netstat -ano | findstr :8080
 
-### CORS 오류가 발생하는 경우
-1. Gateway의 CORS 설정 확인
-2. 프론트엔드 origin이 허용 목록에 포함되어 있는지 확인
+# Docker 컨테이너 상태 확인
+docker-compose ps
+```
 
-## 📚 기술 스택
+### 로그 확인
+```bash
+# 전체 로그
+docker-compose logs
 
-- **Frontend**: Next.js 14, React 18, TypeScript, Tailwind CSS
-- **Backend**: FastAPI, Python 3.11+
-- **Container**: Docker, Docker Compose
-- **Database**: 메모리 기반 (향후 PostgreSQL 추가 예정)
+# 특정 서비스 로그
+docker-compose logs frontend
+docker-compose logs gateway
+docker-compose logs auth-service
+docker-compose logs cal-boundary
+```
 
-## 🤝 기여 방법
+### 컨테이너 재시작
+```bash
+# 특정 서비스 재시작
+docker-compose restart frontend
 
-1. 이슈 생성 또는 기존 이슈 확인
-2. 기능 브랜치 생성
-3. 코드 작성 및 테스트
-4. Pull Request 생성
+# 전체 재시작
+docker-compose restart
+```
+
+## 📚 추가 문서
+
+- **Frontend**: `frontend/README.md`
+- **Gateway**: `gateway/README.md`
+- **Auth Service**: `service/auth-service/README.md`
+- **Cal Boundary**: `service/Cal_boundary/README.md`
+
+## 🤝 기여하기
+
+1. Fork the Project
+2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the Branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
 ## 📄 라이선스
 
