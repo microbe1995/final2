@@ -56,7 +56,15 @@ export const useAuthAPI = () => {
   
   const register = useCallback(async (data: RegisterData) => {
     try {
-      const response = await apiMethods.post('/api/v1/auth/register', data);
+      // 백엔드 스키마(UserRegistrationRequest)는 snake_case를 기대합니다.
+      const payload = {
+        email: data.email,
+        full_name: data.fullName,
+        password: data.password,
+        confirm_password: data.confirmPassword,
+      };
+
+      const response = await apiMethods.post('/api/v1/auth/register', payload);
       
       return {
         success: true,
@@ -110,7 +118,9 @@ export const useAuthAPI = () => {
         '/api/v1/auth/password',
         {
           current_password: data.current_password,
-          new_password: data.new_password
+          new_password: data.new_password,
+          // 백엔드 스키마는 confirm_new_password를 요구
+          confirm_new_password: data.confirm_password || data.new_password,
         },
         {
           headers: {
