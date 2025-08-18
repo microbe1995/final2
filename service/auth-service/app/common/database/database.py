@@ -21,7 +21,7 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sess
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import NullPool
 
-from app.domain.model.db_models import Base
+from app.domain.user.user_entity import Base
 from app.common.config import DatabaseConfig
 
 # ============================================================================

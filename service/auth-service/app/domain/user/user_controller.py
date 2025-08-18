@@ -20,11 +20,17 @@ import logging
 import os
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import text
-from app.domain.service.auth_service import AuthService
-from app.domain.repository.user_repository import UserRepository
-from app.domain.schema.auth_schema import (
-    UserRegistrationRequest, UserLoginRequest, UserUpdateRequest,
-    PasswordChangeRequest, UserDeleteRequest, AuthResponse, UserResponse, MessageResponse
+from app.domain.user.user_service import AuthService
+from app.domain.user.user_repository import UserRepository
+from app.domain.user.user_schema import (
+    UserRegistrationRequest,
+    UserLoginRequest,
+    UserUpdateRequest,
+    PasswordChangeRequest,
+    UserDeleteRequest,
+    AuthResponse,
+    UserResponse,
+    MessageResponse,
 )
 
 # ============================================================================

@@ -23,9 +23,16 @@ import logging
 from datetime import datetime
 from typing import Optional, List, Tuple
 
-from app.domain.entity.user_entity import User, UserCredentials
-from app.domain.repository.user_repository import UserRepository
-from app.domain.schema.auth_schema import UserRegistrationRequest, UserLoginRequest, UserUpdateRequest, PasswordChangeRequest, UserDeleteRequest
+from app.domain.user.user_schema import (
+    User,
+    UserCredentials,
+    UserRegistrationRequest,
+    UserLoginRequest,
+    UserUpdateRequest,
+    PasswordChangeRequest,
+    UserDeleteRequest,
+)
+from app.domain.user.user_repository import UserRepository
 
 # ============================================================================
 # 🔧 로거 설정

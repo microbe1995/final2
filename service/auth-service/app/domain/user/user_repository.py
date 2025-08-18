@@ -18,8 +18,8 @@ import logging
 from typing import Optional, List
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
-from app.domain.entity.user_entity import User
-from app.domain.model.db_models import UserDB
+from app.domain.user.user_schema import User
+from app.domain.user.user_entity import UserDB
 from app.common.database.database import database
 
 # ============================================================================
