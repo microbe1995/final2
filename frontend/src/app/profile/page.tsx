@@ -2,9 +2,9 @@
 
 import { useEffect } from 'react';
 import { useAuthStore } from '@/zustand/authStore';
-import { useAuthAPI } from '@/hooks/useAuthAPI';
-import { useNavigation } from '@/hooks/useNavigation';
-import { useAsyncOperation } from '@/hooks/useAsyncOperation';
+import { useAuthService } from '@/hooks/useAuthAPI';
+import { useAppNavigation } from '@/hooks/useNavigation';
+import { useAsyncOperationHelper } from '@/hooks/useAsyncOperation';
 import ProfileForm from '@/organisms/ProfileForm';
 import Button from '@/atoms/Button';
 
@@ -18,9 +18,9 @@ export default function ProfilePage() {
   // ============================================================================
   
   const { user, token, isAuthenticated, updateUser, logout } = useAuthStore();
-  const { updateProfile, changePassword } = useAuthAPI();
-  const { goToLogin } = useNavigation();
-  const { isLoading, error, success, executeAsync } = useAsyncOperation();
+  const { updateProfile, changePassword } = useAuthService();
+  const { goToLogin } = useAppNavigation();
+  const { isLoading, error, success, executeAsync } = useAsyncOperationHelper();
 
   // ============================================================================
   // 🔄 초기화 - 인증 상태 확인
@@ -154,7 +154,7 @@ export default function ProfilePage() {
               variant="danger"
               className="px-6 py-2"
             >
-              로그아웃
+              Logout
             </Button>
           </div>
         </div>

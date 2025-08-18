@@ -4,7 +4,7 @@
 
 import type { Metadata } from 'next';
 import './globals.css';
-import Navigation from '@/components/organisms/Navigation';
+import AppTopNavigation from '@/components/organisms/AppTopNavigation';
 
 // ============================================================================
 // 🎯 메타데이터 설정
@@ -116,7 +116,7 @@ export default function RootLayout({
       
       <body className="h-full bg-[#0b0c0f] transition-colors duration-200">
         <div className="flex flex-col min-h-screen">
-          <Navigation />
+          <AppTopNavigation />
           <main className="min-h-screen bg-[#0b0c0f] transition-colors duration-200">
             {children}
           </main>

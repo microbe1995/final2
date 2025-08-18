@@ -1,10 +1,10 @@
 'use client';
 
 import { useAuthStore } from '@/zustand/authStore';
-import { useAuthAPI } from '@/hooks/useAuthAPI';
-import { useNavigation } from '@/hooks/useNavigation';
-import { useAsyncOperation } from '@/hooks/useAsyncOperation';
-import AuthForm from '@/organisms/AuthForm';
+import { useAuthService } from '@/hooks/useAuthAPI';
+import { useAppNavigation } from '@/hooks/useNavigation';
+import { useAsyncOperationHelper } from '@/hooks/useAsyncOperation';
+import LoginSignupCard from '@/organisms/LoginSignupCard';
 
 // ============================================================================
 // 🔑 로그인 페이지 컴포넌트
@@ -12,9 +12,9 @@ import AuthForm from '@/organisms/AuthForm';
 
 export default function LoginPage() {
   const { login } = useAuthStore();
-  const { login: loginAPI } = useAuthAPI();
-  const { goToProfile } = useNavigation();
-  const { isLoading, error, success, executeAsync } = useAsyncOperation();
+  const { login: loginAPI } = useAuthService();
+  const { goToProfile } = useAppNavigation();
+  const { isLoading, error, success, executeAsync } = useAsyncOperationHelper();
   
   // ============================================================================
   // 🚀 로그인 제출
@@ -45,7 +45,7 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-[#0b0c0f] flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <AuthForm
+        <LoginSignupCard
           type="login"
           onSubmit={handleSubmit}
           className="w-full"

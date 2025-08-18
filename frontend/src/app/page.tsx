@@ -1,5 +1,5 @@
 import React from 'react';
-import HeroSection from '@/molecules/HeroSection';
+import WelcomeBanner from '@/molecules/WelcomeBanner';
 import FeaturesSection from '@/molecules/FeaturesSection';
 
 // ============================================================================
@@ -45,7 +45,7 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-[#0b0c0f] transition-colors duration-200">
-      <HeroSection
+      <WelcomeBanner
         title="Welcome to CBAM Calculator"
         description="사업장의 데이터를 안전하고 편리하게 관리해 제품별 탄소배출량을 계산하세요. 회원가입 후 로그인하여 서비스를 경험해보세요."
         primaryButtonText="Signup"

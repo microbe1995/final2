@@ -2,10 +2,10 @@ import React from 'react';
 import Button from '@/atoms/Button';
 
 // ============================================================================
-// 🧩 HeroSection Molecule Component
+// 🧩 WelcomeBanner Molecule Component
 // ============================================================================
 
-export interface HeroSectionProps {
+export interface WelcomeBannerProps {
   title: string;
   description: string;
   primaryButtonText: string;
@@ -15,7 +15,7 @@ export interface HeroSectionProps {
   className?: string;
 }
 
-const HeroSection: React.FC<HeroSectionProps> = ({
+const WelcomeBanner: React.FC<WelcomeBannerProps> = ({
   title,
   description,
   primaryButtonText,
@@ -68,4 +68,4 @@ const HeroSection: React.FC<HeroSectionProps> = ({
   );
 };
 
-export default HeroSection;
+export default WelcomeBanner;

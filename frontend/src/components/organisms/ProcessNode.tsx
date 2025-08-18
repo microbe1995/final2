@@ -3,9 +3,9 @@
 import React, { useState, useCallback } from 'react';
 import { NodeProps, Position } from '@xyflow/react';
 
-import ProcessHandle from '../atoms/ProcessHandle';
-import ProcessTypeBadge from '../atoms/ProcessTypeBadge';
-import ProcessStatusIndicator from '../atoms/ProcessStatusIndicator';
+import ProcessFlowHandle from '../atoms/ProcessFlowHandle';
+import ProcessFlowTypeBadge from '../atoms/ProcessFlowTypeBadge';
+import ProcessFlowStatusIndicator from '../atoms/ProcessFlowStatusIndicator';
 import ProcessNodeContent from '../molecules/ProcessNodeContent';
 import ProcessNodeToolbar from '../molecules/ProcessNodeToolbar';
 import type { ProcessNodeData } from '@/types/reactFlow';
@@ -56,7 +56,7 @@ const ProcessNode: React.FC<ProcessNodeProps> = ({
       />
 
       {/* 입력 핸들 */}
-      <ProcessHandle
+              <ProcessFlowHandle
         type="target"
         position={Position.Left}
       />
@@ -65,11 +65,11 @@ const ProcessNode: React.FC<ProcessNodeProps> = ({
       <div className="bg-[#1e293b] border-2 border-[#334155] rounded-lg shadow-lg p-4 min-w-[200px] text-white">
         {/* 공정 타입 및 상태 표시 */}
         <div className="flex items-center justify-between mb-3">
-          <ProcessTypeBadge
+          <ProcessFlowTypeBadge
             processType={data.processType}
             size="sm"
           />
-          <ProcessStatusIndicator
+          <ProcessFlowStatusIndicator
             status="active"
             size="sm"
           />
@@ -95,7 +95,7 @@ const ProcessNode: React.FC<ProcessNodeProps> = ({
       </div>
 
       {/* 출력 핸들 */}
-      <ProcessHandle
+              <ProcessFlowHandle
         type="source"
         position={Position.Right}
       />

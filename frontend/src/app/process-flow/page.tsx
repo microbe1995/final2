@@ -1,11 +1,11 @@
 'use client';
 
 import React from 'react';
-import ProcessFlowHeader from '@/organisms/ProcessFlowHeader';
-import ProcessFlowInfoPanel from '@/organisms/ProcessFlowInfoPanel';
-import ProcessFlowMain from '@/organisms/ProcessFlowMain';
+import ProcessControlHeader from '@/organisms/ProcessControlHeader';
+import ProcessInfoSidebar from '@/organisms/ProcessInfoSidebar';
+import ProcessDiagramEditor from '@/organisms/ProcessDiagramEditor';
 import ProcessTypeModal from '@/molecules/ProcessTypeModal';
-import { useProcessFlow } from '@/hooks/useProcessFlow';
+import { useProcessFlowDomain } from '@/hooks/useProcessFlow';
 import { useNodeManagement } from '@/hooks/useNodeManagement';
 import { useProcessTypeModal } from '@/hooks/useProcessTypeModal';
 
@@ -35,7 +35,7 @@ export default function ProcessFlowPage() {
     saveToBackend,
     loadFromBackend,
     clearFlow,
-  } = useProcessFlow();
+  } = useProcessFlowDomain();
 
   // 노드/엣지 관리
   const {
@@ -94,7 +94,7 @@ export default function ProcessFlowPage() {
   return (
     <div className="min-h-screen bg-[#0b0c0f]">
       {/* 헤더 */}
-      <ProcessFlowHeader
+      <ProcessControlHeader
         serviceStatus={serviceStatus}
         isReadOnly={isReadOnly}
         onToggleReadOnly={toggleReadOnly}
@@ -112,7 +112,7 @@ export default function ProcessFlowPage() {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* 왼쪽 사이드바 - 정보 패널 */}
           <div className="lg:col-span-1">
-            <ProcessFlowInfoPanel
+            <ProcessInfoSidebar
               nodes={nodes}
               edges={edges}
               selectedNodes={selectedNodes}
@@ -123,7 +123,7 @@ export default function ProcessFlowPage() {
           </div>
 
           {/* 메인 공정도 에디터 */}
-          <ProcessFlowMain
+          <ProcessDiagramEditor
             nodes={nodes}
             edges={edges}
             isReadOnly={isReadOnly}

@@ -1,18 +1,18 @@
 'use client';
 
-import { useAuthAPI, RegisterData } from '@/hooks/useAuthAPI';
-import { useNavigation } from '@/hooks/useNavigation';
-import { useAsyncOperation } from '@/hooks/useAsyncOperation';
-import AuthForm from '@/organisms/AuthForm';
+import { useAuthService, RegisterData } from '@/hooks/useAuthAPI';
+import { useAppNavigation } from '@/hooks/useNavigation';
+import { useAsyncOperationHelper } from '@/hooks/useAsyncOperation';
+import LoginSignupCard from '@/organisms/LoginSignupCard';
 
 // ============================================================================
 // 🎯 회원가입 페이지 컴포넌트
 // ============================================================================
 
 export default function RegisterPage() {
-  const { register } = useAuthAPI();
-  const { goToLogin } = useNavigation();
-  const { isLoading, error, success, executeAsync } = useAsyncOperation();
+  const { register } = useAuthService();
+  const { goToLogin } = useAppNavigation();
+  const { isLoading, error, success, executeAsync } = useAsyncOperationHelper();
   
   // ============================================================================
   // 🚀 회원가입 제출
@@ -41,7 +41,7 @@ export default function RegisterPage() {
   return (
     <div className="min-h-screen bg-[#0b0c0f] flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <AuthForm
+        <LoginSignupCard
           type="register"
           onSubmit={handleSubmit}
           className="w-full"
@@ -49,7 +49,7 @@ export default function RegisterPage() {
         
         {/* 상태 메시지 표시 */}
         {isLoading && (
-          <div className="mt-4 text-center text-blue-500">회원가입 중...</div>
+          <div className="mt-4 text-center text-blue-500">Signup...</div>
         )}
         {error && (
           <div className="mt-4 text-center text-red-500">{error}</div>
