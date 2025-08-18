@@ -40,7 +40,7 @@ export const useProcessFlowService = () => {
   
   const loadSavedCanvases = useCallback(async (): Promise<CanvasListItem[]> => {
     try {
-      const response = await apiMethods.get<CanvasListItem[]>('/api/v1/cal-boundary/canvas');
+      const response = await apiMethods.get<CanvasListItem[]>('/api/v1/cal-boundary/canvas/');
       return response || [];
     } catch (error) {
       console.error('❌ Canvas 목록 조회 실패:', error);
@@ -67,7 +67,7 @@ export const useProcessFlowService = () => {
       const canvasData = transformFlowToCanvas(nodes, edges, name);
       
       // 백엔드에 저장
-      await apiMethods.post('/api/v1/cal-boundary/canvas', canvasData);
+      await apiMethods.post('/api/v1/cal-boundary/canvas/', canvasData);
       
       console.log('✅ 백엔드 저장 완료');
       return true;
@@ -87,15 +87,15 @@ export const useProcessFlowService = () => {
     try {
       if (canvasId) {
         // 특정 Canvas 로드
-        const canvas = await apiMethods.get(`/api/v1/cal-boundary/canvas/${canvasId}`);
+        const canvas = await apiMethods.get(`/api/v1/cal-boundary/canvas/${canvasId}/`);
         return transformCanvasToFlow(canvas);
       } else {
         // 최신 Canvas 로드
-        const canvases = await apiMethods.get<CanvasListItem[]>('/api/v1/cal-boundary/canvas');
+        const canvases = await apiMethods.get<CanvasListItem[]>('/api/v1/cal-boundary/canvas/');
         
         if (canvases && canvases.length > 0) {
           const latestCanvas = canvases[0];
-          const canvas = await apiMethods.get(`/api/v1/cal-boundary/canvas/${latestCanvas.id}`);
+          const canvas = await apiMethods.get(`/api/v1/cal-boundary/canvas/${latestCanvas.id}/`);
           return transformCanvasToFlow(canvas);
         }
       }
@@ -127,7 +127,7 @@ export const useProcessFlowService = () => {
   
   const deleteCanvas = useCallback(async (canvasId: string): Promise<boolean> => {
     try {
-      await apiMethods.delete(`/api/v1/cal-boundary/canvas/${canvasId}`);
+      await apiMethods.delete(`/api/v1/cal-boundary/canvas/${canvasId}/`);
       console.log('✅ Canvas 삭제 완료');
       return true;
     } catch (error) {
@@ -156,7 +156,7 @@ export const useProcessFlowService = () => {
       const canvasData = transformFlowToCanvas(nodes, edges, name);
       
       // 백엔드에 업데이트
-      await apiMethods.put(`/api/v1/cal-boundary/canvas/${canvasId}`, canvasData);
+      await apiMethods.put(`/api/v1/cal-boundary/canvas/${canvasId}/`, canvasData);
       
       console.log('✅ Canvas 업데이트 완료');
       return true;
