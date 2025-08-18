@@ -22,14 +22,19 @@ from ..schema.canvas_schema import (
     CanvasBulkOperationRequest,
     CanvasTemplateRequest
 )
+from .canvas_repository import CanvasRepository
 
 class CanvasService:
     """Canvas 관련 비즈니스 로직을 처리하는 서비스 클래스"""
     
-    def __init__(self):
-        """CanvasService 초기화"""
-        self._canvases: Dict[str, Canvas] = {}  # 메모리 저장소 (실제로는 DB 사용)
-        logger.info("✅ CanvasService 초기화 완료")
+    def __init__(self, repository: Optional[CanvasRepository] = None):
+        """CanvasService 초기화
+
+        repository가 주어지면 DB를 사용하고, 없으면 메모리 저장소를 사용합니다.
+        """
+        self.repository = repository or CanvasRepository(use_database=False)
+        self._canvases: Dict[str, Canvas] = {}  # 메모리 저장소 (fallback)
+        logger.info("✅ CanvasService 초기화 완료 (DB: %s)", isinstance(self.repository, CanvasRepository) and self.repository.use_database)
     
     # ============================================================================
     # 🎯 CRUD 작업
@@ -38,47 +43,8 @@ class CanvasService:
     async def create_canvas(self, request: CanvasCreateRequest) -> CanvasResponse:
         """새 Canvas를 생성합니다 - React Flow 지원"""
         try:
-            # 고유 ID 생성
-            canvas_id = str(uuid.uuid4())
-            
-            # 현재 시간
-            now = datetime.utcnow().isoformat()
-            
-            # React Flow 데이터 처리
-            nodes = request.nodes or []
-            edges = request.edges or []
-            
-            # 메타데이터 구성
-            metadata = request.metadata or {}
-            metadata.update({
-                'description': request.description,
-                'nodeCount': len(nodes),
-                'edgeCount': len(edges),
-                'reactFlowVersion': '12.8.3',
-                'createdAt': now,
-                'updatedAt': now
-            })
-            
-            # Canvas 엔티티 생성
-            canvas = Canvas(
-                id=canvas_id,
-                name=request.name,
-                width=request.width,
-                height=request.height,
-                background_color=request.background_color,
-                metadata=metadata
-            )
-            
-            # React Flow 데이터 저장
-            canvas.nodes = nodes
-            canvas.edges = edges
-            
-            # 저장
-            self._canvases[canvas_id] = canvas
-            logger.info(f"✅ Canvas 생성 완료: {canvas_id} ({request.name}) - 노드: {len(nodes)}개, 엣지: {len(edges)}개")
-            
-            return CanvasResponse(**canvas.to_dict())
-            
+            # 레포지토리를 통해 저장 (DB 또는 메모리)
+            return await self.repository.create(request)
         except Exception as e:
             logger.error(f"❌ Canvas 생성 실패: {str(e)}")
             raise
@@ -86,13 +52,12 @@ class CanvasService:
     async def get_canvas(self, canvas_id: str) -> Optional[CanvasResponse]:
         """ID로 Canvas를 조회합니다"""
         try:
-            canvas = self._canvases.get(canvas_id)
-            if not canvas:
+            res = await self.repository.get_by_id(canvas_id)
+            if not res:
                 logger.warning(f"⚠️ Canvas를 찾을 수 없음: {canvas_id}")
                 return None
-            
             logger.info(f"✅ Canvas 조회 완료: {canvas_id}")
-            return CanvasResponse(**canvas.to_dict())
+            return res
             
         except Exception as e:
             logger.error(f"❌ Canvas 조회 실패: {str(e)}")
@@ -101,26 +66,9 @@ class CanvasService:
     async def get_all_canvases(self, page: int = 1, size: int = 20) -> CanvasListResponse:
         """모든 Canvas를 페이지네이션으로 조회합니다"""
         try:
-            start_idx = (page - 1) * size
-            end_idx = start_idx + size
-            
-            canvases_list = list(self._canvases.values())
-            total = len(canvases_list)
-            
-            # 페이지네이션 적용
-            paginated_canvases = canvases_list[start_idx:end_idx]
-            
-            # 응답 생성
-            canvas_responses = [CanvasResponse(**canvas.to_dict()) for canvas in paginated_canvases]
-            
-            logger.info(f"✅ Canvas 목록 조회 완료: {len(canvas_responses)}개 (페이지 {page})")
-            
-            return CanvasListResponse(
-                canvases=canvas_responses,
-                total=total,
-                page=page,
-                size=size
-            )
+            res = await self.repository.list_all(page=page, size=size)
+            logger.info(f"✅ Canvas 목록 조회 완료: {len(res.canvases)}개 (페이지 {page})")
+            return res
             
         except Exception as e:
             logger.error(f"❌ Canvas 목록 조회 실패: {str(e)}")
@@ -129,34 +77,12 @@ class CanvasService:
     async def update_canvas(self, canvas_id: str, request: CanvasUpdateRequest) -> Optional[CanvasResponse]:
         """Canvas를 수정합니다"""
         try:
-            canvas = self._canvases.get(canvas_id)
-            if not canvas:
+            updated = await self.repository.update(canvas_id, request)
+            if not updated:
                 logger.warning(f"⚠️ 수정할 Canvas를 찾을 수 없음: {canvas_id}")
                 return None
-            
-            # 업데이트할 필드들만 수정
-            if request.name is not None:
-                canvas.name = request.name
-            if request.width is not None:
-                canvas.width = request.width
-            if request.height is not None:
-                canvas.height = request.height
-            if request.background_color is not None:
-                canvas.background_color = request.background_color
-            if request.zoom_level is not None:
-                canvas.set_zoom(request.zoom_level)
-            if request.pan_x is not None:
-                canvas.pan_x = request.pan_x
-            if request.pan_y is not None:
-                canvas.pan_y = request.pan_y
-            if request.metadata is not None:
-                canvas.metadata.update(request.metadata)
-            
-            # 수정 시간 업데이트
-            canvas.updated_at = datetime.utcnow()
-            
             logger.info(f"✅ Canvas 수정 완료: {canvas_id}")
-            return CanvasResponse(**canvas.to_dict())
+            return updated
             
         except Exception as e:
             logger.error(f"❌ Canvas 수정 실패: {str(e)}")
@@ -165,11 +91,10 @@ class CanvasService:
     async def delete_canvas(self, canvas_id: str) -> bool:
         """Canvas를 삭제합니다"""
         try:
-            if canvas_id not in self._canvases:
+            ok = await self.repository.delete(canvas_id)
+            if not ok:
                 logger.warning(f"⚠️ 삭제할 Canvas를 찾을 수 없음: {canvas_id}")
                 return False
-            
-            del self._canvases[canvas_id]
             logger.info(f"✅ Canvas 삭제 완료: {canvas_id}")
             return True
             

@@ -12,6 +12,7 @@ import asyncio
 from typing import Optional, AsyncGenerator
 from contextlib import asynccontextmanager
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine
 from sqlalchemy.pool import NullPool
 from loguru import logger
@@ -71,7 +72,7 @@ class DatabaseConnection:
         """데이터베이스 연결을 테스트합니다"""
         try:
             async with self._engine.begin() as conn:
-                await conn.execute("SELECT 1")
+                await conn.execute(text("SELECT 1"))
             logger.info("✅ 데이터베이스 연결 테스트 성공")
         except Exception as e:
             logger.error(f"❌ 데이터베이스 연결 테스트 실패: {str(e)}")

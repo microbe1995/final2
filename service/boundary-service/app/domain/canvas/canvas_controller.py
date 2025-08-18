@@ -7,6 +7,7 @@ from typing import Optional
 from loguru import logger
 
 from ..service.canvas_service import CanvasService
+from ..canvas.canvas_repository import CanvasRepository
 from ..schema.canvas_schema import (
     CanvasCreateRequest,
     CanvasUpdateRequest,
@@ -24,9 +25,13 @@ from ..schema.canvas_schema import (
 canvas_router = APIRouter(tags=["canvas"])
 
 # 서비스 의존성
+def get_canvas_repository() -> CanvasRepository:
+    return CanvasRepository(use_database=True)
+
 def get_canvas_service() -> CanvasService:
     """CanvasService 의존성 주입"""
-    return CanvasService()
+    repo = get_canvas_repository()
+    return CanvasService(repository=repo)
 
 # ============================================================================
 # 🎯 CRUD 엔드포인트

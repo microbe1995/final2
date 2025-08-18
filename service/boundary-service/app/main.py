@@ -17,6 +17,7 @@ import os
 
 # 라우터 임포트
 from .domain.controller import shape_router, arrow_router, canvas_router, cbam_router
+from .common.database.connection import initialize_database, close_database
 
 # ============================================================================
 # 🔧 애플리케이션 설정
@@ -39,11 +40,22 @@ async def lifespan(app: FastAPI):
     logger.info("🚀 Cal_boundary 서비스 시작 중...")
     logger.info(f"📋 서비스 정보: {APP_NAME} v{APP_VERSION}")
     logger.info(f"🔧 디버그 모드: {DEBUG_MODE}")
+    # DB 초기화
+    try:
+        await initialize_database()
+        logger.info("✅ 데이터베이스 초기화 완료")
+    except Exception as e:
+        logger.error(f"❌ 데이터베이스 초기화 실패: {str(e)}")
     
     yield
     
     # 종료 시
     logger.info("🛑 Cal_boundary 서비스 종료 중...")
+    try:
+        await close_database()
+        logger.info("🔌 데이터베이스 연결 종료")
+    except Exception as e:
+        logger.error(f"❌ 데이터베이스 종료 실패: {str(e)}")
 
 # ============================================================================
 # 🚀 FastAPI 애플리케이션 생성

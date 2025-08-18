@@ -44,6 +44,10 @@ class DatabaseConfig(BaseSettings):
     @property
     def connection_string(self) -> str:
         """PostgreSQL 연결 문자열을 반환합니다"""
+        # 우선순위: DATABASE_URL / DATABASE_INTERNAL_URL
+        url_env = os.getenv("DATABASE_URL") or os.getenv("DATABASE_INTERNAL_URL")
+        if url_env:
+            return url_env
         # 기본 연결 문자열
         conn_str = f"postgresql://{self.username}:{self.password}@{self.host}:{self.port}/{self.database}"
         
@@ -56,8 +60,15 @@ class DatabaseConfig(BaseSettings):
     @property
     def async_connection_string(self) -> str:
         """비동기 PostgreSQL 연결 문자열을 반환합니다"""
-        # 기본 연결 문자열 (asyncpg용)
-        conn_str = f"postgresql://{self.username}:{self.password}@{self.host}:{self.port}/{self.database}"
+        # 우선순위: DATABASE_URL / DATABASE_INTERNAL_URL → asyncpg로 변환
+        url_env = os.getenv("DATABASE_URL") or os.getenv("DATABASE_INTERNAL_URL")
+        if url_env:
+            if url_env.startswith("postgresql://"):
+                return url_env.replace("postgresql://", "postgresql+asyncpg://", 1)
+            return url_env
+
+        # asyncpg 드라이버 사용을 명시 (기본 조립)
+        conn_str = f"postgresql+asyncpg://{self.username}:{self.password}@{self.host}:{self.port}/{self.database}"
         
         # SSL 설정 추가
         if self.ssl_mode != "disable":
