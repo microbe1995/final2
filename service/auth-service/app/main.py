@@ -93,29 +93,14 @@ app = FastAPI(
     lifespan=lifespan # 필요X
 )
 
-# ============================================================================
-# 🌐 CORS 설정 (Cross-Origin Resource Sharing) - gateway 쪽
-# ============================================================================
-
-# CORS 미들웨어 추가 - 모든 출처 허용
-from fastapi.middleware.cors import CORSMiddleware
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
-    allow_headers=["*"],
-    expose_headers=["*"],
-    max_age=86400,
-)
+# NOTE: CORS는 오직 Gateway에서만 처리합니다. 개별 서비스에는 CORS 미들웨어를 두지 않습니다.
 
 # ============================================================================
 # 🚪 도메인 라우터 등록
 # ============================================================================
 
 # 인증 컨트롤러의 라우터를 등록
-from app.domain.controller.auth_controller import auth_router
+from app.domain.user.user_controller import auth_router
 
 app.include_router(auth_router)
 
