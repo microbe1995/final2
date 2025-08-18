@@ -1,6 +1,6 @@
 'use client';
 
-import { useAuthAPI } from '@/hooks/useAuthAPI';
+import { useAuthAPI, RegisterData } from '@/hooks/useAuthAPI';
 import { useNavigation } from '@/hooks/useNavigation';
 import { useAsyncOperation } from '@/hooks/useAsyncOperation';
 import AuthForm from '@/organisms/AuthForm';
@@ -18,7 +18,7 @@ export default function RegisterPage() {
   // 🚀 회원가입 제출
   // ============================================================================
   
-  const handleSubmit = async (data: { email: string; password: string; fullName?: string; confirmPassword?: string }) => {
+  const handleSubmit = async (data: RegisterData) => {
     const result = await executeAsync(
       async () => {
         const response = await register(data);

@@ -8,7 +8,7 @@ interface LoginData {
   password: string;
 }
 
-interface RegisterData {
+export interface RegisterData {
   email: string;
   password: string;
   fullName?: string;
