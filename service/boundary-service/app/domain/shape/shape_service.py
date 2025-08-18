@@ -4,11 +4,12 @@
 
 import uuid
 from datetime import datetime
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Tuple
 from loguru import logger
 
-from ..entity.shape_entity import Shape, ShapeType
-from ..schema.shape_schema import (
+from ..shape.shape_entity import Shape, ShapeType
+from ..shape.shape_repository import ShapeRepository
+from ..shape.shape_schema import (
     ShapeCreateRequest,
     ShapeUpdateRequest,
     ShapeResponse,
@@ -18,11 +19,24 @@ from ..schema.shape_schema import (
 )
 
 class ShapeService:
-    """도형 관련 비즈니스 로직을 처리하는 서비스 클래스"""
+    """
+    도형 관련 비즈니스 로직을 처리하는 서비스 클래스
     
-    def __init__(self):
-        """ShapeService 초기화"""
-        self._shapes: Dict[str, Shape] = {}  # 메모리 저장소 (실제로는 DB 사용)
+    주요 기능:
+    - 도형 생성/조회/수정/삭제
+    - 도형 검색 및 필터링
+    - 도형 통계 및 분석
+    - 도형 변환 및 조작
+    """
+    
+    def __init__(self, shape_repository: ShapeRepository):
+        """
+        ShapeService 초기화
+        
+        Args:
+            shape_repository: 도형 데이터 저장소
+        """
+        self.shape_repository = shape_repository
         logger.info("✅ ShapeService 초기화 완료")
     
     # ============================================================================
@@ -32,6 +46,8 @@ class ShapeService:
     async def create_shape(self, request: ShapeCreateRequest) -> ShapeResponse:
         """새 도형을 생성합니다"""
         try:
+            logger.info(f"🎨 도형 생성 시작: {request.type.value}")
+            
             # 고유 ID 생성
             shape_id = str(uuid.uuid4())
             
@@ -46,26 +62,31 @@ class ShapeService:
                 color=request.color,
                 stroke_width=request.stroke_width,
                 fill_color=request.fill_color,
+                label=request.label,
+                label_position=request.label_position,
                 rotation=request.rotation,
-                opacity=request.opacity,
+                visible=request.visible,
+                locked=request.locked,
                 canvas_id=request.canvas_id,
                 metadata=request.metadata or {}
             )
             
-            # 저장
-            self._shapes[shape_id] = shape
-            logger.info(f"✅ 도형 생성 완료: {shape_id} ({request.type.value})")
+            # Repository를 통해 저장
+            created_shape = await self.shape_repository.create_shape(shape)
             
-            return ShapeResponse(**shape.to_dict())
+            logger.info(f"✅ 도형 생성 완료: {shape_id} ({request.type.value})")
+            return ShapeResponse(**created_shape.to_dict())
             
         except Exception as e:
             logger.error(f"❌ 도형 생성 실패: {str(e)}")
-            raise
+            raise ValueError(f"도형 생성 중 오류가 발생했습니다: {str(e)}")
     
     async def get_shape(self, shape_id: str) -> Optional[ShapeResponse]:
         """ID로 도형을 조회합니다"""
         try:
-            shape = self._shapes.get(shape_id)
+            logger.info(f"🔍 도형 조회 시작: {shape_id}")
+            
+            shape = await self.shape_repository.get_shape_by_id(shape_id)
             if not shape:
                 logger.warning(f"⚠️ 도형을 찾을 수 없음: {shape_id}")
                 return None
@@ -74,46 +95,52 @@ class ShapeService:
             return ShapeResponse(**shape.to_dict())
             
         except Exception as e:
-            logger.error(f"❌ 도형 조회 실패: {str(e)}")
-            raise
+            logger.error(f"❌ 도형 조회 실패: {shape_id} - {str(e)}")
+            return None
     
     async def get_all_shapes(self, page: int = 1, size: int = 20) -> ShapeListResponse:
         """모든 도형을 페이지네이션으로 조회합니다"""
         try:
-            start_idx = (page - 1) * size
-            end_idx = start_idx + size
+            logger.info(f"📋 도형 목록 조회: 페이지 {page}, 크기 {size}")
             
-            shapes_list = list(self._shapes.values())
-            total = len(shapes_list)
+            # Repository에서 전체 도형 조회
+            all_shapes = await self.shape_repository.get_all_shapes()
             
             # 페이지네이션 적용
-            paginated_shapes = shapes_list[start_idx:end_idx]
+            start_idx = (page - 1) * size
+            end_idx = start_idx + size
+            paginated_shapes = all_shapes[start_idx:end_idx]
             
             # 응답 생성
             shape_responses = [ShapeResponse(**shape.to_dict()) for shape in paginated_shapes]
             
-            logger.info(f"✅ 도형 목록 조회 완료: {len(shape_responses)}개 (페이지 {page})")
+            logger.info(f"✅ 도형 목록 조회 완료: {len(shape_responses)}개")
             
             return ShapeListResponse(
                 shapes=shape_responses,
-                total=total,
+                total=len(all_shapes),
                 page=page,
                 size=size
             )
             
         except Exception as e:
             logger.error(f"❌ 도형 목록 조회 실패: {str(e)}")
-            raise
+            raise ValueError(f"도형 목록 조회 중 오류가 발생했습니다: {str(e)}")
     
     async def update_shape(self, shape_id: str, request: ShapeUpdateRequest) -> Optional[ShapeResponse]:
         """도형을 수정합니다"""
         try:
-            shape = self._shapes.get(shape_id)
+            logger.info(f"✏️ 도형 수정 시작: {shape_id}")
+            
+            # 기존 도형 조회
+            shape = await self.shape_repository.get_shape_by_id(shape_id)
             if not shape:
                 logger.warning(f"⚠️ 수정할 도형을 찾을 수 없음: {shape_id}")
                 return None
             
             # 업데이트할 필드들만 수정
+            if request.type is not None:
+                shape.type = ShapeType(request.type.value)
             if request.x is not None:
                 shape.x = request.x
             if request.y is not None:
@@ -128,37 +155,50 @@ class ShapeService:
                 shape.stroke_width = request.stroke_width
             if request.fill_color is not None:
                 shape.fill_color = request.fill_color
+            if request.label is not None:
+                shape.label = request.label
+            if request.label_position is not None:
+                shape.label_position = request.label_position
             if request.rotation is not None:
                 shape.rotation = request.rotation
-            if request.opacity is not None:
-                shape.opacity = request.opacity
+            if request.visible is not None:
+                shape.visible = request.visible
+            if request.locked is not None:
+                shape.locked = request.locked
             if request.metadata is not None:
                 shape.metadata.update(request.metadata)
             
             # 수정 시간 업데이트
             shape.updated_at = datetime.utcnow()
             
+            # Repository를 통해 업데이트
+            updated_shape = await self.shape_repository.update_shape(shape)
+            
             logger.info(f"✅ 도형 수정 완료: {shape_id}")
-            return ShapeResponse(**shape.to_dict())
+            return ShapeResponse(**updated_shape.to_dict())
             
         except Exception as e:
-            logger.error(f"❌ 도형 수정 실패: {str(e)}")
-            raise
+            logger.error(f"❌ 도형 수정 실패: {shape_id} - {str(e)}")
+            raise ValueError(f"도형 수정 중 오류가 발생했습니다: {str(e)}")
     
     async def delete_shape(self, shape_id: str) -> bool:
         """도형을 삭제합니다"""
         try:
-            if shape_id not in self._shapes:
-                logger.warning(f"⚠️ 삭제할 도형을 찾을 수 없음: {shape_id}")
-                return False
+            logger.info(f"🗑️ 도형 삭제 시작: {shape_id}")
             
-            del self._shapes[shape_id]
-            logger.info(f"✅ 도형 삭제 완료: {shape_id}")
-            return True
+            # Repository를 통해 삭제
+            success = await self.shape_repository.delete_shape(shape_id)
+            
+            if success:
+                logger.info(f"✅ 도형 삭제 완료: {shape_id}")
+            else:
+                logger.warning(f"⚠️ 삭제할 도형을 찾을 수 없음: {shape_id}")
+            
+            return success
             
         except Exception as e:
-            logger.error(f"❌ 도형 삭제 실패: {str(e)}")
-            raise
+            logger.error(f"❌ 도형 삭제 실패: {shape_id} - {str(e)}")
+            raise ValueError(f"도형 삭제 중 오류가 발생했습니다: {str(e)}")
     
     # ============================================================================
     # 🔍 검색 및 필터링
@@ -167,29 +207,32 @@ class ShapeService:
     async def search_shapes(self, request: ShapeSearchRequest) -> ShapeListResponse:
         """조건에 맞는 도형을 검색합니다"""
         try:
-            filtered_shapes = []
+            logger.info(f"🔍 도형 검색 시작")
             
-            for shape in self._shapes.values():
-                # 타입 필터
-                if request.type and shape.type != ShapeType(request.type.value):
-                    continue
-                
+            # 모든 도형 조회 (실제로는 DB에서 필터링 쿼리 사용)
+            all_shapes = await self.shape_repository.get_all_shapes()
+            
+            # 필터링 로직
+            filtered_shapes = []
+            for shape in all_shapes:
                 # Canvas ID 필터
                 if request.canvas_id and shape.canvas_id != request.canvas_id:
                     continue
                 
-                # 좌표 범위 필터
-                if request.min_x is not None and shape.x < request.min_x:
-                    continue
-                if request.max_x is not None and shape.x > request.max_x:
-                    continue
-                if request.min_y is not None and shape.y < request.min_y:
-                    continue
-                if request.max_y is not None and shape.y > request.max_y:
+                # 타입 필터
+                if request.type and shape.type.value != request.type.value:
                     continue
                 
                 # 색상 필터
                 if request.color and shape.color != request.color:
+                    continue
+                
+                # 표시 상태 필터
+                if request.visible is not None and shape.visible != request.visible:
+                    continue
+                
+                # 잠금 상태 필터
+                if request.locked is not None and shape.locked != request.locked:
                     continue
                 
                 filtered_shapes.append(shape)
@@ -202,7 +245,7 @@ class ShapeService:
             # 응답 생성
             shape_responses = [ShapeResponse(**shape.to_dict()) for shape in paginated_shapes]
             
-            logger.info(f"✅ 도형 검색 완료: {len(shape_responses)}개 (필터링된 {len(filtered_shapes)}개)")
+            logger.info(f"✅ 도형 검색 완료: {len(shape_responses)}개")
             
             return ShapeListResponse(
                 shapes=shape_responses,
@@ -213,79 +256,37 @@ class ShapeService:
             
         except Exception as e:
             logger.error(f"❌ 도형 검색 실패: {str(e)}")
-            raise
+            raise ValueError(f"도형 검색 중 오류가 발생했습니다: {str(e)}")
     
-    # ============================================================================
-    # 🎨 도형 조작
-    # ============================================================================
-    
-    async def move_shape(self, shape_id: str, dx: float, dy: float) -> Optional[ShapeResponse]:
-        """도형을 이동시킵니다"""
+    async def get_shapes_by_canvas(self, canvas_id: str) -> List[ShapeResponse]:
+        """Canvas ID로 도형 목록을 조회합니다"""
         try:
-            shape = self._shapes.get(shape_id)
-            if not shape:
-                logger.warning(f"⚠️ 이동할 도형을 찾을 수 없음: {shape_id}")
-                return None
+            logger.info(f"📋 Canvas 도형 조회: {canvas_id}")
             
-            shape.move(dx, dy)
-            logger.info(f"✅ 도형 이동 완료: {shape_id} (dx: {dx}, dy: {dy})")
+            shapes = await self.shape_repository.get_shapes_by_canvas(canvas_id)
+            shape_responses = [ShapeResponse(**shape.to_dict()) for shape in shapes]
             
-            return ShapeResponse(**shape.to_dict())
+            logger.info(f"✅ Canvas 도형 조회 완료: {len(shape_responses)}개")
+            return shape_responses
             
         except Exception as e:
-            logger.error(f"❌ 도형 이동 실패: {str(e)}")
-            raise
+            logger.error(f"❌ Canvas 도형 조회 실패: {canvas_id} - {str(e)}")
+            return []
     
-    async def resize_shape(self, shape_id: str, new_width: float, new_height: float) -> Optional[ShapeResponse]:
-        """도형의 크기를 변경합니다"""
+    async def get_shapes_by_type(self, shape_type: ShapeType) -> List[ShapeResponse]:
+        """도형 타입별로 조회합니다"""
         try:
-            shape = self._shapes.get(shape_id)
-            if not shape:
-                logger.warning(f"⚠️ 크기 변경할 도형을 찾을 수 없음: {shape_id}")
-                return None
+            logger.info(f"📋 도형 타입별 조회: {shape_type.value}")
             
-            shape.resize(new_width, new_height)
-            logger.info(f"✅ 도형 크기 변경 완료: {shape_id} ({new_width}x{new_height})")
+            shapes = await self.shape_repository.get_shapes_by_type(shape_type)
+            shape_responses = [ShapeResponse(**shape.to_dict()) for shape in shapes]
             
-            return ShapeResponse(**shape.to_dict())
+            logger.info(f"✅ 도형 타입별 조회 완료: {len(shape_responses)}개")
+            return shape_responses
             
         except Exception as e:
-            logger.error(f"❌ 도형 크기 변경 실패: {str(e)}")
-            raise
-    
-    async def rotate_shape(self, shape_id: str, angle: float) -> Optional[ShapeResponse]:
-        """도형을 회전시킵니다"""
-        try:
-            shape = self._shapes.get(shape_id)
-            if not shape:
-                logger.warning(f"⚠️ 회전할 도형을 찾을 수 없음: {shape_id}")
-                return None
-            
-            shape.rotate(angle)
-            logger.info(f"✅ 도형 회전 완료: {shape_id} ({angle}도)")
-            
-            return ShapeResponse(**shape.to_dict())
-            
-        except Exception as e:
-            logger.error(f"❌ 도형 회전 실패: {str(e)}")
-            raise
-    
-    async def change_shape_color(self, shape_id: str, new_color: str) -> Optional[ShapeResponse]:
-        """도형의 색상을 변경합니다"""
-        try:
-            shape = self._shapes.get(shape_id)
-            if not shape:
-                logger.warning(f"⚠️ 색상 변경할 도형을 찾을 수 없음: {shape_id}")
-                return None
-            
-            shape.change_color(new_color)
-            logger.info(f"✅ 도형 색상 변경 완료: {shape_id} ({new_color})")
-            
-            return ShapeResponse(**shape.to_dict())
-            
-        except Exception as e:
-            logger.error(f"❌ 도형 색상 변경 실패: {str(e)}")
-            raise
+            logger.error(f"❌ 도형 타입별 조회 실패: {shape_type.value} - {str(e)}")
+            return []
     
     # ============================================================================
     # 📊 통계 및 분석
@@ -294,82 +295,169 @@ class ShapeService:
     async def get_shape_stats(self) -> ShapeStatsResponse:
         """도형 통계를 조회합니다"""
         try:
-            total_shapes = len(self._shapes)
+            logger.info("📊 도형 통계 조회 시작")
             
-            # 타입별 도형 수
-            shapes_by_type = {}
-            for shape in self._shapes.values():
+            all_shapes = await self.shape_repository.get_all_shapes()
+            
+            # 기본 통계
+            total_shapes = len(all_shapes)
+            
+            # 타입별 분포
+            type_distribution = {}
+            for shape in all_shapes:
                 type_name = shape.type.value
-                shapes_by_type[type_name] = shapes_by_type.get(type_name, 0) + 1
+                type_distribution[type_name] = type_distribution.get(type_name, 0) + 1
             
-            # 색상별 도형 수
-            shapes_by_color = {}
-            for shape in self._shapes.values():
+            # 색상별 분포 (상위 5개)
+            color_distribution = {}
+            for shape in all_shapes:
                 color = shape.color
-                shapes_by_color[color] = shapes_by_color.get(color, 0) + 1
+                color_distribution[color] = color_distribution.get(color, 0) + 1
+            
+            most_used_colors = sorted(
+                [{"color": k, "count": v} for k, v in color_distribution.items()],
+                key=lambda x: x["count"],
+                reverse=True
+            )[:5]
+            
+            # 표시/잠금 상태 통계
+            visible_shapes = sum(1 for shape in all_shapes if shape.visible)
+            locked_shapes = sum(1 for shape in all_shapes if shape.locked)
             
             # 평균 크기 계산
             if total_shapes > 0:
-                total_width = sum(shape.width for shape in self._shapes.values())
-                total_height = sum(shape.height for shape in self._shapes.values())
-                avg_width = total_width / total_shapes
-                avg_height = total_height / total_shapes
+                total_area = sum(shape.width * shape.height for shape in all_shapes)
+                average_area = total_area / total_shapes
             else:
-                avg_width = avg_height = 0.0
-            
-            # Canvas 수 (고유한 canvas_id 개수)
-            canvas_ids = set(shape.canvas_id for shape in self._shapes.values() if shape.canvas_id)
-            canvas_count = len(canvas_ids)
+                average_area = 0.0
             
             logger.info(f"✅ 도형 통계 조회 완료: 총 {total_shapes}개")
             
             return ShapeStatsResponse(
                 total_shapes=total_shapes,
-                shapes_by_type=shapes_by_type,
-                shapes_by_color=shapes_by_color,
-                average_size={"width": avg_width, "height": avg_height},
-                canvas_count=canvas_count
+                type_distribution=type_distribution,
+                most_used_colors=most_used_colors,
+                visible_shapes=visible_shapes,
+                locked_shapes=locked_shapes,
+                average_area=average_area,
+                shapes_with_labels=sum(1 for shape in all_shapes if shape.label)
             )
             
         except Exception as e:
             logger.error(f"❌ 도형 통계 조회 실패: {str(e)}")
-            raise
+            raise ValueError(f"도형 통계 조회 중 오류가 발생했습니다: {str(e)}")
     
     # ============================================================================
-    # 🔧 유틸리티
+    # 🔧 유틸리티 메서드
     # ============================================================================
     
-    async def get_shapes_by_canvas(self, canvas_id: str) -> List[ShapeResponse]:
-        """특정 Canvas에 속한 도형들을 조회합니다"""
+    async def move_shape(self, shape_id: str, x: float, y: float) -> Optional[ShapeResponse]:
+        """도형을 이동합니다"""
         try:
-            canvas_shapes = [
-                shape for shape in self._shapes.values()
-                if shape.canvas_id == canvas_id
-            ]
+            logger.info(f"📍 도형 이동: {shape_id} -> ({x}, {y})")
             
-            shape_responses = [ShapeResponse(**shape.to_dict()) for shape in canvas_shapes]
-            logger.info(f"✅ Canvas 도형 조회 완료: {canvas_id} ({len(shape_responses)}개)")
+            shape = await self.shape_repository.get_shape_by_id(shape_id)
+            if not shape:
+                return None
             
-            return shape_responses
+            # 위치 업데이트
+            shape.x = x
+            shape.y = y
+            shape.updated_at = datetime.utcnow()
+            
+            # Repository를 통해 업데이트
+            updated_shape = await self.shape_repository.update_shape(shape)
+            
+            logger.info(f"✅ 도형 이동 완료: {shape_id}")
+            return ShapeResponse(**updated_shape.to_dict())
             
         except Exception as e:
-            logger.error(f"❌ Canvas 도형 조회 실패: {str(e)}")
-            raise
+            logger.error(f"❌ 도형 이동 실패: {shape_id} - {str(e)}")
+            return None
     
-    async def clear_canvas_shapes(self, canvas_id: str) -> int:
-        """특정 Canvas의 모든 도형을 제거합니다"""
+    async def resize_shape(self, shape_id: str, width: float, height: float) -> Optional[ShapeResponse]:
+        """도형 크기를 조정합니다"""
         try:
-            shapes_to_remove = [
-                shape_id for shape_id, shape in self._shapes.items()
-                if shape.canvas_id == canvas_id
-            ]
+            logger.info(f"📏 도형 크기 조정: {shape_id} -> {width}x{height}")
             
-            for shape_id in shapes_to_remove:
-                del self._shapes[shape_id]
+            shape = await self.shape_repository.get_shape_by_id(shape_id)
+            if not shape:
+                return None
             
-            logger.info(f"✅ Canvas 도형 제거 완료: {canvas_id} ({len(shapes_to_remove)}개)")
-            return len(shapes_to_remove)
+            # 크기 업데이트
+            shape.width = width
+            shape.height = height
+            shape.updated_at = datetime.utcnow()
+            
+            # Repository를 통해 업데이트
+            updated_shape = await self.shape_repository.update_shape(shape)
+            
+            logger.info(f"✅ 도형 크기 조정 완료: {shape_id}")
+            return ShapeResponse(**updated_shape.to_dict())
             
         except Exception as e:
-            logger.error(f"❌ Canvas 도형 제거 실패: {str(e)}")
-            raise
+            logger.error(f"❌ 도형 크기 조정 실패: {shape_id} - {str(e)}")
+            return None
+    
+    async def rotate_shape(self, shape_id: str, rotation: float) -> Optional[ShapeResponse]:
+        """도형을 회전합니다"""
+        try:
+            logger.info(f"🔄 도형 회전: {shape_id} -> {rotation}도")
+            
+            shape = await self.shape_repository.get_shape_by_id(shape_id)
+            if not shape:
+                return None
+            
+            # 회전 업데이트 (0-360도 범위로 정규화)
+            shape.rotation = rotation % 360
+            shape.updated_at = datetime.utcnow()
+            
+            # Repository를 통해 업데이트
+            updated_shape = await self.shape_repository.update_shape(shape)
+            
+            logger.info(f"✅ 도형 회전 완료: {shape_id}")
+            return ShapeResponse(**updated_shape.to_dict())
+            
+        except Exception as e:
+            logger.error(f"❌ 도형 회전 실패: {shape_id} - {str(e)}")
+            return None
+    
+    async def duplicate_shape(self, shape_id: str, offset_x: float = 20.0, offset_y: float = 20.0) -> Optional[ShapeResponse]:
+        """도형을 복제합니다"""
+        try:
+            logger.info(f"📋 도형 복제: {shape_id}")
+            
+            original_shape = await self.shape_repository.get_shape_by_id(shape_id)
+            if not original_shape:
+                return None
+            
+            # 새로운 ID와 위치로 복제
+            new_id = str(uuid.uuid4())
+            duplicated_shape = Shape(
+                id=new_id,
+                type=original_shape.type,
+                x=original_shape.x + offset_x,
+                y=original_shape.y + offset_y,
+                width=original_shape.width,
+                height=original_shape.height,
+                color=original_shape.color,
+                stroke_width=original_shape.stroke_width,
+                fill_color=original_shape.fill_color,
+                label=f"{original_shape.label} (복제)" if original_shape.label else None,
+                label_position=original_shape.label_position,
+                rotation=original_shape.rotation,
+                visible=original_shape.visible,
+                locked=False,  # 복제된 도형은 잠금 해제
+                canvas_id=original_shape.canvas_id,
+                metadata=original_shape.metadata.copy()
+            )
+            
+            # Repository를 통해 저장
+            created_shape = await self.shape_repository.create_shape(duplicated_shape)
+            
+            logger.info(f"✅ 도형 복제 완료: {shape_id} -> {new_id}")
+            return ShapeResponse(**created_shape.to_dict())
+            
+        except Exception as e:
+            logger.error(f"❌ 도형 복제 실패: {shape_id} - {str(e)}")
+            return None

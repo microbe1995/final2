@@ -30,34 +30,6 @@ APP_DESCRIPTION = os.getenv("APP_DESCRIPTION", "Canvas 기반 도형 및 화살�
 DEBUG_MODE = os.getenv("DEBUG_MODE", "false").lower() == "true"
 
 # ============================================================================
-# 🎯 애플리케이션 생명주기 관리
-# ============================================================================
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    """애플리케이션 시작/종료 시 실행되는 함수"""
-    # 시작 시
-    logger.info("🚀 Cal_boundary 서비스 시작 중...")
-    logger.info(f"📋 서비스 정보: {APP_NAME} v{APP_VERSION}")
-    logger.info(f"🔧 디버그 모드: {DEBUG_MODE}")
-    # DB 초기화
-    try:
-        await initialize_database()
-        logger.info("✅ 데이터베이스 초기화 완료")
-    except Exception as e:
-        logger.error(f"❌ 데이터베이스 초기화 실패: {str(e)}")
-    
-    yield
-    
-    # 종료 시
-    logger.info("🛑 Cal_boundary 서비스 종료 중...")
-    try:
-        await close_database()
-        logger.info("🔌 데이터베이스 연결 종료")
-    except Exception as e:
-        logger.error(f"❌ 데이터베이스 종료 실패: {str(e)}")
-
-# ============================================================================
 # 🚀 FastAPI 애플리케이션 생성
 # ============================================================================
 
@@ -66,13 +38,10 @@ app = FastAPI(
     description=APP_DESCRIPTION,
     version=APP_VERSION,
     debug=DEBUG_MODE,
-    lifespan=lifespan,
     docs_url="/docs" if DEBUG_MODE else None,
     redoc_url="/redoc" if DEBUG_MODE else None,
     openapi_url="/openapi.json" if DEBUG_MODE else None
 )
-
-# NOTE: CORS는 게이트웨이에서만 처리합니다. 이 서비스에서는 CORS 미들웨어를 사용하지 않습니다.
 
 # ============================================================================
 # 📊 요청/응답 로깅 미들웨어

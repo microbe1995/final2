@@ -21,10 +21,16 @@ from ..schema.arrow_schema import (
 # 라우터 생성
 arrow_router = APIRouter(tags=["arrows"])
 
-# 서비스 의존성
+# 의존성 주입
+def get_arrow_repository():
+    """ArrowRepository 의존성 주입"""
+    from ..arrow.arrow_repository import ArrowRepository
+    return ArrowRepository(use_database=True)
+
 def get_arrow_service() -> ArrowService:
     """ArrowService 의존성 주입"""
-    return ArrowService()
+    repository = get_arrow_repository()
+    return ArrowService(arrow_repository=repository)
 
 # ============================================================================
 # 🎯 CRUD 엔드포인트

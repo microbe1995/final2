@@ -12,6 +12,7 @@ from ..schema.cbam_schema import (
     EmissionSource, SourceStream, ReportingPeriod, DataAllocation,
     CBAMBoundaryRequest, CBAMBoundaryResponse
 )
+from .boundary_repository import BoundaryRepository
 
 # ============================================================================
 # 🏭 기업 정보 검증 서비스
@@ -418,7 +419,8 @@ class DataAllocationService:
 class CBAMBoundaryMainService:
     """CBAM 산정경계 설정 메인 서비스"""
     
-    def __init__(self):
+    def __init__(self, boundary_repository: BoundaryRepository):
+        self.boundary_repository = boundary_repository
         self.company_validator = CompanyValidationService()
         self.product_validator = CBAMProductValidationService()
         self.process_validator = ProductionProcessValidationService()

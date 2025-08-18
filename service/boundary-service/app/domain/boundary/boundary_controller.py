@@ -30,10 +30,18 @@ cbam_router = APIRouter(
 )
 
 # ============================================================================
-# 🔧 서비스 인스턴스 생성
+# 🔧 의존성 주입
 # ============================================================================
 
-cbam_service = CBAMBoundaryMainService()
+def get_boundary_repository():
+    """BoundaryRepository 의존성 주입"""
+    from .boundary_repository import BoundaryRepository
+    return BoundaryRepository(use_database=True)
+
+def get_cbam_service() -> CBAMBoundaryMainService:
+    """CBAMBoundaryMainService 의존성 주입"""
+    repository = get_boundary_repository()
+    return CBAMBoundaryMainService(boundary_repository=repository)
 
 # ============================================================================
 # 🏭 기업 정보 관리 API
@@ -292,7 +300,10 @@ async def get_period_templates():
 # ============================================================================
 
 @cbam_router.post("/boundary/create", response_model=CBAMBoundaryResponse)
-async def create_cbam_boundary(request: CBAMBoundaryRequest):
+async def create_cbam_boundary(
+    request: CBAMBoundaryRequest,
+    cbam_service: CBAMBoundaryMainService = Depends(get_cbam_service)
+):
     """CBAM 산정경계 설정 생성"""
     try:
         logger.info(f"CBAM 산정경계 설정 생성 요청: {request.company_info.company_name}")

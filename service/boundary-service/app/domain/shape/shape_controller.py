@@ -19,10 +19,16 @@ from ..schema.shape_schema import (
 # 라우터 생성
 shape_router = APIRouter(tags=["shapes"])
 
-# 서비스 의존성
+# 의존성 주입
+def get_shape_repository():
+    """ShapeRepository 의존성 주입"""
+    from ..shape.shape_repository import ShapeRepository
+    return ShapeRepository(use_database=True)
+
 def get_shape_service() -> ShapeService:
     """ShapeService 의존성 주입"""
-    return ShapeService()
+    repository = get_shape_repository()
+    return ShapeService(shape_repository=repository)
 
 # ============================================================================
 # 🎯 CRUD 엔드포인트
