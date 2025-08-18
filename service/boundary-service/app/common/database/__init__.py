@@ -9,11 +9,12 @@
 """
 
 from .config import DatabaseConfig
-from .connection import DatabaseConnection
+from .connection import DatabaseConnection, db_connection
 from .models import Base
 
 __all__ = [
     "DatabaseConfig",
-    "DatabaseConnection", 
+    "DatabaseConnection",
+    "db_connection",
     "Base"
 ]
