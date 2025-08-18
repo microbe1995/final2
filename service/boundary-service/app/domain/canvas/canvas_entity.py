@@ -4,8 +4,8 @@
 
 from datetime import datetime
 from typing import Optional, Dict, Any, List
-from .shape_entity import Shape
-from .arrow_entity import Arrow
+from app.domain.shape.shape_entity import Shape
+from app.domain.arrow.arrow_entity import Arrow
 
 class Canvas:
     """Canvas를 표현하는 엔티티 클래스"""
@@ -233,8 +233,8 @@ class Canvas:
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> 'Canvas':
         """딕셔너리에서 Canvas를 생성합니다 - React Flow 지원"""
-        from .shape_entity import Shape
-        from .arrow_entity import Arrow
+        from app.domain.shape.shape_entity import Shape
+        from app.domain.arrow.arrow_entity import Arrow
         
         return cls(
             id=data["id"],

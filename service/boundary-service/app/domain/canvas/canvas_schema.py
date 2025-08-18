@@ -4,8 +4,8 @@
 
 from pydantic import BaseModel, Field, field_validator
 from typing import Optional, Dict, Any, List
-from .shape_schema import ShapeResponse
-from .arrow_schema import ArrowResponse
+from app.domain.shape.shape_schema import ShapeResponse
+from app.domain.arrow.arrow_schema import ArrowResponse
 
 # ============================================================================
 # 📝 요청 스키마

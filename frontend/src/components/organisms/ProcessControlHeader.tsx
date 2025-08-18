@@ -71,14 +71,14 @@ const ProcessFlowHeader: React.FC<ProcessFlowHeaderProps> = ({
               onClick={onSaveToBackend}
               className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium"
             >
-              백엔드 저장
+              DB 저장
             </button>
             
             <button
               onClick={onLoadFromBackend}
               className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 text-sm font-medium"
             >
-              백엔드 로드
+              DB 로드
             </button>
             
             <button
