@@ -11,10 +11,10 @@ from sqlalchemy import String, Float, Boolean, Text, DateTime
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy import select, update, delete
 
-from ...common.database.models import Base
-from ...common.database.connection import db_connection
-from .canvas_entity import Canvas
-from .canvas_schema import CanvasCreateRequest, CanvasUpdateRequest, CanvasResponse, CanvasListResponse
+from app.common.database.models import Base
+from app.common.database.connection import db_connection
+from app.domain.canvas.canvas_entity import Canvas
+from app.domain.canvas.canvas_schema import CanvasCreateRequest, CanvasUpdateRequest, CanvasResponse, CanvasListResponse
 
 
 class CanvasDB(Base):

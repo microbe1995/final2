@@ -7,12 +7,12 @@ from loguru import logger
 import uuid
 from datetime import datetime, timedelta
 
-from ..schema.cbam_schema import (
+from app.domain.boundary.boundary_schema import (
     CompanyInfo, CBAMProduct, ProductionProcess, CalculationBoundary,
     EmissionSource, SourceStream, ReportingPeriod, DataAllocation,
     CBAMBoundaryRequest, CBAMBoundaryResponse
 )
-from .boundary_repository import BoundaryRepository
+from app.domain.boundary.boundary_repository import BoundaryRepository
 
 # ============================================================================
 # 🏭 기업 정보 검증 서비스

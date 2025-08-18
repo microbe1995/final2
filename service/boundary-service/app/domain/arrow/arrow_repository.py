@@ -22,10 +22,10 @@ from sqlalchemy import String, Float, DateTime, Text
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy import select, update, delete, text
 
-from ...common.database.models import Base
-from ...common.database.connection import db_connection
-from ..arrow.arrow_entity import Arrow, ArrowType
-from ..arrow.arrow_schema import (
+from app.common.database.models import Base
+from app.common.database.connection import db_connection
+from app.domain.arrow.arrow_entity import Arrow, ArrowType
+from app.domain.arrow.arrow_schema import (
     ArrowCreateRequest,
     ArrowUpdateRequest,
     ArrowResponse,

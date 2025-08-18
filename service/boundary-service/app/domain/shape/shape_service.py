@@ -7,9 +7,9 @@ from datetime import datetime
 from typing import List, Optional, Tuple
 from loguru import logger
 
-from ..shape.shape_entity import Shape, ShapeType
-from ..shape.shape_repository import ShapeRepository
-from ..shape.shape_schema import (
+from app.domain.shape.shape_entity import Shape, ShapeType
+from app.domain.shape.shape_repository import ShapeRepository
+from app.domain.shape.shape_schema import (
     ShapeCreateRequest,
     ShapeUpdateRequest,
     ShapeResponse,

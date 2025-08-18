@@ -22,10 +22,10 @@ from sqlalchemy import String, Float, Integer, DateTime, Text
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy import select, update, delete, text
 
-from ...common.database.models import Base
-from ...common.database.connection import db_connection
-from ..shape.shape_entity import Shape, ShapeType
-from ..shape.shape_schema import (
+from app.common.database.models import Base
+from app.common.database.connection import db_connection
+from app.domain.shape.shape_entity import Shape, ShapeType
+from app.domain.shape.shape_schema import (
     ShapeCreateRequest,
     ShapeUpdateRequest,
     ShapeResponse,

@@ -6,8 +6,8 @@ from fastapi import APIRouter, HTTPException, Query, Depends
 from typing import Optional
 from loguru import logger
 
-from ..service.arrow_service import ArrowService
-from ..schema.arrow_schema import (
+from app.domain.arrow.arrow_service import ArrowService
+from app.domain.arrow.arrow_schema import (
     ArrowCreateRequest,
     ArrowUpdateRequest,
     ArrowResponse,
@@ -24,7 +24,7 @@ arrow_router = APIRouter(tags=["arrows"])
 # 의존성 주입
 def get_arrow_repository():
     """ArrowRepository 의존성 주입"""
-    from ..arrow.arrow_repository import ArrowRepository
+    from app.domain.arrow.arrow_repository import ArrowRepository
     return ArrowRepository(use_database=True)
 
 def get_arrow_service() -> ArrowService:

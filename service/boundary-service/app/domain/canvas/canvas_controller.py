@@ -6,9 +6,9 @@ from fastapi import APIRouter, HTTPException, Query, Depends
 from typing import Optional
 from loguru import logger
 
-from ..service.canvas_service import CanvasService
-from ..canvas.canvas_repository import CanvasRepository
-from ..schema.canvas_schema import (
+from app.domain.canvas.canvas_service import CanvasService
+from app.domain.canvas.canvas_repository import CanvasRepository
+from app.domain.canvas.canvas_schema import (
     CanvasCreateRequest,
     CanvasUpdateRequest,
     CanvasResponse,

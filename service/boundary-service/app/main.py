@@ -16,8 +16,11 @@ import time
 import os
 
 # 라우터 임포트
-from .domain.controller import shape_router, arrow_router, canvas_router, cbam_router
-from .common.database.connection import initialize_database, close_database
+from app.domain.shape.shape_controller import shape_router
+from app.domain.arrow.arrow_controller import arrow_router
+from app.domain.canvas.canvas_controller import canvas_router
+from app.domain.boundary.boundary_controller import cbam_router
+from app.common.database.connection import db_connection
 
 # ============================================================================
 # 🔧 애플리케이션 설정
@@ -30,6 +33,24 @@ APP_DESCRIPTION = os.getenv("APP_DESCRIPTION", "Canvas 기반 도형 및 화살�
 DEBUG_MODE = os.getenv("DEBUG_MODE", "false").lower() == "true"
 
 # ============================================================================
+# 🔄 애플리케이션 생명주기 관리
+# ============================================================================
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """애플리케이션 시작/종료 시 실행되는 함수"""
+    logger.info("🚀 Cal_boundary 서비스 시작 중...")
+    
+    # 데이터베이스 초기화
+    await db_connection.initialize()
+    
+    yield
+    
+    # 데이터베이스 연결 종료
+    await db_connection.close()
+    logger.info("🛑 Cal_boundary 서비스 종료 중...")
+
+# ============================================================================
 # 🚀 FastAPI 애플리케이션 생성
 # ============================================================================
 
@@ -40,7 +61,8 @@ app = FastAPI(
     debug=DEBUG_MODE,
     docs_url="/docs" if DEBUG_MODE else None,
     redoc_url="/redoc" if DEBUG_MODE else None,
-    openapi_url="/openapi.json" if DEBUG_MODE else None
+    openapi_url="/openapi.json" if DEBUG_MODE else None,
+    lifespan=lifespan
 )
 
 # ============================================================================

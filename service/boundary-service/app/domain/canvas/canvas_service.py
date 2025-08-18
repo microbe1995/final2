@@ -7,8 +7,8 @@ from datetime import datetime
 from typing import List, Optional, Dict, Any
 from loguru import logger
 
-from ..entity.canvas_entity import Canvas
-from ..schema.canvas_schema import (
+from app.domain.canvas.canvas_entity import Canvas
+from app.domain.canvas.canvas_schema import (
     CanvasCreateRequest,
     CanvasUpdateRequest,
     CanvasResponse,
@@ -22,7 +22,7 @@ from ..schema.canvas_schema import (
     CanvasBulkOperationRequest,
     CanvasTemplateRequest
 )
-from .canvas_repository import CanvasRepository
+from app.domain.canvas.canvas_repository import CanvasRepository
 
 class CanvasService:
     """Canvas 관련 비즈니스 로직을 처리하는 서비스 클래스"""

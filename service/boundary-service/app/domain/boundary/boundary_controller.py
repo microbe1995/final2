@@ -9,12 +9,12 @@ from typing import List, Dict, Any
 import uuid
 from datetime import datetime
 
-from ..schema.cbam_schema import (
+from app.domain.boundary.boundary_schema import (
     CompanyInfo, CBAMProduct, ProductionProcess, CalculationBoundary,
     EmissionSource, SourceStream, ReportingPeriod, DataAllocation,
     CBAMBoundaryRequest, CBAMBoundaryResponse
 )
-from ..service.cbam_service import CBAMBoundaryMainService
+from app.domain.boundary.boundary_service import CBAMBoundaryMainService
 
 # ============================================================================
 # 🚀 CBAM 라우터 생성
@@ -35,7 +35,7 @@ cbam_router = APIRouter(
 
 def get_boundary_repository():
     """BoundaryRepository 의존성 주입"""
-    from .boundary_repository import BoundaryRepository
+    from app.domain.boundary.boundary_repository import BoundaryRepository
     return BoundaryRepository(use_database=True)
 
 def get_cbam_service() -> CBAMBoundaryMainService:

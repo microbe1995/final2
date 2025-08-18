@@ -21,8 +21,8 @@ from datetime import datetime
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update, delete, text
 
-from ...common.database.connection import db_connection
-from ..boundary.boundary_entity import (
+from app.common.database.connection import db_connection
+from app.domain.boundary.boundary_entity import (
     CompanyEntity,
     CBAMProductEntity,
     ProductionProcessEntity,

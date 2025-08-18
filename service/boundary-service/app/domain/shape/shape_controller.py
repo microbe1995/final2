@@ -6,8 +6,8 @@ from fastapi import APIRouter, HTTPException, Query, Depends
 from typing import Optional
 from loguru import logger
 
-from ..service.shape_service import ShapeService
-from ..schema.shape_schema import (
+from app.domain.shape.shape_service import ShapeService
+from app.domain.shape.shape_schema import (
     ShapeCreateRequest,
     ShapeUpdateRequest,
     ShapeResponse,
@@ -22,7 +22,7 @@ shape_router = APIRouter(tags=["shapes"])
 # 의존성 주입
 def get_shape_repository():
     """ShapeRepository 의존성 주입"""
-    from ..shape.shape_repository import ShapeRepository
+    from app.domain.shape.shape_repository import ShapeRepository
     return ShapeRepository(use_database=True)
 
 def get_shape_service() -> ShapeService:
