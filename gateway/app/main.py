@@ -33,7 +33,11 @@ CAL_BOUNDARY_URL = os.getenv("CAL_BOUNDARY_URL", "http://cal-boundary:8001")
 
 SERVICE_MAP = {
     "auth": AUTH_SERVICE_URL,
+    # 기본 키
     "boundary": CAL_BOUNDARY_URL,
+    # 프론트엔드 호환용 별칭
+    "cal-boundary": CAL_BOUNDARY_URL,
+    "cal_boundary": CAL_BOUNDARY_URL,
 }
 
 @asynccontextmanager
@@ -78,7 +82,14 @@ async def proxy_request(service: str, path: str, request: Request) -> Response:
     if not base_url:
         return JSONResponse(status_code=404, content={"detail": f"Unknown service: {service}"})
 
-    target_url = f"{base_url.rstrip('/')}/{path}"
+    # 서비스별 경로 정규화 (내부 서비스 라우터 prefix와 정렬)
+    normalized_path = path
+    if service == "auth":
+        # auth-service는 내부 라우터가 "/auth" prefix를 사용하므로 보정
+        if normalized_path and not normalized_path.startswith("auth/") and normalized_path != "auth":
+            normalized_path = f"auth/{normalized_path}"
+
+    target_url = f"{base_url.rstrip('/')}/{normalized_path}"
     method = request.method
     headers = dict(request.headers)
     headers.pop("host", None)

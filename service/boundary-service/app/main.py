@@ -9,7 +9,6 @@ Cal_boundary 서비스 메인 애플리케이션
 """
 
 from fastapi import FastAPI, Request
-from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
 from loguru import logger
@@ -61,23 +60,7 @@ app = FastAPI(
     openapi_url="/openapi.json" if DEBUG_MODE else None
 )
 
-# ============================================================================
-# 🌐 CORS 미들웨어 설정
-# ============================================================================
-
-# 허용할 도메인 목록
-ALLOWED_ORIGINS = [
-    "http://localhost:3000",  # 로컬 개발
-    "https://lca-final.vercel.app",  # Vercel 배포
-]
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=ALLOWED_ORIGINS,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# NOTE: CORS는 게이트웨이에서만 처리합니다. 이 서비스에서는 CORS 미들웨어를 사용하지 않습니다.
 
 # ============================================================================
 # 📊 요청/응답 로깅 미들웨어
