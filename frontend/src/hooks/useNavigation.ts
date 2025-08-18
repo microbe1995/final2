@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useCallback } from 'react';
 
-export const useNavigation = () => {
+export const useAppNavigation = () => {
   const router = useRouter();
 
   // 로그인 페이지로 이동

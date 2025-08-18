@@ -1,18 +1,16 @@
 // ============================================================================
-// 🪝 Custom Hooks - 재사용 가능한 로직
+// 🪝 Custom Hooks - DDD 도메인별 분류
 // ============================================================================
 
-// API 관련 훅
-export { useAuthAPI } from './useAuthAPI';
-export { useProcessFlowAPI } from './useProcessFlowAPI';
+// 🔐 Auth Domain Services
+export { useAuthService } from './useAuthAPI';
 
-// 상태 관리 훅
-export { useAsyncOperation } from './useAsyncOperation';
-
-// 네비게이션 훅
-export { useNavigation } from './useNavigation';
-
-// Process Flow 관련 훅
-export { useProcessFlow } from './useProcessFlow';
+// 🏭 ProcessFlow Domain Services  
+export { useProcessFlowService } from './useProcessFlowAPI';
+export { useProcessFlowDomain } from './useProcessFlow';
 export { useNodeManagement } from './useNodeManagement';
 export { useProcessTypeModal } from './useProcessTypeModal';
+
+// 🌐 Application Services
+export { useAppNavigation } from './useNavigation';
+export { useAsyncOperationHelper } from './useAsyncOperation';

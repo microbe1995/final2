@@ -53,7 +53,7 @@ export default function LoginPage() {
         
         {/* 상태 메시지 표시 */}
         {isLoading && (
-          <div className="mt-4 text-center text-blue-500">로그인 중...</div>
+          <div className="mt-4 text-center text-blue-500">Login...</div>
         )}
         {error && (
           <div className="mt-4 text-center text-red-500">{error}</div>

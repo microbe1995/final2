@@ -26,7 +26,7 @@ interface PasswordData {
   confirm_password: string;
 }
 
-export const useAuthAPI = () => {
+export const useAuthService = () => {
   // ============================================================================
   // 🔐 로그인 API 호출
   // ============================================================================

@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from 'react';
 
-export const useAsyncOperation = () => {
+export const useAsyncOperationHelper = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');

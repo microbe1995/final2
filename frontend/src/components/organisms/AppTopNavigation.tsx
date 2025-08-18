@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/zustand/authStore';
 
-const Navigation: React.FC = () => {
+const AppTopNavigation: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { user, logout } = useAuthStore();
   const router = useRouter();
@@ -55,7 +55,7 @@ const Navigation: React.FC = () => {
               href="/process-flow"
               className="text-white hover:text-blue-300 px-3 py-2 rounded-md text-base font-medium transition-colors duration-200"
             >
-              공정도
+              ProcessFlow
             </Link>
             
             {user && (
@@ -71,7 +71,7 @@ const Navigation: React.FC = () => {
               onClick={handleLogout}
               className="text-white hover:text-red-300 px-3 py-2 rounded-md text-base font-medium transition-colors duration-200"
             >
-              로그아웃
+              Logout
             </button>
           </div>
 
@@ -122,7 +122,7 @@ const Navigation: React.FC = () => {
             href="/process-flow"
             className="border-transparent text-white hover:bg-[#334155] dark:hover:bg-gray-800 hover:border-[#475569] dark:hover:border-gray-600 hover:text-blue-300 dark:hover:text-white block pl-3 pr-4 py-3 border-l-4 text-base font-medium transition-colors duration-200"
           >
-            공정도
+            ProcessFlow
           </a>
           
           {user && (
@@ -138,7 +138,7 @@ const Navigation: React.FC = () => {
             onClick={handleLogout}
             className="border-transparent text-white hover:bg-[#334155] dark:hover:bg-gray-800 hover:border-[#475569] dark:hover:border-gray-600 hover:text-red-300 dark:hover:text-red-300 block pl-3 pr-4 py-3 border-l-4 text-base font-medium transition-colors duration-200 w-full text-left"
           >
-            로그아웃
+            Logout
           </button>
         </div>
       </div>
@@ -146,4 +146,4 @@ const Navigation: React.FC = () => {
   );
 };
 
-export default Navigation;
+export default AppTopNavigation;

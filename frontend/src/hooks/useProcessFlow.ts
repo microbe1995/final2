@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
-import { useProcessFlowAPI } from './useProcessFlowAPI';
+import { useProcessFlowService } from './useProcessFlowAPI';
 import { CanvasListItem, ServiceHealthStatus } from './useProcessFlowAPI';
 import type { AppNodeType, AppEdgeType } from '@/types/reactFlow';
 
@@ -9,7 +9,7 @@ import type { AppNodeType, AppEdgeType } from '@/types/reactFlow';
 // 🎯 Process Flow 상태 관리 훅
 // ============================================================================
 
-export const useProcessFlow = () => {
+export const useProcessFlowDomain = () => {
   // ============================================================================
   // 🎨 React Flow 상태
   // ============================================================================
@@ -38,7 +38,7 @@ export const useProcessFlow = () => {
     saveToBackend: saveToBackendAPI,
     loadFromBackend: loadFromBackendAPI,
     checkServiceStatus: checkServiceStatusAPI,
-  } = useProcessFlowAPI();
+  } = useProcessFlowService();
 
   // ============================================================================
   // 🔄 Flow 변경 처리

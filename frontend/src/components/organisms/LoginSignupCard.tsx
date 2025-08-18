@@ -23,7 +23,7 @@ export interface AuthFormData {
   confirmPassword?: string;
 }
 
-const AuthForm: React.FC<AuthFormProps> = ({
+const LoginSignupCard: React.FC<AuthFormProps> = ({
   type,
   onSubmit,
   isLoading = false,
@@ -102,12 +102,12 @@ const AuthForm: React.FC<AuthFormProps> = ({
     <Card className={className}>
       <div className="text-center mb-6">
         <h2 className="text-[22px] font-bold text-[#ffffff] leading-[1.3]">
-          {type === 'login' ? '로그인' : '회원가입'}
+          {type === 'login' ? 'Login' : 'Signup'}
         </h2>
         <p className="text-[#cbd5e1] mt-2 leading-[1.5]">
           {type === 'login' 
-            ? 'CBAM Calculator 계정으로 로그인하세요'
-            : '새로운 계정을 만들어보세요'
+            ? 'CBAM Calculator Login'
+            : 'Create New Account'
           }
         </p>
       </div>
@@ -179,20 +179,20 @@ const AuthForm: React.FC<AuthFormProps> = ({
           className="w-full"
         >
           {isLoading 
-            ? (type === 'login' ? '로그인 중...' : '회원가입 중...')
-            : (type === 'login' ? '로그인' : '회원가입')
+            ? (type === 'login' ? 'Login...' : 'Signup...')
+            : (type === 'login' ? 'Login' : 'Signup')
           }
         </Button>
       </form>
 
       <div className="text-center mt-6">
         <p className="text-[#cbd5e1]">
-          {type === 'login' ? '계정이 없으신가요?' : '이미 계정이 있으신가요?'}
+          {type === 'login' ? 'No Account?' : 'Have Account?'}
           <a
             href={type === 'login' ? '/register' : '/login'}
             className="text-[#60a5fa] hover:text-[#93c5fd] font-medium ml-1"
           >
-            {type === 'login' ? 'SignUp' : 'SignIn'}
+            {type === 'login' ? 'Signup' : 'Login'}
           </a>
         </p>
       </div>
@@ -200,4 +200,4 @@ const AuthForm: React.FC<AuthFormProps> = ({
   );
 };
 
-export default AuthForm;
+export default LoginSignupCard;
