@@ -1,151 +1,155 @@
 # ============================================================================
-# 🎨 Canvas Entity - Canvas 엔티티
+# 🎨 Canvas Entity - Canvas 엔티티 (SQLAlchemy 모델)
 # ============================================================================
 
+import json
+import re
 from datetime import datetime
 from typing import Optional, Dict, Any, List
-from app.domain.shape.shape_entity import Shape
-from app.domain.arrow.arrow_entity import Arrow
+from sqlalchemy import String, Float, Text, DateTime
+from sqlalchemy.orm import Mapped, mapped_column, validates
+from sqlalchemy.ext.declarative import declarative_base
 
-class Canvas:
-    """Canvas를 표현하는 엔티티 클래스"""
+# Canvas 도메인 전용 Base
+Base = declarative_base()
+
+class Canvas(Base):
+    """Canvas를 표현하는 엔티티 클래스 (SQLAlchemy 모델)"""
+    __tablename__ = "canvases"
+
+    # Canvas 관련 상수들 (구 utility/constants.py에서 이동)
+    DEFAULT_COLORS = {
+        "primary": "#3B82F6", "secondary": "#6B7280", "success": "#10B981",
+        "warning": "#F59E0B", "danger": "#EF4444", "info": "#06B6D4",
+        "light": "#F3F4F6", "dark": "#1F2937", "white": "#FFFFFF",
+        "black": "#000000", "transparent": "transparent"
+    }
     
-    def __init__(
-        self,
-        id: str,
-        name: str,
-        width: float = 800.0,
-        height: float = 600.0,
-        background_color: str = "#FFFFFF",
-        shapes: Optional[List[Shape]] = None,
-        arrows: Optional[List[Arrow]] = None,
-        # React Flow 데이터 지원
-        nodes: Optional[List[Dict[str, Any]]] = None,
-        edges: Optional[List[Dict[str, Any]]] = None,
-        zoom_level: float = 1.0,
-        pan_x: float = 0.0,
-        pan_y: float = 0.0,
-        created_at: Optional[datetime] = None,
-        updated_at: Optional[datetime] = None,
-        metadata: Optional[Dict[str, Any]] = None
-    ):
-        self.id = id
-        self.name = name
-        self.width = width
-        self.height = height
-        self.background_color = background_color
-        self.shapes = shapes or []
-        self.arrows = arrows or []
-        # React Flow 데이터
-        self.nodes = nodes or []
-        self.edges = edges or []
-        self.zoom_level = zoom_level
-        self.pan_x = pan_x
-        self.pan_y = pan_y
-        self.created_at = created_at or datetime.utcnow()
-        self.updated_at = updated_at or datetime.utcnow()
-        self.metadata = metadata or {}
+    MAX_DIMENSIONS = {
+        "width": 10000, "height": 10000,
+        "min_width": 100, "min_height": 100
+    }
     
-    def add_shape(self, shape: Shape) -> None:
-        """Canvas에 도형을 추가합니다"""
-        shape.canvas_id = self.id
-        self.shapes.append(shape)
-        self.updated_at = datetime.utcnow()
+    SUPPORTED_FORMATS = {
+        "export": ["json", "png", "svg", "pdf"],
+        "import": ["json", "svg"]
+    }
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, index=True)
+    name: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
+    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+
+    width: Mapped[float] = mapped_column(Float, nullable=False, default=1200.0)
+    height: Mapped[float] = mapped_column(Float, nullable=False, default=800.0)
+    background_color: Mapped[str] = mapped_column(String(16), nullable=False, default="#FFFFFF")
+
+    zoom_level: Mapped[float] = mapped_column(Float, nullable=False, default=1.0)
+    pan_x: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
+    pan_y: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
+
+    # React Flow 데이터를 JSON으로 저장
+    nodes_json: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    edges_json: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    metadata_json: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+
+    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
+
+    @property
+    def nodes(self) -> List[Dict[str, Any]]:
+        """React Flow 노드 데이터"""
+        if self.nodes_json:
+            return json.loads(self.nodes_json)
+        return []
     
-    def remove_shape(self, shape_id: str) -> bool:
-        """Canvas에서 도형을 제거합니다"""
-        for i, shape in enumerate(self.shapes):
-            if shape.id == shape_id:
-                del self.shapes[i]
-                self.updated_at = datetime.utcnow()
-                return True
-        return False
+    @nodes.setter
+    def nodes(self, value: List[Dict[str, Any]]) -> None:
+        """React Flow 노드 데이터 설정"""
+        self.nodes_json = json.dumps(value) if value else None
     
-    def add_arrow(self, arrow: Arrow) -> None:
-        """Canvas에 화살표를 추가합니다"""
-        arrow.canvas_id = self.id
-        self.arrows.append(arrow)
-        self.updated_at = datetime.utcnow()
+    @property
+    def edges(self) -> List[Dict[str, Any]]:
+        """React Flow 엣지 데이터"""
+        if self.edges_json:
+            return json.loads(self.edges_json)
+        return []
     
-    def remove_arrow(self, arrow_id: str) -> bool:
-        """Canvas에서 화살표를 제거합니다"""
-        for i, arrow in enumerate(self.arrows):
-            if arrow.id == arrow_id:
-                del self.arrows[i]
-                self.updated_at = datetime.utcnow()
-                return True
-        return False
+    @edges.setter
+    def edges(self, value: List[Dict[str, Any]]) -> None:
+        """React Flow 엣지 데이터 설정"""
+        self.edges_json = json.dumps(value) if value else None
     
-    def get_shape_by_id(self, shape_id: str) -> Optional[Shape]:
-        """ID로 도형을 찾습니다"""
-        for shape in self.shapes:
-            if shape.id == shape_id:
-                return shape
-        return None
+    @property
+    def metadata(self) -> Dict[str, Any]:
+        """메타데이터"""
+        if self.metadata_json:
+            return json.loads(self.metadata_json)
+        return {}
     
-    def get_arrow_by_id(self, arrow_id: str) -> Optional[Arrow]:
-        """ID로 화살표를 찾습니다"""
-        for arrow in self.arrows:
-            if arrow.id == arrow_id:
-                return arrow
-        return None
+    @metadata.setter
+    def metadata(self, value: Dict[str, Any]) -> None:
+        """메타데이터 설정"""
+        self.metadata_json = json.dumps(value) if value else None
     
-    def get_elements_at_point(self, x: float, y: float) -> List[Any]:
-        """주어진 점에 있는 모든 요소를 반환합니다"""
-        elements = []
-        
-        # 도형 검사
-        for shape in self.shapes:
-            if shape.contains_point(x, y):
-                elements.append(shape)
-        
-        # 화살표 검사 (간단한 거리 기반)
-        for arrow in self.arrows:
-            if self._point_near_line(x, y, arrow):
-                elements.append(arrow)
-        
-        return elements
+    # ============================================================================
+    # 🔧 유틸리티 메서드들 (구 utility/validators.py에서 이동)
+    # ============================================================================
     
-    def _point_near_line(self, x: float, y: float, arrow: Arrow, threshold: float = 5.0) -> bool:
-        """점이 선 근처에 있는지 확인합니다"""
-        import math
+    def validate_color(self, color: str) -> bool:
+        """색상 값의 유효성을 검증합니다"""
+        if not color or not isinstance(color, str):
+            return False
         
-        # 선분과 점 사이의 최단 거리 계산
-        A = x - arrow.start_x
-        B = y - arrow.start_y
-        C = arrow.end_x - arrow.start_x
-        D = arrow.end_y - arrow.start_y
+        # 색상 패턴 검증
+        color_patterns = [
+            r'^#[0-9A-Fa-f]{3}$',      # #RGB
+            r'^#[0-9A-Fa-f]{6}$',      # #RRGGBB
+            r'^#[0-9A-Fa-f]{8}$',      # #RRGGBBAA
+            r'^transparent$',           # transparent
+        ]
         
-        dot = A * C + B * D
-        len_sq = C * C + D * D
-        
-        if len_sq == 0:
-            # 시작점과 끝점이 같은 경우
-            return math.sqrt(A * A + B * B) <= threshold
-        
-        param = dot / len_sq
-        
-        if param < 0:
-            xx, yy = arrow.start_x, arrow.start_y
-        elif param > 1:
-            xx, yy = arrow.end_x, arrow.end_y
-        else:
-            xx = arrow.start_x + param * C
-            yy = arrow.start_y + param * D
-        
-        dx = x - xx
-        dy = y - yy
-        distance = math.sqrt(dx * dx + dy * dy)
-        
-        return distance <= threshold
+        return any(re.match(pattern, color) for pattern in color_patterns)
     
+    def validate_dimensions(self, width: float, height: float) -> bool:
+        """Canvas 크기의 유효성을 검증합니다"""
+        return (self.MAX_DIMENSIONS["min_width"] <= width <= self.MAX_DIMENSIONS["width"] and
+                self.MAX_DIMENSIONS["min_height"] <= height <= self.MAX_DIMENSIONS["height"])
+    
+    def validate_zoom_level(self, zoom: float) -> bool:
+        """줌 레벨의 유효성을 검증합니다"""
+        return 0.1 <= zoom <= 5.0
+    
+    # SQLAlchemy 검증자들
+    @validates('background_color')
+    def validate_background_color(self, key, color):
+        """배경색 검증"""
+        if not self.validate_color(color):
+            raise ValueError(f"Invalid background color: {color}")
+        return color
+    
+    @validates('width', 'height')
+    def validate_canvas_dimensions(self, key, value):
+        """Canvas 크기 검증"""
+        if key == 'width':
+            if not (self.MAX_DIMENSIONS["min_width"] <= value <= self.MAX_DIMENSIONS["width"]):
+                raise ValueError(f"Invalid width: {value}")
+        elif key == 'height':
+            if not (self.MAX_DIMENSIONS["min_height"] <= value <= self.MAX_DIMENSIONS["height"]):
+                raise ValueError(f"Invalid height: {value}")
+        return value
+    
+    @validates('zoom_level')
+    def validate_zoom(self, key, zoom):
+        """줌 레벨 검증"""
+        if not self.validate_zoom_level(zoom):
+            raise ValueError(f"Invalid zoom level: {zoom}")
+        return zoom
+
     def clear(self) -> None:
         """Canvas의 모든 요소를 제거합니다 - React Flow 지원"""
-        self.shapes.clear()
-        self.arrows.clear()
         # React Flow 데이터 정리
-        self.nodes.clear()
-        self.edges.clear()
+        self.nodes = []
+        self.edges = []
         self.updated_at = datetime.utcnow()
     
     def resize(self, new_width: float, new_height: float) -> None:
@@ -167,7 +171,7 @@ class Canvas:
     
     def get_bounds(self) -> Dict[str, float]:
         """Canvas의 경계를 계산합니다 - React Flow 지원"""
-        if not self.shapes and not self.arrows and not self.nodes and not self.edges:
+        if not self.nodes and not self.edges:
             return {"min_x": 0, "min_y": 0, "max_x": self.width, "max_y": self.height}
         
         min_x = min_y = float('inf')
@@ -182,30 +186,11 @@ class Canvas:
                 max_x = max(max_x, pos.get('x', 0) + 200)  # 노드 기본 너비
                 max_y = max(max_y, pos.get('y', 0) + 100)  # 노드 기본 높이
         
-        # React Flow 엣지 경계 계산
-        for edge in self.edges:
-            # 엣지는 노드 위치에 따라 경계가 결정되므로 별도 계산 불필요
-            pass
-        
-        # 도형 경계 계산 (하위 호환성)
-        for shape in self.shapes:
-            min_x = min(min_x, shape.x)
-            min_y = min(min_y, shape.y)
-            max_x = max(max_x, shape.x + shape.width)
-            max_y = max(max_y, shape.y + shape.height)
-        
-        # 화살표 경계 계산 (하위 호환성)
-        for arrow in self.arrows:
-            min_x = min(min_x, arrow.start_x, arrow.end_x)
-            min_y = min(min_y, arrow.start_y, arrow.end_y)
-            max_x = max(max_x, arrow.start_x, arrow.end_x)
-            max_y = max(max_y, arrow.start_y, arrow.end_y)
-        
         return {
-            "min_x": min_x,
-            "min_y": min_y,
-            "max_x": max_x,
-            "max_y": max_y
+            "min_x": min_x if min_x != float('inf') else 0,
+            "min_y": min_y if min_y != float('inf') else 0,
+            "max_x": max_x if max_x != float('-inf') else self.width,
+            "max_y": max_y if max_y != float('-inf') else self.height
         }
     
     def to_dict(self) -> Dict[str, Any]:
@@ -213,45 +198,41 @@ class Canvas:
         return {
             "id": self.id,
             "name": self.name,
+            "description": self.description,
             "width": self.width,
             "height": self.height,
             "background_color": self.background_color,
             # React Flow 데이터
             "nodes": self.nodes,
             "edges": self.edges,
-            # 기존 데이터 (하위 호환성)
-            "shapes": [shape.to_dict() for shape in self.shapes],
-            "arrows": [arrow.to_dict() for arrow in self.arrows],
             "zoom_level": self.zoom_level,
             "pan_x": self.pan_x,
             "pan_y": self.pan_y,
-            "created_at": self.created_at.isoformat(),
-            "updated_at": self.updated_at.isoformat(),
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
             "metadata": self.metadata
         }
     
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> 'Canvas':
         """딕셔너리에서 Canvas를 생성합니다 - React Flow 지원"""
-        from app.domain.shape.shape_entity import Shape
-        from app.domain.arrow.arrow_entity import Arrow
-        
-        return cls(
+        canvas = cls(
             id=data["id"],
             name=data["name"],
-            width=data.get("width", 800.0),
-            height=data.get("height", 600.0),
+            description=data.get("description"),
+            width=data.get("width", 1200.0),
+            height=data.get("height", 800.0),
             background_color=data.get("background_color", "#FFFFFF"),
-            # React Flow 데이터
-            nodes=data.get("nodes", []),
-            edges=data.get("edges", []),
-            # 기존 데이터 (하위 호환성)
-            shapes=[Shape.from_dict(shape_data) for shape_data in data.get("shapes", [])],
-            arrows=[Arrow.from_dict(arrow_data) for arrow_data in data.get("arrows", [])],
             zoom_level=data.get("zoom_level", 1.0),
             pan_x=data.get("pan_x", 0.0),
             pan_y=data.get("pan_y", 0.0),
             created_at=datetime.fromisoformat(data["created_at"]) if data.get("created_at") else None,
             updated_at=datetime.fromisoformat(data["updated_at"]) if data.get("updated_at") else None,
-            metadata=data.get("metadata", {})
         )
+        
+        # React Flow 데이터 설정
+        canvas.nodes = data.get("nodes", [])
+        canvas.edges = data.get("edges", [])
+        canvas.metadata = data.get("metadata", {})
+        
+        return canvas

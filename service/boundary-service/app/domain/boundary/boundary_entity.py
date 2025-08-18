@@ -7,8 +7,29 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.sql import func
 from typing import Dict, Any
 import uuid
+import re
 
+# Boundary 도메인 전용 Base
 Base = declarative_base()
+
+# ============================================================================
+# 🔧 유틸리티 함수들 (구 utility에서 이동)
+# ============================================================================
+
+def validate_business_number(business_number: str) -> bool:
+    """사업자등록번호 유효성 검증"""
+    if not business_number or len(business_number) != 10:
+        return False
+    return business_number.isdigit()
+
+def validate_email(email: str) -> bool:
+    """이메일 형식 검증"""
+    pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    return bool(re.match(pattern, email))
+
+def validate_percentage(value: float) -> bool:
+    """퍼센트 값 검증 (0-100)"""
+    return 0 <= value <= 100
 
 # ============================================================================
 # 🏭 기업 기본 정보 엔티티

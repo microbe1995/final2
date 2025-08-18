@@ -30,11 +30,10 @@ class CanvasService:
     def __init__(self, repository: Optional[CanvasRepository] = None):
         """CanvasService 초기화
 
-        repository가 주어지면 DB를 사용하고, 없으면 메모리 저장소를 사용합니다.
+        repository가 주어지면 해당 Repository를 사용하고, 없으면 기본 DB Repository를 사용합니다.
         """
-        self.repository = repository or CanvasRepository(use_database=False)
-        self._canvases: Dict[str, Canvas] = {}  # 메모리 저장소 (fallback)
-        logger.info("✅ CanvasService 초기화 완료 (DB: %s)", isinstance(self.repository, CanvasRepository) and self.repository.use_database)
+        self.repository = repository or CanvasRepository(use_database=True)
+        logger.info("✅ CanvasService 초기화 완료 (Repository: %s)", type(self.repository).__name__)
     
     # ============================================================================
     # 🎯 CRUD 작업
@@ -107,57 +106,30 @@ class CanvasService:
     # ============================================================================
     
     async def search_canvases(self, request: CanvasSearchRequest) -> CanvasListResponse:
-        """조건에 맞는 Canvas를 검색합니다"""
+        """조건에 맞는 Canvas를 검색합니다 (DB 쿼리 최적화)"""
         try:
-            filtered_canvases = []
+            # 검색 필터 구성
+            filters = {}
+            if request.name:
+                filters["name"] = request.name
+            if request.min_width is not None:
+                filters["min_width"] = request.min_width
+            if request.max_width is not None:
+                filters["max_width"] = request.max_width
+            if request.min_height is not None:
+                filters["min_height"] = request.min_height
+            if request.max_height is not None:
+                filters["max_height"] = request.max_height
             
-            for canvas in self._canvases.values():
-                # 이름 필터 (부분 일치)
-                if request.name and request.name.lower() not in canvas.name.lower():
-                    continue
-                
-                # 너비 필터
-                if request.min_width is not None and canvas.width < request.min_width:
-                    continue
-                if request.max_width is not None and canvas.width > request.max_width:
-                    continue
-                
-                # 높이 필터
-                if request.min_height is not None and canvas.height < request.min_height:
-                    continue
-                if request.max_height is not None and canvas.height > request.max_height:
-                    continue
-                
-                # 도형 포함 여부 필터
-                if request.has_shapes is not None:
-                    has_shapes = len(canvas.shapes) > 0
-                    if has_shapes != request.has_shapes:
-                        continue
-                
-                # 화살표 포함 여부 필터
-                if request.has_arrows is not None:
-                    has_arrows = len(canvas.arrows) > 0
-                    if has_arrows != request.has_arrows:
-                        continue
-                
-                filtered_canvases.append(canvas)
-            
-            # 페이지네이션 적용
-            start_idx = (request.page - 1) * request.size
-            end_idx = start_idx + request.size
-            paginated_canvases = filtered_canvases[start_idx:end_idx]
-            
-            # 응답 생성
-            canvas_responses = [CanvasResponse(**canvas.to_dict()) for canvas in paginated_canvases]
-            
-            logger.info(f"✅ Canvas 검색 완료: {len(canvas_responses)}개 (필터링된 {len(filtered_canvases)}개)")
-            
-            return CanvasListResponse(
-                canvases=canvas_responses,
-                total=len(filtered_canvases),
+            # Repository의 최적화된 DB 쿼리 사용
+            result = await self.repository.search_with_filters(
+                filters=filters,
                 page=request.page,
                 size=request.size
             )
+            
+            logger.info(f"✅ Canvas 검색 완료: {len(result.canvases)}개 (총 {result.total}개)")
+            return result
             
         except Exception as e:
             logger.error(f"❌ Canvas 검색 실패: {str(e)}")
@@ -170,15 +142,23 @@ class CanvasService:
     async def resize_canvas(self, canvas_id: str, new_width: float, new_height: float) -> Optional[CanvasResponse]:
         """Canvas의 크기를 변경합니다"""
         try:
-            canvas = self._canvases.get(canvas_id)
+            # 기존 Canvas 조회
+            canvas = await self.repository.get_by_id(canvas_id)
             if not canvas:
                 logger.warning(f"⚠️ 크기 변경할 Canvas를 찾을 수 없음: {canvas_id}")
                 return None
             
-            canvas.resize(new_width, new_height)
+            # 크기 변경 요청 생성
+            update_request = CanvasUpdateRequest(
+                width=new_width,
+                height=new_height
+            )
+            
+            # Repository를 통해 업데이트
+            updated_canvas = await self.repository.update(canvas_id, update_request)
             logger.info(f"✅ Canvas 크기 변경 완료: {canvas_id} ({new_width}x{new_height})")
             
-            return CanvasResponse(**canvas.to_dict())
+            return updated_canvas
             
         except Exception as e:
             logger.error(f"❌ Canvas 크기 변경 실패: {str(e)}")
@@ -187,15 +167,20 @@ class CanvasService:
     async def set_canvas_zoom(self, canvas_id: str, zoom_level: float) -> Optional[CanvasResponse]:
         """Canvas의 확대/축소 레벨을 설정합니다"""
         try:
-            canvas = self._canvases.get(canvas_id)
+            # 기존 Canvas 조회
+            canvas = await self.repository.get_by_id(canvas_id)
             if not canvas:
                 logger.warning(f"⚠️ 확대/축소할 Canvas를 찾을 수 없음: {canvas_id}")
                 return None
             
-            canvas.set_zoom(zoom_level)
+            # 줌 레벨 변경 요청 생성
+            update_request = CanvasUpdateRequest(zoom_level=zoom_level)
+            
+            # Repository를 통해 업데이트
+            updated_canvas = await self.repository.update(canvas_id, update_request)
             logger.info(f"✅ Canvas 확대/축소 완료: {canvas_id} ({zoom_level}x)")
             
-            return CanvasResponse(**canvas.to_dict())
+            return updated_canvas
             
         except Exception as e:
             logger.error(f"❌ Canvas 확대/축소 실패: {str(e)}")
@@ -204,15 +189,27 @@ class CanvasService:
     async def pan_canvas(self, canvas_id: str, dx: float, dy: float) -> Optional[CanvasResponse]:
         """Canvas를 이동시킵니다"""
         try:
-            canvas = self._canvases.get(canvas_id)
+            # 기존 Canvas 조회
+            canvas = await self.repository.get_by_id(canvas_id)
             if not canvas:
                 logger.warning(f"⚠️ 이동할 Canvas를 찾을 수 없음: {canvas_id}")
                 return None
             
-            canvas.pan(dx, dy)
+            # 현재 위치에서 상대적 이동
+            new_pan_x = canvas.pan_x + dx
+            new_pan_y = canvas.pan_y + dy
+            
+            # 이동 요청 생성
+            update_request = CanvasUpdateRequest(
+                pan_x=new_pan_x,
+                pan_y=new_pan_y
+            )
+            
+            # Repository를 통해 업데이트
+            updated_canvas = await self.repository.update(canvas_id, update_request)
             logger.info(f"✅ Canvas 이동 완료: {canvas_id} (dx: {dx}, dy: {dy})")
             
-            return CanvasResponse(**canvas.to_dict())
+            return updated_canvas
             
         except Exception as e:
             logger.error(f"❌ Canvas 이동 실패: {str(e)}")
@@ -221,15 +218,24 @@ class CanvasService:
     async def clear_canvas(self, canvas_id: str) -> Optional[CanvasResponse]:
         """Canvas의 모든 요소를 제거합니다"""
         try:
-            canvas = self._canvases.get(canvas_id)
+            # 기존 Canvas 조회
+            canvas = await self.repository.get_by_id(canvas_id)
             if not canvas:
                 logger.warning(f"⚠️ 초기화할 Canvas를 찾을 수 없음: {canvas_id}")
                 return None
             
-            canvas.clear()
+            # 모든 요소 제거 요청 생성
+            update_request = CanvasUpdateRequest(
+                nodes=[],  # 빈 노드 배열
+                edges=[],  # 빈 엣지 배열
+                metadata={}  # 빈 메타데이터
+            )
+            
+            # Repository를 통해 업데이트
+            updated_canvas = await self.repository.update(canvas_id, update_request)
             logger.info(f"✅ Canvas 초기화 완료: {canvas_id}")
             
-            return CanvasResponse(**canvas.to_dict())
+            return updated_canvas
             
         except Exception as e:
             logger.error(f"❌ Canvas 초기화 실패: {str(e)}")
@@ -424,47 +430,21 @@ class CanvasService:
     # ============================================================================
     
     async def get_canvas_stats(self) -> CanvasStatsResponse:
-        """Canvas 통계를 조회합니다"""
+        """Canvas 통계를 조회합니다 (DB 집계 쿼리 최적화)"""
         try:
-            total_canvases = len(self._canvases)
+            # Repository의 최적화된 DB 집계 쿼리 사용
+            stats_data = await self.repository.get_statistics()
             
-            # 도형과 화살표 수 계산
-            total_shapes = sum(len(canvas.shapes) for canvas in self._canvases.values())
-            total_arrows = sum(len(canvas.arrows) for canvas in self._canvases.values())
-            
-            # 평균 Canvas 크기 계산
-            if total_canvases > 0:
-                total_width = sum(canvas.width for canvas in self._canvases.values())
-                total_height = sum(canvas.height for canvas in self._canvases.values())
-                avg_width = total_width / total_canvases
-                avg_height = total_height / total_canvases
-            else:
-                avg_width = avg_height = 0.0
-            
-            # 색상 사용 통계 (간단한 구현)
-            most_used_colors = [
-                {"color": "#FFFFFF", "count": total_canvases},  # 배경색
-                {"color": "#3B82F6", "count": 0},  # 기본 도형 색상
-                {"color": "#EF4444", "count": 0}   # 기본 화살표 색상
-            ]
-            
-            # Canvas 사용 통계
-            canvas_usage_stats = {
-                "empty": sum(1 for c in self._canvases.values() if len(c.shapes) == 0 and len(c.arrows) == 0),
-                "with_shapes": sum(1 for c in self._canvases.values() if len(c.shapes) > 0),
-                "with_arrows": sum(1 for c in self._canvases.values() if len(c.arrows) > 0),
-                "templates": sum(1 for c in self._canvases.values() if c.metadata.get("is_template", False))
-            }
-            
-            logger.info(f"✅ Canvas 통계 조회 완료: 총 {total_canvases}개")
+            # CanvasStatsResponse 형태로 변환
+            logger.info(f"✅ Canvas 통계 조회 완료: 총 {stats_data['total_canvases']}개")
             
             return CanvasStatsResponse(
-                total_canvases=total_canvases,
-                total_shapes=total_shapes,
-                total_arrows=total_arrows,
-                average_canvas_size={"width": avg_width, "height": avg_height},
-                most_used_colors=most_used_colors,
-                canvas_usage_stats=canvas_usage_stats
+                total_canvases=stats_data["total_canvases"],
+                total_shapes=0,  # Shape Repository에서 별도 조회 필요
+                total_arrows=0,  # Arrow Repository에서 별도 조회 필요
+                average_canvas_size=stats_data["average_canvas_size"],
+                most_used_colors=stats_data["most_used_colors"],
+                canvas_usage_stats=stats_data.get("size_distribution", {})
             )
             
         except Exception as e:
@@ -478,14 +458,23 @@ class CanvasService:
     async def get_canvas_bounds(self, canvas_id: str) -> Dict[str, float]:
         """Canvas의 경계를 계산합니다"""
         try:
-            canvas = self._canvases.get(canvas_id)
+            # Repository를 통해 Canvas 조회
+            canvas = await self.repository.get_by_id(canvas_id)
             if not canvas:
                 logger.warning(f"⚠️ 경계를 계산할 Canvas를 찾을 수 없음: {canvas_id}")
                 return {}
             
-            bounds = canvas.get_bounds()
-            logger.info(f"✅ Canvas 경계 계산 완료: {canvas_id}")
+            # 경계 계산 (Canvas 크기 기반)
+            bounds = {
+                "min_x": canvas.pan_x,
+                "min_y": canvas.pan_y,
+                "max_x": canvas.pan_x + canvas.width,
+                "max_y": canvas.pan_y + canvas.height,
+                "width": canvas.width,
+                "height": canvas.height
+            }
             
+            logger.info(f"✅ Canvas 경계 계산 완료: {canvas_id}")
             return bounds
             
         except Exception as e:
@@ -495,23 +484,47 @@ class CanvasService:
     async def get_elements_at_point(self, canvas_id: str, x: float, y: float) -> Dict[str, Any]:
         """주어진 점에 있는 모든 요소를 반환합니다"""
         try:
-            canvas = self._canvases.get(canvas_id)
+            # Repository를 통해 Canvas 조회
+            canvas = await self.repository.get_by_id(canvas_id)
             if not canvas:
                 logger.warning(f"⚠️ 요소를 찾을 Canvas를 찾을 수 없음: {canvas_id}")
                 return {}
             
-            elements = canvas.get_elements_at_point(x, y)
+            # 점이 Canvas 영역 내에 있는지 확인
+            if not (canvas.pan_x <= x <= canvas.pan_x + canvas.width and 
+                    canvas.pan_y <= y <= canvas.pan_y + canvas.height):
+                logger.info(f"✅ 점이 Canvas 영역 밖에 있음: ({x}, {y})")
+                return {
+                    "canvas_id": canvas_id,
+                    "point": {"x": x, "y": y},
+                    "nodes": [],
+                    "edges": []
+                }
+            
+            # 노드와 엣지에서 해당 점 근처의 요소 찾기
+            nearby_nodes = []
+            nearby_edges = []
+            
+            # 노드 검사
+            for node in canvas.nodes:
+                node_x = node.get("position", {}).get("x", 0)
+                node_y = node.get("position", {}).get("y", 0)
+                node_width = node.get("width", 100)
+                node_height = node.get("height", 50)
+                
+                if (node_x <= x <= node_x + node_width and 
+                    node_y <= y <= node_y + node_height):
+                    nearby_nodes.append(node)
             
             # 응답 데이터 구성
             result = {
                 "canvas_id": canvas_id,
                 "point": {"x": x, "y": y},
-                "shapes": [shape.to_dict() for shape in elements if hasattr(shape, 'type') and 'shape' in str(type(shape)).lower()],
-                "arrows": [arrow.to_dict() for arrow in elements if hasattr(arrow, 'type') and 'arrow' in str(type(arrow)).lower()]
+                "nodes": nearby_nodes,
+                "edges": nearby_edges  # 엣지는 복잡한 계산이 필요하므로 향후 구현
             }
             
-            logger.info(f"✅ 점 근처 요소 조회 완료: ({x}, {y}) - {len(elements)}개")
-            
+            logger.info(f"✅ 점 근처 요소 조회 완료: ({x}, {y}) - 노드 {len(nearby_nodes)}개")
             return result
             
         except Exception as e:

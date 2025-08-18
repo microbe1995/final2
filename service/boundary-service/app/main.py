@@ -20,8 +20,6 @@ from app.domain.shape.shape_controller import shape_router
 from app.domain.arrow.arrow_controller import arrow_router
 from app.domain.canvas.canvas_controller import canvas_router
 from app.domain.boundary.boundary_controller import boundary_router
-from app.common.database.connection import db_connection
-
 # ============================================================================
 # 🔧 애플리케이션 설정
 # ============================================================================
@@ -41,13 +39,24 @@ async def lifespan(app: FastAPI):
     """애플리케이션 시작/종료 시 실행되는 함수"""
     logger.info("🚀 Cal_boundary 서비스 시작 중...")
     
-    # 데이터베이스 초기화
-    await db_connection.initialize()
+    # 각 도메인별 DB 연결 초기화 (필요 시 자동 초기화됨)
+    logger.info("✅ 도메인별 독립 DB 연결 사용 - 자동 초기화 모드")
     
     yield
     
-    # 데이터베이스 연결 종료
-    await db_connection.close()
+    # 각 도메인별 DB 연결 종료
+    try:
+        from app.domain.canvas.canvas_repository import canvas_db
+        from app.domain.shape.shape_repository import shape_db
+        from app.domain.arrow.arrow_repository import arrow_db
+        
+        await canvas_db.close()
+        await shape_db.close() 
+        await arrow_db.close()
+        logger.info("✅ 모든 도메인 DB 연결 종료 완료")
+    except Exception as e:
+        logger.error(f"❌ DB 연결 종료 중 오류: {str(e)}")
+    
     logger.info("🛑 Cal_boundary 서비스 종료 중...")
 
 # ============================================================================

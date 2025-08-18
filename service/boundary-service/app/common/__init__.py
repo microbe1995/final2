@@ -1,31 +1,19 @@
 # ============================================================================
-# 🔧 Cal_boundary Common Package
+# 🔧 Cal_boundary Common Package  
 # ============================================================================
 
 """
 공통 기능 패키지
 
-데이터베이스, 유틸리티 등 공통으로 사용되는 기능들을 포함합니다.
+이제 모든 유틸리티 기능들이 각 도메인으로 분산되었습니다.
+데이터베이스는 각 도메인에서 독립적으로 관리됩니다.
+
+✅ 완전한 DDD 분산 완료:
+- Canvas 도메인: 색상/크기 검증, UUID 생성, 파일명 처리
+- Shape 도메인: 도형 검증, 상수 관리
+- Arrow 도메인: 화살표 검증, 길이 확인
+- Boundary 도메인: 비즈니스 로직 검증 (이메일, 사업자번호 등)
 """
 
-from .database import DatabaseConfig, DatabaseConnection, db_connection, Base
-from .utility import *
-
-__all__ = [
-    # Database
-    "DatabaseConfig",
-    "DatabaseConnection",
-    "db_connection",
-    "Base",
-    
-    # Utility
-    "validate_color",
-    "validate_coordinates", 
-    "validate_dimensions",
-    "generate_uuid",
-    "format_timestamp",
-    "sanitize_filename",
-    "DEFAULT_COLORS",
-    "MAX_DIMENSIONS",
-    "SUPPORTED_FORMATS"
-]
+# 더 이상 공통 유틸리티는 없음 - 모든 기능이 도메인별로 분산됨
+__all__ = []
