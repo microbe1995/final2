@@ -44,29 +44,8 @@ def get_cbam_service() -> CBAMBoundaryMainService:
     return CBAMBoundaryMainService(boundary_repository=repository)
 
 # ============================================================================
-# 🏭 기업 정보 관리 API
+# 🏭 기업 정보 관리 API - 제거됨 (검증 불필요)
 # ============================================================================
-
-@cbam_router.post("/company/validate", response_model=Dict[str, Any])
-async def validate_company_info(company_info: CompanyInfo):
-    """기업 정보 검증"""
-    try:
-        logger.info(f"기업 정보 검증 요청: {company_info.company_name}")
-        
-        from ..service.cbam_service import CompanyValidationService
-        is_valid, errors = CompanyValidationService.validate_company_info(company_info)
-        
-        return {
-            "success": is_valid,
-            "errors": errors,
-            "message": "검증이 완료되었습니다" if is_valid else "검증 오류가 발생했습니다"
-        }
-    except Exception as e:
-        logger.error(f"기업 정보 검증 오류: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"기업 정보 검증 중 오류가 발생했습니다: {str(e)}"
-        )
 
 # ============================================================================
 # 📦 CBAM 제품 관리 API
@@ -78,7 +57,7 @@ async def validate_cbam_products(products: List[CBAMProduct]):
     try:
         logger.info(f"CBAM 제품 검증 요청: {len(products)}개 제품")
         
-        from ..service.cbam_service import CBAMProductValidationService
+        from app.domain.boundary.boundary_service import CBAMProductValidationService
         all_errors = []
         
         for product in products:
@@ -104,7 +83,7 @@ async def validate_cbam_products(products: List[CBAMProduct]):
 async def get_cbam_hs_codes():
     """CBAM 대상 HS 코드 목록 조회"""
     try:
-        from ..service.cbam_service import CBAMProductValidationService
+        from app.domain.boundary.boundary_service import CBAMProductValidationService
         return CBAMProductValidationService.CBAM_HS_CODES
     except Exception as e:
         logger.error(f"HS 코드 조회 오류: {str(e)}")
@@ -117,7 +96,7 @@ async def get_cbam_hs_codes():
 async def check_cbam_target(hs_code: str, cn_code: str):
     """CBAM 대상 여부 확인"""
     try:
-        from ..service.cbam_service import CBAMProductValidationService
+        from app.domain.boundary.boundary_service import CBAMProductValidationService
         is_target = CBAMProductValidationService.check_cbam_target(hs_code, cn_code)
         
         return {
@@ -143,7 +122,7 @@ async def validate_production_processes(processes: List[ProductionProcess]):
     try:
         logger.info(f"생산 공정 검증 요청: {len(processes)}개 공정")
         
-        from ..service.cbam_service import ProductionProcessValidationService
+        from app.domain.boundary.boundary_service import ProductionProcessValidationService
         all_errors = []
         
         # 개별 공정 검증
@@ -238,7 +217,7 @@ async def validate_reporting_period(period: ReportingPeriod):
     try:
         logger.info(f"보고 기간 검증 요청: {period.period_name}")
         
-        from ..service.cbam_service import ReportingPeriodValidationService
+        from app.domain.boundary.boundary_service import ReportingPeriodValidationService
         is_valid, errors = ReportingPeriodValidationService.validate_period(period)
         
         return {
@@ -330,7 +309,7 @@ async def identify_emission_sources(
     try:
         logger.info(f"배출원 식별 요청: {boundary.boundary_id}")
         
-        from ..service.cbam_service import CalculationBoundaryService
+        from app.domain.boundary.boundary_service import CalculationBoundaryService
         emission_sources = CalculationBoundaryService.identify_emission_sources(
             boundary, processes
         )
@@ -353,7 +332,7 @@ async def identify_source_streams(
     try:
         logger.info(f"소스 스트림 식별 요청: {boundary.boundary_id}")
         
-        from ..service.cbam_service import CalculationBoundaryService
+        from app.domain.boundary.boundary_service import CalculationBoundaryService
         source_streams = CalculationBoundaryService.identify_source_streams(
             boundary, processes
         )
@@ -381,7 +360,7 @@ async def create_allocation_plan(
     try:
         logger.info(f"데이터 할당 계획 생성 요청: {boundary.boundary_id}")
         
-        from ..service.cbam_service import DataAllocationService
+        from app.domain.boundary.boundary_service import DataAllocationService
         allocations = DataAllocationService.create_allocation_plan(
             boundary, processes, shared_resources
         )
@@ -396,85 +375,8 @@ async def create_allocation_plan(
         )
 
 # ============================================================================
-# 📊 종합 분석 API
+# 📊 종합 분석 API - 제거됨 (현재 불필요)
 # ============================================================================
-
-@cbam_router.post("/analysis/comprehensive", response_model=Dict[str, Any])
-async def comprehensive_analysis(request: CBAMBoundaryRequest):
-    """CBAM 산정경계 종합 분석"""
-    try:
-        logger.info(f"종합 분석 요청: {request.company_info.company_name}")
-        
-        # 1. 기본 검증
-        validation_results = {
-            "company_info": {"valid": True, "errors": []},
-            "products": {"valid": True, "errors": []},
-            "processes": {"valid": True, "errors": []},
-            "period": {"valid": True, "errors": []}
-        }
-        
-        # 기업 정보 검증
-        from ..service.cbam_service import CompanyValidationService
-        is_valid, errors = CompanyValidationService.validate_company_info(request.company_info)
-        validation_results["company_info"] = {"valid": is_valid, "errors": errors}
-        
-        # 제품 검증
-        from ..service.cbam_service import CBAMProductValidationService
-        product_errors = []
-        for product in request.target_products:
-            is_valid, errors = CBAMProductValidationService.validate_product_info(product)
-            if not is_valid:
-                product_errors.extend([f"{product.product_name}: {error}" for error in errors])
-        validation_results["products"] = {"valid": len(product_errors) == 0, "errors": product_errors}
-        
-        # 공정 검증
-        from ..service.cbam_service import ProductionProcessValidationService
-        process_errors = []
-        for process in request.production_processes:
-            is_valid, errors = ProductionProcessValidationService.validate_process_info(process)
-            if not is_valid:
-                process_errors.extend([f"{process.process_name}: {error}" for error in errors])
-        
-        # 공정 흐름 검증
-        is_valid, errors = ProductionProcessValidationService.validate_process_flow(request.production_processes)
-        if not is_valid:
-            process_errors.extend(errors)
-        validation_results["processes"] = {"valid": len(process_errors) == 0, "errors": process_errors}
-        
-        # 기간 검증
-        from ..service.cbam_service import ReportingPeriodValidationService
-        is_valid, errors = ReportingPeriodValidationService.validate_period(request.reporting_period)
-        validation_results["period"] = {"valid": is_valid, "errors": errors}
-        
-        # 2. 산정경계 설정 생성
-        boundary_response = None
-        if all(result["valid"] for result in validation_results.values()):
-            boundary_response = cbam_service.create_cbam_boundary(request)
-        
-        # 3. 분석 결과 요약
-        analysis_summary = {
-            "total_validation_errors": sum(len(result["errors"]) for result in validation_results.values()),
-            "cbam_target_products": len([p for p in request.target_products if p.is_cbam_target]),
-            "total_processes": len(request.production_processes),
-            "cbam_target_processes": len([p for p in request.production_processes if p.produces_cbam_target]),
-            "shared_utilities": len([p for p in request.production_processes if p.has_shared_utility]),
-            "processes_without_measurement": len([p for p in request.production_processes if not p.has_measurement])
-        }
-        
-        return {
-            "success": True,
-            "validation_results": validation_results,
-            "boundary_response": boundary_response,
-            "analysis_summary": analysis_summary,
-            "message": "종합 분석이 완료되었습니다"
-        }
-        
-    except Exception as e:
-        logger.error(f"종합 분석 오류: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"종합 분석 중 오류가 발생했습니다: {str(e)}"
-        )
 
 # ============================================================================
 # 📋 상태 확인 API
@@ -498,22 +400,25 @@ async def service_info():
         "description": "EU CBAM 규정에 따른 철강 제품 배출량 산정을 위한 산정경계 설정 모듈",
         "version": "1.0.0",
         "features": [
-            "기업 정보 검증",
             "CBAM 제품 검증",
             "생산 공정 검증",
             "보고 기간 검증",
             "산정경계 설정",
             "배출원 및 소스 스트림 식별",
-            "데이터 할당 계획 수립",
-            "종합 분석"
+            "데이터 할당 계획 수립"
         ],
         "supported_industries": ["철강", "알루미늄", "복합비료"],
         "api_endpoints": [
-            "/cbam/company/validate",
             "/cbam/products/validate",
+            "/cbam/products/hs-codes",
+            "/cbam/products/check-target",
             "/cbam/processes/validate",
+            "/cbam/processes/flow-analysis",
             "/cbam/periods/validate",
+            "/cbam/periods/templates",
             "/cbam/boundary/create",
-            "/cbam/analysis/comprehensive"
+            "/cbam/boundary/emission-sources",
+            "/cbam/boundary/source-streams",
+            "/cbam/allocation/create-plan"
         ]
     }

@@ -10,7 +10,14 @@
 
 import os
 from typing import Optional
-from pydantic import BaseSettings, Field
+try:
+    # Pydantic v2
+    from pydantic_settings import BaseSettings
+    from pydantic import Field, ConfigDict
+except ImportError:
+    # Pydantic v1 (fallback)
+    from pydantic import BaseSettings, Field
+    ConfigDict = None
 from loguru import logger
 
 class DatabaseConfig(BaseSettings):
@@ -37,9 +44,17 @@ class DatabaseConfig(BaseSettings):
     # 로깅 설정
     echo: bool = Field(default=False, env="DB_ECHO", description="SQL 쿼리 로깅 여부")
     
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
+    # Pydantic v2 호환 설정
+    if ConfigDict:
+        model_config = ConfigDict(
+            env_file=".env",
+            env_file_encoding="utf-8"
+        )
+    else:
+        # Pydantic v1 fallback
+        class Config:
+            env_file = ".env"
+            env_file_encoding = "utf-8"
     
     @property
     def connection_string(self) -> str:
