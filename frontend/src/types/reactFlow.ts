@@ -57,6 +57,11 @@ export interface ExtendedNodeData {
   color?: string;
   icon?: string;
   processType?: 'start' | 'process' | 'end' | 'manufacturing' | 'inspection' | 'packaging' | 'transport' | 'storage';
+  // 커스텀 노드 관련 필드
+  kind?: 'process' | 'meter' | 'sensor' | 'valve';
+  status?: 'active' | 'inactive' | 'error';
+  value?: number;
+  unit?: string;
   parameters?: Record<string, any>;
   metadata?: Record<string, any>;
   [key: string]: unknown;

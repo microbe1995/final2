@@ -323,6 +323,12 @@ const ProcessFlowInfoPanel: React.FC<ProcessFlowInfoPanelProps> = ({
               {nodes.filter(n => !n.parentId && n.type !== 'groupNode').length}개
             </Badge>
           </div>
+          <div className="flex justify-between items-center">
+            <span className="text-sm text-[#94a3b8]">커스텀 노드</span>
+            <Badge variant="success" size="sm">
+              {nodes.filter(n => n.type === 'customNode').length}개
+            </Badge>
+          </div>
         </div>
       </Card>
 
