@@ -10,7 +10,7 @@ export interface ProcessNodeData {
   description?: string;
   color?: string;
   icon?: string;
-  processType?: 'manufacturing' | 'inspection' | 'packaging' | 'transport' | 'storage';
+  processType?: 'start' | 'process' | 'end' | 'manufacturing' | 'inspection' | 'packaging' | 'transport' | 'storage';
   parameters?: Record<string, any>;
   metadata?: Record<string, any>;
   [key: string]: unknown; // 인덱스 시그니처 추가
@@ -36,7 +36,7 @@ export interface ExtendedNodeData {
   description?: string;
   color?: string;
   icon?: string;
-  processType?: 'manufacturing' | 'inspection' | 'packaging' | 'transport' | 'storage';
+  processType?: 'start' | 'process' | 'end' | 'manufacturing' | 'inspection' | 'packaging' | 'transport' | 'storage';
   parameters?: Record<string, any>;
   metadata?: Record<string, any>;
   [key: string]: unknown;
