@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import ConnectedReactFlow from '@/components/templates/ConnectedReactFlow';
+import ErrorBoundary from '@/components/templates/ErrorBoundary';
 import '@/styles/reactflow-theme.css';
 
 // ============================================================================
@@ -64,12 +65,14 @@ export default function ProcessFlowPage() {
 
       {/* 메인 플로우 영역 */}
       <main className="flex-1">
-        <ConnectedReactFlow
-          key={currentFlowId || 'new-flow'}
-          flowId={currentFlowId}
-          autoSave={autoSave}
-          saveInterval={10000} // 10초마다 자동 저장
-        />
+        <ErrorBoundary>
+          <ConnectedReactFlow
+            key={currentFlowId || 'new-flow'}
+            flowId={currentFlowId}
+            autoSave={autoSave}
+            saveInterval={10000} // 10초마다 자동 저장
+          />
+        </ErrorBoundary>
       </main>
       
       {/* 하단 정보 바 */}

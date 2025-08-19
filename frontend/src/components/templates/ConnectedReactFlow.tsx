@@ -107,35 +107,14 @@ function Flow({ flowId, autoSave, saveInterval }: ConnectedReactFlowProps) {
         // 플로우 ID가 없으면 새 플로우 생성 (초기 노드만)
         const initialNodes = [
           {
-            id: 'annotation-1',
-            type: 'annotation',
-            draggable: false,
-            selectable: false,
-            data: {
-              label: 'This is a "node"',
-              arrowStyle: 'arrow-bottom-right',
-            },
-            position: { x: -65, y: -50 },
-          },
-          {
             id: '1-1',
             type: 'process',
             data: { 
               label: '시작 프로세스',
-              description: '프로세스 시작점'
+              description: '프로세스 시작점',
+              variant: 'primary'
             },
-            position: { x: 150, y: 0 },
-          },
-          {
-            id: 'annotation-2',
-            type: 'annotation',
-            draggable: false,
-            selectable: false,
-            data: {
-              label: 'This is a "handle"',
-              arrowStyle: 'arrow-top-left',
-            },
-            position: { x: 235, y: 35 },
+            position: { x: 150, y: 100 },
           },
         ];
         
