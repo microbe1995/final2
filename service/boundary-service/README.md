@@ -1,65 +1,44 @@
-# Cal_boundary 서비스 (ReactFlow 통합)
+# Cal_boundary 서비스 (ReactFlow 전용)
 
 ## 🚀 서비스 개요
 
-Cal_boundary 서비스는 도형, 화살표, Canvas 및 **ReactFlow 통합 기능**을 제공하는 FastAPI 애플리케이션입니다.
+Cal_boundary 서비스는 **ReactFlow 기반 Canvas** 및 **CBAM 산정경계 설정 기능**을 제공하는 FastAPI 애플리케이션입니다.
 
 ## 🏗️ 주요 기능
 
-### 1. 도형 관리 (Shapes)
-- 도형 생성, 수정, 삭제
-- 도형 타입별 분류 및 관리
-- 도형 검색 및 통계
-
-### 2. 화살표 관리 (Arrows)
-- 화살표 생성, 수정, 삭제
-- 화살표 타입별 분류 및 관리
-- 화살표 연결 및 배치 생성
-
-### 3. Canvas 관리 (Canvas) - **ReactFlow 통합**
+### 1. ReactFlow 기반 Canvas 관리
 - Canvas 생성, 수정, 삭제
 - **ReactFlow 노드/엣지 관리**
 - **실시간 ReactFlow 상태 동기화**
-- **ReactFlow 이벤트 핸들러 지원**
-- Canvas 내 도형 및 화살표 배치
+- **ReactFlow 이벤트 핸들러 지원** (onNodesChange, onEdgesChange, onConnect)
+- **Panning & Zooming 완전 지원**
+- **Connection 관리 및 자동 엣지 생성**
 - Canvas 템플릿 및 가져오기/내보내기
 - Canvas 병합 및 복제
 
-### 4. 🆕 CBAM 산정경계 설정 (CBAM Boundary)
-- **기업 정보 검증**: 기업명, 사업자등록번호, 연락처 등 검증
-- **CBAM 제품 검증**: HS 코드, CN 코드 기반 CBAM 대상 여부 확인
-- **생산 공정 검증**: 공정 정보 및 흐름 검증
-- **보고 기간 검증**: 역년/회계연도/국내제도 기간 검증
+### 2. 🆕 CBAM 산정경계 설정 (CBAM Boundary)
 - **산정경계 설정**: CBAM 대상 제품 생산을 위한 경계 설정
-- **배출원 및 소스 스트림 식별**: CO2 배출원과 탄소 함유 물질 식별
-- **데이터 할당 계획**: 공유 자원의 공정별 할당 계획 수립
-- **종합 분석**: 전체 과정에 대한 종합적인 분석 및 권장사항 제공
+- **경계 유형 관리**: 개별/통합 경계 설정 및 관리
+- **공정 포함/제외**: 산정경계에 포함되거나 제외되는 공정 관리
+- **할당 방법 설정**: 공유 자원의 할당 방법론 설정
 
 ## 📁 프로젝트 구조
 
 ```
 app/
 ├── domain/
-│   ├── controller/          # HTTP API 컨트롤러
-│   │   ├── shape_controller.py
-│   │   ├── arrow_controller.py
-│   │   ├── canvas_controller.py
-│   │   └── cbam_controller.py      # 🆕 CBAM 컨트롤러
-│   ├── entity/              # 데이터베이스 엔티티
-│   │   ├── shape_entity.py
-│   │   ├── arrow_entity.py
-│   │   ├── canvas_entity.py
-│   │   └── cbam_entity.py          # 🆕 CBAM 엔티티
-│   ├── schema/              # Pydantic 스키마
-│   │   ├── shape_schema.py
-│   │   ├── arrow_schema.py
-│   │   ├── canvas_schema.py
-│   │   └── cbam_schema.py          # 🆕 CBAM 스키마
-│   └── service/             # 비즈니스 로직
-│       ├── shape_service.py
-│       ├── arrow_service.py
-│       ├── canvas_service.py
-│       └── cbam_service.py          # 🆕 CBAM 서비스
+│   ├── canvas/              # ReactFlow 기반 Canvas 도메인
+│   │   ├── canvas_controller.py    # Canvas HTTP API
+│   │   ├── canvas_entity.py        # Canvas 엔티티 (ReactFlow 통합)
+│   │   ├── canvas_schema.py        # Canvas 스키마 (ReactFlow 통합)
+│   │   ├── canvas_service.py       # Canvas 비즈니스 로직
+│   │   └── canvas_repository.py    # Canvas 데이터 접근
+│   └── boundary/            # CBAM 산정경계 도메인
+│       ├── boundary_controller.py  # 산정경계 HTTP API
+│       ├── boundary_entity.py      # 산정경계 엔티티
+│       ├── boundary_schema.py      # 산정경계 스키마
+│       ├── boundary_service.py     # 산정경계 비즈니스 로직
+│       └── boundary_repository.py  # 산정경계 데이터 접근
 ├── common/                  # 공통 유틸리티
 └── main.py                 # 메인 애플리케이션
 ```
@@ -70,19 +49,7 @@ app/
 - `GET /health` - 서비스 상태 확인
 - `GET /docs` - Swagger API 문서 (개발 모드)
 
-### 도형 API
-- `POST /shapes` - 도형 생성
-- `GET /shapes` - 도형 목록 조회
-- `PUT /shapes/{id}` - 도형 수정
-- `DELETE /shapes/{id}` - 도형 삭제
-
-### 화살표 API
-- `POST /arrows` - 화살표 생성
-- `GET /arrows` - 화살표 목록 조회
-- `PUT /arrows/{id}` - 화살표 수정
-- `DELETE /arrows/{id}` - 화살표 삭제
-
-### Canvas API (ReactFlow 통합)
+### Canvas API (ReactFlow 전용)
 - `POST /canvas` - Canvas 생성
 - `GET /canvas` - Canvas 목록 조회
 - `PUT /canvas/{id}` - Canvas 수정
@@ -105,22 +72,18 @@ app/
 - `POST /canvas/reactflow/{canvas_id}/connection-events` - ReactFlow 연결 이벤트 배치 처리
 - `GET /canvas/reactflow/examples/onconnect` - onConnect 핸들러 사용 예제 반환
 
-### 🆕 CBAM 산정경계 설정 API
-- `POST /api/v1/cbam/company/validate` - 기업 정보 검증
-- `POST /api/v1/cbam/products/validate` - CBAM 제품 검증
-- `GET /api/v1/cbam/products/hs-codes` - CBAM 대상 HS 코드 목록
-- `POST /api/v1/cbam/products/check-target` - CBAM 대상 여부 확인
-- `POST /api/v1/cbam/processes/validate` - 생산 공정 검증
-- `POST /api/v1/cbam/processes/flow-analysis` - 공정 흐름 분석
-- `POST /api/v1/cbam/periods/validate` - 보고 기간 검증
-- `GET /api/v1/cbam/periods/templates` - 보고 기간 템플릿
-- `POST /api/v1/cbam/boundary/create` - 산정경계 설정 생성
-- `POST /api/v1/cbam/boundary/emission-sources` - 배출원 식별
-- `POST /api/v1/cbam/boundary/source-streams` - 소스 스트림 식별
-- `POST /api/v1/cbam/allocation/create-plan` - 데이터 할당 계획 생성
-- `POST /api/v1/cbam/analysis/comprehensive` - 종합 분석
-- `GET /api/v1/cbam/health` - CBAM 서비스 상태 확인
-- `GET /api/v1/cbam/info` - CBAM 서비스 정보
+#### 🎯 **Panning & Zooming API (완전한 뷰포트 제어)**
+- `POST /canvas/reactflow/{canvas_id}/viewport` - ReactFlow 뷰포트 변경 (onViewportChange)
+- `POST /canvas/reactflow/{canvas_id}/fit-view` - ReactFlow fitView 자동 화면 맞춤
+- `GET /canvas/reactflow/{canvas_id}/interaction-config` - 인터랙션 설정 조회
+- `PUT /canvas/reactflow/{canvas_id}/interaction-config` - 인터랙션 설정 업데이트
+- `GET /canvas/reactflow/examples/panning-zooming` - Panning & Zooming 완전 구현 예제
+
+### CBAM 산정경계 설정 API
+- `POST /boundary/boundary/create` - 산정경계 설정 생성
+- `GET /boundary/boundary/{boundary_id}` - 산정경계 설정 조회
+- `GET /boundary/health` - 서비스 상태 확인
+- `GET /boundary/info` - 서비스 정보 조회
 
 ## 🛠️ 기술 스택
 
@@ -248,6 +211,138 @@ const onConnect = useCallback(
   },
   [canvasId],
 );
+```
+
+### 4. 🎯 완전한 Panning & Zooming 구현
+
+```javascript
+// ReactFlow 공식 문서와 동일한 완전한 구현
+import React, { useState, useCallback } from 'react';
+import { 
+  ReactFlow, 
+  Background, 
+  Controls, 
+  applyNodeChanges, 
+  applyEdgeChanges, 
+  addEdge 
+} from '@xyflow/react';
+
+function ReactFlowComplete() {
+  const [nodes, setNodes] = useState(initialNodes);
+  const [edges, setEdges] = useState(initialEdges);
+  const [viewport, setViewport] = useState({ x: 0, y: 0, zoom: 1 });
+
+  // 🔄 기본 이벤트 핸들러들
+  const onNodesChange = useCallback(
+    (changes) => setNodes((nds) => applyNodeChanges(changes, nds)),
+    []
+  );
+
+  const onEdgesChange = useCallback(
+    (changes) => setEdges((eds) => applyEdgeChanges(changes, eds)),
+    []
+  );
+
+  const onConnect = useCallback(
+    (params) => setEdges((eds) => addEdge(params, eds)),
+    []
+  );
+
+  // 📐 뷰포트 변경 핸들러 (백엔드 동기화)
+  const onViewportChange = useCallback(
+    async (newViewport) => {
+      setViewport(newViewport);
+      
+      // 백엔드 동기화 (디바운스 권장)
+      try {
+        await fetch(`/canvas/reactflow/${canvasId}/viewport`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            canvas_id: canvasId,
+            viewport: newViewport,
+            type: 'viewport'
+          })
+        });
+      } catch (error) {
+        console.error('뷰포트 저장 실패:', error);
+      }
+    },
+    [canvasId]
+  );
+
+  // 🎯 fitView 버튼 핸들러
+  const handleFitView = async () => {
+    try {
+      const response = await fetch(`/canvas/reactflow/${canvasId}/fit-view`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          padding: 0.1,
+          includeHiddenNodes: false,
+          duration: 800
+        })
+      });
+      
+      const result = await response.json();
+      setViewport(result.viewport);
+    } catch (error) {
+      console.error('fitView 실패:', error);
+    }
+  };
+
+  return (
+    <div style={{ height: '100vh', width: '100vw' }}>
+      <ReactFlow
+        nodes={nodes}
+        edges={edges}
+        onNodesChange={onNodesChange}
+        onEdgesChange={onEdgesChange}
+        onConnect={onConnect}
+        
+        // 🎯 완전한 Panning & Zooming 설정
+        panOnDrag={true}              // 드래그로 패닝
+        panOnScroll={false}           // 스크롤로 패닝 (기본: false)
+        panActivationKeyCode="Space"  // Space키로 패닝 모드
+        
+        zoomOnScroll={true}           // 스크롤로 줌
+        zoomOnPinch={true}            // 핀치로 줌
+        zoomOnDoubleClick={true}      // 더블클릭 줌
+        zoomActivationKeyCode="Control" // Ctrl키로 줌 모드
+        minZoom={0.1}                 // 최소 줌
+        maxZoom={5}                   // 최대 줌
+        
+        // 📐 Viewport 완전 제어
+        viewport={viewport}
+        onViewportChange={onViewportChange}
+        fitView                       // 초기 화면 맞춤
+        
+        // 🎮 인터랙션 설정
+        elementsSelectable={true}
+        nodesDraggable={true}
+        nodesConnectable={true}
+        selectNodesOnDrag={false}
+        preventScrolling={true}       // 기본 스크롤 방지
+        
+        // 🎹 키보드 단축키
+        selectionKeyCode="Shift"      // Shift로 선택 모드
+        multiSelectionKeyCode="Control" // Ctrl로 다중 선택
+        deleteKeyCode="Delete"        // Delete로 삭제
+      >
+        <Background />
+        <Controls />
+      </ReactFlow>
+      
+      {/* 🎯 fitView 버튼 */}
+      <button 
+        onClick={handleFitView}
+        style={{ position: 'absolute', top: 10, right: 10 }}
+      >
+        Fit View
+      </button>
+    </div>
+  );
+}
 ```
 
 ## 🚀 실행 방법

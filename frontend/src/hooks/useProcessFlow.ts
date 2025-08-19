@@ -34,7 +34,7 @@ export const useProcessFlowDomain = () => {
   // ============================================================================
   
   const {
-    loadSavedCanvases: loadCanvasesAPI,
+    loadSavedFlows: loadFlowsAPI,
     saveToBackend: saveToBackendAPI,
     loadFromBackend: loadFromBackendAPI,
     checkServiceStatus: checkServiceStatusAPI,
@@ -90,15 +90,15 @@ export const useProcessFlowDomain = () => {
   const loadSavedCanvases = useCallback(async () => {
     try {
       setIsLoadingCanvases(true);
-      const canvases = await loadCanvasesAPI();
-      setSavedCanvases(canvases);
+      const flows = await loadFlowsAPI();
+      setSavedCanvases(flows);
     } catch (error) {
-      console.error('Canvas 목록 로드 실패:', error);
+      console.error('Flow 목록 로드 실패:', error);
       setSavedCanvases([]);
     } finally {
       setIsLoadingCanvases(false);
     }
-  }, [loadCanvasesAPI]);
+  }, [loadFlowsAPI]);
 
   // ============================================================================
   // 💾 백엔드에 저장

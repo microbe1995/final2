@@ -7,9 +7,12 @@ import type { Node, Edge, BuiltInNode, BuiltInEdge } from '@xyflow/react';
 // Process Node 데이터 타입
 export interface ProcessNodeData {
   label: string;
-  description: string;
-  processType: 'manufacturing' | 'inspection' | 'packaging' | 'transport' | 'storage';
-  parameters: Record<string, any>;
+  description?: string;
+  color?: string;
+  icon?: string;
+  processType?: 'manufacturing' | 'inspection' | 'packaging' | 'transport' | 'storage';
+  parameters?: Record<string, any>;
+  metadata?: Record<string, any>;
   [key: string]: unknown; // 인덱스 시그니처 추가
 }
 
@@ -27,8 +30,20 @@ export type ProcessNode = Node<ProcessNodeData, 'processNode'>;
 // 커스텀 엣지 타입
 export type ProcessEdge = Edge<ProcessEdgeData, 'processEdge'>;
 
-// 전체 노드 타입 (내장 노드 + 커스텀 노드)
-export type AppNodeType = BuiltInNode | ProcessNode;
+// 확장된 노드 데이터 타입 (모든 노드에서 사용 가능)
+export interface ExtendedNodeData {
+  label: string;
+  description?: string;
+  color?: string;
+  icon?: string;
+  processType?: 'manufacturing' | 'inspection' | 'packaging' | 'transport' | 'storage';
+  parameters?: Record<string, any>;
+  metadata?: Record<string, any>;
+  [key: string]: unknown;
+}
+
+// 전체 노드 타입 (확장된 데이터 타입 사용)
+export type AppNodeType = Node<ExtendedNodeData>;
 
 // 전체 엣지 타입 (내장 엣지 + 커스텀 엣지)
 export type AppEdgeType = BuiltInEdge | ProcessEdge;

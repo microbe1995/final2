@@ -5,7 +5,7 @@
 """
 Cal_boundary 서비스 메인 애플리케이션
 
-도형, 화살표, Canvas 등의 HTTP API를 제공하는 FastAPI 애플리케이션입니다.
+ReactFlow 기반 HTTP API를 제공하는 FastAPI 애플리케이션입니다.
 """
 
 from fastapi import FastAPI, Request
@@ -15,11 +15,9 @@ from loguru import logger
 import time
 import os
 
-# 라우터 임포트
-from app.domain.shape.shape_controller import shape_router
-from app.domain.arrow.arrow_controller import arrow_router
-from app.domain.canvas.canvas_controller import canvas_router
-from app.domain.boundary.boundary_controller import boundary_router
+# 라우터 임포트 (ReactFlow 기반 라우터들)
+from app.domain.node.node_controller import node_router
+from app.domain.flow.flow_controller import flow_router
 # ============================================================================
 # 🔧 애플리케이션 설정
 # ============================================================================
@@ -27,7 +25,7 @@ from app.domain.boundary.boundary_controller import boundary_router
 # 환경 변수 설정
 APP_NAME = os.getenv("APP_NAME", "Cal_boundary Service")
 APP_VERSION = os.getenv("APP_VERSION", "1.0.0")
-APP_DESCRIPTION = os.getenv("APP_DESCRIPTION", "Canvas 기반 도형 및 화살표 관리 서비스")
+APP_DESCRIPTION = os.getenv("APP_DESCRIPTION", "ReactFlow 기반 서비스")
 DEBUG_MODE = os.getenv("DEBUG_MODE", "false").lower() == "true"
 
 # ============================================================================
@@ -39,23 +37,13 @@ async def lifespan(app: FastAPI):
     """애플리케이션 시작/종료 시 실행되는 함수"""
     logger.info("🚀 Cal_boundary 서비스 시작 중...")
     
-    # 각 도메인별 DB 연결 초기화 (필요 시 자동 초기화됨)
-    logger.info("✅ 도메인별 독립 DB 연결 사용 - 자동 초기화 모드")
+    # ReactFlow 기반 서비스 초기화
+    logger.info("✅ ReactFlow 기반 서비스 초기화")
     
     yield
     
-    # 각 도메인별 DB 연결 종료
-    try:
-        from app.domain.canvas.canvas_repository import canvas_db
-        from app.domain.shape.shape_repository import shape_db
-        from app.domain.arrow.arrow_repository import arrow_db
-        
-        await canvas_db.close()
-        await shape_db.close() 
-        await arrow_db.close()
-        logger.info("✅ 모든 도메인 DB 연결 종료 완료")
-    except Exception as e:
-        logger.error(f"❌ DB 연결 종료 중 오류: {str(e)}")
+    # 서비스 종료 시 정리 작업
+    logger.info("✅ ReactFlow 기반 서비스 정리 완료")
     
     logger.info("🛑 Cal_boundary 서비스 종료 중...")
 
@@ -99,17 +87,9 @@ async def log_requests(request: Request, call_next):
 # 🎯 라우터 등록
 # ============================================================================
 
-# 도형 관련 API (Gateway와 경로 맞춤)
-app.include_router(shape_router, prefix="/shapes")
-
-# 화살표 관련 API (Gateway와 경로 맞춤)
-app.include_router(arrow_router, prefix="/arrows")
-
-# Canvas 관련 API (Gateway와 경로 맞춤)
-app.include_router(canvas_router, prefix="/canvas")
-
-# CBAM 산정경계 설정 관련 API
-app.include_router(boundary_router)
+# ReactFlow 기반 라우터들 등록
+app.include_router(node_router, prefix="/api")
+app.include_router(flow_router, prefix="/api")
 
 # ============================================================================
 # 🏥 헬스체크 엔드포인트

@@ -88,6 +88,10 @@ async def proxy_request(service: str, path: str, request: Request) -> Response:
         # auth-service는 내부 라우터가 "/auth" prefix를 사용하므로 보정
         if normalized_path and not normalized_path.startswith("auth/") and normalized_path != "auth":
             normalized_path = f"auth/{normalized_path}"
+    elif service == "boundary" or service == "cal-boundary" or service == "cal_boundary":
+        # boundary-service는 내부에서 "/api" prefix를 사용하므로 보정
+        if normalized_path and not normalized_path.startswith("api/"):
+            normalized_path = f"api/{normalized_path}"
 
     target_url = f"{base_url.rstrip('/')}/{normalized_path}"
     method = request.method
