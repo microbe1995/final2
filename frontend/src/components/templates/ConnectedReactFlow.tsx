@@ -122,18 +122,34 @@ function Flow({ flowId, autoSave, saveInterval }: ConnectedReactFlowProps) {
         setEdges([]);
       } else {
         // 기존 플로우 로드
-        const flowState = await flowAPI.getFlowState(flowId);
-        if (flowState) {
-          const converted = flowAPI.convertBackendToFrontend(flowState);
-          setNodes(converted.nodes);
-          setEdges(converted.edges);
+        try {
+          const flowState = await flowAPI.getFlowState(flowId);
+          if (flowState) {
+            const converted = flowAPI.convertBackendToFrontend(flowState);
+            setNodes(converted.nodes);
+            setEdges(converted.edges);
+          }
+        } catch (error) {
+          console.error('플로우 로드 실패:', error);
+          // 에러 발생 시 기본 노드로 초기화
+          setNodes([{
+            id: '1-1',
+            type: 'process',
+            data: { 
+              label: '시작 프로세스',
+              description: '프로세스 시작점',
+              variant: 'primary'
+            },
+            position: { x: 150, y: 100 },
+          }]);
+          setEdges([]);
         }
       }
       setIsLoading(false);
     };
 
     loadFlowData();
-  }, [flowId, flowAPI]);
+  }, [flowId]); // flowAPI 제거 - 무한 루프 방지
 
   // ============================================================================
   // 🎯 자동 저장 기능
@@ -142,25 +158,38 @@ function Flow({ flowId, autoSave, saveInterval }: ConnectedReactFlowProps) {
   const saveToBackend = useCallback(async () => {
     if (!flowId || !hasUnsavedChanges) return;
     
-    const viewport = { x: 0, y: 0, zoom: 1 }; // 실제로는 현재 뷰포트 값 사용
-    const success = await flowAPI.saveFlowState(flowId, nodes, edges, viewport);
-    
-    if (success) {
-      setLastSaved(new Date());
-      setHasUnsavedChanges(false);
+    try {
+      const viewport = { x: 0, y: 0, zoom: 1 }; // 실제로는 현재 뷰포트 값 사용
+      const success = await flowAPI.saveFlowState(flowId, nodes, edges, viewport);
+      
+      if (success) {
+        setLastSaved(new Date());
+        setHasUnsavedChanges(false);
+      }
+    } catch (error) {
+      console.error('저장 실패:', error);
     }
-  }, [flowId, nodes, edges, hasUnsavedChanges, flowAPI]);
+  }, [flowId, nodes, edges, hasUnsavedChanges]); // flowAPI 제거
 
   // 자동 저장 인터벌
   useEffect(() => {
     if (!autoSave || !saveInterval) return;
     
     const interval = setInterval(() => {
-      saveToBackend();
+      // 직접 호출하여 의존성 문제 방지
+      if (flowId && hasUnsavedChanges) {
+        const viewport = { x: 0, y: 0, zoom: 1 };
+        flowAPI.saveFlowState(flowId, nodes, edges, viewport).then((success) => {
+          if (success) {
+            setLastSaved(new Date());
+            setHasUnsavedChanges(false);
+          }
+        });
+      }
     }, saveInterval);
     
     return () => clearInterval(interval);
-  }, [autoSave, saveInterval, saveToBackend]);
+  }, [autoSave, saveInterval, flowId, hasUnsavedChanges]); // 구체적인 값들만 의존성으로
 
   // ============================================================================
   // 🎯 노드/엣지 변경 핸들러
@@ -234,7 +263,7 @@ function Flow({ flowId, autoSave, saveInterval }: ConnectedReactFlowProps) {
         y: Math.random() * 200 + 100 
       },
       data: { 
-        label: `프로세스 ${nodes.filter(n => n.type === 'process').length + 1}`,
+        label: `프로세스 ${Date.now()}`, // nodes 의존성 제거
         description: '새로운 프로세스 노드',
         variant: nodeType,
         size: 'md',
@@ -246,7 +275,7 @@ function Flow({ flowId, autoSave, saveInterval }: ConnectedReactFlowProps) {
     
     setNodes(prev => [...prev, newNode]);
     setHasUnsavedChanges(true);
-  }, [nodes]);
+  }, []); // 의존성 배열 비우기
 
   const addAnnotationNode = useCallback(async () => {
     const newNode = {
@@ -259,14 +288,14 @@ function Flow({ flowId, autoSave, saveInterval }: ConnectedReactFlowProps) {
         y: Math.random() * 200 + 100 
       },
       data: { 
-        label: `어노테이션 ${nodes.filter(n => n.type === 'annotation').length + 1}`,
+        label: `어노테이션 ${Date.now()}`, // nodes 의존성 제거
         arrowStyle: 'arrow-bottom-right'
       },
     };
     
     setNodes(prev => [...prev, newNode]);
     setHasUnsavedChanges(true);
-  }, [nodes]);
+  }, []);
 
   const addInputNode = useCallback(async (variant: 'default' | 'primary' | 'success' | 'warning' | 'danger' = 'default') => {
     const newNode = {
@@ -277,7 +306,7 @@ function Flow({ flowId, autoSave, saveInterval }: ConnectedReactFlowProps) {
         y: Math.random() * 200 + 100 
       },
       data: { 
-        label: `입력 ${nodes.filter(n => n.type === 'input').length + 1}`,
+        label: `입력 ${Date.now()}`, // nodes 의존성 제거
         description: '데이터 입력점',
         variant,
         sourcePosition: Position.Right, // 입력 노드는 오른쪽으로 출력
@@ -286,7 +315,7 @@ function Flow({ flowId, autoSave, saveInterval }: ConnectedReactFlowProps) {
     
     setNodes(prev => [...prev, newNode]);
     setHasUnsavedChanges(true);
-  }, [nodes]);
+  }, []);
 
   const addOutputNode = useCallback(async (variant: 'default' | 'primary' | 'success' | 'warning' | 'danger' = 'default') => {
     const newNode = {
@@ -297,7 +326,7 @@ function Flow({ flowId, autoSave, saveInterval }: ConnectedReactFlowProps) {
         y: Math.random() * 200 + 100 
       },
       data: { 
-        label: `출력 ${nodes.filter(n => n.type === 'output').length + 1}`,
+        label: `출력 ${Date.now()}`, // nodes 의존성 제거
         description: '결과 출력점',
         variant,
         targetPosition: Position.Left, // 출력 노드는 왼쪽에서 입력
@@ -306,7 +335,7 @@ function Flow({ flowId, autoSave, saveInterval }: ConnectedReactFlowProps) {
     
     setNodes(prev => [...prev, newNode]);
     setHasUnsavedChanges(true);
-  }, [nodes]);
+  }, []);
 
   const clearAllNodes = useCallback(async () => {
     if (window.confirm('모든 노드를 삭제하시겠습니까?')) {
