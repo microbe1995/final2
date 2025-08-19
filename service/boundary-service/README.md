@@ -1,8 +1,8 @@
-# Cal_boundary 서비스
+# Cal_boundary 서비스 (ReactFlow 통합)
 
 ## 🚀 서비스 개요
 
-Cal_boundary 서비스는 도형, 화살표, Canvas 등의 HTTP API를 제공하는 FastAPI 애플리케이션입니다.
+Cal_boundary 서비스는 도형, 화살표, Canvas 및 **ReactFlow 통합 기능**을 제공하는 FastAPI 애플리케이션입니다.
 
 ## 🏗️ 주요 기능
 
@@ -16,8 +16,11 @@ Cal_boundary 서비스는 도형, 화살표, Canvas 등의 HTTP API를 제공하
 - 화살표 타입별 분류 및 관리
 - 화살표 연결 및 배치 생성
 
-### 3. Canvas 관리 (Canvas)
+### 3. Canvas 관리 (Canvas) - **ReactFlow 통합**
 - Canvas 생성, 수정, 삭제
+- **ReactFlow 노드/엣지 관리**
+- **실시간 ReactFlow 상태 동기화**
+- **ReactFlow 이벤트 핸들러 지원**
 - Canvas 내 도형 및 화살표 배치
 - Canvas 템플릿 및 가져오기/내보내기
 - Canvas 병합 및 복제
@@ -79,11 +82,28 @@ app/
 - `PUT /arrows/{id}` - 화살표 수정
 - `DELETE /arrows/{id}` - 화살표 삭제
 
-### Canvas API
+### Canvas API (ReactFlow 통합)
 - `POST /canvas` - Canvas 생성
 - `GET /canvas` - Canvas 목록 조회
 - `PUT /canvas/{id}` - Canvas 수정
 - `DELETE /canvas/{id}` - Canvas 삭제
+
+#### 🔄 **ReactFlow 전용 API**
+- `POST /canvas/reactflow/initialize` - ReactFlow 캔버스 초기화
+- `GET /canvas/reactflow/{canvas_id}/state` - ReactFlow 상태 조회
+- `PUT /canvas/reactflow/{canvas_id}/state` - ReactFlow 상태 업데이트
+- `POST /canvas/reactflow/{canvas_id}/nodes` - ReactFlow 노드 추가
+- `DELETE /canvas/reactflow/{canvas_id}/nodes/{node_id}` - ReactFlow 노드 제거
+- `POST /canvas/reactflow/{canvas_id}/edges` - ReactFlow 엣지 추가
+- `DELETE /canvas/reactflow/{canvas_id}/edges/{edge_id}` - ReactFlow 엣지 제거
+- `POST /canvas/reactflow/{canvas_id}/changes/nodes` - ReactFlow 노드 변경사항 적용
+- `POST /canvas/reactflow/{canvas_id}/changes/edges` - ReactFlow 엣지 변경사항 적용
+- `GET /canvas/reactflow/examples/initial` - ReactFlow 초기 예제 반환
+
+#### 🔗 **Connection 관련 API (onConnect 핸들러 지원)**
+- `POST /canvas/reactflow/{canvas_id}/connect` - ReactFlow 연결 생성 (onConnect 핸들러)
+- `POST /canvas/reactflow/{canvas_id}/connection-events` - ReactFlow 연결 이벤트 배치 처리
+- `GET /canvas/reactflow/examples/onconnect` - onConnect 핸들러 사용 예제 반환
 
 ### 🆕 CBAM 산정경계 설정 API
 - `POST /api/v1/cbam/company/validate` - 기업 정보 검증
@@ -110,6 +130,125 @@ app/
 - **Validation**: Pydantic
 - **Logging**: Loguru
 - **Documentation**: OpenAPI/Swagger
+- **Frontend Integration**: ReactFlow (@xyflow/react)
+
+## 🔄 ReactFlow 사용법
+
+### 1. 기본 설정 (Frontend)
+
+```javascript
+// 필수 import
+import { useState, useCallback } from 'react';
+import { ReactFlow, applyEdgeChanges, applyNodeChanges } from '@xyflow/react';
+
+// 초기 노드/엣지 설정 (API에서 가져오기)
+const response = await fetch('/canvas/reactflow/examples/initial');
+const { initialNodes, initialEdges } = await response.json();
+
+// 상태 초기화
+export default function App() {
+  const [nodes, setNodes] = useState(initialNodes);
+  const [edges, setEdges] = useState(initialEdges);
+  
+  return (
+    <div style={{ height: '100%', width: '100%' }}>
+      <ReactFlow>
+        <Background />
+        <Controls />
+      </ReactFlow>
+    </div>
+  );
+}
+```
+
+### 2. 이벤트 핸들러 설정
+
+```javascript
+// 필수 import 추가
+import { addEdge } from '@xyflow/react';
+
+// 노드/엣지 변경사항 처리
+const onNodesChange = useCallback(
+  (changes) => setNodes((nodesSnapshot) => applyNodeChanges(changes, nodesSnapshot)),
+  [],
+);
+const onEdgesChange = useCallback(
+  (changes) => setEdges((edgesSnapshot) => applyEdgeChanges(changes, edgesSnapshot)),
+  [],
+);
+
+// 🔗 onConnect 핸들러 (새로운 연결 생성)
+const onConnect = useCallback(
+  (params) => setEdges((edgesSnapshot) => addEdge(params, edgesSnapshot)),
+  [],
+);
+
+// ReactFlow에 전달
+<ReactFlow
+  nodes={nodes}
+  edges={edges}
+  onNodesChange={onNodesChange}
+  onEdgesChange={onEdgesChange}
+  onConnect={onConnect}
+  fitView
+>
+  <Background />
+  <Controls />
+</ReactFlow>
+```
+
+### 3. 백엔드 동기화
+
+```javascript
+// 상태를 백엔드에 저장
+const saveToBackend = async (canvasId) => {
+  await fetch(`/canvas/reactflow/${canvasId}/state`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      nodes,
+      edges,
+      viewport: { x: 0, y: 0, zoom: 1 }
+    })
+  });
+};
+
+// 백엔드에서 상태 로드
+const loadFromBackend = async (canvasId) => {
+  const response = await fetch(`/canvas/reactflow/${canvasId}/state`);
+  const state = await response.json();
+  setNodes(state.nodes);
+  setEdges(state.edges);
+};
+
+// 🔗 onConnect 핸들러 + 백엔드 동기화
+const onConnect = useCallback(
+  async (params) => {
+    // 로컬 상태 즉시 업데이트 (사용자 경험 향상)
+    setEdges((edgesSnapshot) => addEdge(params, edgesSnapshot));
+    
+    // 백엔드 동기화 (비동기)
+    try {
+      await fetch(`/canvas/reactflow/${canvasId}/connect`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          canvas_id: canvasId,
+          connection: params,
+          edge_options: { 
+            animated: false, 
+            style: { stroke: '#b1b1b7' } 
+          }
+        })
+      });
+    } catch (error) {
+      console.error('연결 저장 실패:', error);
+      // 실패 시 사용자에게 알림 또는 롤백 로직 추가
+    }
+  },
+  [canvasId],
+);
+```
 
 ## 🚀 실행 방법
 

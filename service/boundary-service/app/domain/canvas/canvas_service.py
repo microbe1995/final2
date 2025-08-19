@@ -20,7 +20,19 @@ from app.domain.canvas.canvas_schema import (
     CanvasDuplicateRequest,
     CanvasMergeRequest,
     CanvasBulkOperationRequest,
-    CanvasTemplateRequest
+    CanvasTemplateRequest,
+    # ReactFlow 관련 스키마
+    ReactFlowNode,
+    ReactFlowEdge,
+    ReactFlowState,
+    ReactFlowUpdateRequest,
+    NodeChangeEvent,
+    EdgeChangeEvent,
+    ReactFlowViewport,
+    # Connection 관련 스키마
+    ConnectionParams,
+    ConnectionEvent,
+    ConnectionRequest
 )
 from app.domain.canvas.canvas_repository import CanvasRepository
 
@@ -529,4 +541,551 @@ class CanvasService:
             
         except Exception as e:
             logger.error(f"❌ 점 근처 요소 조회 실패: {str(e)}")
+            raise
+
+    # ============================================================================
+    # 🔄 ReactFlow 전용 메서드
+    # ============================================================================
+    
+    async def update_reactflow_state(self, request: ReactFlowUpdateRequest) -> CanvasResponse:
+        """ReactFlow 상태 업데이트"""
+        try:
+            logger.info(f"🔄 ReactFlow 상태 업데이트: {request.canvas_id}")
+            
+            # 기존 캔버스 조회
+            canvas = await self.get_canvas(request.canvas_id)
+            if not canvas:
+                raise Exception(f"Canvas {request.canvas_id}를 찾을 수 없습니다")
+            
+            # 업데이트 요청 생성
+            update_request = CanvasUpdateRequest(
+                nodes=request.nodes,
+                edges=request.edges,
+                viewport=request.viewport
+            )
+            
+            # 캔버스 업데이트
+            updated_canvas = await self.update_canvas(request.canvas_id, update_request)
+            
+            logger.info(f"✅ ReactFlow 상태 업데이트 완료: {request.canvas_id}")
+            return updated_canvas
+            
+        except Exception as e:
+            logger.error(f"❌ ReactFlow 상태 업데이트 실패: {str(e)}")
+            raise
+    
+    async def add_reactflow_node(self, canvas_id: str, node: ReactFlowNode) -> CanvasResponse:
+        """ReactFlow 노드 추가"""
+        try:
+            logger.info(f"➕ ReactFlow 노드 추가: {canvas_id} - {node.id}")
+            
+            # 기존 캔버스 조회
+            canvas = await self.get_canvas(canvas_id)
+            if not canvas:
+                raise Exception(f"Canvas {canvas_id}를 찾을 수 없습니다")
+            
+            # 기존 노드 목록에 새 노드 추가
+            updated_nodes = canvas.nodes.copy()
+            updated_nodes.append(node)
+            
+            # 캔버스 업데이트
+            update_request = CanvasUpdateRequest(nodes=updated_nodes)
+            updated_canvas = await self.update_canvas(canvas_id, update_request)
+            
+            logger.info(f"✅ ReactFlow 노드 추가 완료: {node.id}")
+            return updated_canvas
+            
+        except Exception as e:
+            logger.error(f"❌ ReactFlow 노드 추가 실패: {str(e)}")
+            raise
+    
+    async def remove_reactflow_node(self, canvas_id: str, node_id: str) -> CanvasResponse:
+        """ReactFlow 노드 제거"""
+        try:
+            logger.info(f"➖ ReactFlow 노드 제거: {canvas_id} - {node_id}")
+            
+            # 기존 캔버스 조회
+            canvas = await self.get_canvas(canvas_id)
+            if not canvas:
+                raise Exception(f"Canvas {canvas_id}를 찾을 수 없습니다")
+            
+            # 노드 제거
+            updated_nodes = [node for node in canvas.nodes if node.id != node_id]
+            
+            # 관련 엣지도 제거
+            updated_edges = [
+                edge for edge in canvas.edges 
+                if edge.source != node_id and edge.target != node_id
+            ]
+            
+            # 캔버스 업데이트
+            update_request = CanvasUpdateRequest(nodes=updated_nodes, edges=updated_edges)
+            updated_canvas = await self.update_canvas(canvas_id, update_request)
+            
+            logger.info(f"✅ ReactFlow 노드 제거 완료: {node_id}")
+            return updated_canvas
+            
+        except Exception as e:
+            logger.error(f"❌ ReactFlow 노드 제거 실패: {str(e)}")
+            raise
+    
+    async def add_reactflow_edge(self, canvas_id: str, edge: ReactFlowEdge) -> CanvasResponse:
+        """ReactFlow 엣지 추가"""
+        try:
+            logger.info(f"🔗 ReactFlow 엣지 추가: {canvas_id} - {edge.id}")
+            
+            # 기존 캔버스 조회
+            canvas = await self.get_canvas(canvas_id)
+            if not canvas:
+                raise Exception(f"Canvas {canvas_id}를 찾을 수 없습니다")
+            
+            # 소스와 타겟 노드 존재 확인
+            node_ids = {node.id for node in canvas.nodes}
+            if edge.source not in node_ids:
+                raise Exception(f"소스 노드 {edge.source}를 찾을 수 없습니다")
+            if edge.target not in node_ids:
+                raise Exception(f"타겟 노드 {edge.target}를 찾을 수 없습니다")
+            
+            # 기존 엣지 목록에 새 엣지 추가
+            updated_edges = canvas.edges.copy()
+            updated_edges.append(edge)
+            
+            # 캔버스 업데이트
+            update_request = CanvasUpdateRequest(edges=updated_edges)
+            updated_canvas = await self.update_canvas(canvas_id, update_request)
+            
+            logger.info(f"✅ ReactFlow 엣지 추가 완료: {edge.id}")
+            return updated_canvas
+            
+        except Exception as e:
+            logger.error(f"❌ ReactFlow 엣지 추가 실패: {str(e)}")
+            raise
+    
+    async def remove_reactflow_edge(self, canvas_id: str, edge_id: str) -> CanvasResponse:
+        """ReactFlow 엣지 제거"""
+        try:
+            logger.info(f"🔗❌ ReactFlow 엣지 제거: {canvas_id} - {edge_id}")
+            
+            # 기존 캔버스 조회
+            canvas = await self.get_canvas(canvas_id)
+            if not canvas:
+                raise Exception(f"Canvas {canvas_id}를 찾을 수 없습니다")
+            
+            # 엣지 제거
+            updated_edges = [edge for edge in canvas.edges if edge.id != edge_id]
+            
+            # 캔버스 업데이트
+            update_request = CanvasUpdateRequest(edges=updated_edges)
+            updated_canvas = await self.update_canvas(canvas_id, update_request)
+            
+            logger.info(f"✅ ReactFlow 엣지 제거 완료: {edge_id}")
+            return updated_canvas
+            
+        except Exception as e:
+            logger.error(f"❌ ReactFlow 엣지 제거 실패: {str(e)}")
+            raise
+    
+    async def apply_node_changes(self, canvas_id: str, changes: List[NodeChangeEvent]) -> CanvasResponse:
+        """ReactFlow 노드 변경사항 적용 (이벤트 핸들러)"""
+        try:
+            logger.info(f"🔄 ReactFlow 노드 변경사항 적용: {canvas_id} - {len(changes)}개")
+            
+            # 기존 캔버스 조회
+            canvas = await self.get_canvas(canvas_id)
+            if not canvas:
+                raise Exception(f"Canvas {canvas_id}를 찾을 수 없습니다")
+            
+            updated_nodes = canvas.nodes.copy()
+            
+            # 각 변경사항 적용
+            for change in changes:
+                if change.type == "position":
+                    # 노드 위치 변경
+                    for node in updated_nodes:
+                        if node.id == change.id and change.position:
+                            node.position = change.position
+                
+                elif change.type == "select":
+                    # 노드 선택 상태 변경
+                    for node in updated_nodes:
+                        if node.id == change.id:
+                            # 선택 상태는 일반적으로 클라이언트에서 관리하므로 로그만 기록
+                            logger.debug(f"노드 {change.id} 선택 상태: {change.selected}")
+                
+                elif change.type == "remove":
+                    # 노드 제거
+                    updated_nodes = [node for node in updated_nodes if node.id != change.id]
+            
+            # 캔버스 업데이트
+            update_request = CanvasUpdateRequest(nodes=updated_nodes)
+            updated_canvas = await self.update_canvas(canvas_id, update_request)
+            
+            logger.info(f"✅ ReactFlow 노드 변경사항 적용 완료: {len(changes)}개")
+            return updated_canvas
+            
+        except Exception as e:
+            logger.error(f"❌ ReactFlow 노드 변경사항 적용 실패: {str(e)}")
+            raise
+    
+    async def apply_edge_changes(self, canvas_id: str, changes: List[EdgeChangeEvent]) -> CanvasResponse:
+        """ReactFlow 엣지 변경사항 적용 (이벤트 핸들러)"""
+        try:
+            logger.info(f"🔄 ReactFlow 엣지 변경사항 적용: {canvas_id} - {len(changes)}개")
+            
+            # 기존 캔버스 조회
+            canvas = await self.get_canvas(canvas_id)
+            if not canvas:
+                raise Exception(f"Canvas {canvas_id}를 찾을 수 없습니다")
+            
+            updated_edges = canvas.edges.copy()
+            
+            # 각 변경사항 적용
+            for change in changes:
+                if change.type == "select":
+                    # 엣지 선택 상태 변경 (클라이언트에서 관리)
+                    logger.debug(f"엣지 {change.id} 선택 상태: {change.selected}")
+                
+                elif change.type == "remove":
+                    # 엣지 제거
+                    updated_edges = [edge for edge in updated_edges if edge.id != change.id]
+            
+            # 캔버스 업데이트
+            update_request = CanvasUpdateRequest(edges=updated_edges)
+            updated_canvas = await self.update_canvas(canvas_id, update_request)
+            
+            logger.info(f"✅ ReactFlow 엣지 변경사항 적용 완료: {len(changes)}개")
+            return updated_canvas
+            
+        except Exception as e:
+            logger.error(f"❌ ReactFlow 엣지 변경사항 적용 실패: {str(e)}")
+            raise
+    
+    async def get_reactflow_examples(self) -> Dict[str, Any]:
+        """ReactFlow 사용 예제 반환"""
+        try:
+            logger.info("📝 ReactFlow 사용 예제 반환")
+            
+            # 기본 노드/엣지 예제 (사용자 요청사항)
+            initial_nodes = [
+                {
+                    "id": "n1",
+                    "position": {"x": 0, "y": 0},
+                    "data": {"label": "Node 1"},
+                    "type": "input"
+                },
+                {
+                    "id": "n2", 
+                    "position": {"x": 100, "y": 100},
+                    "data": {"label": "Node 2"}
+                }
+            ]
+            
+            initial_edges = [
+                {
+                    "id": "n1-n2",
+                    "source": "n1",
+                    "target": "n2"
+                }
+            ]
+            
+            # React 코드 예제
+            react_examples = {
+                "imports": """import { useState, useCallback } from 'react';
+import { ReactFlow, applyEdgeChanges, applyNodeChanges } from '@xyflow/react';""",
+                
+                "define_nodes_edges": f"""const initialNodes = {initial_nodes};
+const initialEdges = {initial_edges};""",
+                
+                "initialize_state": """export default function App() {
+  const [nodes, setNodes] = useState(initialNodes);
+  const [edges, setEdges] = useState(initialEdges);
+  
+  return (
+    <div style={{ height: '100%', width: '100%' }}>
+      <ReactFlow>
+        <Background />
+        <Controls />
+      </ReactFlow>
+    </div>
+  );
+}""",
+                
+                "event_handlers": """const onNodesChange = useCallback(
+  (changes) => setNodes((nodesSnapshot) => applyNodeChanges(changes, nodesSnapshot)),
+  [],
+);
+const onEdgesChange = useCallback(
+  (changes) => setEdges((edgesSnapshot) => applyEdgeChanges(changes, edgesSnapshot)),
+  [],
+);""",
+                
+                "pass_to_reactflow": """<ReactFlow
+  nodes={nodes}
+  edges={edges}
+  onNodesChange={onNodesChange}
+  onEdgesChange={onEdgesChange}
+  fitView
+>
+  <Background />
+  <Controls />
+</ReactFlow>"""
+            }
+            
+            return {
+                "initialNodes": initial_nodes,
+                "initialEdges": initial_edges,
+                "examples": react_examples,
+                "api_endpoints": {
+                    "initialize": "POST /canvas/reactflow/initialize",
+                    "get_state": "GET /canvas/reactflow/{canvas_id}/state",
+                    "update_state": "PUT /canvas/reactflow/{canvas_id}/state",
+                    "add_node": "POST /canvas/reactflow/{canvas_id}/nodes",
+                    "remove_node": "DELETE /canvas/reactflow/{canvas_id}/nodes/{node_id}",
+                    "add_edge": "POST /canvas/reactflow/{canvas_id}/edges",
+                    "remove_edge": "DELETE /canvas/reactflow/{canvas_id}/edges/{edge_id}",
+                    "apply_node_changes": "POST /canvas/reactflow/{canvas_id}/changes/nodes",
+                    "apply_edge_changes": "POST /canvas/reactflow/{canvas_id}/changes/edges"
+                }
+            }
+            
+        except Exception as e:
+            logger.error(f"❌ ReactFlow 예제 반환 실패: {str(e)}")
+            raise
+    
+    # ============================================================================
+    # 🔗 Connection 관련 메서드
+    # ============================================================================
+    
+    async def handle_connection(self, canvas_id: str, connection_request: ConnectionRequest) -> ReactFlowEdge:
+        """ReactFlow onConnect 핸들러 - 연결을 엣지로 변환하여 추가"""
+        try:
+            logger.info(f"🔗 ReactFlow 연결 처리: {canvas_id} - {connection_request.connection.source} → {connection_request.connection.target}")
+            
+            # 기존 캔버스 조회
+            canvas = await self.get_canvas(canvas_id)
+            if not canvas:
+                raise Exception(f"Canvas {canvas_id}를 찾을 수 없습니다")
+            
+            # 소스와 타겟 노드 존재 확인
+            node_ids = {node.id for node in canvas.nodes}
+            if connection_request.connection.source not in node_ids:
+                raise Exception(f"소스 노드 {connection_request.connection.source}를 찾을 수 없습니다")
+            if connection_request.connection.target not in node_ids:
+                raise Exception(f"타겟 노드 {connection_request.connection.target}를 찾을 수 없습니다")
+            
+            # 연결 파라미터를 엣지로 변환
+            edge_id = self._generate_edge_id(
+                connection_request.connection.source, 
+                connection_request.connection.target,
+                connection_request.connection.sourceHandle,
+                connection_request.connection.targetHandle
+            )
+            
+            # 기본 엣지 옵션
+            default_options = {
+                "type": "default",
+                "animated": False,
+                "style": {"stroke": "#b1b1b7"},
+                "labelStyle": {"fill": "#000"},
+                "labelBgStyle": {"fill": "#fff", "color": "#000"}
+            }
+            
+            # 사용자 지정 옵션과 병합
+            edge_options = {**default_options, **connection_request.edge_options}
+            
+            # ReactFlow 엣지 생성
+            new_edge = ReactFlowEdge(
+                id=edge_id,
+                source=connection_request.connection.source,
+                target=connection_request.connection.target,
+                type=edge_options.get("type", "default"),
+                animated=edge_options.get("animated", False),
+                style=edge_options.get("style", {}),
+                label=edge_options.get("label"),
+                labelStyle=edge_options.get("labelStyle", {}),
+                labelBgStyle=edge_options.get("labelBgStyle", {})
+            )
+            
+            # 핸들 정보가 있으면 추가
+            if connection_request.connection.sourceHandle:
+                new_edge.sourceHandle = connection_request.connection.sourceHandle
+            if connection_request.connection.targetHandle:
+                new_edge.targetHandle = connection_request.connection.targetHandle
+            
+            # 엣지를 캔버스에 추가
+            updated_canvas = await self.add_reactflow_edge(canvas_id, new_edge)
+            
+            logger.info(f"✅ ReactFlow 연결 처리 완료: {edge_id}")
+            return new_edge
+            
+        except Exception as e:
+            logger.error(f"❌ ReactFlow 연결 처리 실패: {str(e)}")
+            raise
+    
+    async def handle_multiple_connections(self, canvas_id: str, connections: List[ConnectionParams]) -> List[ReactFlowEdge]:
+        """여러 연결을 한 번에 처리"""
+        try:
+            logger.info(f"🔗📦 ReactFlow 다중 연결 처리: {canvas_id} - {len(connections)}개 연결")
+            
+            created_edges = []
+            for connection in connections:
+                try:
+                    connection_request = ConnectionRequest(
+                        canvas_id=canvas_id,
+                        connection=connection
+                    )
+                    new_edge = await self.handle_connection(canvas_id, connection_request)
+                    created_edges.append(new_edge)
+                except Exception as conn_error:
+                    logger.error(f"❌ 개별 연결 처리 실패: {connection.source} → {connection.target} - {str(conn_error)}")
+                    # 개별 연결 실패는 전체를 중단시키지 않음
+                    continue
+            
+            logger.info(f"✅ ReactFlow 다중 연결 처리 완료: {len(created_edges)}/{len(connections)}개 성공")
+            return created_edges
+            
+        except Exception as e:
+            logger.error(f"❌ ReactFlow 다중 연결 처리 실패: {str(e)}")
+            raise
+    
+    async def validate_connection(self, canvas_id: str, connection: ConnectionParams) -> Dict[str, Any]:
+        """연결 유효성 검증"""
+        try:
+            logger.info(f"🔍 ReactFlow 연결 유효성 검증: {canvas_id} - {connection.source} → {connection.target}")
+            
+            # 기존 캔버스 조회
+            canvas = await self.get_canvas(canvas_id)
+            if not canvas:
+                return {
+                    "valid": False,
+                    "error": f"Canvas {canvas_id}를 찾을 수 없습니다"
+                }
+            
+            # 노드 존재 확인
+            node_ids = {node.id for node in canvas.nodes}
+            
+            if connection.source not in node_ids:
+                return {
+                    "valid": False,
+                    "error": f"소스 노드 {connection.source}를 찾을 수 없습니다"
+                }
+            
+            if connection.target not in node_ids:
+                return {
+                    "valid": False,
+                    "error": f"타겟 노드 {connection.target}를 찾을 수 없습니다"
+                }
+            
+            # 자기 자신으로의 연결 방지
+            if connection.source == connection.target:
+                return {
+                    "valid": False,
+                    "error": "자기 자신으로의 연결은 허용되지 않습니다"
+                }
+            
+            # 중복 연결 확인
+            edge_id = self._generate_edge_id(
+                connection.source, 
+                connection.target,
+                connection.sourceHandle,
+                connection.targetHandle
+            )
+            
+            existing_edge_ids = {edge.id for edge in canvas.edges}
+            if edge_id in existing_edge_ids:
+                return {
+                    "valid": False,
+                    "error": "이미 존재하는 연결입니다"
+                }
+            
+            return {
+                "valid": True,
+                "message": "유효한 연결입니다",
+                "edge_id": edge_id
+            }
+            
+        except Exception as e:
+            logger.error(f"❌ ReactFlow 연결 유효성 검증 실패: {str(e)}")
+            return {
+                "valid": False,
+                "error": f"유효성 검증 중 오류 발생: {str(e)}"
+            }
+    
+    def _generate_edge_id(self, source: str, target: str, source_handle: Optional[str] = None, target_handle: Optional[str] = None) -> str:
+        """엣지 ID 생성"""
+        parts = [source, target]
+        
+        if source_handle:
+            parts.append(f"sh-{source_handle}")
+        if target_handle:
+            parts.append(f"th-{target_handle}")
+        
+        return "-".join(parts)
+    
+    async def get_connection_examples(self) -> Dict[str, Any]:
+        """Connection 사용 예제 반환"""
+        try:
+            logger.info("📝 ReactFlow Connection 사용 예제 반환")
+            
+            return {
+                "onConnect_handler": {
+                    "description": "ReactFlow onConnect 핸들러 구현",
+                    "import": "import { addEdge } from '@xyflow/react';",
+                    "basic_usage": """const onConnect = useCallback(
+  (params) => setEdges((edgesSnapshot) => addEdge(params, edgesSnapshot)),
+  [],
+);""",
+                    "with_backend_sync": """const onConnect = useCallback(
+  async (params) => {
+    // 로컬 상태 즉시 업데이트
+    setEdges((edgesSnapshot) => addEdge(params, edgesSnapshot));
+    
+    // 백엔드 동기화 (비동기)
+    try {
+      await fetch(`/canvas/reactflow/${canvasId}/connect`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          canvas_id: canvasId,
+          connection: params,
+          edge_options: { 
+            animated: false, 
+            style: { stroke: '#b1b1b7' } 
+          }
+        })
+      });
+    } catch (error) {
+      console.error('연결 저장 실패:', error);
+      // 실패 시 롤백 로직 추가 가능
+    }
+  },
+  [canvasId],
+);""",
+                    "reactflow_usage": """<ReactFlow
+  nodes={nodes}
+  edges={edges}
+  onNodesChange={onNodesChange}
+  onEdgesChange={onEdgesChange}
+  onConnect={onConnect}
+  fitView
+>
+  <Background />
+  <Controls />
+</ReactFlow>"""
+                },
+                "connection_params": {
+                    "source": "출발 노드 ID",
+                    "target": "도착 노드 ID", 
+                    "sourceHandle": "출발 핸들 ID (선택적)",
+                    "targetHandle": "도착 핸들 ID (선택적)"
+                },
+                "api_endpoints": {
+                    "create_connection": "POST /canvas/reactflow/{canvas_id}/connect",
+                    "batch_connections": "POST /canvas/reactflow/{canvas_id}/connection-events",
+                    "examples": "GET /canvas/reactflow/examples/onconnect"
+                }
+            }
+            
+        except Exception as e:
+            logger.error(f"❌ ReactFlow Connection 예제 반환 실패: {str(e)}")
             raise

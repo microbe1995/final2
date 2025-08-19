@@ -12,6 +12,7 @@ const ProcessTypeBadge: React.FC<ProcessTypeBadgeProps> = ({
   size = 'md',
   className = ''
 }) => {
+  
   // 간단한 타입별 스타일링
   const getTypeStyle = (type: string) => {
     switch (type) {

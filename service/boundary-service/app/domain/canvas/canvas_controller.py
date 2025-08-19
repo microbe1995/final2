@@ -3,7 +3,7 @@
 # ============================================================================
 
 from fastapi import APIRouter, HTTPException, Query, Depends
-from typing import Optional
+from typing import Optional, List, Dict, Any
 from loguru import logger
 
 from app.domain.canvas.canvas_service import CanvasService
@@ -18,7 +18,21 @@ from app.domain.canvas.canvas_schema import (
     CanvasExportRequest,
     CanvasImportRequest,
     CanvasDuplicateRequest,
-    CanvasTemplateRequest
+    CanvasTemplateRequest,
+    # ReactFlow 관련 스키마
+    ReactFlowNode,
+    ReactFlowEdge,
+    ReactFlowState,
+    ReactFlowUpdateRequest,
+    NodeChangeEvent,
+    EdgeChangeEvent,
+    ReactFlowPosition,
+    ReactFlowNodeData,
+    ReactFlowViewport,
+    # Connection 관련 스키마
+    ConnectionParams,
+    ConnectionEvent,
+    ConnectionRequest
 )
 
 # 라우터 생성
@@ -363,3 +377,454 @@ async def debug_info(
     except Exception as e:
         logger.error(f"❌ 디버그 정보 조회 실패: {str(e)}")
         return {"service": "canvas", "error": str(e)}
+
+# ============================================================================
+# 🔄 ReactFlow 전용 API 엔드포인트
+# ============================================================================
+
+@canvas_router.post("/reactflow/initialize", response_model=Dict[str, Any])
+async def initialize_reactflow_canvas(
+    canvas_id: str,
+    canvas_service: CanvasService = Depends(get_canvas_service)
+):
+    """ReactFlow 캔버스 초기화 - 기본 노드와 엣지 설정"""
+    try:
+        logger.info(f"🔄 ReactFlow 캔버스 초기화: {canvas_id}")
+        
+        # 기본 노드 생성 (요청 사항에 따라)
+        initial_nodes = [
+            ReactFlowNode(
+                id="n1",
+                position=ReactFlowPosition(x=0, y=0),
+                data=ReactFlowNodeData(label="Node 1"),
+                type="input"
+            ),
+            ReactFlowNode(
+                id="n2", 
+                position=ReactFlowPosition(x=100, y=100),
+                data=ReactFlowNodeData(label="Node 2"),
+                type="default"
+            )
+        ]
+        
+        # 기본 엣지 생성
+        initial_edges = [
+            ReactFlowEdge(
+                id="n1-n2",
+                source="n1",
+                target="n2"
+            )
+        ]
+        
+        # 캔버스 업데이트
+        update_request = ReactFlowUpdateRequest(
+            canvas_id=canvas_id,
+            nodes=initial_nodes,
+            edges=initial_edges,
+            viewport=ReactFlowViewport(x=0, y=0, zoom=1)
+        )
+        
+        response = await canvas_service.update_reactflow_state(update_request)
+        
+        return {
+            "success": True,
+            "canvas_id": canvas_id,
+            "message": "ReactFlow 캔버스가 초기화되었습니다",
+            "initial_state": {
+                "nodes": [node.dict() for node in initial_nodes],
+                "edges": [edge.dict() for edge in initial_edges],
+                "viewport": ReactFlowViewport().dict()
+            }
+        }
+        
+    except Exception as e:
+        logger.error(f"❌ ReactFlow 초기화 실패: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"ReactFlow 초기화 실패: {str(e)}")
+
+@canvas_router.get("/reactflow/{canvas_id}/state", response_model=ReactFlowState)
+async def get_reactflow_state(
+    canvas_id: str,
+    canvas_service: CanvasService = Depends(get_canvas_service)
+):
+    """ReactFlow 상태 조회"""
+    try:
+        logger.info(f"📊 ReactFlow 상태 조회: {canvas_id}")
+        
+        canvas = await canvas_service.get_canvas(canvas_id)
+        if not canvas:
+            raise HTTPException(status_code=404, detail="Canvas를 찾을 수 없습니다")
+        
+        # Canvas에서 ReactFlow 상태 추출
+        reactflow_state = ReactFlowState(
+            nodes=canvas.nodes,
+            edges=canvas.edges,
+            viewport=canvas.viewport
+        )
+        
+        return reactflow_state
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"❌ ReactFlow 상태 조회 실패: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"ReactFlow 상태 조회 실패: {str(e)}")
+
+@canvas_router.put("/reactflow/{canvas_id}/state", response_model=Dict[str, Any])
+async def update_reactflow_state(
+    canvas_id: str,
+    state: ReactFlowState,
+    canvas_service: CanvasService = Depends(get_canvas_service)
+):
+    """ReactFlow 상태 업데이트"""
+    try:
+        logger.info(f"📝 ReactFlow 상태 업데이트: {canvas_id}")
+        
+        update_request = ReactFlowUpdateRequest(
+            canvas_id=canvas_id,
+            nodes=state.nodes,
+            edges=state.edges,
+            viewport=state.viewport
+        )
+        
+        response = await canvas_service.update_reactflow_state(update_request)
+        
+        return {
+            "success": True,
+            "canvas_id": canvas_id,
+            "message": "ReactFlow 상태가 업데이트되었습니다",
+            "updated_at": response.updated_at
+        }
+        
+    except Exception as e:
+        logger.error(f"❌ ReactFlow 상태 업데이트 실패: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"ReactFlow 상태 업데이트 실패: {str(e)}")
+
+@canvas_router.post("/reactflow/{canvas_id}/nodes", response_model=Dict[str, Any])
+async def add_reactflow_node(
+    canvas_id: str,
+    node: ReactFlowNode,
+    canvas_service: CanvasService = Depends(get_canvas_service)
+):
+    """ReactFlow 노드 추가"""
+    try:
+        logger.info(f"➕ ReactFlow 노드 추가: {canvas_id} - {node.id}")
+        
+        response = await canvas_service.add_reactflow_node(canvas_id, node)
+        
+        return {
+            "success": True,
+            "canvas_id": canvas_id,
+            "node_id": node.id,
+            "message": f"노드 '{node.id}'가 추가되었습니다"
+        }
+        
+    except Exception as e:
+        logger.error(f"❌ ReactFlow 노드 추가 실패: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"노드 추가 실패: {str(e)}")
+
+@canvas_router.delete("/reactflow/{canvas_id}/nodes/{node_id}", response_model=Dict[str, Any])
+async def remove_reactflow_node(
+    canvas_id: str,
+    node_id: str,
+    canvas_service: CanvasService = Depends(get_canvas_service)
+):
+    """ReactFlow 노드 제거"""
+    try:
+        logger.info(f"➖ ReactFlow 노드 제거: {canvas_id} - {node_id}")
+        
+        response = await canvas_service.remove_reactflow_node(canvas_id, node_id)
+        
+        return {
+            "success": True,
+            "canvas_id": canvas_id,
+            "node_id": node_id,
+            "message": f"노드 '{node_id}'가 제거되었습니다"
+        }
+        
+    except Exception as e:
+        logger.error(f"❌ ReactFlow 노드 제거 실패: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"노드 제거 실패: {str(e)}")
+
+@canvas_router.post("/reactflow/{canvas_id}/edges", response_model=Dict[str, Any])
+async def add_reactflow_edge(
+    canvas_id: str,
+    edge: ReactFlowEdge,
+    canvas_service: CanvasService = Depends(get_canvas_service)
+):
+    """ReactFlow 엣지 추가"""
+    try:
+        logger.info(f"🔗 ReactFlow 엣지 추가: {canvas_id} - {edge.id}")
+        
+        response = await canvas_service.add_reactflow_edge(canvas_id, edge)
+        
+        return {
+            "success": True,
+            "canvas_id": canvas_id,
+            "edge_id": edge.id,
+            "message": f"엣지 '{edge.id}'가 추가되었습니다"
+        }
+        
+    except Exception as e:
+        logger.error(f"❌ ReactFlow 엣지 추가 실패: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"엣지 추가 실패: {str(e)}")
+
+@canvas_router.delete("/reactflow/{canvas_id}/edges/{edge_id}", response_model=Dict[str, Any])
+async def remove_reactflow_edge(
+    canvas_id: str,
+    edge_id: str,
+    canvas_service: CanvasService = Depends(get_canvas_service)
+):
+    """ReactFlow 엣지 제거"""
+    try:
+        logger.info(f"🔗❌ ReactFlow 엣지 제거: {canvas_id} - {edge_id}")
+        
+        response = await canvas_service.remove_reactflow_edge(canvas_id, edge_id)
+        
+        return {
+            "success": True,
+            "canvas_id": canvas_id,
+            "edge_id": edge_id,
+            "message": f"엣지 '{edge_id}'가 제거되었습니다"
+        }
+        
+    except Exception as e:
+        logger.error(f"❌ ReactFlow 엣지 제거 실패: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"엣지 제거 실패: {str(e)}")
+
+@canvas_router.post("/reactflow/{canvas_id}/changes/nodes", response_model=Dict[str, Any])
+async def apply_node_changes(
+    canvas_id: str,
+    changes: List[NodeChangeEvent],
+    canvas_service: CanvasService = Depends(get_canvas_service)
+):
+    """ReactFlow 노드 변경사항 적용 (이벤트 핸들러)"""
+    try:
+        logger.info(f"🔄 ReactFlow 노드 변경사항 적용: {canvas_id} - {len(changes)}개 변경")
+        
+        response = await canvas_service.apply_node_changes(canvas_id, changes)
+        
+        return {
+            "success": True,
+            "canvas_id": canvas_id,
+            "changes_applied": len(changes),
+            "message": f"{len(changes)}개의 노드 변경사항이 적용되었습니다"
+        }
+        
+    except Exception as e:
+        logger.error(f"❌ ReactFlow 노드 변경사항 적용 실패: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"노드 변경사항 적용 실패: {str(e)}")
+
+@canvas_router.post("/reactflow/{canvas_id}/changes/edges", response_model=Dict[str, Any])
+async def apply_edge_changes(
+    canvas_id: str,
+    changes: List[EdgeChangeEvent],
+    canvas_service: CanvasService = Depends(get_canvas_service)
+):
+    """ReactFlow 엣지 변경사항 적용 (이벤트 핸들러)"""
+    try:
+        logger.info(f"🔄 ReactFlow 엣지 변경사항 적용: {canvas_id} - {len(changes)}개 변경")
+        
+        response = await canvas_service.apply_edge_changes(canvas_id, changes)
+        
+        return {
+            "success": True,
+            "canvas_id": canvas_id,
+            "changes_applied": len(changes),
+            "message": f"{len(changes)}개의 엣지 변경사항이 적용되었습니다"
+        }
+        
+    except Exception as e:
+        logger.error(f"❌ ReactFlow 엣지 변경사항 적용 실패: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"엣지 변경사항 적용 실패: {str(e)}")
+
+@canvas_router.get("/reactflow/examples/initial", response_model=Dict[str, Any])
+async def get_initial_reactflow_example():
+    """ReactFlow 초기 예제 노드/엣지 반환"""
+    try:
+        logger.info("📝 ReactFlow 초기 예제 반환")
+        
+        # 요청사항에 맞는 초기 노드/엣지 예제
+        initial_nodes = [
+            {
+                "id": "n1",
+                "position": {"x": 0, "y": 0},
+                "data": {"label": "Node 1"},
+                "type": "input"
+            },
+            {
+                "id": "n2",
+                "position": {"x": 100, "y": 100},
+                "data": {"label": "Node 2"}
+            }
+        ]
+        
+        initial_edges = [
+            {
+                "id": "n1-n2",
+                "source": "n1",
+                "target": "n2"
+            }
+        ]
+        
+        return {
+            "success": True,
+            "message": "ReactFlow 초기 예제",
+            "initialNodes": initial_nodes,
+            "initialEdges": initial_edges,
+            "viewport": {"x": 0, "y": 0, "zoom": 1},
+            "usage": {
+                "description": "이 데이터를 사용하여 ReactFlow를 초기화할 수 있습니다",
+                "example_code": {
+                    "react": "const [nodes, setNodes] = useState(initialNodes); const [edges, setEdges] = useState(initialEdges);"
+                }
+            }
+        }
+        
+    except Exception as e:
+        logger.error(f"❌ ReactFlow 예제 반환 실패: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"예제 반환 실패: {str(e)}")
+
+# ============================================================================
+# 🔗 Connection 관련 API 엔드포인트
+# ============================================================================
+
+@canvas_router.post("/reactflow/{canvas_id}/connect", response_model=Dict[str, Any])
+async def handle_connection(
+    canvas_id: str,
+    connection_request: ConnectionRequest,
+    canvas_service: CanvasService = Depends(get_canvas_service)
+):
+    """ReactFlow onConnect 핸들러 - 새로운 연결 생성"""
+    try:
+        logger.info(f"🔗 ReactFlow 연결 생성: {canvas_id} - {connection_request.connection.source} → {connection_request.connection.target}")
+        
+        # 연결을 엣지로 변환하여 추가
+        new_edge = await canvas_service.handle_connection(canvas_id, connection_request)
+        
+        return {
+            "success": True,
+            "canvas_id": canvas_id,
+            "edge_id": new_edge.id,
+            "connection": {
+                "source": connection_request.connection.source,
+                "target": connection_request.connection.target,
+                "sourceHandle": connection_request.connection.sourceHandle,
+                "targetHandle": connection_request.connection.targetHandle
+            },
+            "message": f"연결이 생성되었습니다: {connection_request.connection.source} → {connection_request.connection.target}"
+        }
+        
+    except Exception as e:
+        logger.error(f"❌ ReactFlow 연결 생성 실패: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"연결 생성 실패: {str(e)}")
+
+@canvas_router.post("/reactflow/{canvas_id}/connection-events", response_model=Dict[str, Any])
+async def handle_connection_events(
+    canvas_id: str,
+    events: List[ConnectionEvent],
+    canvas_service: CanvasService = Depends(get_canvas_service)
+):
+    """ReactFlow 연결 이벤트 배치 처리"""
+    try:
+        logger.info(f"🔗📦 ReactFlow 연결 이벤트 배치 처리: {canvas_id} - {len(events)}개 이벤트")
+        
+        results = []
+        for event in events:
+            try:
+                connection_request = ConnectionRequest(
+                    canvas_id=canvas_id,
+                    connection=event.params
+                )
+                new_edge = await canvas_service.handle_connection(canvas_id, connection_request)
+                results.append({
+                    "success": True,
+                    "edge_id": new_edge.id,
+                    "connection": event.params.dict()
+                })
+            except Exception as event_error:
+                logger.error(f"❌ 개별 연결 이벤트 처리 실패: {str(event_error)}")
+                results.append({
+                    "success": False,
+                    "error": str(event_error),
+                    "connection": event.params.dict()
+                })
+        
+        success_count = sum(1 for r in results if r["success"])
+        
+        return {
+            "success": True,
+            "canvas_id": canvas_id,
+            "total_events": len(events),
+            "success_count": success_count,
+            "failed_count": len(events) - success_count,
+            "results": results,
+            "message": f"{success_count}/{len(events)}개의 연결 이벤트가 처리되었습니다"
+        }
+        
+    except Exception as e:
+        logger.error(f"❌ ReactFlow 연결 이벤트 배치 처리 실패: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"연결 이벤트 처리 실패: {str(e)}")
+
+@canvas_router.get("/reactflow/examples/onconnect", response_model=Dict[str, Any])
+async def get_onconnect_example():
+    """ReactFlow onConnect 핸들러 사용 예제 반환"""
+    try:
+        logger.info("📝 ReactFlow onConnect 예제 반환")
+        
+        return {
+            "success": True,
+            "message": "ReactFlow onConnect 핸들러 예제",
+            "example_code": {
+                "import": "import { addEdge } from '@xyflow/react';",
+                "handler": """const onConnect = useCallback(
+  (params) => setEdges((edgesSnapshot) => addEdge(params, edgesSnapshot)),
+  [],
+);""",
+                "usage": """<ReactFlow
+  nodes={nodes}
+  edges={edges}
+  onNodesChange={onNodesChange}
+  onEdgesChange={onEdgesChange}
+  onConnect={onConnect}
+  fitView
+>
+  <Background />
+  <Controls />
+</ReactFlow>""",
+                "backend_sync": """// 백엔드와 동기화
+const onConnect = useCallback(
+  async (params) => {
+    // 로컬 상태 업데이트
+    setEdges((edgesSnapshot) => addEdge(params, edgesSnapshot));
+    
+    // 백엔드 동기화
+    try {
+      await fetch(`/canvas/reactflow/${canvasId}/connect`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          canvas_id: canvasId,
+          connection: params,
+          edge_options: { 
+            animated: false, 
+            style: { stroke: '#b1b1b7' } 
+          }
+        })
+      });
+    } catch (error) {
+      console.error('연결 저장 실패:', error);
+    }
+  },
+  [canvasId],
+);"""
+            },
+            "api_endpoints": {
+                "create_connection": "POST /canvas/reactflow/{canvas_id}/connect",
+                "batch_events": "POST /canvas/reactflow/{canvas_id}/connection-events",
+                "examples": "GET /canvas/reactflow/examples/onconnect"
+            }
+        }
+        
+    except Exception as e:
+        logger.error(f"❌ ReactFlow onConnect 예제 반환 실패: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"onConnect 예제 반환 실패: {str(e)}")

@@ -44,9 +44,10 @@ class Canvas(Base):
     pan_x: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
     pan_y: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
 
-    # React Flow 데이터를 JSON으로 저장
+    # ReactFlow 데이터를 JSON으로 저장
     nodes_json: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     edges_json: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    viewport_json: Mapped[Optional[str]] = mapped_column(Text, nullable=True) 
     metadata_json: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
@@ -66,15 +67,27 @@ class Canvas(Base):
     
     @property
     def edges(self) -> List[Dict[str, Any]]:
-        """React Flow 엣지 데이터"""
+        """ReactFlow 엣지 데이터"""
         if self.edges_json:
             return json.loads(self.edges_json)
         return []
     
     @edges.setter
     def edges(self, value: List[Dict[str, Any]]) -> None:
-        """React Flow 엣지 데이터 설정"""
+        """ReactFlow 엣지 데이터 설정"""
         self.edges_json = json.dumps(value) if value else None
+    
+    @property
+    def viewport(self) -> Dict[str, Any]:
+        """ReactFlow 뷰포트 데이터"""
+        if self.viewport_json:
+            return json.loads(self.viewport_json)
+        return {"x": 0, "y": 0, "zoom": 1}
+    
+    @viewport.setter
+    def viewport(self, value: Dict[str, Any]) -> None:
+        """ReactFlow 뷰포트 데이터 설정"""
+        self.viewport_json = json.dumps(value) if value else None
     
     @property
     def metadata(self) -> Dict[str, Any]:
@@ -143,10 +156,11 @@ class Canvas(Base):
         return zoom
 
     def clear(self) -> None:
-        """Canvas의 모든 요소를 제거합니다 - React Flow 지원"""
-        # React Flow 데이터 정리
+        """Canvas의 모든 요소를 제거합니다 - ReactFlow 지원"""
+        # ReactFlow 데이터 정리
         self.nodes = []
         self.edges = []
+        self.viewport = {"x": 0, "y": 0, "zoom": 1}
         self.updated_at = datetime.utcnow()
     
     def resize(self, new_width: float, new_height: float) -> None:
