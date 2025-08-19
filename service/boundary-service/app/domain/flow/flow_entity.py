@@ -60,14 +60,14 @@ class ReactFlowState(Base):
         self.settings_json = json.dumps(value) if value else None
     
     @property
-    def metadata(self) -> Dict[str, Any]:
+    def flow_metadata(self) -> Dict[str, Any]:
         """플로우 메타데이터 반환"""
         if self.metadata_json:
             return json.loads(self.metadata_json)
         return {}
     
-    @metadata.setter
-    def metadata(self, value: Dict[str, Any]) -> None:
+    @flow_metadata.setter
+    def flow_metadata(self, value: Dict[str, Any]) -> None:
         """플로우 메타데이터 설정"""
         self.metadata_json = json.dumps(value) if value else None
     
@@ -79,7 +79,7 @@ class ReactFlowState(Base):
             "description": self.description,
             "viewport": self.viewport,
             "settings": self.settings,
-            "metadata": self.metadata,
+            "metadata": self.flow_metadata,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None
         }

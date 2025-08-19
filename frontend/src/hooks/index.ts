@@ -9,7 +9,7 @@ export { useAuthService } from './useAuthAPI';
 export { useProcessFlowService } from './useProcessFlowAPI';
 export { useProcessFlowDomain } from './useProcessFlow';
 // useNodeManagement 삭제됨 - ReactFlow 내장 기능 사용
-export { useProcessTypeModal } from './useProcessTypeModal';
+// useProcessTypeModal 삭제됨 - ReactFlow Panel로 대체
 
 // 🌐 Application Services
 export { useAppNavigation } from './useNavigation';

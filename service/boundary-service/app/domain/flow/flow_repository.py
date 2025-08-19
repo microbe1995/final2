@@ -186,7 +186,7 @@ class FlowRepository:
                     viewport_y=flow_data.get('viewport', {}).get('y', 0),
                     viewport_zoom=flow_data.get('viewport', {}).get('zoom', 1.0),
                     settings_json=str(flow_data.get('settings', {})) if flow_data.get('settings') else None,
-                    metadata_json=str(flow_data.get('metadata', {})) if flow_data.get('metadata') else None
+                    metadata_json=str(flow_data.get('flow_metadata', {})) if flow_data.get('flow_metadata') else None
                 )
                 
                 session.add(flow_entity)
@@ -239,8 +239,8 @@ class FlowRepository:
                 if 'settings' in flow_data:
                     update_fields['settings_json'] = str(flow_data['settings']) if flow_data['settings'] else None
                 
-                if 'metadata' in flow_data:
-                    update_fields['metadata_json'] = str(flow_data['metadata']) if flow_data['metadata'] else None
+                if 'flow_metadata' in flow_data:
+                    update_fields['metadata_json'] = str(flow_data['flow_metadata']) if flow_data['flow_metadata'] else None
                 
                 if update_fields:
                     update_fields['updated_at'] = datetime.utcnow()

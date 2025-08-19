@@ -4,9 +4,7 @@ import React from 'react';
 import ProcessControlHeader from '@/organisms/ProcessControlHeader';
 import ProcessInfoSidebar from '@/organisms/ProcessInfoSidebar';
 import ProcessFlowEditor from '@/templates/ProcessFlowEditor';
-import ProcessTypeModal from '@/molecules/ProcessTypeModal';
 import { useProcessFlowDomain } from '@/hooks/useProcessFlow';
-import { useProcessTypeModal } from '@/hooks/useProcessTypeModal';
 import { addEdge } from '@xyflow/react';
 import type { AppNodeType, AppEdgeType, ProcessNode, ProcessEdge } from '@/types/reactFlow';
 
@@ -82,13 +80,6 @@ export default function ProcessFlowPage() {
     }
   };
 
-  // Process Type 모달 관리
-  const {
-    isOpen: isProcessTypeModalOpen,
-    openModal: openProcessTypeModal,
-    closeModal: closeProcessTypeModal,
-    handleSelectType,
-  } = useProcessTypeModal(addProcessNode, addProcessEdge);
 
   // ============================================================================
   // 🚀 이벤트 핸들러 - 단일 책임
@@ -170,35 +161,17 @@ export default function ProcessFlowPage() {
                   initialEdges={edges}
                   onFlowChange={handleFlowChange}
                   readOnly={isReadOnly}
+                  onDeleteSelected={deleteSelectedElements}
                 />
               </div>
               
-              {/* 하단 컨트롤 버튼들 */}
-              <div className="flex justify-center space-x-4 mt-4">
-                <button
-                  onClick={openProcessTypeModal}
-                  className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition-colors"
-                >
-                  공정 요소 추가
-                </button>
-                <button
-                  onClick={deleteSelectedElements}
-                  className="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium transition-colors"
-                >
-                  선택 삭제
-                </button>
-              </div>
+              {/* ReactFlow 내부 Panel로 대체 */}
             </div>
           </div>
         </div>
       </div>
 
-      {/* 공정 요소 유형 선택 모달 */}
-      <ProcessTypeModal
-        isOpen={isProcessTypeModalOpen}
-        onClose={closeProcessTypeModal}
-        onSelectType={handleSelectType}
-      />
+      {/* 모달 제거 - ReactFlow Panel로 대체 */}
     </div>
   );
 }

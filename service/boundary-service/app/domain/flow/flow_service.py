@@ -49,7 +49,7 @@ class FlowService:
                     "zoom": request.viewport.zoom
                 },
                 "settings": request.settings or {},
-                "metadata": request.metadata or {}
+                "flow_metadata": request.metadata or {}
             }
             
             # 비즈니스 규칙 검증
@@ -133,7 +133,7 @@ class FlowService:
                 update_data["settings"] = request.settings
             
             if request.metadata is not None:
-                update_data["metadata"] = request.metadata
+                update_data["flow_metadata"] = request.metadata
             
             # 플로우 수정
             updated_flow = await self.flow_repository.update_flow(flow_id, update_data)

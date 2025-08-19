@@ -44,6 +44,7 @@ interface ProcessFlowEditorProps {
   onFlowChange?: (nodes: AppNodeType[], edges: AppEdgeType[]) => void;
   readOnly?: boolean;
   flowId?: string; // 백엔드 동기화를 위한 플로우 ID
+  onDeleteSelected?: () => void; // 삭제 핸들러
 }
 
 // ============================================================================
@@ -55,7 +56,8 @@ const ProcessFlowEditor: React.FC<ProcessFlowEditorProps> = ({
   initialEdges = [],
   onFlowChange,
   readOnly = false,
-  flowId // 백엔드 동기화용 플로우 ID
+  flowId, // 백엔드 동기화용 플로우 ID
+  onDeleteSelected
 }) => {
   // ✅ 공식 문서 방식: useState 사용
   const [nodes, setNodes] = useState<AppNodeType[]>(initialNodes);
@@ -194,11 +196,13 @@ const ProcessFlowEditor: React.FC<ProcessFlowEditorProps> = ({
           }}
         />
         
-        {/* ReactFlow Panel - 노드 추가 패널 */}
+        {/* ReactFlow Panel - 에디터 컨트롤 */}
         {!readOnly && (
           <Panel position="top-left" className="bg-[#1e293b] p-4 rounded-lg border border-[#334155] shadow-lg">
             <div className="flex flex-col gap-2">
-              <h3 className="text-white text-sm font-semibold mb-2">공정 요소 추가</h3>
+              <h3 className="text-white text-sm font-semibold mb-2">에디터 도구</h3>
+              
+              {/* 노드 추가 버튼 */}
               <button
                 onClick={() => {
                   const newNode: ProcessNode = {
@@ -218,7 +222,17 @@ const ProcessFlowEditor: React.FC<ProcessFlowEditorProps> = ({
               >
                 + 공정 노드
               </button>
-              <div className="text-xs text-gray-400 mt-1">
+              
+              {/* 선택 삭제 버튼 */}
+              <button
+                onClick={onDeleteSelected}
+                className="px-3 py-2 bg-red-600 text-white text-xs rounded hover:bg-red-700 transition-colors"
+              >
+                선택 삭제
+              </button>
+              
+              {/* 통계 정보 */}
+              <div className="text-xs text-gray-400 mt-1 pt-2 border-t border-gray-600">
                 노드: {nodes.length} | 엣지: {edges.length}
               </div>
             </div>

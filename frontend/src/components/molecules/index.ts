@@ -18,7 +18,7 @@ export { default as FeaturesSection } from './FeaturesSection';
 export { default as ProcessNodeContent } from './ProcessNodeContent';
 export { default as ProcessNodeToolbar } from './ProcessNodeToolbar';
 export { default as ProcessEdgeLabel } from './ProcessEdgeLabel';
-export { default as ProcessTypeModal } from './ProcessTypeModal';
+// ProcessTypeModal 삭제됨 - ReactFlow Panel로 대체
 
 // ============================================================================
 // 📝 Molecules 타입 정의

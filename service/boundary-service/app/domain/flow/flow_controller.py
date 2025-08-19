@@ -145,7 +145,7 @@ async def update_flow(flow_id: str, request: FlowUpdateRequest):
             flow_data["settings"] = request.settings
         
         if request.metadata is not None:
-            flow_data["metadata"] = request.metadata
+            flow_data["flow_metadata"] = request.metadata
         
         flow_data["updated_at"] = datetime.now().isoformat()
         
