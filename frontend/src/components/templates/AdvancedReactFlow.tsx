@@ -24,6 +24,7 @@ const nodeTypes = {
 const connectionAnnotation = {
   id: 'connection-annotation',
   type: 'annotation',
+  draggable: false,
   selectable: false,
   data: {
     label: 'this is a "connection"',

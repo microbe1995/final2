@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import { useAuthStore } from '@/zustand/authStore';
 import { useAuthAPI } from '@/hooks/useAuthAPI';
 import { useAppNavigation } from '@/hooks/useNavigation';
-import { useAsyncOperationHelper } from '@/hooks/useAsyncOperation';
+import { useAsync } from '@/hooks';
 import ProfileForm from '@/organisms/ProfileForm';
 import Button from '@/atoms/Button';
 
@@ -20,7 +20,7 @@ export default function ProfilePage() {
   const { user, token, isAuthenticated, updateUser, logout } = useAuthStore();
   const { updateProfile, changePassword } = useAuthAPI();
   const { goToLogin } = useAppNavigation();
-  const { isLoading, error, success, executeAsync } = useAsyncOperationHelper();
+  const { isLoading, error, success, execute } = useAsync();
 
   // ============================================================================
   // 🔄 초기화 - 인증 상태 확인
@@ -39,7 +39,7 @@ export default function ProfilePage() {
   const handleUpdateProfile = async (data: { full_name: string; email: string }) => {
     if (!token) return;
 
-    await executeAsync(
+    await execute(
       async () => {
         const response = await updateProfile(data, token);
         
@@ -53,7 +53,7 @@ export default function ProfilePage() {
         
         return response;
       },
-      '프로필이 성공적으로 업데이트되었습니다.'
+      { successMessage: '프로필이 성공적으로 업데이트되었습니다.' }
     );
   };
 
@@ -64,12 +64,12 @@ export default function ProfilePage() {
   const handleUpdatePassword = async (data: { current_password: string; new_password: string; confirm_password: string }) => {
     if (!token) return;
 
-    await executeAsync(
+    await execute(
       async () => {
         const response = await changePassword(data, token);
         return response;
       },
-      '비밀번호가 성공적으로 변경되었습니다.'
+      { successMessage: '비밀번호가 성공적으로 변경되었습니다.' }
     );
   };
 

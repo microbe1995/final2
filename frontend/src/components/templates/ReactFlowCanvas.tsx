@@ -5,6 +5,7 @@ import {
   ReactFlow,
   Controls,
   Background,
+  BackgroundVariant,
   applyNodeChanges,
   applyEdgeChanges,
   addEdge,
@@ -160,7 +161,7 @@ const ReactFlowCanvas: React.FC<ReactFlowCanvasProps> = ({
         <Background 
           color="#e5e7eb" 
           gap={20} 
-          variant="dots" 
+          variant={BackgroundVariant.Dots} 
         />
         
         {/* 기본 컨트롤 */}

@@ -3,7 +3,7 @@
 import { useAuthStore } from '@/zustand/authStore';
 import { useAuthAPI } from '@/hooks/useAuthAPI';
 import { useAppNavigation } from '@/hooks/useNavigation';
-import { useAsyncOperationHelper } from '@/hooks/useAsyncOperation';
+import { useAsync } from '@/hooks';
 import LoginSignupCard from '@/organisms/LoginSignupCard';
 
 // ============================================================================
@@ -14,14 +14,14 @@ export default function LoginPage() {
   const { login } = useAuthStore();
   const { login: loginAPI } = useAuthAPI();
   const { goToProfile } = useAppNavigation();
-  const { isLoading, error, success, executeAsync } = useAsyncOperationHelper();
+  const { isLoading, error, success, execute } = useAsync();
   
   // ============================================================================
   // 🚀 로그인 제출
   // ============================================================================
   
   const handleSubmit = async (data: { email: string; password: string }) => {
-    const result = await executeAsync(
+    const result = await execute(
       async () => {
         const response = await loginAPI(data);
         
@@ -34,7 +34,7 @@ export default function LoginPage() {
         
         return response;
       },
-      '로그인이 완료되었습니다!'
+      { successMessage: '로그인이 완료되었습니다!' }
     );
   };
 

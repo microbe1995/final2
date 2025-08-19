@@ -1,12 +1,9 @@
 // ============================================================================
-// 🏗️ Templates - DDD 도메인별 페이지 레이아웃 컴포넌트
+// 🏗️ Templates - 페이지 레이아웃 컴포넌트 (간소화됨)
 // ============================================================================
 
-// 🏭 ProcessFlow 도메인 템플릿
-export { default as ProcessFlowEditor } from './ProcessFlowEditor';
-
-// ============================================================================
-// 📝 Templates 타입 정의
-// ============================================================================
-
-
+// React Flow 템플릿들
+export { default as ReactFlowCanvas } from './ReactFlowCanvas';
+export { default as SimpleProcessFlow } from './SimpleProcessFlow';
+export { default as AdvancedReactFlow } from './AdvancedReactFlow';
+export { default as ConnectedReactFlow } from './ConnectedReactFlow';

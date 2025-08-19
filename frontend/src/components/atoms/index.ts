@@ -1,5 +1,5 @@
 // ============================================================================
-// 🧩 Atoms - DDD 도메인별 기본 UI 컴포넌트
+// 🧩 Atoms - 기본 UI 컴포넌트 (간소화됨)
 // ============================================================================
 
 // 🌐 공통/범용 컴포넌트
@@ -9,12 +9,9 @@ export { default as Icon } from './Icon';
 export { default as Badge } from './Badge';
 export { default as Tooltip } from './Tooltip';
 
-
-
-// 🏭 ProcessFlow 도메인 컴포넌트
-export { default as ProcessFlowHandle } from './ProcessFlowHandle';
-export { default as ProcessFlowTypeBadge } from './ProcessFlowTypeBadge';
-export { default as ProcessFlowStatusIndicator } from './ProcessFlowStatusIndicator';
+// 🎯 React Flow 컴포넌트
+export { default as AnnotationNode } from './AnnotationNode';
+export { default as NodeWrapper } from './NodeWrapper';
 
 // ============================================================================
 // 📝 Atoms 타입 정의
@@ -25,4 +22,3 @@ export type { InputProps } from './Input';
 export type { IconProps } from './Icon';
 export type { BadgeProps } from './Badge';
 export type { TooltipProps } from './Tooltip';
-

@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback } from 'react';
-import { useAPI } from './common/useAPI';
+import { useAPI } from './useAPI';
 
 interface LoginData {
   email: string;
