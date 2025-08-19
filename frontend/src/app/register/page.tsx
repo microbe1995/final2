@@ -1,6 +1,6 @@
 'use client';
 
-import { useAuthService, RegisterData } from '@/hooks/useAuthAPI';
+import { useAuthAPI, RegisterData } from '@/hooks/useAuthAPI';
 import { useAppNavigation } from '@/hooks/useNavigation';
 import { useAsyncOperationHelper } from '@/hooks/useAsyncOperation';
 import LoginSignupCard from '@/organisms/LoginSignupCard';
@@ -10,7 +10,7 @@ import LoginSignupCard from '@/organisms/LoginSignupCard';
 // ============================================================================
 
 export default function RegisterPage() {
-  const { register } = useAuthService();
+  const { register } = useAuthAPI();
   const { goToLogin } = useAppNavigation();
   const { isLoading, error, success, executeAsync } = useAsyncOperationHelper();
   

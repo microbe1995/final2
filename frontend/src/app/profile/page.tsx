@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { useAuthStore } from '@/zustand/authStore';
-import { useAuthService } from '@/hooks/useAuthAPI';
+import { useAuthAPI } from '@/hooks/useAuthAPI';
 import { useAppNavigation } from '@/hooks/useNavigation';
 import { useAsyncOperationHelper } from '@/hooks/useAsyncOperation';
 import ProfileForm from '@/organisms/ProfileForm';
@@ -18,7 +18,7 @@ export default function ProfilePage() {
   // ============================================================================
   
   const { user, token, isAuthenticated, updateUser, logout } = useAuthStore();
-  const { updateProfile, changePassword } = useAuthService();
+  const { updateProfile, changePassword } = useAuthAPI();
   const { goToLogin } = useAppNavigation();
   const { isLoading, error, success, executeAsync } = useAsyncOperationHelper();
 

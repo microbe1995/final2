@@ -1,7 +1,7 @@
 'use client';
 
 import { useAuthStore } from '@/zustand/authStore';
-import { useAuthService } from '@/hooks/useAuthAPI';
+import { useAuthAPI } from '@/hooks/useAuthAPI';
 import { useAppNavigation } from '@/hooks/useNavigation';
 import { useAsyncOperationHelper } from '@/hooks/useAsyncOperation';
 import LoginSignupCard from '@/organisms/LoginSignupCard';
@@ -12,7 +12,7 @@ import LoginSignupCard from '@/organisms/LoginSignupCard';
 
 export default function LoginPage() {
   const { login } = useAuthStore();
-  const { login: loginAPI } = useAuthService();
+  const { login: loginAPI } = useAuthAPI();
   const { goToProfile } = useAppNavigation();
   const { isLoading, error, success, executeAsync } = useAsyncOperationHelper();
   

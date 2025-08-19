@@ -6,7 +6,7 @@
 // 🔐 인증 및 사용자 관리 훅들
 // ============================================================================
 export { useAuthAPI } from './useAuthAPI';
-export { useNavigation } from './useNavigation';
+export { useAppNavigation } from './useNavigation';
 
 // ============================================================================
 // 🌊 React Flow 핵심 훅들
@@ -27,7 +27,7 @@ export { useAdvancedViewport } from './useAdvancedViewport';
 // ============================================================================
 // 🔄 비동기 작업 관리 훅들
 // ============================================================================
-export { useAsyncOperation } from './useAsyncOperation';
+export { useAsyncOperationHelper } from './useAsyncOperation';
 
 // ============================================================================
 // 🧩 React Flow Context Provider
