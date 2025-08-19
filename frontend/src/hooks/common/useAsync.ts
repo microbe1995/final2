@@ -5,7 +5,7 @@ import { useState, useCallback } from 'react';
 export interface AsyncState {
   isLoading: boolean;
   error: string | null;
-  success: string | null;
+  success: string | null;  // undefined가 아닌 null로 통일
 }
 
 export interface AsyncOperationOptions {
@@ -40,18 +40,31 @@ export function useAsync() {
       const result = await operation();
       
       if (options.successMessage) {
-        setState(prev => ({ ...prev, success: options.successMessage }));
+        setState(prev => ({ 
+          ...prev, 
+          success: options.successMessage || null,  // null로 폴백
+          isLoading: false 
+        }));
+      } else {
+        setState(prev => ({ 
+          ...prev, 
+          success: null,
+          isLoading: false 
+        }));
       }
       
       options.onSuccess?.();
       return result;
     } catch (error: any) {
       const errorMessage = options.errorMessage || error.message || '작업 중 오류가 발생했습니다.';
-      setState(prev => ({ ...prev, error: errorMessage }));
+      setState(prev => ({ 
+        ...prev, 
+        error: errorMessage,
+        success: null,
+        isLoading: false 
+      }));
       options.onError?.(error);
       return null;
-    } finally {
-      setState(prev => ({ ...prev, isLoading: false }));
     }
   }, []);
 
