@@ -39,7 +39,7 @@ export const useProcessFlowService = () => {
   const loadSavedFlows = useCallback(async (): Promise<CanvasListItem[]> => {
     try {
       // MSA: Boundary Service의 Flow API 호출
-      const response = await apiMethods.get<any>('/api/v1/boundary/flow');
+      const response = await apiMethods.get<any>('/api/flow');
       
       // ReactFlow 데이터를 Canvas 형식으로 변환
       const canvasList: CanvasListItem[] = response.flows?.map((flow: any) => ({
@@ -103,7 +103,7 @@ export const useProcessFlowService = () => {
         }
       };
       
-      const createdFlow = await apiMethods.post('/api/v1/boundary/flow', flowData);
+      const createdFlow = await apiMethods.post('/api/flow', flowData);
       console.log('✅ MSA ReactFlow 저장 완료:', createdFlow.id);
       
       return { success: true, flowId: createdFlow.id };
@@ -125,7 +125,7 @@ export const useProcessFlowService = () => {
       
       if (!targetFlowId) {
         // 플로우 목록에서 최신 플로우 찾기
-        const flowsResponse = await apiMethods.get('/api/v1/boundary/flow');
+        const flowsResponse = await apiMethods.get('/api/flow');
         if (flowsResponse.flows && flowsResponse.flows.length > 0) {
           targetFlowId = flowsResponse.flows[0].id;
         } else {
@@ -134,7 +134,7 @@ export const useProcessFlowService = () => {
       }
       
       // MSA: 특정 플로우의 ReactFlow 데이터 로드
-      const flowData = await apiMethods.get(`/api/v1/boundary/flow/${targetFlowId}`);
+      const flowData = await apiMethods.get(`/api/flow/${targetFlowId}`);
       
       if (flowData.reactflow_data) {
         return {
@@ -162,7 +162,7 @@ export const useProcessFlowService = () => {
   const checkServiceStatus = useCallback(async (): Promise<ServiceHealthStatus | null> => {
     try {
       // MSA: 각 서비스의 헬스체크
-      const boundaryHealth = await apiMethods.get('/api/v1/boundary/health');
+      const boundaryHealth = await apiMethods.get('/health');
       
       return {
         status: boundaryHealth.status === 'healthy' ? 'healthy' : 'unhealthy',
@@ -192,7 +192,7 @@ export const useProcessFlowService = () => {
   ): Promise<boolean> => {
     try {
       // MSA: Boundary Service로 ReactFlow 상태 동기화
-      await apiMethods.put(`/api/v1/boundary/flow/${flowId}/reactflow`, {
+      await apiMethods.put(`/api/flow/${flowId}/reactflow`, {
         nodes,
         edges,
         timestamp: Date.now()
@@ -212,7 +212,7 @@ export const useProcessFlowService = () => {
   
   const deleteFlow = useCallback(async (flowId: string): Promise<boolean> => {
     try {
-      await apiMethods.delete(`/api/v1/boundary/flow/${flowId}`);
+      await apiMethods.delete(`/api/flow/${flowId}`);
       console.log('✅ MSA Flow 삭제 완료');
       return true;
     } catch (error) {

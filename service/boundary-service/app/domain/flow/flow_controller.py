@@ -287,27 +287,26 @@ async def get_flow_state(flow_id: str):
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="플로우 상태 조회 중 오류가 발생했습니다")
 
 # ============================================================================
-# 🏥 헬스체크 API
+# 🏥 플로우 도메인 상태 API
 # ============================================================================
 
-@flow_router.get("/flow/health")
-async def flow_health_check():
+@flow_router.get("/flow/status")
+async def flow_status_check():
     """
-    🏥 **플로우 도메인 헬스체크**
+    📊 **플로우 도메인 상태**
     
-    플로우 도메인의 상태를 확인합니다.
+    플로우 도메인의 현재 상태를 확인합니다.
     """
     try:
         return {
-            "status": "healthy",
+            "status": "active",
             "domain": "flows",
             "message": "플로우 도메인이 정상적으로 작동 중입니다",
-            "total_flows": len(flows_storage),
             "timestamp": datetime.now().isoformat()
         }
         
     except Exception as e:
-        logger.error(f"❌ 플로우 도메인 헬스체크 실패: {str(e)}")
+        logger.error(f"❌ 플로우 도메인 상태 확인 실패: {str(e)}")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="플로우 도메인 상태 확인 실패")
 
 # ============================================================================

@@ -77,14 +77,14 @@ class FlowDatabaseConnection:
         if not self._is_initialized:
             await self.initialize()
         
-        async with self.SessionLocal() as session:
-            try:
-                yield session
-            except Exception as e:
-                await session.rollback()
-                raise
-            finally:
-                await session.close()
+        session = self.SessionLocal()
+        try:
+            yield session
+        except Exception as e:
+            await session.rollback()
+            raise
+        finally:
+            await session.close()
     
     async def close(self):
         """연결 종료"""
