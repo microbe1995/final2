@@ -12,11 +12,15 @@ import {
   addEdge,
   applyNodeChanges,
   applyEdgeChanges,
+  Position,
 } from '@xyflow/react';
 
 import { useCallback, useState, useEffect } from 'react';
 import { AnnotationNode } from '@/components/atoms/AnnotationNode';
 import NodeWrapper from '@/components/atoms/NodeWrapper';
+import { ProcessNode } from '@/components/atoms/ProcessNode';
+import { InputNode } from '@/components/atoms/InputNode';
+import { OutputNode } from '@/components/atoms/OutputNode';
 import { useReactFlowAPI } from '@/hooks/useReactFlowAPI';
 import type { Node, Edge } from '@xyflow/react';
 
@@ -24,6 +28,9 @@ import '@xyflow/react/dist/style.css';
 
 const nodeTypes = {
   annotation: AnnotationNode,
+  process: ProcessNode,
+  input: InputNode,
+  output: OutputNode,
 };
 
 // ============================================================================
@@ -92,52 +99,48 @@ function Flow({ flowId, autoSave, saveInterval }: ConnectedReactFlowProps) {
 
   useEffect(() => {
     const loadFlowData = async () => {
+      setIsLoading(true);
+      setHasUnsavedChanges(false);
+      setLastSaved(null);
+      
       if (!flowId) {
-        // 플로우 ID가 없으면 새 플로우 생성
-        const newFlow = await flowAPI.createFlow({
-          name: `플로우 ${new Date().toLocaleString()}`,
-          description: 'React Flow 다이어그램',
-          settings: { autoSave: true },
-          metadata: { createdBy: 'user', version: '1.0' }
-        });
+        // 플로우 ID가 없으면 새 플로우 생성 (초기 노드만)
+        const initialNodes = [
+          {
+            id: 'annotation-1',
+            type: 'annotation',
+            draggable: false,
+            selectable: false,
+            data: {
+              label: 'This is a "node"',
+              arrowStyle: 'arrow-bottom-right',
+            },
+            position: { x: -65, y: -50 },
+          },
+          {
+            id: '1-1',
+            type: 'process',
+            data: { 
+              label: '시작 프로세스',
+              description: '프로세스 시작점'
+            },
+            position: { x: 150, y: 0 },
+          },
+          {
+            id: 'annotation-2',
+            type: 'annotation',
+            draggable: false,
+            selectable: false,
+            data: {
+              label: 'This is a "handle"',
+              arrowStyle: 'arrow-top-left',
+            },
+            position: { x: 235, y: 35 },
+          },
+        ];
         
-        if (newFlow) {
-          // 기본 어노테이션 노드들 추가
-          const initialNodes = [
-            {
-              id: 'annotation-1',
-              type: 'annotation',
-              draggable: false,
-              selectable: false,
-              data: {
-                label: 'This is a "node"',
-                arrowStyle: 'arrow-bottom-right',
-              },
-              position: { x: -65, y: -50 },
-            },
-            {
-              id: '1-1',
-              type: 'default',
-              data: { label: 'node label' },
-              position: { x: 150, y: 0 },
-            },
-            {
-              id: 'annotation-2',
-              type: 'annotation',
-              draggable: false,
-              selectable: false,
-              data: {
-                label: 'This is a "handle"',
-                arrowStyle: 'arrow-top-left',
-              },
-              position: { x: 235, y: 35 },
-            },
-          ];
-          
-          setNodes(initialNodes);
-          // 백엔드에 초기 노드들 저장
-          await flowAPI.saveFlowState(newFlow.id, initialNodes, [], { x: 0, y: 0, zoom: 1 });
-        }
+        setNodes(initialNodes);
+        setEdges([]);
       } else {
         // 기존 플로우 로드
         const flowState = await flowAPI.getFlowState(flowId);
@@ -243,22 +246,28 @@ function Flow({ flowId, autoSave, saveInterval }: ConnectedReactFlowProps) {
   // 🎯 노드 추가 기능
   // ============================================================================
 
-  const addNode = useCallback(async () => {
+  const addNode = useCallback(async (nodeType: 'default' | 'primary' | 'success' | 'warning' | 'danger' = 'default') => {
     const newNode = {
       id: `node-${Date.now()}`,
-      type: 'default',
+      type: 'process',
       position: { 
         x: Math.random() * 300 + 100, 
         y: Math.random() * 200 + 100 
       },
       data: { 
-        label: `노드 ${nodes.length + 1}` 
+        label: `프로세스 ${nodes.filter(n => n.type === 'process').length + 1}`,
+        description: '새로운 프로세스 노드',
+        variant: nodeType,
+        size: 'md',
+        // 🎯 다양한 핸들 설정 예시
+        targetPosition: nodeType === 'primary' ? [Position.Left, Position.Top] : Position.Top,
+        sourcePosition: nodeType === 'danger' ? [Position.Right, Position.Bottom] : Position.Bottom,
       },
     };
     
     setNodes(prev => [...prev, newNode]);
     setHasUnsavedChanges(true);
-  }, [nodes.length]);
+  }, [nodes]);
 
   const addAnnotationNode = useCallback(async () => {
     const newNode = {
@@ -273,6 +282,46 @@ function Flow({ flowId, autoSave, saveInterval }: ConnectedReactFlowProps) {
       data: { 
         label: `어노테이션 ${nodes.filter(n => n.type === 'annotation').length + 1}`,
         arrowStyle: 'arrow-bottom-right'
+      },
+    };
+    
+    setNodes(prev => [...prev, newNode]);
+    setHasUnsavedChanges(true);
+  }, [nodes]);
+
+  const addInputNode = useCallback(async (variant: 'default' | 'primary' | 'success' | 'warning' | 'danger' = 'default') => {
+    const newNode = {
+      id: `input-${Date.now()}`,
+      type: 'input',
+      position: { 
+        x: Math.random() * 300 + 100, 
+        y: Math.random() * 200 + 100 
+      },
+      data: { 
+        label: `입력 ${nodes.filter(n => n.type === 'input').length + 1}`,
+        description: '데이터 입력점',
+        variant,
+        sourcePosition: Position.Right, // 입력 노드는 오른쪽으로 출력
+      },
+    };
+    
+    setNodes(prev => [...prev, newNode]);
+    setHasUnsavedChanges(true);
+  }, [nodes]);
+
+  const addOutputNode = useCallback(async (variant: 'default' | 'primary' | 'success' | 'warning' | 'danger' = 'default') => {
+    const newNode = {
+      id: `output-${Date.now()}`,
+      type: 'output',
+      position: { 
+        x: Math.random() * 300 + 100, 
+        y: Math.random() * 200 + 100 
+      },
+      data: { 
+        label: `출력 ${nodes.filter(n => n.type === 'output').length + 1}`,
+        description: '결과 출력점',
+        variant,
+        targetPosition: Position.Left, // 출력 노드는 왼쪽에서 입력
       },
     };
     
@@ -330,29 +379,90 @@ function Flow({ flowId, autoSave, saveInterval }: ConnectedReactFlowProps) {
         
         {/* 노드 생성 컨트롤 패널 */}
         <Panel position="top-right">
-          <div className="bg-white p-3 rounded-lg shadow-lg border border-gray-200">
-            <div className="flex flex-col gap-2">
+          <div className="bg-white p-3 rounded-lg shadow-lg border border-gray-200 max-w-[220px]">
+            <div className="flex flex-col gap-3">
               <h3 className="text-sm font-semibold text-gray-700">노드 생성</h3>
               
-              <button
-                onClick={addNode}
-                className="px-3 py-2 bg-blue-500 text-white rounded text-sm hover:bg-blue-600 transition-colors"
-              >
-                + 기본 노드
-              </button>
+              {/* 🎯 프로세스 노드들 */}
+              <div>
+                <h4 className="text-xs font-medium text-gray-600 mb-1">프로세스 노드</h4>
+                <div className="grid grid-cols-3 gap-1">
+                  <button
+                    onClick={() => addNode('default')}
+                    className="px-2 py-1 bg-gray-500 text-white rounded text-xs hover:bg-gray-600 transition-colors"
+                    title="기본 프로세스"
+                  >
+                    기본
+                  </button>
+                  
+                  <button
+                    onClick={() => addNode('primary')}
+                    className="px-2 py-1 bg-blue-500 text-white rounded text-xs hover:bg-blue-600 transition-colors"
+                    title="주요 프로세스"
+                  >
+                    주요
+                  </button>
+                  
+                  <button
+                    onClick={() => addNode('success')}
+                    className="px-2 py-1 bg-green-500 text-white rounded text-xs hover:bg-green-600 transition-colors"
+                    title="완료 프로세스"
+                  >
+                    완료
+                  </button>
+                </div>
+              </div>
               
-              <button
-                onClick={addAnnotationNode}
-                className="px-3 py-2 bg-green-500 text-white rounded text-sm hover:bg-green-600 transition-colors"
-              >
-                + 어노테이션
-              </button>
+              {/* 📥 입력/출력 노드들 */}
+              <div>
+                <h4 className="text-xs font-medium text-gray-600 mb-1">입력/출력 노드</h4>
+                <div className="grid grid-cols-2 gap-1">
+                  <button
+                    onClick={() => addInputNode('primary')}
+                    className="px-2 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700 transition-colors flex items-center gap-1"
+                    title="데이터 입력점"
+                  >
+                    📥 입력
+                  </button>
+                  
+                  <button
+                    onClick={() => addOutputNode('success')}
+                    className="px-2 py-1 bg-purple-600 text-white rounded text-xs hover:bg-purple-700 transition-colors flex items-center gap-1"
+                    title="결과 출력점"
+                  >
+                    📤 출력
+                  </button>
+                </div>
+              </div>
               
+              {/* 📝 기타 노드들 */}
+              <div>
+                <h4 className="text-xs font-medium text-gray-600 mb-1">기타</h4>
+                <div className="grid grid-cols-2 gap-1">
+                  <button
+                    onClick={addAnnotationNode}
+                    className="px-2 py-1 bg-purple-500 text-white rounded text-xs hover:bg-purple-600 transition-colors"
+                    title="어노테이션 노드"
+                  >
+                    💬 메모
+                  </button>
+                  
+                  <button
+                    onClick={() => addNode('warning')}
+                    className="px-2 py-1 bg-yellow-500 text-white rounded text-xs hover:bg-yellow-600 transition-colors"
+                    title="주의 프로세스"
+                  >
+                    ⚠️ 주의
+                  </button>
+                </div>
+              </div>
+              
+              {/* 🗑️ 전체 삭제 버튼 */}
               <button
                 onClick={clearAllNodes}
-                className="px-3 py-2 bg-red-500 text-white rounded text-sm hover:bg-red-600 transition-colors"
+                className="px-3 py-2 bg-red-600 text-white rounded text-sm hover:bg-red-700 transition-colors"
               >
-                전체 삭제
+                🗑️ 전체 삭제
               </button>
               
               <div className="text-xs text-gray-400 pt-2 border-t border-gray-200">
@@ -390,6 +500,7 @@ function Flow({ flowId, autoSave, saveInterval }: ConnectedReactFlowProps) {
               >
                 수동 저장
               </button>
+              
             </div>
           </div>
         </Panel>

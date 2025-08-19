@@ -12,6 +12,9 @@ export { default as Tooltip } from './Tooltip';
 // 🎯 React Flow 컴포넌트
 export { default as AnnotationNode } from './AnnotationNode';
 export { default as NodeWrapper } from './NodeWrapper';
+export { default as ProcessNode } from './ProcessNode';
+export { default as InputNode } from './InputNode';
+export { default as OutputNode } from './OutputNode';
 
 // ============================================================================
 // 📝 Atoms 타입 정의

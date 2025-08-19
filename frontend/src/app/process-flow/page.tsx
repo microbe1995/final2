@@ -21,15 +21,15 @@ export default function ProcessFlowPage() {
   };
 
   return (
-    <div className="h-screen flex flex-col bg-gray-100">
+    <div className="h-screen flex flex-col bg-gray-50">
       {/* 헤더 */}
-      <header className="bg-white border-b border-gray-200 px-6 py-4">
+      <header className="bg-white border-b border-gray-300 px-6 py-4 shadow-sm">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">
+            <h1 className="text-2xl font-bold text-blue-900">
               연결된 프로세스 플로우
             </h1>
-            <p className="text-sm text-gray-600 mt-1">
+            <p className="text-sm text-blue-600 mt-1">
               백엔드와 연동된 영구 저장 가능한 React Flow 다이어그램
             </p>
           </div>
@@ -50,12 +50,12 @@ export default function ProcessFlowPage() {
             
             <button
               onClick={handleCreateNewFlow}
-              className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
             >
               새 플로우
             </button>
             
-            <div className="text-sm text-gray-500">
+            <div className="text-sm text-blue-600 font-medium">
               {currentFlowId ? `플로우 ID: ${currentFlowId}` : '새 플로우'}
             </div>
           </div>
@@ -65,6 +65,7 @@ export default function ProcessFlowPage() {
       {/* 메인 플로우 영역 */}
       <main className="flex-1">
         <ConnectedReactFlow
+          key={currentFlowId || 'new-flow'}
           flowId={currentFlowId}
           autoSave={autoSave}
           saveInterval={10000} // 10초마다 자동 저장
@@ -72,14 +73,23 @@ export default function ProcessFlowPage() {
       </main>
       
       {/* 하단 정보 바 */}
-      <footer className="bg-white border-t border-gray-200 px-6 py-2">
-        <div className="flex items-center justify-between text-sm text-gray-600">
+      <footer className="bg-white border-t border-gray-300 px-6 py-3 shadow-sm">
+        <div className="flex items-center justify-between text-sm text-blue-700">
           <div className="flex items-center gap-4">
-            <span>🔗 백엔드 연동됨</span>
-            <span>💾 PostgreSQL 저장</span>
-            <span>⚡ 자동 저장: {autoSave ? 'ON' : 'OFF'}</span>
+            <span className="flex items-center gap-1">
+              <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+              백엔드 연동됨
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
+              PostgreSQL 저장
+            </span>
+            <span className="flex items-center gap-1">
+              <span className={`w-2 h-2 rounded-full ${autoSave ? 'bg-green-500' : 'bg-gray-400'}`}></span>
+              자동 저장: {autoSave ? 'ON' : 'OFF'}
+            </span>
           </div>
-          <div>
+          <div className="text-blue-600 font-medium">
             React Flow + FastAPI + PostgreSQL
           </div>
         </div>
