@@ -10,6 +10,7 @@ import {
   Controls,
   MiniMap,
   Background,
+  Panel,
   type OnConnect,
   type OnNodesChange,
   type OnEdgesChange,
@@ -192,6 +193,37 @@ const ProcessFlowEditor: React.FC<ProcessFlowEditorProps> = ({
             return '#fff';
           }}
         />
+        
+        {/* ReactFlow Panel - 노드 추가 패널 */}
+        {!readOnly && (
+          <Panel position="top-left" className="bg-[#1e293b] p-4 rounded-lg border border-[#334155] shadow-lg">
+            <div className="flex flex-col gap-2">
+              <h3 className="text-white text-sm font-semibold mb-2">공정 요소 추가</h3>
+              <button
+                onClick={() => {
+                  const newNode: ProcessNode = {
+                    id: `node-${Date.now()}`,
+                    type: 'processNode',
+                    position: { x: Math.random() * 300 + 50, y: Math.random() * 300 + 50 },
+                    data: {
+                      label: '새 공정',
+                      processType: 'process',
+                      description: '공정 설명',
+                    },
+                  };
+                  setNodes(prev => [...prev, newNode]);
+                  onFlowChange?.([...nodes, newNode], edges);
+                }}
+                className="px-3 py-2 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 transition-colors"
+              >
+                + 공정 노드
+              </button>
+              <div className="text-xs text-gray-400 mt-1">
+                노드: {nodes.length} | 엣지: {edges.length}
+              </div>
+            </div>
+          </Panel>
+        )}
       </ReactFlow>
     </div>
   );

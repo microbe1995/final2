@@ -13,12 +13,8 @@ export { default as WelcomeBanner } from './WelcomeBanner';
 export { default as FeatureCard } from './FeatureCard';
 export { default as FeaturesSection } from './FeaturesSection';
 
-// 🎨 Canvas 도메인 컴포넌트
-export { default as FlowArrow } from './FlowArrow';
-export { default as ControlPanel } from './ControlPanel';
 
 // 🏭 ProcessFlow 도메인 컴포넌트
-export { default as ProcessShape } from './ProcessShape';
 export { default as ProcessNodeContent } from './ProcessNodeContent';
 export { default as ProcessNodeToolbar } from './ProcessNodeToolbar';
 export { default as ProcessEdgeLabel } from './ProcessEdgeLabel';
@@ -28,6 +24,3 @@ export { default as ProcessTypeModal } from './ProcessTypeModal';
 // 📝 Molecules 타입 정의
 // ============================================================================
 
-export type { ProcessShapeProps } from './ProcessShape';
-export type { FlowArrowProps } from './FlowArrow';
-export type { ControlPanelProps } from './ControlPanel';

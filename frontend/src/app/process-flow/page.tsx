@@ -3,11 +3,12 @@
 import React from 'react';
 import ProcessControlHeader from '@/organisms/ProcessControlHeader';
 import ProcessInfoSidebar from '@/organisms/ProcessInfoSidebar';
-import ProcessDiagramEditor from '@/organisms/ProcessDiagramEditor';
+import ProcessFlowEditor from '@/templates/ProcessFlowEditor';
 import ProcessTypeModal from '@/molecules/ProcessTypeModal';
 import { useProcessFlowDomain } from '@/hooks/useProcessFlow';
-import { useNodeManagement } from '@/hooks/useNodeManagement';
 import { useProcessTypeModal } from '@/hooks/useProcessTypeModal';
+import { addEdge } from '@xyflow/react';
+import type { AppNodeType, AppEdgeType, ProcessNode, ProcessEdge } from '@/types/reactFlow';
 
 // ============================================================================
 // 🎯 Process Flow 페이지 컴포넌트
@@ -37,12 +38,49 @@ export default function ProcessFlowPage() {
     clearFlow,
   } = useProcessFlowDomain();
 
-  // 노드/엣지 관리
-  const {
-    addProcessNode,
-    addProcessEdge,
-    deleteSelectedElements,
-  } = useNodeManagement(nodes, edges, handleFlowChange);
+  // ReactFlow 노드/엣지 관리 (내장 기능 사용)
+  const addProcessNode = () => {
+    const newNode: ProcessNode = {
+      id: `node-${Date.now()}`,
+      type: 'processNode',
+      position: { x: 250, y: 250 },
+      data: {
+        label: '새 공정 단계',
+        processType: 'manufacturing',
+        description: '공정 단계 설명을 입력하세요',
+        parameters: {},
+      },
+    };
+    handleFlowChange([...nodes, newNode], edges);
+  };
+
+  const addProcessEdge = () => {
+    if (nodes.length < 2) {
+      alert('엣지를 추가하려면 최소 2개의 노드가 필요합니다.');
+      return;
+    }
+    const newEdge: ProcessEdge = {
+      id: `edge-${Date.now()}`,
+      source: nodes[0].id,
+      target: nodes[1].id,
+      type: 'processEdge',
+      data: { label: '공정 흐름', processType: 'standard' },
+    };
+    handleFlowChange(nodes, addEdge(newEdge, edges));
+  };
+
+  const deleteSelectedElements = () => {
+    const selectedNodes = nodes.filter((node) => node.selected);
+    const selectedEdges = edges.filter((edge) => edge.selected);
+    
+    if (selectedNodes.length > 0 || selectedEdges.length > 0) {
+      const newNodes = nodes.filter((node) => !node.selected);
+      const newEdges = edges.filter((edge) => !edge.selected);
+      handleFlowChange(newNodes, newEdges);
+    } else {
+      alert('삭제할 요소를 선택해주세요.');
+    }
+  };
 
   // Process Type 모달 관리
   const {
@@ -122,15 +160,36 @@ export default function ProcessFlowPage() {
             />
           </div>
 
-          {/* 메인 공정도 에디터 */}
-          <ProcessDiagramEditor
-            nodes={nodes}
-            edges={edges}
-            isReadOnly={isReadOnly}
-            onFlowChange={handleFlowChange}
-            onAddElement={openProcessTypeModal}
-            onDeleteSelected={deleteSelectedElements}
-          />
+          {/* 메인 공정도 에디터 - ReactFlow 표준 */}
+          <div className="lg:col-span-3">
+            <div className="bg-[#1e293b] rounded-lg shadow-lg p-6 border border-[#334155]">
+              {/* React Flow 에디터 - 명시적 높이 설정 */}
+              <div className="h-[600px] w-full">
+                <ProcessFlowEditor
+                  initialNodes={nodes}
+                  initialEdges={edges}
+                  onFlowChange={handleFlowChange}
+                  readOnly={isReadOnly}
+                />
+              </div>
+              
+              {/* 하단 컨트롤 버튼들 */}
+              <div className="flex justify-center space-x-4 mt-4">
+                <button
+                  onClick={openProcessTypeModal}
+                  className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition-colors"
+                >
+                  공정 요소 추가
+                </button>
+                <button
+                  onClick={deleteSelectedElements}
+                  className="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium transition-colors"
+                >
+                  선택 삭제
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
