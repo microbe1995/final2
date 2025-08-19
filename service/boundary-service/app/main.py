@@ -18,6 +18,7 @@ import os
 # 라우터 임포트 (ReactFlow 기반 라우터들)
 from app.domain.node.node_controller import node_router
 from app.domain.flow.flow_controller import flow_router
+from app.domain.edge.edge_controller import edge_router
 # ============================================================================
 # 🔧 애플리케이션 설정
 # ============================================================================
@@ -90,6 +91,7 @@ async def log_requests(request: Request, call_next):
 # ReactFlow 기반 라우터들 등록
 app.include_router(node_router, prefix="/api")
 app.include_router(flow_router, prefix="/api")
+app.include_router(edge_router, prefix="/api")
 
 # ============================================================================
 # 🏥 헬스체크 엔드포인트

@@ -209,6 +209,36 @@ export const useProcessFlowService = () => {
     }
   }, []);
   
+  const syncEdgeChanges = useCallback(async (
+    flowId: string,
+    edgeChanges: any[]
+  ): Promise<boolean> => {
+    try {
+      await apiMethods.post(`/api/v1/boundary/flow/${flowId}/edge/changes`, {
+        changes: edgeChanges
+      });
+      console.log('✅ 엣지 변경사항 동기화 완료');
+      return true;
+    } catch (error) {
+      console.error('❌ 엣지 변경사항 동기화 실패:', error);
+      return false;
+    }
+  }, []);
+  
+  const createConnection = useCallback(async (
+    flowId: string,
+    connectionParams: { source: string; target: string; sourceHandle?: string; targetHandle?: string }
+  ): Promise<any> => {
+    try {
+      const newConnection = await apiMethods.post(`/api/v1/boundary/flow/${flowId}/connect`, connectionParams);
+      console.log('✅ 새 연결 생성 완료:', newConnection.edge.id);
+      return newConnection;
+    } catch (error) {
+      console.error('❌ 연결 생성 실패:', error);
+      throw error;
+    }
+  }, []);
+  
   const syncViewportChange = useCallback(async (
     flowId: string,
     viewport: { x: number; y: number; zoom: number }
@@ -265,7 +295,9 @@ export const useProcessFlowService = () => {
     deleteFlow,
     // ReactFlow 실시간 동기화 함수들
     syncNodeChanges,
+    syncEdgeChanges,
     syncViewportChange,
     createNode,
+    createConnection,
   };
 };

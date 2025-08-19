@@ -9,6 +9,7 @@ import {
   applyEdgeChanges,
   Controls,
   MiniMap,
+  Background,
   type OnConnect,
   type OnNodesChange,
   type OnEdgesChange,
@@ -16,7 +17,7 @@ import {
 import '@xyflow/react/dist/style.css';
 import ProcessNodeComponent from '../organisms/ProcessNode';
 import ProcessEdgeComponent from '../organisms/ProcessEdge';
-import CustomBackground from '../atoms/CustomBackground';
+
 import type { AppNodeType, AppEdgeType, ProcessNode, ProcessEdge } from '@/types/reactFlow';
 import { useProcessFlowService } from '@/hooks/useProcessFlowAPI';
 
@@ -60,18 +61,14 @@ const ProcessFlowEditor: React.FC<ProcessFlowEditorProps> = ({
   const [edges, setEdges] = useState<AppEdgeType[]>(initialEdges);
   
   // 🔄 백엔드 동기화 API 
-  const { syncNodeChanges, syncViewportChange } = useProcessFlowService();
+  const { syncNodeChanges, syncEdgeChanges, syncViewportChange, createConnection } = useProcessFlowService();
 
   // ✅ 공식 문서 방식: applyNodeChanges, applyEdgeChanges 사용
   const onNodesChange: OnNodesChange = useCallback(
     async (changes) => {
       const newNodes = applyNodeChanges(changes, nodes) as AppNodeType[];
       setNodes(newNodes);
-      
-      // 부모에게 변경사항 알림
-      if (onFlowChange) {
-        onFlowChange(newNodes, edges);
-      }
+      onFlowChange?.(newNodes, edges);
       
       // 🔄 백엔드에 실시간 동기화 (읽기 전용이 아닐 때만)
       if (!readOnly && flowId && syncNodeChanges) {
@@ -86,21 +83,26 @@ const ProcessFlowEditor: React.FC<ProcessFlowEditorProps> = ({
   );
 
   const onEdgesChange: OnEdgesChange = useCallback(
-    (changes) => {
+    async (changes) => {
       const newEdges = applyEdgeChanges(changes, edges) as AppEdgeType[];
       setEdges(newEdges);
+      onFlowChange?.(nodes, newEdges);
       
-      // 부모에게 변경사항 알림
-      if (onFlowChange) {
-        onFlowChange(nodes, newEdges);
+      // 🔄 백엔드에 실시간 동기화 (읽기 전용이 아닐 때만)
+      if (!readOnly && flowId && syncEdgeChanges) {
+        try {
+          await syncEdgeChanges(flowId, changes);
+        } catch (error) {
+          console.error('❌ 엣지 변경사항 백엔드 동기화 실패:', error);
+        }
       }
     },
-    [nodes, edges, onFlowChange]
+    [nodes, edges, onFlowChange, readOnly, flowId, syncEdgeChanges]
   );
 
-  // ✅ 공식 문서 방식: addEdge 사용
+  // ✅ 공식 문서 방식: addEdge 사용 + 백엔드 동기화
   const onConnect: OnConnect = useCallback(
-    (params: Connection) => {
+    async (params: Connection) => {
       if (!params.source || !params.target) return;
       
       const newEdge: ProcessEdge = {
@@ -116,13 +118,23 @@ const ProcessFlowEditor: React.FC<ProcessFlowEditorProps> = ({
       
       const newEdges = addEdge(newEdge, edges);
       setEdges(newEdges);
+      onFlowChange?.(nodes, newEdges);
       
-      // 부모에게 변경사항 알림
-      if (onFlowChange) {
-        onFlowChange(nodes, newEdges);
+      // 🔄 백엔드에 연결 생성 동기화 (읽기 전용이 아닐 때만)
+      if (!readOnly && flowId && createConnection) {
+        try {
+          await createConnection(flowId, {
+            source: params.source,
+            target: params.target,
+            sourceHandle: params.sourceHandle || undefined,
+            targetHandle: params.targetHandle || undefined
+          });
+        } catch (error) {
+          console.error('❌ 연결 생성 백엔드 동기화 실패:', error);
+        }
       }
     },
-    [edges, nodes, onFlowChange]
+    [edges, nodes, onFlowChange, readOnly, flowId, createConnection]
   );
   
   // 🔄 뷰포트 변경 핸들러 (팬/줌 시 백엔드 동기화)
@@ -145,19 +157,12 @@ const ProcessFlowEditor: React.FC<ProcessFlowEditorProps> = ({
 
   // 외부에서 전달받은 nodes/edges가 변경되면 내부 상태도 업데이트
   React.useEffect(() => {
-    console.log('🔄 ProcessFlowEditor - initialNodes 변경 감지:', initialNodes);
     setNodes(initialNodes);
   }, [initialNodes]);
 
   React.useEffect(() => {
-    console.log('🔄 ProcessFlowEditor - initialEdges 변경 감지:', initialEdges);
     setEdges(initialEdges);
   }, [initialEdges]);
-
-  // 렌더링 시점에 현재 상태 로그
-  React.useEffect(() => {
-    console.log('🎨 ProcessFlowEditor 렌더링:', { nodes: nodes.length, edges: edges.length });
-  }, [nodes, edges]);
 
   return (
     <div className="w-full h-full">
@@ -175,7 +180,7 @@ const ProcessFlowEditor: React.FC<ProcessFlowEditorProps> = ({
         className="bg-[#0b0c0f]"
         style={{ backgroundColor: '#0b0c0f' }}
       >
-        <CustomBackground />
+        <Background gap={16} size={0.5} />
         <Controls />
         <MiniMap
           nodeStrokeColor={(n) => {

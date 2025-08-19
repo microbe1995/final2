@@ -9,8 +9,7 @@ export { default as Icon } from './Icon';
 export { default as Badge } from './Badge';
 export { default as Tooltip } from './Tooltip';
 
-// 🎨 Canvas 도메인 컴포넌트
-export { default as CustomBackground } from './CustomBackground';
+
 
 // 🏭 ProcessFlow 도메인 컴포넌트
 export { default as ProcessFlowHandle } from './ProcessFlowHandle';
