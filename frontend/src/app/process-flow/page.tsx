@@ -1,21 +1,20 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
+import ProcessControlHeader from '@/organisms/ProcessControlHeader';
+import ProcessInfoSidebar from '@/organisms/ProcessInfoSidebar';
 import ProcessFlowEditor from '@/templates/ProcessFlowEditor';
 import { useProcessFlowDomain } from '@/hooks/useProcessFlow';
 import { addEdge } from '@xyflow/react';
-import type { AppNodeType, AppEdgeType, ProcessNode, ProcessEdge } from '@/types/reactFlow';
-import Card from '@/molecules/Card';
-import Button from '@/atoms/Button';
-import Badge from '@/atoms/Badge';
+import type { AppNodeType, AppEdgeType, ProcessNode, ProcessEdge, GroupNodeData } from '@/types/reactFlow';
 
 // ============================================================================
-// 🎯 Pure React Flow 기반 Process Flow 페이지
+// 🎯 MSA 기반 React Flow Process Flow 페이지
 // ============================================================================
 
 export default function ProcessFlowPage() {
   // ============================================================================
-  // 🎯 Pure React Flow 상태 관리 (백엔드 의존성 제거)
+  // 🎯 MSA 기반 React Flow 상태 관리
   // ============================================================================
   
   const {
@@ -24,19 +23,23 @@ export default function ProcessFlowPage() {
     isReadOnly,
     selectedNodes,
     selectedEdges,
+    savedCanvases,
+    isLoadingCanvases,
+    serviceStatus,
+    currentCanvasId,
     handleFlowChange,
     toggleReadOnly,
     exportFlow,
     importFlow,
+    saveToBackend,
+    loadFromBackend,
     clearFlow,
-    saveToLocalStorage,
-    loadFromLocalStorage,
-    getSavedFlows,
+    deleteCanvasFromBackend,
   } = useProcessFlowDomain();
 
-  // 로컬 저장된 Flow 목록 상태
-  const [savedFlows, setSavedFlows] = useState(getSavedFlows());
-  const [showSavedFlows, setShowSavedFlows] = useState(false);
+  // Sub Flow 관련 상태
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+  const [edgeZIndex, setEdgeZIndex] = useState<number>(1);
 
   // ============================================================================
   // 🎨 React Flow 노드/엣지 생성 함수들
@@ -58,6 +61,28 @@ export default function ProcessFlowPage() {
       },
     };
     handleFlowChange([...nodes, newNode], edges);
+  };
+
+  // Sub Flow: 그룹 노드 추가
+  const addGroupNode = () => {
+    const newGroupNode: AppNodeType = {
+      id: `group-${Date.now()}`,
+      type: 'groupNode',
+      position: { 
+        x: Math.random() * 400 + 100, 
+        y: Math.random() * 300 + 100 
+      },
+      data: {
+        label: '새 공정 그룹',
+        description: '공정 그룹 설명을 입력하세요',
+        groupType: 'subprocess',
+        childCount: 0,
+        isExpanded: true,
+        style: { width: 300, height: 200 }
+      } as GroupNodeData,
+      style: { width: 300, height: 200 }
+    };
+    handleFlowChange([...nodes, newGroupNode], edges);
   };
 
   const addProcessEdge = () => {
@@ -88,25 +113,65 @@ export default function ProcessFlowPage() {
     }
   };
 
+  // Sub Flow: 그룹 확장/축소 토글
+  const toggleGroupExpansion = useCallback((groupId: string) => {
+    setExpandedGroups(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(groupId)) {
+        newSet.delete(groupId);
+      } else {
+        newSet.add(groupId);
+      }
+      return newSet;
+    });
+  }, []);
+
+  // Sub Flow: Edge Z-Index 조정
+  const handleEdgeZIndexChange = (zIndex: number) => {
+    setEdgeZIndex(zIndex);
+  };
+
   // ============================================================================
-  // 🚀 로컬 스토리지 이벤트 핸들러
+  // 🚀 MSA 백엔드 이벤트 핸들러
   // ============================================================================
   
-  const handleSaveToLocal = () => {
-    const name = prompt('Flow 이름을 입력하세요:', `Flow ${new Date().toLocaleDateString()}`);
-    if (name) {
-      saveToLocalStorage(name);
-      setSavedFlows(getSavedFlows()); // 목록 새로고침
-      alert('로컬에 저장되었습니다!');
+  const handleSaveToBackend = async () => {
+    try {
+      const name = prompt('저장할 이름을 입력하세요:', `Flow ${new Date().toLocaleDateString()}`);
+      if (name) {
+        await saveToBackend(name);
+        alert('MSA 백엔드에 성공적으로 저장되었습니다!');
+      }
+    } catch (error) {
+      alert('MSA 백엔드 저장에 실패했습니다. 다시 시도해주세요.');
     }
   };
 
-  const handleLoadFromLocal = (key: string) => {
-    if (loadFromLocalStorage(key)) {
-      alert('Flow를 성공적으로 불러왔습니다!');
-      setShowSavedFlows(false);
-    } else {
-      alert('Flow를 불러오는데 실패했습니다.');
+  const handleLoadFromBackend = async (canvasId?: string) => {
+    try {
+      const success = await loadFromBackend(canvasId);
+      if (success) {
+        alert('MSA 백엔드에서 성공적으로 불러왔습니다!');
+      } else {
+        alert('저장된 공정도가 없습니다. 새로 만들어보세요!');
+      }
+    } catch (error) {
+      alert('MSA 백엔드 로드에 실패했습니다. 다시 시도해주세요.');
+    }
+  };
+
+  const handleDeleteCanvas = async (canvasId: string) => {
+    if (confirm('정말로 이 공정도를 삭제하시겠습니까?')) {
+      try {
+        const success = await deleteCanvasFromBackend(canvasId);
+        if (success) {
+          alert('공정도가 삭제되었습니다.');
+        } else {
+          alert('삭제에 실패했습니다.');
+        }
+      } catch (error) {
+        alert('삭제 중 오류가 발생했습니다.');
+      }
     }
   };
 
@@ -117,183 +182,61 @@ export default function ProcessFlowPage() {
   };
 
   // ============================================================================
-  // 🎨 렌더링
+  // 🎨 렌더링 - MSA 기반 UI
   // ============================================================================
 
   return (
-    <div className="min-h-screen bg-[#0b0c0f] text-white">
-      {/* 헤더 */}
-      <div className="bg-[#1e293b] border-b border-[#334155] p-4">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-white">공정도 관리</h1>
-              <p className="text-[#94a3b8] mt-1">React Flow 기반의 인터랙티브 공정도 에디터</p>
-            </div>
-            
-            <div className="flex items-center gap-3">
-              <Badge variant={isReadOnly ? 'secondary' : 'primary'}>
-                {isReadOnly ? '읽기 전용' : '편집 모드'}
-              </Badge>
-              
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={toggleReadOnly}
-              >
-                {isReadOnly ? '편집 모드' : '읽기 전용'}
-              </Button>
-              
-              <Button
-                variant="primary"
-                size="sm"
-                onClick={exportFlow}
-              >
-                내보내기
-              </Button>
-              
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={importFlow}
-              >
-                가져오기
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
+    <div className="min-h-screen bg-[#0b0c0f]">
+      {/* MSA 연결 상태가 포함된 헤더 */}
+              <ProcessControlHeader
+          serviceStatus={serviceStatus}
+          isReadOnly={isReadOnly}
+          onToggleReadOnly={toggleReadOnly}
+          onExport={exportFlow}
+          onImport={importFlow}
+          onSaveToBackend={handleSaveToBackend}
+          onLoadFromBackend={handleLoadFromBackend}
+          onClearFlow={handleClearFlow}
+          savedCanvases={savedCanvases}
+          isLoadingCanvases={isLoadingCanvases}
+          currentCanvasId={currentCanvasId}
+          nodeCount={nodes.length}
+          edgeCount={edges.length}
+          // Sub Flow 기능 추가
+          onAddGroupNode={addGroupNode}
+          onToggleGroupExpansion={toggleGroupExpansion}
+          onEdgeZIndexChange={handleEdgeZIndexChange}
+          edgeZIndex={edgeZIndex}
+          expandedGroups={expandedGroups}
+        />
 
       {/* 메인 콘텐츠 */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* 왼쪽 사이드바 - 컨트롤 패널 */}
-          <div className="lg:col-span-1 space-y-4">
-            {/* 공정도 정보 */}
-            <Card className="p-4 bg-[#1e293b] border-[#334155]">
-              <h3 className="text-lg font-semibold text-white mb-4">공정도 정보</h3>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-[#94a3b8]">공정 단계:</span>
-                  <span className="text-white font-medium">{nodes.length}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-[#94a3b8]">연결 흐름:</span>
-                  <span className="text-white font-medium">{edges.length}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-[#94a3b8]">선택된 노드:</span>
-                  <span className="text-white font-medium">{selectedNodes.length}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-[#94a3b8]">선택된 엣지:</span>
-                  <span className="text-white font-medium">{selectedEdges.length}</span>
-                </div>
-              </div>
-            </Card>
-
-            {/* 편집 도구 */}
-            <Card className="p-4 bg-[#1e293b] border-[#334155]">
-              <h3 className="text-lg font-semibold text-white mb-4">편집 도구</h3>
-              <div className="space-y-2">
-                <Button
-                  variant="primary"
-                  size="sm"
-                  onClick={addProcessNode}
-                  disabled={isReadOnly}
-                  className="w-full"
-                >
-                  + 공정 노드
-                </Button>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={addProcessEdge}
-                  disabled={isReadOnly || nodes.length < 2}
-                  className="w-full"
-                >
-                  + 공정 흐름
-                </Button>
-                <Button
-                  variant="danger"
-                  size="sm"
-                  onClick={deleteSelectedElements}
-                  disabled={isReadOnly}
-                  className="w-full"
-                >
-                  선택 삭제
-                </Button>
-              </div>
-            </Card>
-
-            {/* 로컬 저장 관리 */}
-            <Card className="p-4 bg-[#1e293b] border-[#334155]">
-              <h3 className="text-lg font-semibold text-white mb-4">로컬 저장 관리</h3>
-              <div className="space-y-2">
-                <Button
-                  variant="primary"
-                  size="sm"
-                  onClick={handleSaveToLocal}
-                  className="w-full"
-                >
-                  로컬 저장
-                </Button>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => setShowSavedFlows(!showSavedFlows)}
-                  className="w-full"
-                >
-                  저장된 Flow 보기
-                </Button>
-                <Button
-                  variant="danger"
-                  size="sm"
-                  onClick={handleClearFlow}
-                  className="w-full"
-                >
-                  전체 초기화
-                </Button>
-              </div>
-
-              {/* 저장된 Flow 목록 */}
-              {showSavedFlows && (
-                <div className="mt-4 space-y-2">
-                  <h4 className="text-sm font-medium text-[#94a3b8]">저장된 Flow 목록</h4>
-                  {savedFlows.length === 0 ? (
-                    <p className="text-xs text-[#64748b]">저장된 Flow가 없습니다.</p>
-                  ) : (
-                    <div className="space-y-1 max-h-40 overflow-y-auto">
-                      {savedFlows.map((flow) => (
-                        <div key={flow.key} className="p-2 bg-[#334155] rounded text-xs">
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <p className="text-white font-medium truncate">{flow.name}</p>
-                              <p className="text-[#94a3b8]">
-                                노드: {flow.nodeCount}, 엣지: {flow.edgeCount}
-                              </p>
-                            </div>
-                            <Button
-                              variant="primary"
-                              size="sm"
-                              onClick={() => handleLoadFromLocal(flow.key)}
-                              className="ml-2 text-xs py-1 px-2"
-                            >
-                              로드
-                            </Button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-            </Card>
+          {/* 왼쪽 사이드바 - MSA 정보 + React Flow 컨트롤 */}
+          <div className="lg:col-span-1">
+            <ProcessInfoSidebar
+              nodes={nodes}
+              edges={edges}
+              selectedNodes={selectedNodes}
+              selectedEdges={selectedEdges}
+              savedCanvases={savedCanvases}
+              currentCanvasId={currentCanvasId}
+              isLoadingCanvases={isLoadingCanvases}
+              serviceStatus={serviceStatus}
+              onLoadCanvas={handleLoadFromBackend}
+              onDeleteCanvas={handleDeleteCanvas}
+              onAddNode={addProcessNode}
+              onAddEdge={addProcessEdge}
+              onDeleteSelected={deleteSelectedElements}
+              isReadOnly={isReadOnly}
+            />
           </div>
 
-          {/* 메인 공정도 에디터 */}
+          {/* 메인 React Flow 에디터 */}
           <div className="lg:col-span-3">
-            <Card className="p-6 bg-[#1e293b] border-[#334155]">
+            <div className="bg-[#1e293b] rounded-lg shadow-lg p-6 border border-[#334155]">
+              {/* React Flow 에디터 - MSA 실시간 동기화 */}
               <div className="h-[600px] w-full">
                 <ProcessFlowEditor
                   initialNodes={nodes}
@@ -301,9 +244,12 @@ export default function ProcessFlowPage() {
                   onFlowChange={handleFlowChange}
                   readOnly={isReadOnly}
                   onDeleteSelected={deleteSelectedElements}
+                  flowId={currentCanvasId || undefined} // MSA 동기화용 ID
+                  // Sub Flow 기능 추가
+                  edgeZIndex={edgeZIndex}
                 />
               </div>
-            </Card>
+            </div>
           </div>
         </div>
       </div>

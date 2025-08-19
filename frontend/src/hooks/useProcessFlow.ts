@@ -1,15 +1,17 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
+import { useProcessFlowService } from './useProcessFlowAPI';
+import { CanvasListItem, ServiceHealthStatus } from './useProcessFlowAPI';
 import type { AppNodeType, AppEdgeType } from '@/types/reactFlow';
 
 // ============================================================================
-// 🎯 Pure React Flow 상태 관리 훅 (백엔드 의존성 제거)
+// 🎯 MSA 기반 React Flow 상태 관리 훅
 // ============================================================================
 
 export const useProcessFlowDomain = () => {
   // ============================================================================
-  // 🎨 React Flow 상태만 관리
+  // 🎨 React Flow 상태
   // ============================================================================
   
   const [nodes, setNodes] = useState<AppNodeType[]>([]);
@@ -19,19 +21,51 @@ export const useProcessFlowDomain = () => {
   const [selectedEdges, setSelectedEdges] = useState<AppEdgeType[]>([]);
 
   // ============================================================================
-  // 🔄 Flow 변경 처리 (순수 클라이언트 사이드)
+  // 🔗 MSA 백엔드 관련 상태
   // ============================================================================
   
-  const handleFlowChange = useCallback((newNodes: AppNodeType[], newEdges: AppEdgeType[]) => {
-    console.log('🔄 Pure React Flow - handleFlowChange 호출됨:', { newNodes, newEdges });
+  const [savedCanvases, setSavedCanvases] = useState<CanvasListItem[]>([]);
+  const [isLoadingCanvases, setIsLoadingCanvases] = useState(false);
+  const [serviceStatus, setServiceStatus] = useState<ServiceHealthStatus | null>(null);
+  const [currentCanvasId, setCurrentCanvasId] = useState<string | null>(null);
+
+  // ============================================================================
+  // 🚀 MSA API 훅 사용
+  // ============================================================================
+  
+  const {
+    loadSavedFlows,
+    saveReactFlowToBackend,
+    loadReactFlowFromBackend,
+    checkServiceStatus,
+    syncReactFlowChanges,
+    deleteFlow,
+  } = useProcessFlowService();
+
+  // ============================================================================
+  // 🔄 React Flow 변경 처리 (MSA 동기화 포함)
+  // ============================================================================
+  
+  const handleFlowChange = useCallback(async (newNodes: AppNodeType[], newEdges: AppEdgeType[]) => {
+    console.log('🔄 MSA React Flow - handleFlowChange 호출됨:', { newNodes, newEdges });
     setNodes(newNodes);
     setEdges(newEdges);
     
     // 선택된 요소들 업데이트
     setSelectedNodes(newNodes.filter(node => node.selected));
     setSelectedEdges(newEdges.filter(edge => edge.selected));
-    console.log('✅ Pure React Flow - 상태 업데이트 완료');
-  }, []);
+    
+    // MSA: 백엔드에 실시간 동기화 (currentCanvasId가 있을 때만)
+    if (currentCanvasId && !isReadOnly) {
+      try {
+        await syncReactFlowChanges(currentCanvasId, newNodes, newEdges);
+      } catch (error) {
+        console.warn('⚠️ MSA 실시간 동기화 실패 (오프라인 모드로 계속):', error);
+      }
+    }
+    
+    console.log('✅ MSA React Flow - 상태 업데이트 완료');
+  }, [currentCanvasId, isReadOnly, syncReactFlowChanges]);
 
   // ============================================================================
   // 🔒 읽기 전용 모드 토글
@@ -42,7 +76,7 @@ export const useProcessFlowDomain = () => {
   }, []);
 
   // ============================================================================
-  // 📤 Flow 내보내기 (JSON 다운로드)
+  // 📤 React Flow 내보내기 (로컬 + MSA 백엔드)
   // ============================================================================
   
   const exportFlow = useCallback(() => {
@@ -54,7 +88,8 @@ export const useProcessFlowDomain = () => {
       metadata: {
         nodeCount: nodes.length,
         edgeCount: edges.length,
-        createdWith: 'React Flow'
+        createdWith: 'React Flow MSA',
+        canvasId: currentCanvasId
       }
     };
     
@@ -63,12 +98,12 @@ export const useProcessFlowDomain = () => {
     
     const link = document.createElement('a');
     link.href = URL.createObjectURL(dataBlob);
-    link.download = `react-flow-${new Date().toISOString().split('T')[0]}.json`;
+    link.download = `react-flow-msa-${new Date().toISOString().split('T')[0]}.json`;
     link.click();
-  }, [nodes, edges]);
+  }, [nodes, edges, currentCanvasId]);
 
   // ============================================================================
-  // 📥 Flow 가져오기 (JSON 파일 업로드)
+  // 📥 React Flow 가져오기 (로컬 파일)
   // ============================================================================
   
   const importFlow = useCallback(() => {
@@ -81,7 +116,7 @@ export const useProcessFlowDomain = () => {
       if (!file) return;
       
       const reader = new FileReader();
-      reader.onload = (event) => {
+      reader.onload = async (event) => {
         try {
           const flowData = JSON.parse(event.target?.result as string);
           
@@ -90,12 +125,13 @@ export const useProcessFlowDomain = () => {
             setEdges(flowData.edges);
             setSelectedNodes([]);
             setSelectedEdges([]);
-            console.log('✅ Flow 가져오기 완료:', flowData);
+            setCurrentCanvasId(null); // 새로 가져온 데이터는 백엔드 ID 없음
+            console.log('✅ React Flow 가져오기 완료:', flowData);
           } else {
             alert('올바르지 않은 React Flow 파일 형식입니다.');
           }
         } catch (error) {
-          console.error('Flow 가져오기 실패:', error);
+          console.error('React Flow 가져오기 실패:', error);
           alert('파일을 읽는 중 오류가 발생했습니다.');
         }
       };
@@ -106,6 +142,84 @@ export const useProcessFlowDomain = () => {
   }, []);
 
   // ============================================================================
+  // 📋 MSA 백엔드에서 저장된 Canvas 목록 로드
+  // ============================================================================
+  
+  const loadSavedCanvases = useCallback(async () => {
+    try {
+      setIsLoadingCanvases(true);
+      const flows = await loadSavedFlows();
+      setSavedCanvases(flows);
+    } catch (error) {
+      console.error('MSA Flow 목록 로드 실패:', error);
+      setSavedCanvases([]);
+    } finally {
+      setIsLoadingCanvases(false);
+    }
+  }, [loadSavedFlows]);
+
+  // ============================================================================
+  // 💾 MSA 백엔드에 저장
+  // ============================================================================
+  
+  const saveToBackend = useCallback(async (canvasName?: string) => {
+    try {
+      const result = await saveReactFlowToBackend(nodes, edges, canvasName);
+      
+      if (result.success) {
+        setCurrentCanvasId(result.flowId || null);
+        // 저장된 Canvas 목록 새로고침
+        await loadSavedCanvases();
+        return true;
+      }
+      
+      throw new Error('저장 실패');
+    } catch (error) {
+      console.error('MSA 백엔드 저장 실패:', error);
+      throw error;
+    }
+  }, [nodes, edges, saveReactFlowToBackend, loadSavedCanvases]);
+
+  // ============================================================================
+  // 📥 MSA 백엔드에서 로드
+  // ============================================================================
+  
+  const loadFromBackend = useCallback(async (canvasId?: string) => {
+    try {
+      const flowData = await loadReactFlowFromBackend(canvasId);
+      
+      if (flowData) {
+        setNodes(flowData.nodes);
+        setEdges(flowData.edges);
+        setCurrentCanvasId(canvasId || flowData.metadata?.flow?.id || null);
+        console.log('MSA 백엔드에서 React Flow 로드 완료');
+        return true;
+      }
+      
+      return false;
+    } catch (error) {
+      console.error('MSA 백엔드 로드 실패:', error);
+      throw error;
+    }
+  }, [loadReactFlowFromBackend]);
+
+  // ============================================================================
+  // 🔍 MSA 서비스 상태 확인
+  // ============================================================================
+  
+  const checkMSAServiceStatus = useCallback(async () => {
+    try {
+      const status = await checkServiceStatus();
+      setServiceStatus(status);
+      return status;
+    } catch (error) {
+      console.error('MSA 서비스 상태 확인 실패:', error);
+      setServiceStatus(null);
+      return null;
+    }
+  }, [checkServiceStatus]);
+
+  // ============================================================================
   // 🧹 Flow 초기화
   // ============================================================================
   
@@ -114,69 +228,39 @@ export const useProcessFlowDomain = () => {
     setEdges([]);
     setSelectedNodes([]);
     setSelectedEdges([]);
+    setCurrentCanvasId(null);
   }, []);
 
   // ============================================================================
-  // 📋 로컬 스토리지 저장/로드
+  // 🗑️ MSA 백엔드에서 Flow 삭제
   // ============================================================================
   
-  const saveToLocalStorage = useCallback((name?: string) => {
-    const flowData = {
-      nodes,
-      edges,
-      timestamp: new Date().toISOString(),
-      name: name || `Flow ${Date.now()}`
-    };
-    
-    const key = `react-flow-${Date.now()}`;
-    localStorage.setItem(key, JSON.stringify(flowData));
-    
-    console.log('✅ 로컬 스토리지에 저장 완료:', key);
-    return key;
-  }, [nodes, edges]);
-
-  const loadFromLocalStorage = useCallback((key: string) => {
+  const deleteCanvasFromBackend = useCallback(async (canvasId: string) => {
     try {
-      const flowData = localStorage.getItem(key);
-      if (flowData) {
-        const parsed = JSON.parse(flowData);
-        setNodes(parsed.nodes || []);
-        setEdges(parsed.edges || []);
-        setSelectedNodes([]);
-        setSelectedEdges([]);
-        console.log('✅ 로컬 스토리지에서 로드 완료:', key);
-        return true;
-      }
-      return false;
-    } catch (error) {
-      console.error('로컬 스토리지 로드 실패:', error);
-      return false;
-    }
-  }, []);
-
-  const getSavedFlows = useCallback(() => {
-    const savedFlows: { key: string; name: string; timestamp: string; nodeCount: number; edgeCount: number }[] = [];
-    
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (key && key.startsWith('react-flow-')) {
-        try {
-          const flowData = JSON.parse(localStorage.getItem(key) || '{}');
-          savedFlows.push({
-            key,
-            name: flowData.name || key,
-            timestamp: flowData.timestamp || 'Unknown',
-            nodeCount: flowData.nodes?.length || 0,
-            edgeCount: flowData.edges?.length || 0
-          });
-        } catch (error) {
-          console.warn('저장된 Flow 파싱 실패:', key);
+      const success = await deleteFlow(canvasId);
+      if (success) {
+        // 현재 로드된 캔버스가 삭제된 경우 초기화
+        if (currentCanvasId === canvasId) {
+          clearFlow();
         }
+        // 목록 새로고침
+        await loadSavedCanvases();
       }
+      return success;
+    } catch (error) {
+      console.error('MSA Flow 삭제 실패:', error);
+      return false;
     }
-    
-    return savedFlows.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-  }, []);
+  }, [deleteFlow, currentCanvasId, clearFlow, loadSavedCanvases]);
+
+  // ============================================================================
+  // 🔄 초기화 - 컴포넌트 마운트 시 MSA 서비스 연결
+  // ============================================================================
+  
+  useEffect(() => {
+    loadSavedCanvases();
+    checkMSAServiceStatus();
+  }, [loadSavedCanvases, checkMSAServiceStatus]);
 
   return {
     // React Flow 상태
@@ -186,20 +270,28 @@ export const useProcessFlowDomain = () => {
     selectedNodes,
     selectedEdges,
     
-    // 상태 업데이트
+    // MSA 백엔드 상태
+    savedCanvases,
+    isLoadingCanvases,
+    serviceStatus,
+    currentCanvasId,
+    
+    // 액션
     setNodes,
     setEdges,
     handleFlowChange,
     toggleReadOnly,
     
-    // 파일 관리
+    // 파일 관리 (하이브리드)
     exportFlow,
     importFlow,
     clearFlow,
     
-    // 로컬 스토리지 관리
-    saveToLocalStorage,
-    loadFromLocalStorage,
-    getSavedFlows,
+    // MSA 백엔드 관리
+    loadSavedCanvases,
+    saveToBackend,
+    loadFromBackend,
+    checkMSAServiceStatus,
+    deleteCanvasFromBackend,
   };
 };

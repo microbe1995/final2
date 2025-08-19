@@ -3,6 +3,7 @@
 import React from 'react';
 import { Node, Edge } from '@xyflow/react';
 import Card from '@/molecules/Card';
+import Button from '@/atoms/Button';
 import Badge from '../atoms/Badge';
 import Icon from '../atoms/Icon';
 
@@ -11,6 +12,16 @@ interface ProcessFlowInfoPanelProps {
   edges: Edge<any>[];
   selectedNodes: Node<any>[];
   selectedEdges: Edge<any>[];
+  savedCanvases: any[];
+  currentCanvasId: string | null;
+  isLoadingCanvases: boolean;
+  serviceStatus: any;
+  onLoadCanvas: (canvasId: string) => void;
+  onDeleteCanvas: (canvasId: string) => void;
+  onAddNode: () => void;
+  onAddEdge: () => void;
+  onDeleteSelected: () => void;
+  isReadOnly: boolean;
   className?: string;
 }
 
@@ -19,6 +30,16 @@ const ProcessFlowInfoPanel: React.FC<ProcessFlowInfoPanelProps> = ({
   edges,
   selectedNodes,
   selectedEdges,
+  savedCanvases,
+  currentCanvasId,
+  isLoadingCanvases,
+  serviceStatus,
+  onLoadCanvas,
+  onDeleteCanvas,
+  onAddNode,
+  onAddEdge,
+  onDeleteSelected,
+  isReadOnly,
   className = ''
 }) => {
   // 공정 타입별 노드 수 계산
@@ -37,6 +58,36 @@ const ProcessFlowInfoPanel: React.FC<ProcessFlowInfoPanelProps> = ({
 
   return (
     <div className={`space-y-4 ${className}`}>
+      {/* MSA 서비스 상태 */}
+      <Card className="p-4 bg-[#1e293b] border-[#334155]">
+        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 text-white">
+          <Icon name="server" size="sm" />
+          MSA 서비스 상태
+        </h3>
+        
+        <div className="space-y-3">
+          <div className="flex justify-between items-center">
+            <span className="text-[#94a3b8]">백엔드 연결</span>
+            <Badge variant={serviceStatus?.status === 'healthy' ? 'success' : 'error'}>
+              {serviceStatus?.status === 'healthy' ? '정상' : '오류'}
+            </Badge>
+          </div>
+          
+          <div className="flex justify-between items-center">
+            <span className="text-[#94a3b8]">동기화 상태</span>
+            <Badge variant={currentCanvasId ? 'success' : 'default'}>
+              {currentCanvasId ? 'ON' : 'OFF'}
+            </Badge>
+          </div>
+          
+          {currentCanvasId && (
+            <div className="text-xs text-[#64748b]">
+              Canvas ID: {currentCanvasId.substring(0, 8)}...
+            </div>
+          )}
+        </div>
+      </Card>
+
       {/* 전체 정보 */}
       <Card className="p-4 bg-[#1e293b] border-[#334155]">
         <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 text-white">
@@ -71,6 +122,101 @@ const ProcessFlowInfoPanel: React.FC<ProcessFlowInfoPanelProps> = ({
         </div>
       </Card>
 
+      {/* 편집 도구 */}
+      <Card className="p-4 bg-[#1e293b] border-[#334155]">
+        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 text-white">
+          <Icon name="edit" size="sm" />
+          편집 도구
+        </h3>
+        
+        <div className="space-y-2">
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={onAddNode}
+            disabled={isReadOnly}
+            className="w-full"
+          >
+            + 공정 노드
+          </Button>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={onAddEdge}
+            disabled={isReadOnly || nodes.length < 2}
+            className="w-full"
+          >
+            + 공정 흐름
+          </Button>
+          <Button
+            variant="danger"
+            size="sm"
+            onClick={onDeleteSelected}
+            disabled={isReadOnly}
+            className="w-full"
+          >
+            선택 삭제
+          </Button>
+        </div>
+      </Card>
+
+      {/* MSA 백엔드 저장된 Canvas 목록 */}
+      <Card className="p-4 bg-[#1e293b] border-[#334155]">
+        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 text-white">
+          <Icon name="database" size="sm" />
+          저장된 공정도 (MSA)
+        </h3>
+        
+        {isLoadingCanvases ? (
+          <div className="text-center text-[#94a3b8] text-sm">
+            🔄 불러오는 중...
+          </div>
+        ) : savedCanvases.length === 0 ? (
+          <p className="text-[#64748b] text-sm">저장된 공정도가 없습니다.</p>
+        ) : (
+          <div className="space-y-2 max-h-60 overflow-y-auto">
+            {savedCanvases.map((canvas) => (
+              <div key={canvas.id} className="p-3 bg-[#334155] rounded border border-[#475569]">
+                <div className="flex justify-between items-start mb-2">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-white font-medium text-sm truncate">{canvas.name}</p>
+                    <p className="text-[#94a3b8] text-xs">
+                      노드: {canvas.metadata?.nodeCount || 0}, 엣지: {canvas.metadata?.edgeCount || 0}
+                    </p>
+                    {canvas.metadata?.createdAt && (
+                      <p className="text-[#64748b] text-xs">
+                        {new Date(canvas.metadata.createdAt).toLocaleDateString()}
+                      </p>
+                    )}
+                  </div>
+                  <div className="flex gap-1 ml-2">
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={() => onLoadCanvas(canvas.id)}
+                      className="text-xs py-1 px-2"
+                    >
+                      로드
+                    </Button>
+                    <Button
+                      variant="danger"
+                      size="sm"
+                      onClick={() => onDeleteCanvas(canvas.id)}
+                      className="text-xs py-1 px-2"
+                    >
+                      삭제
+                    </Button>
+                  </div>
+                </div>
+                {currentCanvasId === canvas.id && (
+                  <Badge variant="success" size="sm">현재 로드됨</Badge>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
+
       {/* 공정 타입별 분석 */}
       <Card className="p-4 bg-[#1e293b] border-[#334155]">
         <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 text-white">
@@ -88,27 +234,6 @@ const ProcessFlowInfoPanel: React.FC<ProcessFlowInfoPanelProps> = ({
             ))
           ) : (
             <p className="text-[#64748b] text-sm">노드가 없습니다.</p>
-          )}
-        </div>
-      </Card>
-
-      {/* 연결 타입별 분석 */}
-      <Card className="p-4 bg-[#1e293b] border-[#334155]">
-        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 text-white">
-          <Icon name="connection" size="sm" />
-          연결 타입 분석
-        </h3>
-        
-        <div className="space-y-2">
-          {Object.entries(edgeTypeCounts).length > 0 ? (
-            Object.entries(edgeTypeCounts).map(([type, count]) => (
-              <div key={type} className="flex justify-between items-center">
-                <span className="text-[#94a3b8] capitalize">{type}</span>
-                <Badge variant="secondary">{count}</Badge>
-              </div>
-            ))
-          ) : (
-            <p className="text-[#64748b] text-sm">연결이 없습니다.</p>
           )}
         </div>
       </Card>
@@ -138,6 +263,17 @@ const ProcessFlowInfoPanel: React.FC<ProcessFlowInfoPanelProps> = ({
                     {node.data.description}
                   </p>
                 )}
+                {/* Sub Flow 정보 */}
+                {node.parentId && (
+                  <p className="text-purple-400 text-xs mt-1">
+                    📁 그룹: {node.parentId}
+                  </p>
+                )}
+                {node.type === 'groupNode' && (
+                  <p className="text-purple-400 text-xs mt-1">
+                    🗂️ 그룹 노드
+                  </p>
+                )}
               </div>
             ))}
             
@@ -161,6 +297,35 @@ const ProcessFlowInfoPanel: React.FC<ProcessFlowInfoPanelProps> = ({
         </Card>
       )}
 
+      {/* Sub Flow 정보 */}
+      <Card className="p-4 bg-[#1e293b] border-[#334155]">
+        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 text-white">
+          <Icon name="folder" size="sm" />
+          Sub Flow 정보
+        </h3>
+        
+        <div className="space-y-3">
+          <div className="flex justify-between items-center">
+            <span className="text-sm text-[#94a3b8]">그룹 노드</span>
+            <Badge variant="info" size="sm">
+              {nodes.filter(n => n.type === 'groupNode').length}개
+            </Badge>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-sm text-[#94a3b8]">자식 노드</span>
+            <Badge variant="info" size="sm">
+              {nodes.filter(n => n.parentId).length}개
+            </Badge>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-sm text-[#94a3b8]">독립 노드</span>
+            <Badge variant="info" size="sm">
+              {nodes.filter(n => !n.parentId && n.type !== 'groupNode').length}개
+            </Badge>
+          </div>
+        </div>
+      </Card>
+
       {/* 사용 가이드 */}
       <Card className="p-4 bg-[#1e293b] border-[#334155]">
         <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 text-white">
@@ -172,9 +337,12 @@ const ProcessFlowInfoPanel: React.FC<ProcessFlowInfoPanelProps> = ({
           <div>• 드래그하여 노드 이동</div>
           <div>• 핸들을 연결하여 흐름 생성</div>
           <div>• 클릭하여 요소 선택</div>
+          <div>• 그룹 노드로 공정 그룹화</div>
+          <div>• 자식 노드는 부모와 함께 이동</div>
+          <div>• Edge Z-Index로 레이어 순서 조정</div>
           <div>• Delete 키로 선택 삭제</div>
           <div>• 마우스 휠로 확대/축소</div>
-          <div>• 우클릭 드래그로 화면 이동</div>
+          <div>• MSA 백엔드 실시간 동기화</div>
         </div>
       </Card>
     </div>

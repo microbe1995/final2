@@ -13,6 +13,9 @@ export interface ProcessNodeData {
   processType?: 'start' | 'process' | 'end' | 'manufacturing' | 'inspection' | 'packaging' | 'transport' | 'storage';
   parameters?: Record<string, any>;
   metadata?: Record<string, any>;
+  // Sub Flow 지원
+  parentId?: string;
+  extent?: 'parent' | 'free';
   [key: string]: unknown; // 인덱스 시그니처 추가
 }
 
@@ -26,6 +29,23 @@ export interface ProcessEdgeData {
 
 // 커스텀 노드 타입
 export type ProcessNode = Node<ProcessNodeData, 'processNode'>;
+
+// Group Node 데이터 타입 (Sub Flow 지원)
+export interface GroupNodeData {
+  label: string;
+  description?: string;
+  groupType: 'process' | 'subprocess' | 'workflow';
+  childCount: number;
+  isExpanded: boolean;
+  style?: React.CSSProperties;
+  // Sub Flow 관련
+  children?: string[]; // 자식 노드 ID 목록
+  parentExtent?: 'parent' | 'free';
+  [key: string]: unknown; // 인덱스 시그니처 추가
+}
+
+// Group Node 타입
+export type GroupNode = Node<GroupNodeData, 'groupNode'>;
 
 // 커스텀 엣지 타입
 export type ProcessEdge = Edge<ProcessEdgeData, 'processEdge'>;

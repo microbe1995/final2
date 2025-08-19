@@ -18,6 +18,7 @@ import {
 import '@xyflow/react/dist/style.css';
 import ProcessNodeComponent from '../organisms/ProcessNode';
 import ProcessEdgeComponent from '../organisms/ProcessEdge';
+import GroupNodeComponent from '../organisms/GroupNode';
 
 import type { AppNodeType, AppEdgeType, ProcessNode, ProcessEdge } from '@/types/reactFlow';
 
@@ -27,6 +28,7 @@ import type { AppNodeType, AppEdgeType, ProcessNode, ProcessEdge } from '@/types
 
 const nodeTypes = {
   processNode: ProcessNodeComponent as any,
+  groupNode: GroupNodeComponent as any,
 };
 
 const edgeTypes = {
@@ -43,6 +45,9 @@ interface ProcessFlowEditorProps {
   onFlowChange?: (nodes: AppNodeType[], edges: AppEdgeType[]) => void;
   readOnly?: boolean;
   onDeleteSelected?: () => void;
+  flowId?: string; // MSA 백엔드 동기화용 Flow ID
+  // Sub Flow 기능 추가
+  edgeZIndex?: number;
 }
 
 // ============================================================================
@@ -54,11 +59,18 @@ const ProcessFlowEditor: React.FC<ProcessFlowEditorProps> = ({
   initialEdges = [],
   onFlowChange,
   readOnly = false,
-  onDeleteSelected
+  onDeleteSelected,
+  flowId,
+  // Sub Flow 기능 추가
+  edgeZIndex: propEdgeZIndex
 }) => {
   // ✅ Pure React Flow 상태 관리
   const [nodes, setNodes] = useState<AppNodeType[]>(initialNodes);
   const [edges, setEdges] = useState<AppEdgeType[]>(initialEdges);
+  
+  // Sub Flow 관련 상태
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+  const [edgeZIndex, setEdgeZIndex] = useState<number>(propEdgeZIndex || 1);
 
   // 외부에서 전달받은 nodes/edges가 변경되면 내부 상태도 업데이트
   useEffect(() => {
@@ -75,6 +87,24 @@ const ProcessFlowEditor: React.FC<ProcessFlowEditorProps> = ({
       const newNodes = applyNodeChanges(changes, nodes) as AppNodeType[];
       setNodes(newNodes);
       onFlowChange?.(newNodes, edges);
+      
+      // Sub Flow: 그룹 노드 변경 시 자식 노드 위치 업데이트
+      changes.forEach(change => {
+        if (change.type === 'position' && change.position) {
+          const node = newNodes.find(n => n.id === change.id);
+          if (node?.parentId) {
+            // 부모 노드가 이동하면 자식 노드도 함께 이동
+            const parentNode = newNodes.find(n => n.id === node.parentId);
+            if (parentNode) {
+              // 자식 노드 위치를 부모 기준으로 상대적 위치로 조정
+              const relativeX = node.position.x - parentNode.position.x;
+              const relativeY = node.position.y - parentNode.position.y;
+              node.position.x = parentNode.position.x + relativeX;
+              node.position.y = parentNode.position.y + relativeY;
+            }
+          }
+        }
+      });
     },
     [nodes, edges, onFlowChange]
   );
@@ -154,6 +184,8 @@ const ProcessFlowEditor: React.FC<ProcessFlowEditorProps> = ({
         defaultViewport={{ x: 0, y: 0, zoom: 1 }}
         minZoom={0.1}
         maxZoom={2}
+        // Sub Flow 지원
+        defaultEdgeOptions={{ zIndex: edgeZIndex }}
       >
         {/* 배경 */}
         <Background 
@@ -190,6 +222,18 @@ const ProcessFlowEditor: React.FC<ProcessFlowEditorProps> = ({
                 : 'bg-blue-600 text-white'
             }`}>
               {readOnly ? '읽기 전용' : '편집 모드'}
+            </span>
+            {flowId && (
+              <span className="px-2 py-1 bg-green-600 rounded text-xs">
+                MSA 동기화 ON
+              </span>
+            )}
+            {/* Sub Flow 정보 */}
+            <span className="px-2 py-1 bg-purple-600 rounded text-xs">
+              그룹: {nodes.filter(n => n.type === 'groupNode').length}개
+            </span>
+            <span className="px-2 py-1 bg-purple-600 rounded text-xs">
+              자식: {nodes.filter(n => n.parentId).length}개
             </span>
           </div>
         </Panel>
