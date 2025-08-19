@@ -11,18 +11,18 @@ export interface APIOptions {
   onSuccess?: () => void;
   onError?: (error: any) => void;
   headers?: Record<string, string>;
-  config?: Omit<AxiosRequestConfig, 'headers'>;  // headers와 중복되지 않도록
+  config?: AxiosRequestConfig;  // Omit 제거
 }
 
 export function useAPI(domain: string) {
   const { execute, isLoading, error, success } = useAsync();
 
-  const createConfig = useCallback((options: APIOptions = {}) => {
+  const createConfig = useCallback((options: APIOptions = {}): AxiosRequestConfig => {
     const { headers, config = {} } = options;
     return {
       ...config,
       headers: {
-        ...config.headers,
+        ...(config.headers || {}),  // config.headers가 undefined일 수 있으므로 기본값 설정
         ...headers,
       },
     };
