@@ -338,22 +338,22 @@ const ProcessFlowEditor: React.FC<ProcessFlowEditorProps> = ({
       console.warn('❌ 선택된 노드들 간의 연결이 유효하지 않습니다');
       return;
     }
-    
-    const newEdge: ProcessEdge = {
-      id: `edge-${Date.now()}`,
+      
+      const newEdge: ProcessEdge = {
+        id: `edge-${Date.now()}`,
       source: sourceNode.id,
       target: targetNode.id,
-      type: 'processEdge',
-      data: {
+        type: 'processEdge',
+        data: {
         label: `${sourceNode.data.label} → ${targetNode.data.label}`,
-        processType: 'standard',
-      },
-    };
-    
+          processType: 'standard',
+        },
+      };
+      
     const newEdges = [...edges, newEdge];
-    setEdges(newEdges);
-    onFlowChange?.(nodes, newEdges);
-    
+      setEdges(newEdges);
+      onFlowChange?.(nodes, newEdges);
+      
     // 선택 해제
     clearSelection();
     
@@ -507,7 +507,7 @@ const ProcessFlowEditor: React.FC<ProcessFlowEditorProps> = ({
   }), [readOnly]);
 
   return (
-    <div className="w-full h-full">
+    <div className="w-full h-full bg-[#0b0c0f]">
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -527,7 +527,7 @@ const ProcessFlowEditor: React.FC<ProcessFlowEditorProps> = ({
         // 기본 설정
         fitView
         attributionPosition="bottom-left"
-        className="bg-[#0b0c0f]"
+        className="bg-[#0b0c0f] w-full h-full"
         defaultEdgeOptions={{ zIndex: edgeZIndex }}
         
         // 이벤트 핸들러
@@ -560,9 +560,10 @@ const ProcessFlowEditor: React.FC<ProcessFlowEditorProps> = ({
       >
         {/* 배경 */}
         <Background 
-          color="#334155" 
-          gap={16} 
+          color="#475569" 
+          gap={20} 
           variant={'dots' as any} 
+          className="opacity-50"
         />
         
         {/* 컨트롤 (토글 가능) */}

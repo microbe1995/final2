@@ -186,7 +186,7 @@ export default function ProcessFlowPage() {
   // ============================================================================
 
   return (
-    <div className="min-h-screen bg-[#0b0c0f]">
+    <div className="h-screen bg-[#0b0c0f] overflow-hidden">
       {/* MSA 연결 상태가 포함된 헤더 */}
               <ProcessControlHeader
           serviceStatus={serviceStatus}
@@ -210,47 +210,40 @@ export default function ProcessFlowPage() {
           expandedGroups={expandedGroups}
         />
 
-      {/* 메인 콘텐츠 */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* 왼쪽 사이드바 - MSA 정보 + React Flow 컨트롤 */}
-          <div className="lg:col-span-1">
-            <ProcessInfoSidebar
-              nodes={nodes}
-              edges={edges}
-              selectedNodes={selectedNodes}
-              selectedEdges={selectedEdges}
-              savedCanvases={savedCanvases}
-              currentCanvasId={currentCanvasId}
-              isLoadingCanvases={isLoadingCanvases}
-              serviceStatus={serviceStatus}
-              onLoadCanvas={handleLoadFromBackend}
-              onDeleteCanvas={handleDeleteCanvas}
-              onAddNode={addProcessNode}
-              onAddEdge={addProcessEdge}
-              onDeleteSelected={deleteSelectedElements}
-              isReadOnly={isReadOnly}
-            />
-          </div>
+      {/* 메인 콘텐츠 - 전체 화면 (헤더 제외) */}
+      <div className="flex h-[calc(100vh-80px)]">
+        {/* 왼쪽 사이드바 - MSA 정보 + React Flow 컨트롤 */}
+        <div className="w-80 bg-[#1e293b] border-r border-[#334155] overflow-y-auto p-4">
+          <ProcessInfoSidebar
+            nodes={nodes}
+            edges={edges}
+            selectedNodes={selectedNodes}
+            selectedEdges={selectedEdges}
+            savedCanvases={savedCanvases}
+            currentCanvasId={currentCanvasId}
+            isLoadingCanvases={isLoadingCanvases}
+            serviceStatus={serviceStatus}
+            onLoadCanvas={handleLoadFromBackend}
+            onDeleteCanvas={handleDeleteCanvas}
+            onAddNode={addProcessNode}
+            onAddEdge={addProcessEdge}
+            onDeleteSelected={deleteSelectedElements}
+            isReadOnly={isReadOnly}
+          />
+        </div>
 
-          {/* 메인 React Flow 에디터 */}
-          <div className="lg:col-span-3">
-            <div className="bg-[#1e293b] rounded-lg shadow-lg p-6 border border-[#334155]">
-              {/* React Flow 에디터 - MSA 실시간 동기화 */}
-              <div className="h-[600px] w-full">
-                <ProcessFlowEditor
-                  initialNodes={nodes}
-                  initialEdges={edges}
-                  onFlowChange={handleFlowChange}
-                  readOnly={isReadOnly}
-                  onDeleteSelected={deleteSelectedElements}
-                  flowId={currentCanvasId || undefined} // MSA 동기화용 ID
-                  // Sub Flow 기능 추가
-                  edgeZIndex={edgeZIndex}
-                />
-              </div>
-            </div>
-          </div>
+        {/* 메인 React Flow 에디터 - 전체 화면 */}
+        <div className="flex-1 h-full">
+          <ProcessFlowEditor
+            initialNodes={nodes}
+            initialEdges={edges}
+            onFlowChange={handleFlowChange}
+            readOnly={isReadOnly}
+            onDeleteSelected={deleteSelectedElements}
+            flowId={currentCanvasId || undefined} // MSA 동기화용 ID
+            // Sub Flow 기능 추가
+            edgeZIndex={edgeZIndex}
+          />
         </div>
       </div>
     </div>

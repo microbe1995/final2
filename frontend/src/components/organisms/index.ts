@@ -18,6 +18,7 @@ export { default as ProcessFlowControls } from './ProcessFlowControls';
 export { default as ProcessInfoSidebar } from './ProcessInfoSidebar';
 export { default as ProcessControlHeader } from './ProcessControlHeader';
 export { default as GroupNode } from './GroupNode';
+export { default as CustomNode } from './CustomNode';
 // ProcessDiagramEditor 삭제됨 - ProcessFlowEditor.tsx 사용
 
 // ============================================================================
