@@ -28,6 +28,22 @@ export interface ServiceHealthStatus {
 }
 
 // ============================================================================
+// 🔘 Handle 관련 타입 정의
+// ============================================================================
+
+export interface HandleData {
+  id: string;
+  node_id: string;
+  flow_id: string;
+  type: 'source' | 'target' | 'default';
+  position: 'left' | 'right' | 'top' | 'bottom';
+  style?: any;
+  data?: any;
+  is_connectable: boolean;
+  is_valid_connection: boolean;
+}
+
+// ============================================================================
 // 🔗 MSA 기반 Process Flow API 훅 (React Flow 전용)
 // ============================================================================
 
@@ -105,6 +121,11 @@ export const useProcessFlowService = () => {
       
       const createdFlow = await apiMethods.post('/api/flow', flowData);
       console.log('✅ MSA ReactFlow 저장 완료:', createdFlow.id);
+      
+      // 2단계: 각 노드에 핸들 자동 생성
+      for (const node of nodes) {
+        await createHandlesForNode(node.id, createdFlow.id);
+      }
       
       return { success: true, flowId: createdFlow.id };
     } catch (error) {
@@ -221,6 +242,90 @@ export const useProcessFlowService = () => {
     }
   }, []);
 
+  // ============================================================================
+  // 🔘 Handle 관련 API 메서드들
+  // ============================================================================
+  
+  const createHandlesForNode = useCallback(async (
+    nodeId: string, 
+    flowId: string
+  ): Promise<HandleData[]> => {
+    try {
+      // 노드에 기본 핸들들 자동 생성 (왼쪽 입력, 오른쪽 출력)
+      const handleConfigs = [
+        {
+          type: 'target',
+          position: 'left',
+          is_connectable: true,
+          is_valid_connection: true
+        },
+        {
+          type: 'source',
+          position: 'right',
+          is_connectable: true,
+          is_valid_connection: true
+        }
+      ];
+      
+      const response = await apiMethods.post(`/api/node/${nodeId}/reactflow-handles`, {
+        flow_id: flowId,
+        handle_configs: handleConfigs
+      });
+      
+      console.log('✅ 노드 핸들 자동 생성 완료:', nodeId);
+      return response;
+    } catch (error) {
+      console.error('❌ 노드 핸들 생성 실패:', error);
+      return [];
+    }
+  }, []);
+
+  const getHandlesForNode = useCallback(async (nodeId: string): Promise<HandleData[]> => {
+    try {
+      const response = await apiMethods.get(`/api/node/${nodeId}/reactflow-handles`);
+      return response;
+    } catch (error) {
+      console.error('❌ 노드 핸들 조회 실패:', error);
+      return [];
+    }
+  }, []);
+
+  const validateHandleConnection = useCallback(async (
+    sourceHandleId: string, 
+    targetHandleId: string, 
+    flowId: string
+  ): Promise<boolean> => {
+    try {
+      const response = await apiMethods.post('/api/handle/validate-connection', {
+        source_handle_id: sourceHandleId,
+        target_handle_id: targetHandleId,
+        flow_id: flowId
+      });
+      
+      return response.success;
+    } catch (error) {
+      console.error('❌ 핸들 연결 유효성 검증 실패:', error);
+      return false;
+    }
+  }, []);
+
+  const getConnectableHandles = useCallback(async (
+    flowId: string, 
+    excludeNodeId?: string
+  ): Promise<HandleData[]> => {
+    try {
+      const url = excludeNodeId 
+        ? `/api/flow/${flowId}/connectable-handles?exclude_node_id=${excludeNodeId}`
+        : `/api/flow/${flowId}/connectable-handles`;
+      
+      const response = await apiMethods.get(url);
+      return response;
+    } catch (error) {
+      console.error('❌ 연결 가능한 핸들 조회 실패:', error);
+      return [];
+    }
+  }, []);
+
   return {
     // MSA 기반 ReactFlow API
     loadSavedFlows,
@@ -229,5 +334,11 @@ export const useProcessFlowService = () => {
     checkServiceStatus,
     deleteFlow,
     syncReactFlowChanges,
+    
+    // Handle 관련 API
+    createHandlesForNode,
+    getHandlesForNode,
+    validateHandleConnection,
+    getConnectableHandles,
   };
 };

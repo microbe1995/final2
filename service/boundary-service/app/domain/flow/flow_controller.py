@@ -32,6 +32,9 @@ def get_flow_service() -> FlowService:
     repository = get_flow_repository()
     return FlowService(repository=repository)
 
+# 임시 메모리 저장소 (테스트용)
+flows_storage = {}
+
 # ============================================================================
 # 🌊 플로우 기본 CRUD API
 # ============================================================================

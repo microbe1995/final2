@@ -4,7 +4,7 @@ import axios, { AxiosInstance, AxiosResponse, AxiosError } from 'axios';
 // 🔧 API 클라이언트 설정
 // ============================================================================
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8001';
 
 // 기본 API 클라이언트 생성
 export const apiClient: AxiosInstance = axios.create({
