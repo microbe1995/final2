@@ -26,7 +26,7 @@ export const useReactFlowAPI = () => {
   // ============================================================================
 
   const createFlow = useCallback(async (data: CreateFlowRequest): Promise<FlowData | null> => {
-    return api.post('/flow/create', data, {
+    return api.post('/flow', data, {
       successMessage: '플로우가 생성되었습니다.',
       errorMessage: '플로우 생성에 실패했습니다.'
     });
@@ -58,7 +58,7 @@ export const useReactFlowAPI = () => {
   // ============================================================================
 
   const createNode = useCallback(async (data: CreateNodeRequest): Promise<NodeData | null> => {
-    return api.post('/node/create', data, {
+    return api.post('/node', data, {
       errorMessage: '노드 생성에 실패했습니다.'
     });
   }, [api]);
@@ -81,7 +81,7 @@ export const useReactFlowAPI = () => {
   // ============================================================================
 
   const createEdge = useCallback(async (data: CreateEdgeRequest): Promise<EdgeData | null> => {
-    return api.post('/edge/create', data, {
+    return api.post('/edge', data, {
       errorMessage: '엣지 생성에 실패했습니다.'
     });
   }, [api]);
@@ -104,7 +104,7 @@ export const useReactFlowAPI = () => {
   // ============================================================================
 
   const updateViewport = useCallback(async (data: UpdateViewportRequest): Promise<boolean> => {
-    const result = await api.post('/viewport/update', data, {
+    const result = await api.post('/viewport', data, {
       errorMessage: '뷰포트 업데이트에 실패했습니다.'
     });
     return !!result;

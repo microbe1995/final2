@@ -56,11 +56,8 @@ export interface EdgeData {
 export interface CreateFlowRequest {
   name: string;
   description?: string;
-  viewport?: {
-    x: number;
-    y: number;
-    zoom: number;
-  };
+  settings?: Record<string, any>;
+  metadata?: Record<string, any>;
 }
 
 export interface FlowStateResponse {

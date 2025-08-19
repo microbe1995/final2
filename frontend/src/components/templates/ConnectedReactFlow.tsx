@@ -97,7 +97,8 @@ function Flow({ flowId, autoSave, saveInterval }: ConnectedReactFlowProps) {
         const newFlow = await flowAPI.createFlow({
           name: `플로우 ${new Date().toLocaleString()}`,
           description: 'React Flow 다이어그램',
-          viewport: { x: 0, y: 0, zoom: 1 }
+          settings: { autoSave: true },
+          metadata: { createdBy: 'user', version: '1.0' }
         });
         
         if (newFlow) {
