@@ -11,7 +11,7 @@ from app.domain.flow.flow_repository import FlowRepository
 from app.domain.flow.flow_schema import (
     FlowCreateRequest,
     FlowUpdateRequest,
-    FlowViewportUpdateRequest,
+    # FlowViewportUpdateRequest,  # Viewport 도메인으로 분리됨
     FlowResponse,
     FlowListResponse,
     ReactFlowStateResponse,
@@ -43,11 +43,11 @@ class FlowService:
                 "id": flow_id,
                 "name": request.name,
                 "description": request.description,
-                "viewport": {
-                    "x": request.viewport.x,
-                    "y": request.viewport.y,
-                    "zoom": request.viewport.zoom
-                },
+                # "viewport": {  # Viewport 도메인으로 분리됨
+                #     "x": request.viewport.x,
+                #     "y": request.viewport.y,
+                #     "zoom": request.viewport.zoom
+                # },
                 "settings": request.settings or {},
                 "flow_metadata": request.metadata or {}
             }
@@ -122,12 +122,12 @@ class FlowService:
             if request.description is not None:
                 update_data["description"] = request.description
             
-            if request.viewport is not None:
-                update_data["viewport"] = {
-                    "x": request.viewport.x,
-                    "y": request.viewport.y,
-                    "zoom": request.viewport.zoom
-                }
+                    # if request.viewport is not None:  # Viewport 도메인으로 분리됨
+        #     update_data["viewport"] = {
+        #         "x": request.viewport.x,
+        #         "y": request.viewport.y,
+        #         "zoom": request.viewport.zoom
+        #     }
             
             if request.settings is not None:
                 update_data["settings"] = request.settings
@@ -174,41 +174,8 @@ class FlowService:
             raise ValueError(f"플로우 삭제 중 오류가 발생했습니다: {str(e)}")
     
     # ============================================================================
-    # 📱 뷰포트 관리 메서드
+    # 📱 뷰포트 관리 메서드 (Viewport 도메인으로 분리됨)
     # ============================================================================
-    
-    async def update_viewport(self, flow_id: str, request: FlowViewportUpdateRequest) -> Optional[FlowResponse]:
-        """플로우 뷰포트 업데이트"""
-        try:
-            logger.info(f"📱 뷰포트 업데이트: {flow_id}")
-            
-            # 기존 플로우 확인
-            existing_flow = await self.flow_repository.get_flow_by_id(flow_id)
-            if not existing_flow:
-                logger.warning(f"⚠️ 플로우를 찾을 수 없음: {flow_id}")
-                return None
-            
-            # 뷰포트 데이터 준비
-            update_data = {
-                "viewport": {
-                    "x": request.viewport.x,
-                    "y": request.viewport.y,
-                    "zoom": request.viewport.zoom
-                }
-            }
-            
-            # 플로우 수정
-            updated_flow = await self.flow_repository.update_flow(flow_id, update_data)
-            
-            if updated_flow:
-                logger.info(f"✅ 뷰포트 업데이트 성공: {flow_id}")
-                return self._convert_to_flow_response(updated_flow)
-            else:
-                return None
-                
-        except Exception as e:
-            logger.error(f"❌ 뷰포트 업데이트 실패: {str(e)}")
-            raise ValueError(f"뷰포트 업데이트 중 오류가 발생했습니다: {str(e)}")
     
     # ============================================================================
     # 🎯 ReactFlow 전체 상태 관리

@@ -20,6 +20,7 @@ from app.domain.node.node_controller import node_router
 from app.domain.flow.flow_controller import flow_router
 from app.domain.edge.edge_controller import edge_router
 from app.domain.handle.handle_controller import handle_router
+from app.domain.Viewport.Viewport_controller import viewport_router
 # ============================================================================
 # 🔧 애플리케이션 설정
 # ============================================================================
@@ -94,6 +95,7 @@ app.include_router(node_router, prefix="/api")
 app.include_router(flow_router, prefix="/api")
 app.include_router(edge_router, prefix="/api")
 app.include_router(handle_router, prefix="/api")
+app.include_router(viewport_router, prefix="/api")
 
 # ============================================================================
 # 🏥 헬스체크 엔드포인트

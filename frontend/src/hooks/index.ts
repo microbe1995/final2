@@ -1,29 +1,35 @@
 // ============================================================================
-// 🪝 Custom Hooks - DDD 도메인별 분류
+// 🪝 Hooks - React Flow 및 비즈니스 로직 훅들
 // ============================================================================
 
-// 🔐 Auth Domain Services
-export { useAuthService } from './useAuthAPI';
+// ============================================================================
+// 🔐 인증 및 사용자 관리 훅들
+// ============================================================================
+export { useAuthAPI } from './useAuthAPI';
+export { useNavigation } from './useNavigation';
 
-// 🏭 ProcessFlow Domain Services (MSA 기반)
-export { useProcessFlowService } from './useProcessFlowAPI';
-export { useProcessFlowDomain } from './useProcessFlow';
-// useNodeManagement 삭제됨 - ReactFlow 내장 기능 사용
-// useProcessTypeModal 삭제됨 - ReactFlow Panel로 대체
-
-// 🌐 Application Services
-export { useAppNavigation } from './useNavigation';
-export { useAsyncOperationHelper } from './useAsyncOperation';
+// ============================================================================
+// 🌊 React Flow 핵심 훅들
+// ============================================================================
+export { useProcessFlow } from './useProcessFlow';
+export { useProcessFlowAPI } from './useProcessFlowAPI';
 
 // ============================================================================
 // 🎯 React Flow 고급 기능 훅들
 // ============================================================================
-
-// 🎨 Layout Engine (Dagre, ELK, D3-Force, Cola)
+// 🎨 Layout Engine (ELK)
 export { useLayoutEngine } from './useLayoutEngine';
-
 // 🛣️ Edge Routing (Smart Edge, Orthogonal, Bezier, Step)
 export { useEdgeRouting } from './useEdgeRouting';
-
 // 🖱️ Advanced Viewport Controls (Design Tool, Map, Presentation)
 export { useAdvancedViewport } from './useAdvancedViewport';
+
+// ============================================================================
+// 🔄 비동기 작업 관리 훅들
+// ============================================================================
+export { useAsyncOperation } from './useAsyncOperation';
+
+// ============================================================================
+// 🧩 React Flow Context Provider
+// ============================================================================
+export { ReactFlowProvider, useReactFlowContext, useSubFlow, useEdgeZIndex, useViewport } from './providers/ReactFlowProvider';

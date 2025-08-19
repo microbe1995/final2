@@ -182,9 +182,9 @@ class FlowRepository:
                     id=flow_data.get('id'),
                     name=flow_data.get('name'),
                     description=flow_data.get('description'),
-                    viewport_x=flow_data.get('viewport', {}).get('x', 0),
-                    viewport_y=flow_data.get('viewport', {}).get('y', 0),
-                    viewport_zoom=flow_data.get('viewport', {}).get('zoom', 1.0),
+                                # viewport_x=flow_data.get('viewport', {}).get('x', 0),  # Viewport 도메인으로 분리됨
+            # viewport_y=flow_data.get('viewport', {}).get('y', 0),  # Viewport 도메인으로 분리됨
+            # viewport_zoom=flow_data.get('viewport', {}).get('zoom', 1.0),  # Viewport 도메인으로 분리됨
                     settings_json=str(flow_data.get('settings', {})) if flow_data.get('settings') else None,
                     metadata_json=str(flow_data.get('flow_metadata', {})) if flow_data.get('flow_metadata') else None
                 )
@@ -230,11 +230,11 @@ class FlowRepository:
                 if 'description' in flow_data:
                     update_fields['description'] = flow_data['description']
                 
-                if 'viewport' in flow_data:
-                    viewport = flow_data['viewport']
-                    update_fields['viewport_x'] = viewport.get('x')
-                    update_fields['viewport_y'] = viewport.get('y')
-                    update_fields['viewport_zoom'] = viewport.get('zoom')
+                        # if 'viewport' in flow_data:  # Viewport 도메인으로 분리됨
+        #     viewport = flow_data['viewport']
+        #     update_fields['viewport_x'] = viewport.get('x')
+        #     update_fields['viewport_y'] = viewport.get('y')
+        #     update_fields['viewport_zoom'] = viewport.get('zoom')
                 
                 if 'settings' in flow_data:
                     update_fields['settings_json'] = str(flow_data['settings']) if flow_data['settings'] else None

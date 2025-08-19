@@ -18,10 +18,7 @@ class ReactFlowState(Base):
     name: Mapped[str] = mapped_column(String(100), nullable=False, comment="플로우 이름")
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True, comment="플로우 설명")
     
-    # 뷰포트 상태
-    viewport_x: Mapped[float] = mapped_column(Float, nullable=False, default=0.0, comment="뷰포트 X")
-    viewport_y: Mapped[float] = mapped_column(Float, nullable=False, default=0.0, comment="뷰포트 Y")
-    viewport_zoom: Mapped[float] = mapped_column(Float, nullable=False, default=1.0, comment="뷰포트 줌")
+    # 뷰포트 관련 필드 제거 (Viewport 도메인으로 분리됨)
     
     # 설정 및 메타데이터
     settings_json: Mapped[Optional[str]] = mapped_column(Text, nullable=True, comment="플로우 설정 JSON")
@@ -31,21 +28,7 @@ class ReactFlowState(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
     
-    @property
-    def viewport(self) -> Dict[str, float]:
-        """뷰포트 상태 반환"""
-        return {
-            "x": self.viewport_x,
-            "y": self.viewport_y,
-            "zoom": self.viewport_zoom
-        }
-    
-    @viewport.setter
-    def viewport(self, value: Dict[str, float]) -> None:
-        """뷰포트 상태 설정"""
-        self.viewport_x = value.get("x", 0.0)
-        self.viewport_y = value.get("y", 0.0)
-        self.viewport_zoom = value.get("zoom", 1.0)
+    # 뷰포트 관련 프로퍼티 제거 (Viewport 도메인으로 분리됨)
     
     @property
     def settings(self) -> Dict[str, Any]:
@@ -77,7 +60,7 @@ class ReactFlowState(Base):
             "id": self.id,
             "name": self.name,
             "description": self.description,
-            "viewport": self.viewport,
+            # "viewport": self.viewport,  # 뷰포트 관련 필드 제거 (Viewport 도메인으로 분리됨)
             "settings": self.settings,
             "metadata": self.flow_metadata,
             "created_at": self.created_at.isoformat() if self.created_at else None,

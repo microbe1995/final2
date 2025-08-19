@@ -7,14 +7,8 @@ from typing import Optional, Dict, Any, List
 from datetime import datetime
 
 # ============================================================================
-# 📱 뷰포트 스키마
+# 📱 뷰포트 스키마 (Viewport 도메인으로 분리됨)
 # ============================================================================
-
-class FlowViewport(BaseModel):
-    """플로우 뷰포트"""
-    x: float = Field(default=0.0, description="뷰포트 X 좌표")
-    y: float = Field(default=0.0, description="뷰포트 Y 좌표")
-    zoom: float = Field(default=1.0, ge=0.1, le=5.0, description="뷰포트 줌 레벨")
 
 # ============================================================================
 # 📝 요청 스키마
@@ -25,7 +19,7 @@ class FlowCreateRequest(BaseModel):
     id: Optional[str] = Field(default=None, description="플로우 ID (자동 생성 가능)")
     name: str = Field(..., min_length=1, max_length=100, description="플로우 이름")
     description: Optional[str] = Field(default=None, max_length=500, description="플로우 설명")
-    viewport: FlowViewport = Field(default_factory=FlowViewport, description="초기 뷰포트 상태")
+    # viewport: FlowViewport = Field(default_factory=FlowViewport, description="초기 뷰포트 상태")  # Viewport 도메인으로 분리됨
     settings: Optional[Dict[str, Any]] = Field(default_factory=dict, description="플로우 설정")
     metadata: Optional[Dict[str, Any]] = Field(default_factory=dict, description="플로우 메타데이터")
 
@@ -33,13 +27,11 @@ class FlowUpdateRequest(BaseModel):
     """플로우 수정 요청"""
     name: Optional[str] = Field(default=None, min_length=1, max_length=100, description="플로우 이름")
     description: Optional[str] = Field(default=None, max_length=500, description="플로우 설명")
-    viewport: Optional[FlowViewport] = Field(default=None, description="뷰포트 상태")
+    # viewport: Optional[FlowViewport] = Field(default=None, description="뷰포트 상태")  # Viewport 도메인으로 분리됨
     settings: Optional[Dict[str, Any]] = Field(default=None, description="플로우 설정")
     metadata: Optional[Dict[str, Any]] = Field(default=None, description="플로우 메타데이터")
 
-class FlowViewportUpdateRequest(BaseModel):
-    """플로우 뷰포트 업데이트 요청"""
-    viewport: FlowViewport = Field(..., description="새로운 뷰포트 상태")
+# FlowViewportUpdateRequest 클래스 제거 (Viewport 도메인으로 분리됨)
 
 # ============================================================================
 # 📤 응답 스키마
@@ -50,7 +42,7 @@ class FlowResponse(BaseModel):
     id: str = Field(..., description="플로우 ID")
     name: str = Field(..., description="플로우 이름")
     description: Optional[str] = Field(default=None, description="플로우 설명")
-    viewport: FlowViewport = Field(..., description="뷰포트 상태")
+    # viewport: FlowViewport = Field(..., description="뷰포트 상태")  # Viewport 도메인으로 분리됨
     settings: Dict[str, Any] = Field(default_factory=dict, description="플로우 설정")
     metadata: Dict[str, Any] = Field(default_factory=dict, description="플로우 메타데이터")
     created_at: str = Field(..., description="생성 시간")
@@ -74,7 +66,7 @@ class ReactFlowStateResponse(BaseModel):
                     "id": "flow_123",
                     "name": "My Flow",
                     "description": "ReactFlow 예시",
-                    "viewport": {"x": 0, "y": 0, "zoom": 1.0},
+                    # "viewport": {"x": 0, "y": 0, "zoom": 1.0},  # Viewport 도메인으로 분리됨
                     "settings": {},
                     "metadata": {}
                 },

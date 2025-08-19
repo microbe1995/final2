@@ -13,7 +13,7 @@ from app.domain.flow.flow_repository import FlowRepository
 from app.domain.flow.flow_schema import (
     FlowCreateRequest,
     FlowUpdateRequest,
-    FlowViewportUpdateRequest,
+    # FlowViewportUpdateRequest,  # Viewport 도메인으로 분리됨
     FlowResponse,
     FlowListResponse,
     ReactFlowStateResponse,
@@ -187,54 +187,8 @@ async def delete_flow(flow_id: str):
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="플로우 삭제 중 오류가 발생했습니다")
 
 # ============================================================================
-# 📱 뷰포트 관리 API
+# 📱 뷰포트 관리 API (Viewport 도메인으로 분리됨)
 # ============================================================================
-
-@flow_router.put("/flow/{flow_id}/viewport", response_model=FlowResponse)
-async def update_flow_viewport(flow_id: str, request: FlowViewportUpdateRequest):
-    """
-    📱 **플로우 뷰포트 업데이트**
-    
-    ReactFlow의 onViewportChange 이벤트에서 사용됩니다.
-    사용자가 팬/줌을 할 때 뷰포트 상태를 백엔드에 저장합니다.
-    
-    **사용 예시:**
-    ```javascript
-    const onViewportChange = useCallback(
-      (viewport) => {
-        // 백엔드에 뷰포트 상태 저장
-        fetch(`/api/flows/${flowId}/viewport`, {
-          method: 'PUT',
-          body: JSON.stringify({ viewport })
-        });
-      },
-      [flowId]
-    );
-    ```
-    """
-    try:
-        logger.info(f"📱 플로우 뷰포트 업데이트 API 호출: {flow_id}")
-        
-        if flow_id not in flows_storage:
-            logger.warning(f"⚠️ 플로우를 찾을 수 없음: {flow_id}")
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="플로우를 찾을 수 없습니다")
-        
-        flow_data = flows_storage[flow_id]
-        flow_data["viewport"] = {
-            "x": request.viewport.x,
-            "y": request.viewport.y,
-            "zoom": request.viewport.zoom
-        }
-        flow_data["updated_at"] = datetime.now().isoformat()
-        
-        logger.info(f"✅ 플로우 뷰포트 업데이트 성공: {flow_id}")
-        return FlowResponse(**flow_data)
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"❌ 플로우 뷰포트 업데이트 오류: {str(e)}")
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="뷰포트 업데이트 중 오류가 발생했습니다")
 
 # ============================================================================
 # 🎯 ReactFlow 전체 상태 API

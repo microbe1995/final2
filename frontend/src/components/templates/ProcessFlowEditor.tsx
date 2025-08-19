@@ -3,7 +3,6 @@
 import React, { useState, useCallback, useEffect, useRef, useMemo, useTransition } from 'react';
 import {
   ReactFlow,
-  addEdge,
   Connection,
   applyNodeChanges,
   applyEdgeChanges,
@@ -11,7 +10,6 @@ import {
   MiniMap,
   Background,
   Panel,
-  type OnConnect,
   type OnNodesChange,
   type OnEdgesChange,
   type ReactFlowInstance,
@@ -19,7 +17,6 @@ import {
   type Edge,
   type OnInit,
   type OnBeforeDelete,
-  type ConnectionLineType,
   type SelectionMode,
   type PanOnScrollMode,
   type ConnectionMode,
@@ -120,10 +117,10 @@ const ProcessFlowEditor: React.FC<ProcessFlowEditorProps> = ({
   const onNodesChange: OnNodesChange = useCallback(
     (changes) => {
       startTransition(() => {
-        const newNodes = applyNodeChanges(changes, nodes) as AppNodeType[];
-        setNodes(newNodes);
-        onFlowChange?.(newNodes, edges);
-        
+      const newNodes = applyNodeChanges(changes, nodes) as AppNodeType[];
+      setNodes(newNodes);
+      onFlowChange?.(newNodes, edges);
+      
         // Sub Flow: 그룹 노드 변경 시 자식 노드 위치 업데이트
         changes.forEach(change => {
           if (change.type === 'position' && change.position) {
@@ -147,7 +144,7 @@ const ProcessFlowEditor: React.FC<ProcessFlowEditorProps> = ({
   // ============================================================================
   // 🎯 엣지 변경 핸들러
   // ============================================================================
-  
+
   const onEdgesChange: OnEdgesChange = useCallback(
     (changes) => {
       const newEdges = applyEdgeChanges(changes, edges) as AppEdgeType[];
@@ -169,68 +166,26 @@ const ProcessFlowEditor: React.FC<ProcessFlowEditorProps> = ({
     
     if (!sourceNode || !targetNode) return false;
     
-    // 예시: process 노드에서 meter 노드로만 연결 허용
-    if (sourceNode.data?.kind === 'process' && targetNode.data?.kind === 'meter') {
-      return true;
+    // 자기 자신과의 연결 방지
+    if (connection.source === connection.target) {
+      return false;
     }
     
-    // 기본 연결 규칙: 같은 타입끼리는 연결 금지
-    if (sourceNode.type === targetNode.type) {
+    // 이미 존재하는 연결 방지
+    const existingEdge = edges.find(
+      edge => edge.source === connection.source && edge.target === connection.target
+    );
+    if (existingEdge) {
+      return false;
+    }
+    
+    // 그룹 노드는 연결할 수 없음
+    if (sourceNode.type === 'groupNode' || targetNode.type === 'groupNode') {
       return false;
     }
     
     return true;
-  }, [nodes]);
-
-  const onConnect: OnConnect = useCallback(
-    (params: Connection) => {
-      if (!isValidConnection(params)) {
-        // 연결 검증 실패 시 알림
-        console.warn('❌ 유효하지 않은 연결:', params);
-        return;
-      }
-      
-      const newEdge: ProcessEdge = {
-        id: `edge-${Date.now()}`,
-        source: params.source!,
-        target: params.target!,
-        type: 'processEdge',
-        data: {
-          label: '공정 흐름',
-          processType: 'standard',
-        },
-      };
-      
-      const newEdges = addEdge(newEdge, edges);
-      setEdges(newEdges);
-      onFlowChange?.(nodes, newEdges);
-      console.log('✅ 새로운 연결 생성:', newEdge);
-    },
-    [edges, nodes, onFlowChange, isValidConnection]
-  );
-
-  // ============================================================================
-  // 🎯 재연결 핸들러
-  // ============================================================================
-  
-  const onEdgeUpdate = useCallback(
-    (oldEdge: Edge, newConnection: Connection) => {
-      if (!isValidConnection(newConnection)) {
-        console.warn('❌ 재연결 검증 실패:', newConnection);
-        return;
-      }
-      
-      setEdges((els) => 
-        els.map(edge => 
-          edge.id === oldEdge.id 
-            ? { ...edge, source: newConnection.source!, target: newConnection.target! }
-            : edge
-        )
-      );
-      console.log('✅ 엣지 재연결 완료:', { oldEdge, newConnection });
-    },
-    [isValidConnection]
-  );
+  }, [nodes, edges]);
 
   // ============================================================================
   // 🎯 키보드 단축키 핸들러 (완전 구현)
@@ -338,7 +293,7 @@ const ProcessFlowEditor: React.FC<ProcessFlowEditorProps> = ({
         setNodes(flowObject.nodes || []);
         setEdges(flowObject.edges || []);
         console.log('📂 플로우 로드 완료');
-      } catch (error) {
+        } catch (error) {
         console.error('❌ 플로우 로드 실패:', error);
       }
     };
@@ -359,6 +314,56 @@ const ProcessFlowEditor: React.FC<ProcessFlowEditorProps> = ({
       }
       return newSet;
     });
+  }, []);
+
+  // ============================================================================
+  // 🎯 수동 엣지 생성 및 선택 관리
+  // ============================================================================
+  
+  const createManualEdge = useCallback(() => {
+    if (selectedElements.nodes.length !== 2) {
+      console.warn('❌ 엣지를 생성하려면 정확히 2개의 노드를 선택해야 합니다');
+      return;
+    }
+    
+    const [sourceNode, targetNode] = selectedElements.nodes;
+    
+    // 연결 유효성 검증
+    if (!isValidConnection({ 
+      source: sourceNode.id, 
+      target: targetNode.id,
+      sourceHandle: null,
+      targetHandle: null
+    })) {
+      console.warn('❌ 선택된 노드들 간의 연결이 유효하지 않습니다');
+      return;
+    }
+    
+    const newEdge: ProcessEdge = {
+      id: `edge-${Date.now()}`,
+      source: sourceNode.id,
+      target: targetNode.id,
+      type: 'processEdge',
+      data: {
+        label: `${sourceNode.data.label} → ${targetNode.data.label}`,
+        processType: 'standard',
+      },
+    };
+    
+    const newEdges = [...edges, newEdge];
+    setEdges(newEdges);
+    onFlowChange?.(nodes, newEdges);
+    
+    // 선택 해제
+    clearSelection();
+    
+    console.log('✅ 수동 엣지 생성 완료:', newEdge);
+  }, [selectedElements.nodes, edges, nodes, onFlowChange, isValidConnection]);
+  
+  const clearSelection = useCallback(() => {
+    setNodes(prev => prev.map(node => ({ ...node, selected: false })));
+    setEdges(prev => prev.map(edge => ({ ...edge, selected: false })));
+    setSelectedElements({ nodes: [], edges: [] });
   }, []);
 
   // ============================================================================
@@ -481,18 +486,18 @@ const ProcessFlowEditor: React.FC<ProcessFlowEditorProps> = ({
     selectionOnDrag: true,
     selectionMode: 'partial' as SelectionMode,
     panOnDrag: true,
-    panOnScroll: true,
+    panOnScroll: false, // 스크롤 시 자동 팬 비활성화
     panOnScrollMode: 'free' as PanOnScrollMode,
-    zoomOnScroll: true,
-    zoomOnDoubleClick: false,
-    autoPanOnNodeDrag: true,
-    autoPanOnConnect: true,
-    autoPanSpeed: 20,
-    connectOnClick: true,
-    connectionMode: 'strict' as ConnectionMode,
-    edgesReconnectable: true,
-    snapToGrid: true,
-         snapGrid: [10, 10] as [number, number],
+    zoomOnScroll: false, // 스크롤 시 자동 줌 비활성화
+    zoomOnDoubleClick: true, // 더블클릭으로 줌 허용
+    autoPanOnNodeDrag: false, // 노드 드래그 시 자동 팬 비활성화
+    autoPanOnConnect: false, // 자동 연결 비활성화
+    autoPanSpeed: 0, // 자동 팬 비활성화
+    connectOnClick: false, // 자동 연결 비활성화
+    connectionMode: 'loose' as ConnectionMode, // 수동 연결을 위한 유연한 모드
+    edgesReconnectable: false, // 수동 연결만 지원
+    snapToGrid: false, // 자연스러운 노드 배치
+    snapGrid: [20, 20] as [number, number], // 필요시 사용
     deleteKeyCode: ['Delete', 'Backspace'],
     selectionKeyCode: 'Shift',
     multiSelectionKeyCode: ['Meta', 'Control'],
@@ -508,7 +513,7 @@ const ProcessFlowEditor: React.FC<ProcessFlowEditorProps> = ({
         edges={edges}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
-        onConnect={onConnect}
+        // onConnect={onConnect} // 자동 연결 기능 제거
         
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
@@ -622,7 +627,7 @@ const ProcessFlowEditor: React.FC<ProcessFlowEditorProps> = ({
             {readOnly ? (
               '🔒 읽기 전용 모드 - 노드 선택 및 확대/축소만 가능합니다'
             ) : (
-              '🎯 편집 모드 - 드래그로 노드 이동, 핸들 연결로 엣지 생성, Delete/Backspace 키로 삭제, Ctrl+S로 저장'
+              '🎯 편집 모드 - 드래그로 노드 이동, 노드 선택 후 엣지 생성 버튼으로 연결, Delete/Backspace 키로 삭제, Ctrl+S로 저장'
             )}
           </div>
         </Panel>
@@ -693,6 +698,25 @@ const ProcessFlowEditor: React.FC<ProcessFlowEditorProps> = ({
               </button>
               <button onClick={() => createCustomNode('valve')} className="px-2 py-1 bg-red-600 hover:bg-red-700 rounded text-xs">
                 🔴 밸브 노드
+              </button>
+            </div>
+
+            {/* 수동 엣지 생성 */}
+            <div className="flex gap-1">
+              <button 
+                onClick={createManualEdge} 
+                disabled={selectedElements.nodes.length !== 2}
+                className="px-2 py-1 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-500 disabled:cursor-not-allowed rounded text-xs"
+                title={selectedElements.nodes.length !== 2 ? '엣지를 생성하려면 2개의 노드를 선택하세요' : '선택된 노드들 사이에 엣지 생성'}
+              >
+                🔗 엣지 생성 ({selectedElements.nodes.length}/2)
+              </button>
+              <button 
+                onClick={clearSelection} 
+                disabled={selectedElements.nodes.length === 0 && selectedElements.edges.length === 0}
+                className="px-2 py-1 bg-gray-600 hover:bg-gray-700 disabled:bg-gray-500 disabled:cursor-not-allowed rounded text-xs"
+              >
+                🚫 선택 해제
               </button>
             </div>
 
@@ -776,9 +800,9 @@ const ProcessFlowEditor: React.FC<ProcessFlowEditorProps> = ({
               >
                 🗺️ 지도
               </button>
+              </div>
             </div>
-          </div>
-        </Panel>
+          </Panel>
       </ReactFlow>
     </div>
   );
