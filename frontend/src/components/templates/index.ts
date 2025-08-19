@@ -1,9 +1,6 @@
 // ============================================================================
-// 🏗️ Templates - 페이지 레이아웃 컴포넌트 (간소화됨)
+// 🏗️ Templates - 페이지 레이아웃 컴포넌트 (단일화됨)
 // ============================================================================
 
-// React Flow 템플릿들
-export { default as ReactFlowCanvas } from './ReactFlowCanvas';
-export { default as SimpleProcessFlow } from './SimpleProcessFlow';
-export { default as AdvancedReactFlow } from './AdvancedReactFlow';
+// 유일한 React Flow 템플릿 - 백엔드 연동 + 완전한 기능
 export { default as ConnectedReactFlow } from './ConnectedReactFlow';

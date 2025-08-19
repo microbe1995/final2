@@ -239,6 +239,55 @@ function Flow({ flowId, autoSave, saveInterval }: ConnectedReactFlowProps) {
   }, []);
 
   // ============================================================================
+  // 🎯 노드 추가 기능
+  // ============================================================================
+
+  const addNode = useCallback(async () => {
+    const newNode = {
+      id: `node-${Date.now()}`,
+      type: 'default',
+      position: { 
+        x: Math.random() * 300 + 100, 
+        y: Math.random() * 200 + 100 
+      },
+      data: { 
+        label: `노드 ${nodes.length + 1}` 
+      },
+    };
+    
+    setNodes(prev => [...prev, newNode]);
+    setHasUnsavedChanges(true);
+  }, [nodes.length]);
+
+  const addAnnotationNode = useCallback(async () => {
+    const newNode = {
+      id: `annotation-${Date.now()}`,
+      type: 'annotation',
+      draggable: true,
+      selectable: true,
+      position: { 
+        x: Math.random() * 300 + 100, 
+        y: Math.random() * 200 + 100 
+      },
+      data: { 
+        label: `어노테이션 ${nodes.filter(n => n.type === 'annotation').length + 1}`,
+        arrowStyle: 'arrow-bottom-right'
+      },
+    };
+    
+    setNodes(prev => [...prev, newNode]);
+    setHasUnsavedChanges(true);
+  }, [nodes]);
+
+  const clearAllNodes = useCallback(async () => {
+    if (window.confirm('모든 노드를 삭제하시겠습니까?')) {
+      setNodes([]);
+      setEdges([]);
+      setHasUnsavedChanges(true);
+    }
+  }, []);
+
+  // ============================================================================
   // 🎯 수동 저장
   // ============================================================================
 
@@ -278,8 +327,42 @@ function Flow({ flowId, autoSave, saveInterval }: ConnectedReactFlowProps) {
           <ViewportWithAnnotation />
         </Panel>
         
-        {/* 저장 상태 패널 */}
+        {/* 노드 생성 컨트롤 패널 */}
         <Panel position="top-right">
+          <div className="bg-white p-3 rounded-lg shadow-lg border border-gray-200">
+            <div className="flex flex-col gap-2">
+              <h3 className="text-sm font-semibold text-gray-700">노드 생성</h3>
+              
+              <button
+                onClick={addNode}
+                className="px-3 py-2 bg-blue-500 text-white rounded text-sm hover:bg-blue-600 transition-colors"
+              >
+                + 기본 노드
+              </button>
+              
+              <button
+                onClick={addAnnotationNode}
+                className="px-3 py-2 bg-green-500 text-white rounded text-sm hover:bg-green-600 transition-colors"
+              >
+                + 어노테이션
+              </button>
+              
+              <button
+                onClick={clearAllNodes}
+                className="px-3 py-2 bg-red-500 text-white rounded text-sm hover:bg-red-600 transition-colors"
+              >
+                전체 삭제
+              </button>
+              
+              <div className="text-xs text-gray-400 pt-2 border-t border-gray-200">
+                노드: {nodes.length} | 엣지: {edges.length}
+              </div>
+            </div>
+          </div>
+        </Panel>
+
+        {/* 저장 상태 패널 */}
+        <Panel position="top-left" style={{ top: '80px' }}>
           <div className="bg-white p-3 rounded-lg shadow-lg border border-gray-200">
             <div className="flex flex-col gap-2">
               <div className="flex items-center gap-2">
@@ -306,10 +389,6 @@ function Flow({ flowId, autoSave, saveInterval }: ConnectedReactFlowProps) {
               >
                 수동 저장
               </button>
-              
-              <div className="text-xs text-gray-400">
-                노드: {nodes.length} | 엣지: {edges.length}
-              </div>
             </div>
           </div>
         </Panel>

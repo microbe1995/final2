@@ -8,7 +8,7 @@ import { useAsync } from './useAsync';
 // 🔧 API 클라이언트 설정 (통합됨)
 // ============================================================================
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8001';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
 
 // 기본 API 클라이언트 생성
 const apiClient: AxiosInstance = axios.create({

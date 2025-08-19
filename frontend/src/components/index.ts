@@ -1,5 +1,5 @@
 // ============================================================================
-// 🧩 Components - 간소화된 컴포넌트 모음
+// 🧩 Components - 컴포넌트 모음 (중복 제거됨)
 // ============================================================================
 
 // Atoms (기본 UI 요소)
@@ -22,8 +22,5 @@ export { default as AppTopNavigation } from './organisms/AppTopNavigation';
 export { default as LoginSignupCard } from './organisms/LoginSignupCard';
 export { default as ProfileForm } from './organisms/ProfileForm';
 
-// Templates (페이지 레이아웃)
-export { default as ReactFlowCanvas } from './templates/ReactFlowCanvas';
-export { default as SimpleProcessFlow } from './templates/SimpleProcessFlow';
-export { default as AdvancedReactFlow } from './templates/AdvancedReactFlow';
+// Templates (페이지 레이아웃) - 단일화됨
 export { default as ConnectedReactFlow } from './templates/ConnectedReactFlow';
