@@ -14,6 +14,9 @@ importers:
       axios:
         specifier: ^1.6.2
         version: 1.11.0
+      elkjs:
+        specifier: ^0.10.0
+        version: 0.10.0
       next:
         specifier: 14.1.0
         version: 14.1.0(@babel/core@7.28.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -26,6 +29,9 @@ importers:
       react-dom:
         specifier: ^18.2.0
         version: 18.3.1(react@18.3.1)
+      web-worker:
+        specifier: ^1.5.0
+        version: 1.5.0
       zustand:
         specifier: ^4.4.7
         version: 4.5.7(@types/react@18.3.23)(react@18.3.1)
@@ -1445,6 +1451,9 @@ packages:
 
   electron-to-chromium@1.5.200:
     resolution: {integrity: sha512-rFCxROw7aOe4uPTfIAx+rXv9cEcGx+buAF4npnhtTqCJk5KDFRnh3+KYj7rdVh6lsFt5/aPs+Irj9rZ33WMA7w==}
+
+  elkjs@0.10.0:
+    resolution: {integrity: sha512-v/3r+3Bl2NMrWmVoRTMBtHtWvRISTix/s9EfnsfEWApNrsmNjqgqJOispCGg46BPwIFdkag3N/HYSxJczvCm6w==}
 
   emoji-regex@8.0.0:
     resolution: {integrity: sha512-MSjYzcWNOA0ewAHpz0MxpYFvwg6yjy1NG3xteoqz644VCo/RPgnr1/GGt+ic3iJTzQ8Eu3TdM14SawnVUmGE6A==}
@@ -2927,6 +2936,9 @@ packages:
   watchpack@2.4.4:
     resolution: {integrity: sha512-c5EGNOiyxxV5qmTtAB7rbiXxi1ooX1pQKMLX/MIabJjRA0SJBQOjKF+KSVfHkr9U1cADPon0mRiVe/riyaiDUA==}
     engines: {node: '>=10.13.0'}
+
+  web-worker@1.5.0:
+    resolution: {integrity: sha512-RiMReJrTAiA+mBjGONMnjVDP2u3p9R1vkcGz6gDIrOMT3oGuYwX2WRMYI9ipkphSuE5XKEhydbhNEJh4NY9mlw==}
 
   webidl-conversions@4.0.2:
     resolution: {integrity: sha512-YQ+BmxuTgd6UXZW3+ICGfyqRyHXVlD5GtQr5+qjiNW7bF0cqrzX500HVXPBOvgXb5YnzDd+h0zqyv61KUD7+Sg==}
@@ -4563,7 +4575,6 @@ snapshots:
       d3-selection: 3.0.0
       d3-transition: 3.0.1(d3-selection@3.0.0)
 
-
   damerau-levenshtein@1.0.8: {}
 
   data-view-buffer@1.0.2:
@@ -4649,6 +4660,8 @@ snapshots:
       jake: 10.9.4
 
   electron-to-chromium@1.5.200: {}
+
+  elkjs@0.10.0: {}
 
   emoji-regex@8.0.0: {}
 
@@ -6366,6 +6379,8 @@ snapshots:
     dependencies:
       glob-to-regexp: 0.4.1
       graceful-fs: 4.2.11
+
+  web-worker@1.5.0: {}
 
   webidl-conversions@4.0.2: {}
 

@@ -16,9 +16,10 @@ interface GroupNodeData {
   childCount: number;
   isExpanded: boolean;
   style?: React.CSSProperties;
+  [key: string]: unknown; // 인덱스 시그니처 추가
 }
 
-interface GroupNodeProps extends NodeProps<GroupNodeData> {
+interface GroupNodeProps extends NodeProps<any> {
   onToggleExpand?: (id: string) => void;
 }
 
@@ -32,9 +33,12 @@ const GroupNode: React.FC<GroupNodeProps> = ({
   id,
   onToggleExpand
 }) => {
+  // data를 GroupNodeData로 타입 단언
+  const groupData = data as GroupNodeData;
+  
   const handleToggleExpand = () => {
     if (onToggleExpand) {
-      onToggleExpand(id);
+      onToggleExpand(id as string);
     }
   };
 
@@ -42,9 +46,9 @@ const GroupNode: React.FC<GroupNodeProps> = ({
     <div 
       className={`relative ${selected ? 'ring-2 ring-purple-500' : ''}`}
       style={{
-        width: data.style?.width || 300,
-        height: data.style?.height || 200,
-        ...data.style
+        width: groupData.style?.width || 300,
+        height: groupData.style?.height || 200,
+        ...groupData.style
       }}
     >
       {/* 입력 핸들 */}
@@ -58,37 +62,37 @@ const GroupNode: React.FC<GroupNodeProps> = ({
         {/* 그룹 헤더 */}
         <div className="flex items-center justify-between mb-3">
           <Badge variant="info" size="sm">
-            {data.groupType === 'subprocess' ? 'Sub Process' : 
-             data.groupType === 'workflow' ? 'Workflow' : 'Process Group'}
+            {groupData.groupType === 'subprocess' ? 'Sub Process' : 
+             groupData.groupType === 'workflow' ? 'Workflow' : 'Process Group'}
           </Badge>
           <button
             onClick={handleToggleExpand}
             className="text-purple-300 hover:text-purple-100 text-sm"
           >
-            {data.isExpanded ? '📁' : '📂'}
+            {groupData.isExpanded ? '📁' : '📂'}
           </button>
         </div>
 
         {/* 그룹 제목 */}
         <h3 className="text-lg font-semibold text-purple-100 mb-2">
-          {data.label}
+          {groupData.label}
         </h3>
 
         {/* 그룹 설명 */}
-        {data.description && (
+        {groupData.description && (
           <p className="text-purple-200 text-sm mb-3">
-            {data.description}
+            {groupData.description}
           </p>
         )}
 
         {/* 자식 노드 정보 */}
         <div className="absolute bottom-4 left-4 right-4">
           <div className="flex justify-between items-center text-xs text-purple-300">
-            <span>자식 노드: {data.childCount}개</span>
+            <span>자식 노드: {groupData.childCount}개</span>
             <span className={`px-2 py-1 rounded ${
-              data.isExpanded ? 'bg-purple-600/50' : 'bg-purple-800/50'
+              groupData.isExpanded ? 'bg-purple-600/50' : 'bg-purple-800/50'
             }`}>
-              {data.isExpanded ? '펼침' : '접힘'}
+              {groupData.isExpanded ? '펼침' : '접힘'}
             </span>
           </div>
         </div>

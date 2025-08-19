@@ -326,25 +326,53 @@ const ProcessFlowInfoPanel: React.FC<ProcessFlowInfoPanelProps> = ({
         </div>
       </Card>
 
-      {/* 사용 가이드 */}
-      <Card className="p-4 bg-[#1e293b] border-[#334155]">
-        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 text-white">
-          <Icon name="help" size="sm" />
-          사용 가이드
-        </h3>
-        
-        <div className="space-y-2 text-xs text-[#94a3b8]">
-          <div>• 드래그하여 노드 이동</div>
-          <div>• 핸들을 연결하여 흐름 생성</div>
-          <div>• 클릭하여 요소 선택</div>
-          <div>• 그룹 노드로 공정 그룹화</div>
-          <div>• 자식 노드는 부모와 함께 이동</div>
-          <div>• Edge Z-Index로 레이어 순서 조정</div>
-          <div>• Delete 키로 선택 삭제</div>
-          <div>• 마우스 휠로 확대/축소</div>
-          <div>• MSA 백엔드 실시간 동기화</div>
-        </div>
-      </Card>
+             {/* 사용 가이드 */}
+       <Card className="p-4 bg-[#1e293b] border-[#334155]">
+         <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 text-white">
+           <Icon name="help" size="sm" />
+           사용 가이드
+         </h3>
+         
+         <div className="space-y-2 text-xs text-[#94a3b8]">
+           <div>• 드래그하여 노드 이동</div>
+           <div>• 핸들을 연결하여 흐름 생성</div>
+           <div>• 클릭하여 요소 선택</div>
+           <div>• 그룹 노드로 공정 그룹화</div>
+           <div>• 자식 노드는 부모와 함께 이동</div>
+           <div>• Edge Z-Index로 레이어 순서 조정</div>
+           <div>• Delete 키로 선택 삭제</div>
+           <div>• 마우스 휠로 확대/축소</div>
+           <div>• MSA 백엔드 실시간 동기화</div>
+         </div>
+       </Card>
+
+       {/* 고급 기능 가이드 */}
+       <Card className="p-4 bg-[#1e293b] border-[#334155]">
+         <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 text-white">
+           <Icon name="zap" size="sm" />
+           고급 기능 가이드
+         </h3>
+         
+         <div className="space-y-2 text-xs text-[#94a3b8]">
+           <div>🎨 <strong>레이아웃 엔진:</strong></div>
+           <div>• Dagre: 간단한 계층 구조</div>
+           <div>• ELK: 고급 다이어그램</div>
+           <div>• D3-Force: 물리 기반 배치</div>
+           <div>• Cola: 제약 기반 레이아웃</div>
+           
+           <div className="mt-2">🛣️ <strong>엣지 라우팅:</strong></div>
+           <div>• Smart Edge: 노드 충돌 방지</div>
+           <div>• Orthogonal: 직교 다이어그램</div>
+           <div>• Bezier: 부드러운 곡선</div>
+           <div>• Step: 계단식 경로</div>
+           
+           <div className="mt-2">🖱️ <strong>뷰포트 모드:</strong></div>
+           <div>• 기본: 표준 React Flow</div>
+           <div>• 디자인: Figma/Sketch 스타일</div>
+           <div>• 지도: 지도 네비게이션</div>
+           <div>• 프레젠테이션: 읽기 전용</div>
+         </div>
+       </Card>
     </div>
   );
 };

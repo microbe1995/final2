@@ -23,6 +23,12 @@ import GroupNodeComponent from '../organisms/GroupNode';
 import type { AppNodeType, AppEdgeType, ProcessNode, ProcessEdge } from '@/types/reactFlow';
 
 // ============================================================================
+// 🎯 React Flow 고급 기능 훅들
+// ============================================================================
+
+import { useLayoutEngine, useEdgeRouting, useAdvancedViewport } from '@/hooks';
+
+// ============================================================================
 // 🎯 노드 및 엣지 타입 정의
 // ============================================================================
 
@@ -71,6 +77,14 @@ const ProcessFlowEditor: React.FC<ProcessFlowEditorProps> = ({
   // Sub Flow 관련 상태
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [edgeZIndex, setEdgeZIndex] = useState<number>(propEdgeZIndex || 1);
+
+  // ============================================================================
+  // 🎯 React Flow 고급 기능 훅들
+  // ============================================================================
+  
+  const layoutEngine = useLayoutEngine();
+  const edgeRouting = useEdgeRouting();
+  const advancedViewport = useAdvancedViewport();
 
   // 외부에서 전달받은 nodes/edges가 변경되면 내부 상태도 업데이트
   useEffect(() => {
@@ -173,15 +187,21 @@ const ProcessFlowEditor: React.FC<ProcessFlowEditorProps> = ({
         nodesDraggable={!readOnly}
         nodesConnectable={!readOnly}
         elementsSelectable={true}
-        zoomOnScroll={true}
-        panOnScroll={false}
-        panOnDrag={true}
-        selectNodesOnDrag={false}
+        zoomOnScroll={advancedViewport.options.zoomOnScroll}
+        panOnScroll={advancedViewport.options.panOnScroll}
+        panOnDrag={advancedViewport.options.panOnDrag}
+        selectNodesOnDrag={advancedViewport.options.selectionOnDrag}
+        selectionMode={advancedViewport.options.selectionMode as any}
+        multiSelectionKeyCode={advancedViewport.options.multiSelectionKey === 'shift' ? 'Shift' : 'Control'}
         // 연결 설정
         connectionMode={'loose' as any}
         snapToGrid={true}
         snapGrid={[15, 15]}
-        defaultViewport={{ x: 0, y: 0, zoom: 1 }}
+        defaultViewport={{ 
+          x: advancedViewport.viewport.x, 
+          y: advancedViewport.viewport.y, 
+          zoom: advancedViewport.viewport.zoom 
+        }}
         minZoom={0.1}
         maxZoom={2}
         // Sub Flow 지원
@@ -235,6 +255,16 @@ const ProcessFlowEditor: React.FC<ProcessFlowEditorProps> = ({
             <span className="px-2 py-1 bg-purple-600 rounded text-xs">
               자식: {nodes.filter(n => n.parentId).length}개
             </span>
+            {/* 고급 기능 상태 */}
+            <span className="px-2 py-1 bg-orange-600 rounded text-xs">
+              레이아웃: {layoutEngine.currentAlgorithm}
+            </span>
+            <span className="px-2 py-1 bg-indigo-600 rounded text-xs">
+              라우팅: {edgeRouting.currentRoutingType}
+            </span>
+            <span className="px-2 py-1 bg-teal-600 rounded text-xs">
+              뷰포트: {advancedViewport.viewport.mode}
+            </span>
           </div>
         </Panel>
 
@@ -246,6 +276,95 @@ const ProcessFlowEditor: React.FC<ProcessFlowEditorProps> = ({
             ) : (
               '🎯 편집 모드 - 드래그로 노드 이동, 핸들 연결로 엣지 생성, Delete 키로 삭제'
             )}
+          </div>
+        </Panel>
+
+        {/* 고급 기능 컨트롤 패널 */}
+        <Panel position="bottom-left" className="bg-[#1e293b] text-white p-3 rounded border border-[#334155] shadow-lg">
+          <div className="space-y-2">
+            <div className="text-xs font-semibold text-[#cbd5e1]">🎨 고급 기능</div>
+            
+            {/* ELK 레이아웃 엔진 컨트롤 */}
+            <div className="flex gap-1">
+              <button
+                onClick={() => layoutEngine.applyAutoLayout(nodes, edges)}
+                disabled={layoutEngine.isLayouting}
+                className="px-2 py-1 bg-orange-600 hover:bg-orange-700 rounded text-xs disabled:opacity-50"
+              >
+                {layoutEngine.isLayouting ? '🔄' : '🎯'} ELK 자동 레이아웃
+              </button>
+              <button
+                onClick={() => layoutEngine.applyELKLayout(nodes, edges, { layout: 'layered' })}
+                disabled={layoutEngine.isLayouting}
+                className="px-2 py-1 bg-orange-500 hover:bg-orange-600 rounded text-xs disabled:opacity-50"
+              >
+                📐 계층형
+              </button>
+              <button
+                onClick={() => layoutEngine.applyELKLayout(nodes, edges, { layout: 'force' })}
+                disabled={layoutEngine.isLayouting}
+                className="px-2 py-1 bg-orange-500 hover:bg-orange-600 rounded text-xs disabled:opacity-50"
+              >
+                ⚡ 물리형
+              </button>
+              <button
+                onClick={() => layoutEngine.resetLayout(nodes, edges)}
+                className="px-2 py-1 bg-orange-700 hover:bg-orange-800 rounded text-xs"
+              >
+                🔄 리셋
+              </button>
+            </div>
+
+            {/* 엣지 라우팅 컨트롤 */}
+            <div className="flex gap-1">
+              <button
+                onClick={() => edgeRouting.applyAutoRouting(edges, nodes)}
+                disabled={edgeRouting.isRouting}
+                className="px-2 py-1 bg-indigo-600 hover:bg-indigo-700 rounded text-xs disabled:opacity-50"
+              >
+                {edgeRouting.isRouting ? '🔄' : '🛣️'} 자동 라우팅
+              </button>
+              <button
+                onClick={() => edgeRouting.resetRouting(edges)}
+                className="px-2 py-1 bg-indigo-700 hover:bg-indigo-800 rounded text-xs"
+              >
+                🔄 리셋
+              </button>
+            </div>
+
+            {/* 뷰포트 모드 컨트롤 */}
+            <div className="flex gap-1">
+              <button
+                onClick={advancedViewport.enableDefaultMode}
+                className={`px-2 py-1 rounded text-xs ${
+                  advancedViewport.isInDefaultMode 
+                    ? 'bg-teal-600 text-white' 
+                    : 'bg-gray-600 hover:bg-gray-700'
+                }`}
+              >
+                🖱️ 기본
+              </button>
+              <button
+                onClick={advancedViewport.enableDesignToolMode}
+                className={`px-2 py-1 rounded text-xs ${
+                  advancedViewport.isInDesignMode 
+                    ? 'bg-teal-600 text-white' 
+                    : 'bg-gray-600 hover:bg-gray-700'
+                }`}
+              >
+                🎨 디자인
+              </button>
+              <button
+                onClick={advancedViewport.enableMapMode}
+                className={`px-2 py-1 rounded text-xs ${
+                  advancedViewport.isInMapMode 
+                    ? 'bg-teal-600 text-white' 
+                    : 'bg-gray-600 hover:bg-gray-700'
+                }`}
+              >
+                🗺️ 지도
+              </button>
+            </div>
           </div>
         </Panel>
       </ReactFlow>

@@ -14,3 +14,16 @@ export { useProcessFlowDomain } from './useProcessFlow';
 // 🌐 Application Services
 export { useAppNavigation } from './useNavigation';
 export { useAsyncOperationHelper } from './useAsyncOperation';
+
+// ============================================================================
+// 🎯 React Flow 고급 기능 훅들
+// ============================================================================
+
+// 🎨 Layout Engine (Dagre, ELK, D3-Force, Cola)
+export { useLayoutEngine } from './useLayoutEngine';
+
+// 🛣️ Edge Routing (Smart Edge, Orthogonal, Bezier, Step)
+export { useEdgeRouting } from './useEdgeRouting';
+
+// 🖱️ Advanced Viewport Controls (Design Tool, Map, Presentation)
+export { useAdvancedViewport } from './useAdvancedViewport';
