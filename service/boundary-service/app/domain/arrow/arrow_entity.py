@@ -54,15 +54,15 @@ class Arrow(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
     
     @property
-    def metadata(self) -> Dict[str, Any]:
-        """메타데이터"""
+    def arrow_metadata(self) -> Dict[str, Any]:
+        """화살표 메타데이터"""
         if self.metadata_json:
             return json.loads(self.metadata_json)
         return {}
     
-    @metadata.setter
-    def metadata(self, value: Dict[str, Any]) -> None:
-        """메타데이터 설정"""
+    @arrow_metadata.setter
+    def arrow_metadata(self, value: Dict[str, Any]) -> None:
+        """화살표 메타데이터 설정"""
         self.metadata_json = json.dumps(value) if value else None
     
     def move(self, dx: float, dy: float) -> None:
@@ -154,7 +154,7 @@ class Arrow(Base):
             "canvas_id": self.canvas_id,
             "name": self.name,
             "description": self.description,
-            "metadata": self.metadata,
+            "metadata": self.arrow_metadata,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None
         }
@@ -179,5 +179,5 @@ class Arrow(Base):
             updated_at=datetime.fromisoformat(data["updated_at"]) if data.get("updated_at") else None,
         )
         
-        arrow.metadata = data.get("metadata", {})
+        arrow.arrow_metadata = data.get("metadata", {})
         return arrow

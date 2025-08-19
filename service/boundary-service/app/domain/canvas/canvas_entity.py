@@ -90,15 +90,15 @@ class Canvas(Base):
         self.viewport_json = json.dumps(value) if value else None
     
     @property
-    def metadata(self) -> Dict[str, Any]:
-        """메타데이터"""
+    def canvas_metadata(self) -> Dict[str, Any]:
+        """캔버스 메타데이터"""
         if self.metadata_json:
             return json.loads(self.metadata_json)
         return {}
     
-    @metadata.setter
-    def metadata(self, value: Dict[str, Any]) -> None:
-        """메타데이터 설정"""
+    @canvas_metadata.setter
+    def canvas_metadata(self, value: Dict[str, Any]) -> None:
+        """캔버스 메타데이터 설정"""
         self.metadata_json = json.dumps(value) if value else None
     
     # ============================================================================
@@ -221,7 +221,7 @@ class Canvas(Base):
             "pan_y": self.pan_y,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
-            "metadata": self.metadata
+            "metadata": self.canvas_metadata
         }
     
     @classmethod
@@ -244,6 +244,6 @@ class Canvas(Base):
         # React Flow 데이터 설정
         canvas.nodes = data.get("nodes", [])
         canvas.edges = data.get("edges", [])
-        canvas.metadata = data.get("metadata", {})
+        canvas.canvas_metadata = data.get("metadata", {})
         
         return canvas
