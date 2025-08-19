@@ -7,7 +7,7 @@ import React from 'react';
 // ============================================================================
 
 export interface BadgeProps {
-  variant?: 'default' | 'success' | 'warning' | 'error' | 'info';
+  variant?: 'default' | 'primary' | 'secondary' | 'success' | 'warning' | 'error' | 'info';
   size?: 'sm' | 'md' | 'lg';
   children: React.ReactNode;
   className?: string;
@@ -28,6 +28,8 @@ const Badge: React.FC<BadgeProps> = ({
   // variant별 스타일 매핑 - 다크 테마에 맞게 조정
   const variantStyles = {
     default: 'bg-[#334155] text-white border-[#475569]',
+    primary: 'bg-blue-600 text-white border-blue-500',
+    secondary: 'bg-gray-600 text-white border-gray-500',
     success: 'bg-green-900/30 text-green-300 border-green-500/50',
     warning: 'bg-yellow-900/30 text-yellow-300 border-yellow-500/50',
     error: 'bg-red-900/30 text-red-300 border-red-500/50',

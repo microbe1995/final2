@@ -1,17 +1,15 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
-import { useProcessFlowService } from './useProcessFlowAPI';
-import { CanvasListItem, ServiceHealthStatus } from './useProcessFlowAPI';
+import { useState, useCallback } from 'react';
 import type { AppNodeType, AppEdgeType } from '@/types/reactFlow';
 
 // ============================================================================
-// 🎯 Process Flow 상태 관리 훅
+// 🎯 Pure React Flow 상태 관리 훅 (백엔드 의존성 제거)
 // ============================================================================
 
 export const useProcessFlowDomain = () => {
   // ============================================================================
-  // 🎨 React Flow 상태
+  // 🎨 React Flow 상태만 관리
   // ============================================================================
   
   const [nodes, setNodes] = useState<AppNodeType[]>([]);
@@ -21,38 +19,18 @@ export const useProcessFlowDomain = () => {
   const [selectedEdges, setSelectedEdges] = useState<AppEdgeType[]>([]);
 
   // ============================================================================
-  // 🔗 백엔드 관련 상태
-  // ============================================================================
-  
-  const [savedCanvases, setSavedCanvases] = useState<CanvasListItem[]>([]);
-  const [isLoadingCanvases, setIsLoadingCanvases] = useState(false);
-  const [serviceStatus, setServiceStatus] = useState<ServiceHealthStatus | null>(null);
-  const [currentCanvasId, setCurrentCanvasId] = useState<string | null>(null);
-
-  // ============================================================================
-  // 🚀 API 훅 사용
-  // ============================================================================
-  
-  const {
-    loadSavedFlows: loadFlowsAPI,
-    saveToBackend: saveToBackendAPI,
-    loadFromBackend: loadFromBackendAPI,
-    checkServiceStatus: checkServiceStatusAPI,
-  } = useProcessFlowService();
-
-  // ============================================================================
-  // 🔄 Flow 변경 처리
+  // 🔄 Flow 변경 처리 (순수 클라이언트 사이드)
   // ============================================================================
   
   const handleFlowChange = useCallback((newNodes: AppNodeType[], newEdges: AppEdgeType[]) => {
-    console.log('🔄 useProcessFlow - handleFlowChange 호출됨:', { newNodes, newEdges });
+    console.log('🔄 Pure React Flow - handleFlowChange 호출됨:', { newNodes, newEdges });
     setNodes(newNodes);
     setEdges(newEdges);
     
     // 선택된 요소들 업데이트
     setSelectedNodes(newNodes.filter(node => node.selected));
     setSelectedEdges(newEdges.filter(edge => edge.selected));
-    console.log('✅ useProcessFlow - 상태 업데이트 완료');
+    console.log('✅ Pure React Flow - 상태 업데이트 완료');
   }, []);
 
   // ============================================================================
@@ -64,7 +42,7 @@ export const useProcessFlowDomain = () => {
   }, []);
 
   // ============================================================================
-  // 📤 Flow 내보내기
+  // 📤 Flow 내보내기 (JSON 다운로드)
   // ============================================================================
   
   const exportFlow = useCallback(() => {
@@ -72,6 +50,12 @@ export const useProcessFlowDomain = () => {
       nodes,
       edges,
       timestamp: new Date().toISOString(),
+      version: '1.0.0',
+      metadata: {
+        nodeCount: nodes.length,
+        edgeCount: edges.length,
+        createdWith: 'React Flow'
+      }
     };
     
     const dataStr = JSON.stringify(flowData, null, 2);
@@ -79,83 +63,47 @@ export const useProcessFlowDomain = () => {
     
     const link = document.createElement('a');
     link.href = URL.createObjectURL(dataBlob);
-    link.download = `process-flow-${new Date().toISOString().split('T')[0]}.json`;
+    link.download = `react-flow-${new Date().toISOString().split('T')[0]}.json`;
     link.click();
   }, [nodes, edges]);
 
   // ============================================================================
-  // 📋 저장된 Canvas 목록 로드
+  // 📥 Flow 가져오기 (JSON 파일 업로드)
   // ============================================================================
   
-  const loadSavedCanvases = useCallback(async () => {
-    try {
-      setIsLoadingCanvases(true);
-      const flows = await loadFlowsAPI();
-      setSavedCanvases(flows);
-    } catch (error) {
-      console.error('Flow 목록 로드 실패:', error);
-      setSavedCanvases([]);
-    } finally {
-      setIsLoadingCanvases(false);
-    }
-  }, [loadFlowsAPI]);
-
-  // ============================================================================
-  // 💾 백엔드에 저장
-  // ============================================================================
-  
-  const saveToBackend = useCallback(async (canvasName?: string) => {
-    try {
-      await saveToBackendAPI(nodes, edges, canvasName);
+  const importFlow = useCallback(() => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    
+    input.onchange = (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file) return;
       
-      // 저장된 Canvas 목록 새로고침
-      await loadSavedCanvases();
-      
-      return true;
-    } catch (error) {
-      console.error('백엔드 저장 실패:', error);
-      throw error;
-    }
-  }, [nodes, edges, saveToBackendAPI, loadSavedCanvases]);
-
-  // ============================================================================
-  // 📥 백엔드에서 로드
-  // ============================================================================
-  
-  const loadFromBackend = useCallback(async (canvasId?: string) => {
-    try {
-      const flowData = await loadFromBackendAPI(canvasId);
-      
-      if (flowData) {
-        setNodes(flowData.nodes);
-        setEdges(flowData.edges);
-        setCurrentCanvasId(canvasId || null);
-        console.log('백엔드에서 공정도 로드 완료');
-        return true;
-      }
-      
-      return false;
-    } catch (error) {
-      console.error('백엔드 로드 실패:', error);
-      throw error;
-    }
-  }, [loadFromBackendAPI]);
-
-  // ============================================================================
-  // 🔍 서비스 상태 확인
-  // ============================================================================
-  
-  const checkServiceStatus = useCallback(async () => {
-    try {
-      const status = await checkServiceStatusAPI();
-      setServiceStatus(status);
-      return status;
-    } catch (error) {
-      console.error('서비스 상태 확인 실패:', error);
-      setServiceStatus(null);
-      return null;
-    }
-  }, [checkServiceStatusAPI]);
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+          const flowData = JSON.parse(event.target?.result as string);
+          
+          if (flowData.nodes && flowData.edges) {
+            setNodes(flowData.nodes);
+            setEdges(flowData.edges);
+            setSelectedNodes([]);
+            setSelectedEdges([]);
+            console.log('✅ Flow 가져오기 완료:', flowData);
+          } else {
+            alert('올바르지 않은 React Flow 파일 형식입니다.');
+          }
+        } catch (error) {
+          console.error('Flow 가져오기 실패:', error);
+          alert('파일을 읽는 중 오류가 발생했습니다.');
+        }
+      };
+      reader.readAsText(file);
+    };
+    
+    input.click();
+  }, []);
 
   // ============================================================================
   // 🧹 Flow 초기화
@@ -166,17 +114,69 @@ export const useProcessFlowDomain = () => {
     setEdges([]);
     setSelectedNodes([]);
     setSelectedEdges([]);
-    setCurrentCanvasId(null);
   }, []);
 
   // ============================================================================
-  // 🔄 초기화 - 컴포넌트 마운트 시 실행
+  // 📋 로컬 스토리지 저장/로드
   // ============================================================================
   
-  useEffect(() => {
-    loadSavedCanvases();
-    checkServiceStatus();
-  }, [loadSavedCanvases, checkServiceStatus]);
+  const saveToLocalStorage = useCallback((name?: string) => {
+    const flowData = {
+      nodes,
+      edges,
+      timestamp: new Date().toISOString(),
+      name: name || `Flow ${Date.now()}`
+    };
+    
+    const key = `react-flow-${Date.now()}`;
+    localStorage.setItem(key, JSON.stringify(flowData));
+    
+    console.log('✅ 로컬 스토리지에 저장 완료:', key);
+    return key;
+  }, [nodes, edges]);
+
+  const loadFromLocalStorage = useCallback((key: string) => {
+    try {
+      const flowData = localStorage.getItem(key);
+      if (flowData) {
+        const parsed = JSON.parse(flowData);
+        setNodes(parsed.nodes || []);
+        setEdges(parsed.edges || []);
+        setSelectedNodes([]);
+        setSelectedEdges([]);
+        console.log('✅ 로컬 스토리지에서 로드 완료:', key);
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('로컬 스토리지 로드 실패:', error);
+      return false;
+    }
+  }, []);
+
+  const getSavedFlows = useCallback(() => {
+    const savedFlows: { key: string; name: string; timestamp: string; nodeCount: number; edgeCount: number }[] = [];
+    
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith('react-flow-')) {
+        try {
+          const flowData = JSON.parse(localStorage.getItem(key) || '{}');
+          savedFlows.push({
+            key,
+            name: flowData.name || key,
+            timestamp: flowData.timestamp || 'Unknown',
+            nodeCount: flowData.nodes?.length || 0,
+            edgeCount: flowData.edges?.length || 0
+          });
+        } catch (error) {
+          console.warn('저장된 Flow 파싱 실패:', key);
+        }
+      }
+    }
+    
+    return savedFlows.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+  }, []);
 
   return {
     // React Flow 상태
@@ -186,22 +186,20 @@ export const useProcessFlowDomain = () => {
     selectedNodes,
     selectedEdges,
     
-    // 백엔드 상태
-    savedCanvases,
-    isLoadingCanvases,
-    serviceStatus,
-    currentCanvasId,
-    
-    // 액션
+    // 상태 업데이트
     setNodes,
     setEdges,
     handleFlowChange,
     toggleReadOnly,
+    
+    // 파일 관리
     exportFlow,
-    loadSavedCanvases,
-    saveToBackend,
-    loadFromBackend,
-    checkServiceStatus,
+    importFlow,
     clearFlow,
+    
+    // 로컬 스토리지 관리
+    saveToLocalStorage,
+    loadFromLocalStorage,
+    getSavedFlows,
   };
 };

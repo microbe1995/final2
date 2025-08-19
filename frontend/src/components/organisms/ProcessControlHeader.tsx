@@ -1,31 +1,27 @@
 'use client';
 
 import React from 'react';
+import Button from '@/atoms/Button';
+import Badge from '@/atoms/Badge';
 
 interface ProcessFlowHeaderProps {
-  serviceStatus: any;
   isReadOnly: boolean;
   onToggleReadOnly: () => void;
   onExport: () => void;
-  onSaveToBackend: () => void;
-  onLoadFromBackend: () => void;
+  onImport: () => void;
   onClearFlow: () => void;
-  savedCanvases: any[];
-  isLoadingCanvases: boolean;
-  currentCanvasId: string | null;
+  nodeCount: number;
+  edgeCount: number;
 }
 
 const ProcessFlowHeader: React.FC<ProcessFlowHeaderProps> = ({
-  serviceStatus,
   isReadOnly,
   onToggleReadOnly,
   onExport,
-  onSaveToBackend,
-  onLoadFromBackend,
+  onImport,
   onClearFlow,
-  savedCanvases,
-  isLoadingCanvases,
-  currentCanvasId,
+  nodeCount,
+  edgeCount,
 }) => {
   return (
     <div className="bg-[#1e293b] shadow-sm border-b border-[#334155]">
@@ -36,57 +32,51 @@ const ProcessFlowHeader: React.FC<ProcessFlowHeaderProps> = ({
             <p className="text-sm text-[#cbd5e1]">
               React Flow 기반의 인터랙티브 공정도 에디터
             </p>
+            <div className="flex items-center gap-3 mt-2">
+              <span className="text-xs text-[#94a3b8]">
+                노드: {nodeCount} | 엣지: {edgeCount}
+              </span>
+              <Badge variant={isReadOnly ? 'secondary' : 'primary'}>
+                {isReadOnly ? '읽기 전용' : '편집 모드'}
+              </Badge>
+            </div>
           </div>
           
           <div className="flex items-center space-x-3">
-            {/* 서비스 상태 표시 */}
-            <div className="flex items-center space-x-2">
-              <div className={`w-3 h-3 rounded-full ${
-                serviceStatus ? 'bg-green-500' : 'bg-red-500'
-              }`} title={serviceStatus ? '서비스 정상' : '서비스 오류'} />
-              <span className="text-xs text-white">
-                {serviceStatus ? '연결됨' : '연결 안됨'}
-              </span>
-            </div>
-            
-            <button
+            {/* 모드 토글 */}
+            <Button
+              variant="secondary"
+              size="sm"
               onClick={onToggleReadOnly}
-              className={`px-4 py-2 rounded-lg text-sm font-medium ${
-                isReadOnly
-                  ? 'bg-blue-500 text-white hover:bg-blue-600'
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-              }`}
             >
               {isReadOnly ? '편집 모드' : '읽기 전용'}
-            </button>
-            
-            <button
+            </Button>
+
+            {/* 파일 관리 */}
+            <Button
+              variant="primary"
+              size="sm"
               onClick={onExport}
-              className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 text-sm font-medium"
             >
               내보내기
-            </button>
-            
-            <button
-              onClick={onSaveToBackend}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium"
+            </Button>
+
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={onImport}
             >
-              DB 저장
-            </button>
-            
-            <button
-              onClick={onLoadFromBackend}
-              className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 text-sm font-medium"
-            >
-              DB 로드
-            </button>
-            
-            <button
+              가져오기
+            </Button>
+
+            {/* 초기화 */}
+            <Button
+              variant="danger"
+              size="sm"
               onClick={onClearFlow}
-              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-medium"
             >
               초기화
-            </button>
+            </Button>
           </div>
         </div>
       </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   ReactFlow,
   addEdge,
@@ -20,7 +20,6 @@ import ProcessNodeComponent from '../organisms/ProcessNode';
 import ProcessEdgeComponent from '../organisms/ProcessEdge';
 
 import type { AppNodeType, AppEdgeType, ProcessNode, ProcessEdge } from '@/types/reactFlow';
-import { useProcessFlowService } from '@/hooks/useProcessFlowAPI';
 
 // ============================================================================
 // 🎯 노드 및 엣지 타입 정의
@@ -43,12 +42,11 @@ interface ProcessFlowEditorProps {
   initialEdges?: AppEdgeType[];
   onFlowChange?: (nodes: AppNodeType[], edges: AppEdgeType[]) => void;
   readOnly?: boolean;
-  flowId?: string; // 백엔드 동기화를 위한 플로우 ID
-  onDeleteSelected?: () => void; // 삭제 핸들러
+  onDeleteSelected?: () => void;
 }
 
 // ============================================================================
-// 🎯 ProcessFlowEditor 컴포넌트
+// 🎯 Pure React Flow Editor 컴포넌트 (백엔드 동기화 제거)
 // ============================================================================
 
 const ProcessFlowEditor: React.FC<ProcessFlowEditorProps> = ({
@@ -56,58 +54,43 @@ const ProcessFlowEditor: React.FC<ProcessFlowEditorProps> = ({
   initialEdges = [],
   onFlowChange,
   readOnly = false,
-  flowId, // 백엔드 동기화용 플로우 ID
   onDeleteSelected
 }) => {
-  // ✅ 공식 문서 방식: useState 사용
+  // ✅ Pure React Flow 상태 관리
   const [nodes, setNodes] = useState<AppNodeType[]>(initialNodes);
   const [edges, setEdges] = useState<AppEdgeType[]>(initialEdges);
-  
-  // 🔄 백엔드 동기화 API 
-  const { syncNodeChanges, syncEdgeChanges, syncViewportChange, createConnection } = useProcessFlowService();
 
-  // ✅ 공식 문서 방식: applyNodeChanges, applyEdgeChanges 사용
+  // 외부에서 전달받은 nodes/edges가 변경되면 내부 상태도 업데이트
+  useEffect(() => {
+    setNodes(initialNodes);
+  }, [initialNodes]);
+
+  useEffect(() => {
+    setEdges(initialEdges);
+  }, [initialEdges]);
+
+  // ✅ Pure React Flow: applyNodeChanges, applyEdgeChanges 사용
   const onNodesChange: OnNodesChange = useCallback(
-    async (changes) => {
+    (changes) => {
       const newNodes = applyNodeChanges(changes, nodes) as AppNodeType[];
       setNodes(newNodes);
       onFlowChange?.(newNodes, edges);
-      
-      // 🔄 백엔드에 실시간 동기화 (읽기 전용이 아닐 때만)
-      if (!readOnly && flowId && syncNodeChanges) {
-        try {
-          await syncNodeChanges(flowId, changes);
-        } catch (error) {
-          console.error('❌ 노드 변경사항 백엔드 동기화 실패:', error);
-        }
-      }
     },
-    [nodes, edges, onFlowChange, readOnly, flowId, syncNodeChanges]
+    [nodes, edges, onFlowChange]
   );
 
   const onEdgesChange: OnEdgesChange = useCallback(
-    async (changes) => {
+    (changes) => {
       const newEdges = applyEdgeChanges(changes, edges) as AppEdgeType[];
       setEdges(newEdges);
       onFlowChange?.(nodes, newEdges);
-      
-      // 🔄 백엔드에 실시간 동기화 (읽기 전용이 아닐 때만)
-      if (!readOnly && flowId && syncEdgeChanges) {
-        try {
-          await syncEdgeChanges(flowId, changes);
-        } catch (error) {
-          console.error('❌ 엣지 변경사항 백엔드 동기화 실패:', error);
-        }
-      }
     },
-    [nodes, edges, onFlowChange, readOnly, flowId, syncEdgeChanges]
+    [nodes, edges, onFlowChange]
   );
 
-  // ✅ 공식 문서 방식: addEdge 사용 + 백엔드 동기화
+  // ✅ Pure React Flow: addEdge 사용
   const onConnect: OnConnect = useCallback(
-    async (params: Connection) => {
-      if (!params.source || !params.target) return;
-      
+    (params: Connection) => {
       const newEdge: ProcessEdge = {
         id: `edge-${Date.now()}`,
         source: params.source,
@@ -122,50 +105,26 @@ const ProcessFlowEditor: React.FC<ProcessFlowEditorProps> = ({
       const newEdges = addEdge(newEdge, edges);
       setEdges(newEdges);
       onFlowChange?.(nodes, newEdges);
-      
-      // 🔄 백엔드에 연결 생성 동기화 (읽기 전용이 아닐 때만)
-      if (!readOnly && flowId && createConnection) {
-        try {
-          await createConnection(flowId, {
-            source: params.source,
-            target: params.target,
-            sourceHandle: params.sourceHandle || undefined,
-            targetHandle: params.targetHandle || undefined
-          });
-        } catch (error) {
-          console.error('❌ 연결 생성 백엔드 동기화 실패:', error);
-        }
-      }
     },
-    [edges, nodes, onFlowChange, readOnly, flowId, createConnection]
-  );
-  
-  // 🔄 뷰포트 변경 핸들러 (팬/줌 시 백엔드 동기화)
-  const onViewportChange = useCallback(
-    async (viewport: { x: number; y: number; zoom: number }) => {
-      // 🔄 백엔드에 뷰포트 상태 동기화 (읽기 전용이 아닐 때만)
-      if (!readOnly && flowId && syncViewportChange) {
-        try {
-          // 디바운스를 위해 setTimeout 사용 (성능 최적화)
-          setTimeout(async () => {
-            await syncViewportChange(flowId, viewport);
-          }, 500);
-        } catch (error) {
-          console.error('❌ 뷰포트 변경사항 백엔드 동기화 실패:', error);
-        }
-      }
-    },
-    [readOnly, flowId, syncViewportChange]
+    [edges, nodes, onFlowChange]
   );
 
-  // 외부에서 전달받은 nodes/edges가 변경되면 내부 상태도 업데이트
-  React.useEffect(() => {
-    setNodes(initialNodes);
-  }, [initialNodes]);
+  // 키보드 단축키 핸들러
+  const handleKeyDown = useCallback((event: KeyboardEvent) => {
+    if (readOnly) return;
+    
+    // Delete 키로 선택된 요소 삭제
+    if (event.key === 'Delete' && onDeleteSelected) {
+      onDeleteSelected();
+    }
+  }, [readOnly, onDeleteSelected]);
 
-  React.useEffect(() => {
-    setEdges(initialEdges);
-  }, [initialEdges]);
+  useEffect(() => {
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [handleKeyDown]);
 
   return (
     <div className="w-full h-full">
@@ -175,69 +134,76 @@ const ProcessFlowEditor: React.FC<ProcessFlowEditorProps> = ({
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
-        onViewportChange={onViewportChange}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         fitView
         attributionPosition="bottom-left"
         className="bg-[#0b0c0f]"
-        style={{ backgroundColor: '#0b0c0f' }}
+        // 상호작용 설정
+        nodesDraggable={!readOnly}
+        nodesConnectable={!readOnly}
+        elementsSelectable={true}
+        zoomOnScroll={true}
+        panOnScroll={false}
+        panOnDrag={true}
+        selectNodesOnDrag={false}
+        // 연결 설정
+        connectionMode={'loose' as any}
+        snapToGrid={true}
+        snapGrid={[15, 15]}
+        defaultViewport={{ x: 0, y: 0, zoom: 1 }}
+        minZoom={0.1}
+        maxZoom={2}
       >
-        <Background gap={16} size={0.5} />
-        <Controls />
-        <MiniMap
-          nodeStrokeColor={(n) => {
-            if (n.type === 'processNode') return '#1a192b';
-            return '#eee';
-          }}
-          nodeColor={(n) => {
-            if (n.selected) return '#ff0072';
-            return '#fff';
-          }}
+        {/* 배경 */}
+        <Background 
+          color="#334155" 
+          gap={16} 
+          variant={'dots' as any} 
         />
         
-        {/* ReactFlow Panel - 에디터 컨트롤 */}
-        {!readOnly && (
-          <Panel position="top-left" className="bg-[#1e293b] p-4 rounded-lg border border-[#334155] shadow-lg">
-            <div className="flex flex-col gap-2">
-              <h3 className="text-white text-sm font-semibold mb-2">에디터 도구</h3>
-              
-              {/* 노드 추가 버튼 */}
-              <button
-                onClick={() => {
-                  const newNode: ProcessNode = {
-                    id: `node-${Date.now()}`,
-                    type: 'processNode',
-                    position: { x: Math.random() * 300 + 50, y: Math.random() * 300 + 50 },
-                    data: {
-                      label: '새 공정',
-                      processType: 'process',
-                      description: '공정 설명',
-                    },
-                  };
-                  setNodes(prev => [...prev, newNode]);
-                  onFlowChange?.([...nodes, newNode], edges);
-                }}
-                className="px-3 py-2 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 transition-colors"
-              >
-                + 공정 노드
-              </button>
-              
-              {/* 선택 삭제 버튼 */}
-              <button
-                onClick={onDeleteSelected}
-                className="px-3 py-2 bg-red-600 text-white text-xs rounded hover:bg-red-700 transition-colors"
-              >
-                선택 삭제
-              </button>
-              
-              {/* 통계 정보 */}
-              <div className="text-xs text-gray-400 mt-1 pt-2 border-t border-gray-600">
-                노드: {nodes.length} | 엣지: {edges.length}
-              </div>
-            </div>
-          </Panel>
-        )}
+        {/* 컨트롤 */}
+        <Controls 
+          position="top-left"
+          showZoom={true}
+          showFitView={true}
+          showInteractive={true}
+        />
+        
+        {/* 미니맵 */}
+        <MiniMap 
+          position="bottom-right"
+          nodeColor="#3b82f6"
+          maskColor="rgb(0, 0, 0, 0.2)"
+          zoomable
+          pannable
+        />
+
+        {/* 상단 정보 패널 */}
+        <Panel position="top-center" className="bg-[#1e293b] text-white p-3 rounded border border-[#334155] shadow-lg">
+          <div className="flex items-center gap-4 text-sm">
+            <span>노드: {nodes.length}</span>
+            <span>엣지: {edges.length}</span>
+            <span className={`px-2 py-1 rounded text-xs ${
+              readOnly 
+                ? 'bg-gray-600 text-gray-200' 
+                : 'bg-blue-600 text-white'
+            }`}>
+              {readOnly ? '읽기 전용' : '편집 모드'}
+            </span>
+          </div>
+        </Panel>
+
+        {/* 하단 도움말 패널 */}
+        <Panel position="bottom-center" className="bg-[#1e293b] text-white p-2 rounded border border-[#334155] shadow-lg">
+          <div className="text-xs text-[#94a3b8]">
+            {readOnly ? (
+              '🔒 읽기 전용 모드 - 노드 선택 및 확대/축소만 가능합니다'
+            ) : (
+              '🎯 편집 모드 - 드래그로 노드 이동, 핸들 연결로 엣지 생성, Delete 키로 삭제'
+            )}
+          </div>
+        </Panel>
       </ReactFlow>
     </div>
   );
