@@ -2,7 +2,7 @@
 
 import { useAuthAPI, RegisterData } from '@/hooks/useAuthAPI';
 import { useAppNavigation } from '@/hooks/useNavigation';
-import { useAsyncOperationHelper } from '@/hooks/useAsyncOperation';
+import { useAsync } from '@/hooks';
 import LoginSignupCard from '@/organisms/LoginSignupCard';
 
 // ============================================================================
@@ -12,14 +12,14 @@ import LoginSignupCard from '@/organisms/LoginSignupCard';
 export default function RegisterPage() {
   const { register } = useAuthAPI();
   const { goToLogin } = useAppNavigation();
-  const { isLoading, error, success, executeAsync } = useAsyncOperationHelper();
+  const { isLoading, error, success, execute } = useAsync();
   
   // ============================================================================
   // 🚀 회원가입 제출
   // ============================================================================
   
   const handleSubmit = async (data: RegisterData) => {
-    const result = await executeAsync(
+    const result = await execute(
       async () => {
         const response = await register(data);
         
@@ -30,7 +30,7 @@ export default function RegisterPage() {
         
         return response;
       },
-      '회원가입이 완료되었습니다!'
+      { successMessage: '회원가입이 완료되었습니다!' }
     );
   };
 
