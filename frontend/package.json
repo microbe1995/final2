@@ -2,10 +2,10 @@
   "name": "cbam-frontend",
   "version": "0.1.0",
   "private": true,
-  "packageManager": "pnpm@10.x",
+  "packageManager": "pnpm@8.x",
   "engines": {
     "node": ">=18.0.0",
-    "pnpm": ">=10.0.0"
+    "pnpm": ">=8.0.0"
   },
   "scripts": {
     "dev": "next dev",
