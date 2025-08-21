@@ -8,8 +8,7 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
-lib64/
+
 parts/
 sdist/
 var/
@@ -18,7 +17,8 @@ wheels/
 .installed.cfg
 *.egg
 
-# Virtual Environment
+# Virtual Environmenㅅ
+
 venv/
 env/
 ENV/
