@@ -31,7 +31,7 @@ export default function CBAMSearchPage() {
     searchMaterials,
     searchPrecursors,
   } = useDataSearchAPI();
-fr
+
   // 검색 상태
   const [isSearching, setIsSearching] = useState(false);
   const [searchResults, setSearchResults] = useState<{
