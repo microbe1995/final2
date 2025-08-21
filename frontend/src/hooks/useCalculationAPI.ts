@@ -1,4 +1,5 @@
 import { useCallback } from 'react';
+import axiosClient, { apiEndpoints } from '@/lib/axiosClient';
 
 // ============================================================================
 // 🧮 Calculation API Types
@@ -80,23 +81,16 @@ export interface CalculationStatsResponse {
 }
 
 // ============================================================================
-// 🚀 Calculation API Hook (Mock Implementation)
+// 🚀 Calculation API Hook (실제 API 호출)
 // ============================================================================
 
 export const useCalculationAPI = () => {
-  // Mock implementations for now
+  // 🔥 연료 배출량 계산 (실제 API 호출)
   const calculateFuelEmission = useCallback(
     async (data: FuelCalculationRequest): Promise<FuelCalculationResponse | null> => {
       try {
-        // Mock calculation
-        const emission = data.fuel_amount * 2.5;
-        return {
-          emission,
-          fuel_name: data.fuel_name,
-          emission_factor: 2.5,
-          net_calorific_value: 43.0,
-          calculation_formula: "연료량(톤) × 순발열량(TJ/Gg) × 배출계수(tCO2/TJ) × 1e-3"
-        };
+        const response = await axiosClient.post(apiEndpoints.calculation.fuel, data);
+        return response.data;
       } catch (error) {
         console.error('Error calculating fuel emission:', error);
         return null;
@@ -105,17 +99,12 @@ export const useCalculationAPI = () => {
     []
   );
 
+  // 🧱 원료 배출량 계산 (실제 API 호출)
   const calculateMaterialEmission = useCallback(
     async (data: MaterialCalculationRequest): Promise<MaterialCalculationResponse | null> => {
       try {
-        // Mock calculation
-        const emission = data.material_amount * 1.8;
-        return {
-          emission,
-          material_name: data.material_name,
-          emission_factor: 1.8,
-          calculation_formula: "원료량(톤) × 배출계수(tCO2/톤)"
-        };
+        const response = await axiosClient.post(apiEndpoints.calculation.material, data);
+        return response.data;
       } catch (error) {
         console.error('Error calculating material emission:', error);
         return null;
@@ -124,21 +113,12 @@ export const useCalculationAPI = () => {
     []
   );
 
+  // 🔬 전구물질 목록 조회 (실제 API 호출)
   const getPrecursorList = useCallback(
     async (userId: string): Promise<PrecursorListResponse | null> => {
       try {
-        // Mock data
-        return {
-          precursors: [
-            {
-              user_id: userId,
-              precursor_name: "석회석",
-              emission_factor: 0.44,
-              carbon_content: 12.0
-            }
-          ],
-          total_count: 1
-        };
+        const response = await axiosClient.get(`${apiEndpoints.calculation.precursors}/${userId}`);
+        return response.data;
       } catch (error) {
         console.error('Error fetching precursor list:', error);
         return null;
@@ -147,14 +127,14 @@ export const useCalculationAPI = () => {
     []
   );
 
+  // 🔬 전구물질 배치 저장 (실제 API 호출)
   const savePrecursorBatch = useCallback(
     async (precursors: PrecursorData[]): Promise<PrecursorSaveResponse | null> => {
       try {
-        // Mock save
-        return {
-          saved_count: precursors.length,
-          message: `${precursors.length}개의 전구물질이 저장되었습니다.`
-        };
+        const response = await axiosClient.post(apiEndpoints.calculation.precursorsBatch, {
+          precursors
+        });
+        return response.data;
       } catch (error) {
         console.error('Error saving precursor batch:', error);
         return null;
@@ -163,24 +143,12 @@ export const useCalculationAPI = () => {
     []
   );
 
+  // 🎯 CBAM 종합 계산 (실제 API 호출)
   const calculateCBAM = useCallback(
     async (data: CBAMCalculationRequest): Promise<CBAMCalculationResponse | null> => {
       try {
-        const totalEmissions = data.fuel_emissions + data.material_emissions + data.precursor_emissions;
-        const cbamRate = 75.0; // EUR/tCO2eq
-        const cbamCost = totalEmissions * cbamRate;
-
-        return {
-          product_name: data.product_name,
-          emission: totalEmissions,
-          cbam_cost: cbamCost,
-          cbam_rate: cbamRate,
-          breakdown: {
-            fuel_emissions: data.fuel_emissions,
-            material_emissions: data.material_emissions,
-            precursor_emissions: data.precursor_emissions
-          }
-        };
+        const response = await axiosClient.post(apiEndpoints.calculation.cbam, data);
+        return response.data;
       } catch (error) {
         console.error('Error calculating CBAM:', error);
         return null;
@@ -189,28 +157,12 @@ export const useCalculationAPI = () => {
     []
   );
 
+  // 📊 계산 통계 조회 (실제 API 호출)
   const getCalculationStats = useCallback(
     async (): Promise<CalculationStatsResponse | null> => {
       try {
-        // Mock stats
-        return {
-          fuel_calculations: 12,
-          material_calculations: 8,
-          cbam_calculations: 5,
-          total_calculations: 25,
-          recent_calculations: [
-            {
-              type: "연료",
-              timestamp: new Date().toISOString(),
-              emission: 125.5
-            },
-            {
-              type: "원료",
-              timestamp: new Date(Date.now() - 3600000).toISOString(),
-              emission: 89.2
-            }
-          ]
-        };
+        const response = await axiosClient.get(apiEndpoints.calculation.stats);
+        return response.data;
       } catch (error) {
         console.error('Error fetching calculation stats:', error);
         return null;
@@ -219,11 +171,16 @@ export const useCalculationAPI = () => {
     []
   );
 
+  // 📈 계산 이력 조회 (실제 API 호출)
   const getCalculationHistory = useCallback(
     async (type?: string, limit?: number): Promise<any[] | null> => {
       try {
-        // Mock history
-        return [];
+        const params: any = {};
+        if (type) params.type = type;
+        if (limit) params.limit = limit;
+        
+        const response = await axiosClient.get(apiEndpoints.calculation.history, { params });
+        return response.data;
       } catch (error) {
         console.error('Error fetching calculation history:', error);
         return null;

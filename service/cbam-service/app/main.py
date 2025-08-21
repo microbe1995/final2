@@ -10,10 +10,12 @@ ReactFlow 기반 HTTP API를 제공하는 FastAPI 애플리케이션입니다.
 
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from loguru import logger
 import time
 import os
+from dotenv import load_dotenv
 
 # 라우터 임포트 (ReactFlow 기반 라우터들)
 from app.domain.node.node_controller import node_router
@@ -28,6 +30,10 @@ from app.domain.datasearch import datasearch_router
 # ============================================================================
 # 🔧 애플리케이션 설정
 # ============================================================================
+
+# 환경 변수 로드 (.env는 로컬에서만 사용)
+if not os.getenv("RAILWAY_ENVIRONMENT"):
+    load_dotenv()
 
 # 환경 변수 설정
 APP_NAME = os.getenv("APP_NAME", "Cal_boundary Service")

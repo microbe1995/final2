@@ -108,6 +108,46 @@ docker logs greensteel-gateway-1
 
 ## 환경 변수
 
-- `PORT`: 서비스 포트 (기본값: 8080)
-- `AUTH_SERVICE_URL`: 인증 서비스 URL
-- `USER_SERVICE_URL`: 사용자 서비스 URL 
+### Railway 프로덕션 환경 설정
+
+```bash
+# 서비스 URL 설정
+AUTH_SERVICE_URL=https://auth-service-production-d30b.up.railway.app
+CAL_BOUNDARY_URL=https://lcafinal-production.up.railway.app
+
+# CORS 설정 (허용할 오리진들)
+CORS_URL=https://lca-final.vercel.app
+
+# 서버 설정
+PORT=8080
+```
+
+### 로컬 개발 환경 설정
+
+```bash
+# 서비스 URL 설정
+AUTH_SERVICE_URL=http://localhost:8000
+CAL_BOUNDARY_URL=http://localhost:8001
+
+# CORS 설정
+CORS_URL=http://localhost:3000
+
+# 서버 설정
+PORT=8080
+```
+
+### 추가 CORS 설정 (선택사항)
+
+```bash
+CORS_ALLOW_CREDENTIALS=true
+CORS_ALLOW_METHODS=GET,POST,PUT,DELETE,OPTIONS,PATCH
+CORS_ALLOW_HEADERS=*
+```
+
+## 서비스 라우팅 구조
+
+Gateway는 다음과 같은 구조로 요청을 라우팅합니다:
+
+- **Auth Service**: `/api/v1/auth/{path}` → `AUTH_SERVICE_URL/api/v1/{path}`
+- **Cal_boundary Service**: `/api/v1/boundary/{path}` → `CAL_BOUNDARY_URL/api/{path}`
+- **Countries API**: `/api/v1/countries/{path}` → `CAL_BOUNDARY_URL/api/{path}` (boundary 서비스에서 처리) 

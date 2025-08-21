@@ -186,6 +186,16 @@ export const apiEndpoints = {
     calculations: '/api/cbam/calculations',
     templates: '/api/cbam/templates',
   },
+  // Calculation Service (Gateway를 통해 boundary 서비스로)
+  calculation: {
+    fuel: '/api/v1/boundary/calculation/fuel',
+    material: '/api/v1/boundary/calculation/material',
+    cbam: '/api/v1/boundary/calculation/cbam',
+    precursors: '/api/v1/boundary/precursors',
+    precursorsBatch: '/api/v1/boundary/precursors/batch',
+    stats: '/api/v1/boundary/calculation/stats',
+    history: '/api/v1/boundary/calculation/history',
+  },
   // Data Upload (Gateway를 통해)
   upload: {
     data: '/api/datagather/upload',
