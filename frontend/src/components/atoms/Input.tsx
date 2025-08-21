@@ -1,11 +1,7 @@
-import React from 'react';
+import React, { forwardRef } from 'react';
+import { cn } from '@/lib/utils';
 
-
-// ============================================================================
-// 🧩 Input Atom Component
-// ============================================================================
-
-export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
   error?: string;
   helperText?: string;
@@ -13,61 +9,57 @@ export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> 
   rightIcon?: React.ReactNode;
 }
 
-const Input = React.forwardRef<HTMLInputElement, InputProps>(
-  ({ className, label, error, helperText, leftIcon, rightIcon, id, ...props }, ref) => {
+const Input = forwardRef<HTMLInputElement, InputProps>(
+  (
+    { label, error, helperText, leftIcon, rightIcon, className, id, ...props },
+    ref
+  ) => {
     const inputId = id || `input-${Math.random().toString(36).substr(2, 9)}`;
-    
+
     return (
-      <div className="w-full">
+      <div className='w-full'>
         {label && (
-          <label htmlFor={inputId} className="block text-[14px] font-medium text-white mb-2 leading-[1.5]">
+          <label
+            htmlFor={inputId}
+            className='block text-sm font-medium text-ecotrace-text mb-2'
+          >
             {label}
           </label>
         )}
-        
-        <div className="relative">
+
+        <div className='relative'>
           {leftIcon && (
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <div className="h-5 w-5 text-[#94a3b8]">
-                {leftIcon}
-              </div>
+            <div className='absolute left-3 top-1/2 transform -translate-y-1/2 text-ecotrace-textSecondary'>
+              {leftIcon}
             </div>
           )}
-          
+
           <input
+            ref={ref}
             id={inputId}
-            className={[
-              'block w-full rounded-[12px] border border-[#334155] px-3 py-2 text-white placeholder-[#94a3b8]',
-              'bg-[#1e293b] focus:bg-[#1e293b]',
-              'focus:border-[#60a5fa] focus:outline-none focus:ring-2 focus:ring-[#60a5fa]/20',
-              'disabled:bg-[#1e293b] disabled:cursor-not-allowed',
-              'transition-colors duration-[160ms]',
+            className={cn(
+              'w-full px-4 py-3 bg-ecotrace-surface border border-ecotrace-border rounded-lg text-ecotrace-text placeholder-ecotrace-textSecondary transition-colors duration-200',
+              'focus:outline-none focus:ring-2 focus:ring-ecotrace-primary focus:border-ecotrace-primary',
+              'disabled:opacity-50 disabled:cursor-not-allowed',
+              error && 'border-red-500 focus:ring-red-500 focus:border-red-500',
               leftIcon && 'pl-10',
               rightIcon && 'pr-10',
-              error && 'border-[#f87171] focus:border-[#f87171] focus:ring-[#f87171]/20',
               className
-            ].filter(Boolean).join(' ')}
-            ref={ref}
+            )}
             {...props}
           />
-          
+
           {rightIcon && (
-            <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-              <div className="h-5 w-5 text-[#94a3b8]">
-                {rightIcon}
-              </div>
+            <div className='absolute right-3 top-1/2 transform -translate-y-1/2 text-ecotrace-textSecondary'>
+              {rightIcon}
             </div>
           )}
         </div>
-        
-        {error && (
-          <p className="mt-1 text-[14px] text-[#f87171] leading-[1.5]">
-            {error}
-          </p>
-        )}
-        
+
+        {error && <p className='mt-1 text-sm text-red-500'>{error}</p>}
+
         {helperText && !error && (
-          <p className="mt-1 text-[14px] text-[#94a3b8] leading-[1.5]">
+          <p className='mt-1 text-sm text-ecotrace-textSecondary'>
             {helperText}
           </p>
         )}

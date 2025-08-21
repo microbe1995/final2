@@ -7,74 +7,38 @@ interface OutputNodeProps {
   data: {
     label: string;
     description?: string;
+    variant?: 'default' | 'primary' | 'success' | 'warning' | 'danger';
     [key: string]: any;
   };
   isConnectable?: boolean;
-  targetPosition?: Position;
-  variant?: 'default' | 'primary' | 'success' | 'warning' | 'danger';
-  size?: 'sm' | 'md' | 'lg';
 }
 
-// 🎨 스타일 변형
 const variantStyles = {
-  default: 'bg-gradient-to-r from-purple-500 to-purple-600 text-white',
-  primary: 'bg-gradient-to-r from-blue-500 to-blue-600 text-white',
-  success: 'bg-gradient-to-r from-green-500 to-green-600 text-white',
-  warning: 'bg-gradient-to-r from-orange-500 to-orange-600 text-white',
-  danger: 'bg-gradient-to-r from-red-500 to-red-600 text-white',
+  default: 'bg-purple-50 border-purple-300 text-purple-800',
+  primary: 'bg-purple-100 border-purple-500 text-purple-900',
+  success: 'bg-green-50 border-green-300 text-green-800',
+  warning: 'bg-yellow-50 border-yellow-300 text-yellow-800',
+  danger: 'bg-red-50 border-red-300 text-red-800',
 };
 
-const sizeStyles = {
-  sm: 'px-3 py-2 min-w-[100px] text-xs',
-  md: 'px-4 py-3 min-w-[120px] text-sm',
-  lg: 'px-6 py-4 min-w-[160px] text-base',
-};
-
-function OutputNode({ 
-  data, 
-  isConnectable = true,
-  targetPosition = Position.Top,
-  variant = 'default',
-  size = 'md'
-}: OutputNodeProps) {
-  
-  // data에서 props 추출
-  const finalTargetPosition = data.targetPosition || targetPosition;
-  const finalVariant = data.variant || variant;
-  const finalSize = data.size || size;
-
-  // 🎨 동적 스타일 생성
-  const nodeClasses = `
-    ${variantStyles[finalVariant as keyof typeof variantStyles]} 
-    ${sizeStyles[finalSize as keyof typeof sizeStyles]}
-    rounded-full shadow-lg relative hover:shadow-xl transition-all duration-200
-    hover:scale-105 cursor-pointer font-semibold
-    flex items-center justify-center
-  `.trim();
-
-  // 🎯 핸들 스타일
-  const handleStyle = "!w-4 !h-4 !bg-white !border-2 !border-current transition-all hover:!scale-110";
+function OutputNode({ data, isConnectable = true }: OutputNodeProps) {
+  const variant = data.variant || 'default';
+  const variantStyle = variantStyles[variant as keyof typeof variantStyles];
 
   return (
-    <div className={nodeClasses}>
-      {/* 🎯 입력 핸들 */}
+    <div
+      className={`p-3 rounded-lg border-2 ${variantStyle} min-w-[120px] text-center`}
+    >
       <Handle
-        type="target"
-        position={finalTargetPosition}
+        type='target'
+        position={Position.Left}
         isConnectable={isConnectable}
-        className={handleStyle}
+        className='!w-3 !h-3 !bg-purple-500 !border-2 !border-white hover:!bg-purple-600'
       />
-
-      {/* 📍 출력 표시 아이콘 */}
-      <div className="flex items-center gap-2">
-        <div className="text-center">
-          <div>{data.label}</div>
-          {data.description && (
-            <div className="text-xs opacity-80">{data.description}</div>
-          )}
-        </div>
-        <span className="text-lg">📤</span>
-      </div>
+      <div className='font-semibold text-sm mb-1'>📤 {data.label}</div>
+      {data.description && (
+        <div className='text-xs opacity-80'>{data.description}</div>
+      )}
     </div>
   );
 }

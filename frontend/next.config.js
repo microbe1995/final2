@@ -2,99 +2,146 @@ const withPWA = require('next-pwa')({
   dest: 'public',
   register: true,
   skipWaiting: true,
-  disable: process.env.NODE_ENV === 'development', // 개발 환경에서만 비활성화
+  disable: process.env.NODE_ENV === 'development',
+  buildExcludes: [
+    /middleware-manifest\.json$/,
+    /app-build-manifest\.json$/,        // PWA에서 문제되는 파일 제외
+    /_buildManifest\.js$/,
+    /_ssgManifest\.js$/
+  ],
+  publicExcludes: [
+    '!workbox-*.js',
+    '!sw.js'
+  ],
   runtimeCaching: [
     {
-      urlPattern: /^https?.*/,
+      urlPattern: /^https:\/\/gateway-production-da31\.up\.railway\.app/,
       handler: 'NetworkFirst',
       options: {
-        cacheName: 'offlineCache',
+        cacheName: 'gateway-api-cache-v2',  // 캐시 버전 업데이트
+        expiration: {
+          maxEntries: 100,
+          maxAgeSeconds: 60 * 60 * 24, // 24시간
+        },
+        cacheableResponse: {
+          statuses: [0, 200],
+        },
+      },
+    },
+    {
+      urlPattern: /^https:\/\/www\.greensteel\.site/,
+      handler: 'NetworkFirst',
+      options: {
+        cacheName: 'greensteel-api-cache-v2',  // 캐시 버전 업데이트
+        expiration: {
+          maxEntries: 100,
+          maxAgeSeconds: 60 * 60 * 24, // 24시간
+        },
+        cacheableResponse: {
+          statuses: [0, 200],
+        },
+      },
+    },
+    {
+      urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp|avif)$/,
+      handler: 'CacheFirst',
+      options: {
+        cacheName: 'image-cache-v2',
         expiration: {
           maxEntries: 200,
+          maxAgeSeconds: 60 * 60 * 24 * 30, // 30일
+        },
+      },
+    },
+    {
+      urlPattern: /\.(?:js|css)$/,
+      handler: 'StaleWhileRevalidate',
+      options: {
+        cacheName: 'static-resources-v2',
+        expiration: {
+          maxEntries: 100,
+          maxAgeSeconds: 60 * 60 * 24 * 7, // 7일
         },
       },
     },
   ],
-})
+});
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  env: {
-    // API Gateway 설정 - 실제 사용하는 /api/v1 경로로 통일
-    GATEWAY_URL: process.env.GATEWAY_URL || 'http://localhost:8080',
-    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080',
-    NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080/api/v1',
-    
-    // Railway 배포 환경 설정 - 실제 사용하는 /api/v1 경로로 통일
-    NEXT_PUBLIC_RAILWAY_API_URL: process.env.NEXT_PUBLIC_RAILWAY_API_URL || 'http://localhost:8080',
-    NEXT_PUBLIC_RAILWAY_API_BASE_URL: process.env.NEXT_PUBLIC_RAILWAY_API_BASE_URL || 'http://localhost:8080/api/v1',
-    
-    // Cal_boundary 서비스 설정
-    NEXT_PUBLIC_CAL_BOUNDARY_API_URL: process.env.NEXT_PUBLIC_CAL_BOUNDARY_API_URL || 'http://localhost:8001',
-    NEXT_PUBLIC_CAL_BOUNDARY_API_BASE_URL: process.env.NEXT_PUBLIC_CAL_BOUNDARY_API_BASE_URL || 'http://localhost:8001/api/v1',
-    
-    // 환경 구분 (NODE_ENV 제거 - Vercel에서 자동 설정)
-    IS_RAILWAY_DEPLOYED: process.env.IS_RAILWAY_DEPLOYED || 'false'
+  assetPrefix:
+    process.env.NODE_ENV === 'production'
+      ? process.env.NEXT_PUBLIC_ASSET_PREFIX || ''
+      : '',
+  basePath: '',
+  trailingSlash: false,
+  poweredByHeader: false,
+  compress: true,
+  images: {
+    domains: ['greensteel.site'],
+    formats: ['image/webp', 'image/avif'],
+    dangerouslyAllowSVG: true,
+    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },
-  
-  // CORS 설정 (개발용)
   async headers() {
     return [
       {
-        source: '/api/:path*',
+        source: '/(.*)',
         headers: [
-          { key: 'Access-Control-Allow-Origin', value: '*' },
-          { key: 'Access-Control-Allow-Methods', value: 'GET, POST, PUT, DELETE, OPTIONS' },
-          { key: 'Access-Control-Allow-Headers', value: 'Content-Type, Authorization' },
+          {
+            key: 'Content-Security-Policy',
+            value: `default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com https://dapi.kakao.com https://t1.daumcdn.net https://greensteel.site; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: https://www.google-analytics.com https://greensteel.site; connect-src 'self' ${process.env.NEXT_PUBLIC_GATEWAY_URL || 'https://api.greensteel.site'} http://localhost:8080 http://localhost:8083 https://www.google-analytics.com https://analytics.google.com https://dapi.kakao.com https://greensteel.site; font-src 'self' data:; frame-src 'self' https://greensteel.site https://postcode.map.daum.net;`,
+          },
+          {
+            key: 'X-Frame-Options',
+            value: 'DENY',
+          },
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff',
+          },
+          {
+            key: 'Referrer-Policy',
+            value: 'strict-origin-when-cross-origin',
+          },
+          {
+            key: 'Permissions-Policy',
+            value: 'camera=(), microphone=(), geolocation=()',
+          },
         ],
       },
-    ]
+    ];
   },
-  
-  // 이미지 도메인 설정
-  images: {
-    domains: ['localhost', 'lca-final.vercel.app'],
-    unoptimized: false,
+  async rewrites() {
+    const GATEWAY_URL = process.env.NEXT_PUBLIC_GATEWAY_URL || 'https://gateway-production-da31.up.railway.app';
+    
+    return [
+      {
+        source: '/sitemap.xml',
+        destination: '/api/sitemap',
+      },
+      // 지리 정보 API (새 /geo 프리픽스)
+      {
+        source: '/geo/:path*',
+        destination: `${GATEWAY_URL}/geo/:path*`,
+      },
+      // 인증 관련 API
+      {
+        source: '/auth/:path*',
+        destination: `${GATEWAY_URL}/auth/:path*`,
+      },
+      // 기존 API 요청들 (호환성 유지)
+      {
+        source: '/api/:path*',
+        destination: `${GATEWAY_URL}/api/:path*`,
+      },
+      // Gateway 직접 접근
+      {
+        source: '/gateway/:path*',
+        destination: `${GATEWAY_URL}/:path*`,
+      },
+    ];
   },
+};
 
-  // Vercel Analytics 비활성화
-  experimental: {
-    instrumentationHook: false
-  },
-  
-  // 빌드 시 정적 페이지 생성 문제 해결
-  trailingSlash: false,
-  
-  // Vercel 배포 최적화
-  swcMinify: true,
-  
-  // Vercel 자동 감지 최적화
-  distDir: '.next',
-  
-  // 빌드 최적화
-  compress: true,
-  
-  // webpack 설정 - web-worker 폴리필 추가
-  webpack: (config, { isServer }) => {
-    if (!isServer) {
-      config.resolve.fallback = {
-        ...config.resolve.fallback,
-        fs: false,
-        net: false,
-        tls: false,
-        crypto: false,
-        stream: false,
-        url: false,
-        zlib: false,
-        http: false,
-        https: false,
-        assert: false,
-        os: false,
-        path: false,
-      };
-    }
-    return config;
-  },
-}
-
-module.exports = withPWA(nextConfig) 
+module.exports = withPWA(nextConfig);

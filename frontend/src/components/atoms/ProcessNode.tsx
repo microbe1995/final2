@@ -11,12 +11,12 @@ interface ProcessNodeProps {
   };
   isConnectable?: boolean;
   // 🎯 유연한 핸들 설정
-  targetPosition?: Position | Position[];  // 입력 핸들 위치(들)
-  sourcePosition?: Position | Position[];  // 출력 핸들 위치(들)
+  targetPosition?: Position | Position[]; // 입력 핸들 위치(들)
+  sourcePosition?: Position | Position[]; // 출력 핸들 위치(들)
   // 🎨 스타일 커스터마이징
   variant?: 'default' | 'primary' | 'success' | 'warning' | 'danger';
   size?: 'sm' | 'md' | 'lg';
-  showHandles?: boolean;  // 핸들 표시 여부
+  showHandles?: boolean; // 핸들 표시 여부
 }
 
 // 🎨 스타일 변형
@@ -34,23 +34,29 @@ const sizeStyles = {
   lg: 'px-6 py-4 min-w-[160px] text-base',
 };
 
-function ProcessNode({ 
-  data, 
+function ProcessNode({
+  data,
   isConnectable = true,
   targetPosition,
   sourcePosition,
   variant,
   size,
-  showHandles
+  showHandles,
 }: ProcessNodeProps) {
-  
   // data에서 props 추출 (React Flow 패턴)
-  const finalTargetPosition = targetPosition || data.targetPosition || Position.Top;
-  const finalSourcePosition = sourcePosition || data.sourcePosition || Position.Bottom;
+  const finalTargetPosition =
+    targetPosition || data.targetPosition || Position.Top;
+  const finalSourcePosition =
+    sourcePosition || data.sourcePosition || Position.Bottom;
   const finalVariant = variant || data.variant || 'default';
   const finalSize = size || data.size || 'md';
-  const finalShowHandles = showHandles !== undefined ? showHandles : (data.showHandles !== undefined ? data.showHandles : true);
-  
+  const finalShowHandles =
+    showHandles !== undefined
+      ? showHandles
+      : data.showHandles !== undefined
+        ? data.showHandles
+        : true;
+
   // 🔧 핸들 위치를 배열로 정규화
   const normalizePositions = (pos: Position | Position[]): Position[] => {
     return Array.isArray(pos) ? pos : [pos];
@@ -69,54 +75,65 @@ function ProcessNode({
 
   // 🎯 핸들 스타일 (variant에 따라 색상 변경)
   const getHandleStyle = (type: 'source' | 'target') => {
-    const baseStyle = "!w-3 !h-3 !border-2 !border-white transition-colors";
-    
+    const baseStyle = '!w-3 !h-3 !border-2 !border-white transition-colors';
+
     switch (finalVariant) {
-      case 'primary': return `${baseStyle} !bg-blue-600 hover:!bg-blue-700`;
-      case 'success': return `${baseStyle} !bg-green-600 hover:!bg-green-700`;
-      case 'warning': return `${baseStyle} !bg-yellow-600 hover:!bg-yellow-700`;
-      case 'danger': return `${baseStyle} !bg-red-600 hover:!bg-red-700`;
-      default: return `${baseStyle} !bg-gray-600 hover:!bg-gray-700`;
+      case 'primary':
+        return `${baseStyle} !bg-blue-600 hover:!bg-blue-700`;
+      case 'success':
+        return `${baseStyle} !bg-green-600 hover:!bg-green-700`;
+      case 'warning':
+        return `${baseStyle} !bg-yellow-600 hover:!bg-yellow-700`;
+      case 'danger':
+        return `${baseStyle} !bg-red-600 hover:!bg-red-700`;
+      default:
+        return `${baseStyle} !bg-gray-600 hover:!bg-gray-700`;
     }
   };
 
   return (
     <div className={nodeClasses}>
       {/* 🎯 Target 핸들들 렌더링 */}
-      {finalShowHandles && targetPositions.map((position, index) => (
-        <Handle
-          key={`target-${position}-${index}`}
-          type="target"
-          position={position}
-          isConnectable={isConnectable}
-          className={getHandleStyle('target')}
-          id={targetPositions.length > 1 ? `target-${position}` : undefined}
-        />
-      ))}
+      {finalShowHandles &&
+        targetPositions.map((position, index) => (
+          <Handle
+            key={`target-${position}-${index}`}
+            type='target'
+            position={position}
+            isConnectable={isConnectable}
+            className={getHandleStyle('target')}
+            id={targetPositions.length > 1 ? `target-${position}` : undefined}
+          />
+        ))}
 
       {/* 🎯 노드 내용 */}
-      <div className="text-center">
-        <div className={`font-semibold mb-1 ${finalSize === 'lg' ? 'text-lg' : finalSize === 'sm' ? 'text-xs' : 'text-sm'}`}>
+      <div className='text-center'>
+        <div
+          className={`font-semibold mb-1 ${finalSize === 'lg' ? 'text-lg' : finalSize === 'sm' ? 'text-xs' : 'text-sm'}`}
+        >
           {data.label}
         </div>
         {data.description && (
-          <div className={`text-opacity-70 ${finalSize === 'lg' ? 'text-sm' : 'text-xs'}`}>
+          <div
+            className={`text-opacity-70 ${finalSize === 'lg' ? 'text-sm' : 'text-xs'}`}
+          >
             {data.description}
           </div>
         )}
       </div>
 
       {/* 🎯 Source 핸들들 렌더링 */}
-      {finalShowHandles && sourcePositions.map((position, index) => (
-        <Handle
-          key={`source-${position}-${index}`}
-          type="source"
-          position={position}
-          isConnectable={isConnectable}
-          className={getHandleStyle('source')}
-          id={sourcePositions.length > 1 ? `source-${position}` : undefined}
-        />
-      ))}
+      {finalShowHandles &&
+        sourcePositions.map((position, index) => (
+          <Handle
+            key={`source-${position}-${index}`}
+            type='source'
+            position={position}
+            isConnectable={isConnectable}
+            className={getHandleStyle('source')}
+            id={sourcePositions.length > 1 ? `source-${position}` : undefined}
+          />
+        ))}
     </div>
   );
 }

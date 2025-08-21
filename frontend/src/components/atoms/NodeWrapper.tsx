@@ -4,42 +4,35 @@ import React from 'react';
 
 interface NodeWrapperProps {
   children: React.ReactNode;
-  bottom?: number;
   top?: number;
+  bottom?: number;
   left?: number;
   right?: number;
   width?: number;
   height?: number;
 }
 
-const NodeWrapper: React.FC<NodeWrapperProps> = ({ 
-  children, 
-  bottom, 
-  top, 
-  left, 
-  right, 
-  width, 
-  height 
+const NodeWrapper: React.FC<NodeWrapperProps> = ({
+  children,
+  top,
+  bottom,
+  left,
+  right,
+  width,
+  height,
 }) => {
-  const toPx = (value?: number) => (value !== undefined ? `${value}px` : undefined);
+  const style: React.CSSProperties = {
+    position: 'absolute',
+    top: top !== undefined ? top : 'auto',
+    bottom: bottom !== undefined ? bottom : 'auto',
+    left: left !== undefined ? left : 'auto',
+    right: right !== undefined ? right : 'auto',
+    width: width !== undefined ? width : 'auto',
+    height: height !== undefined ? height : 'auto',
+    zIndex: 1000,
+  };
 
-  return (
-    <div
-      className="react-flow__node-annotation"
-      style={{
-        position: 'absolute',
-        fontSize: '12px',
-        bottom: toPx(bottom),
-        left: toPx(left),
-        width: toPx(width),
-        height: toPx(height),
-        top: toPx(top),
-        right: toPx(right),
-      }}
-    >
-      {children}
-    </div>
-  );
+  return <div style={style}>{children}</div>;
 };
 
 export default NodeWrapper;

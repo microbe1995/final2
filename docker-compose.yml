@@ -1,10 +1,10 @@
-name: greensteel
+name: cbam
 
 services:
   # API Gateway 서비스
   gateway:
     build: ./gateway
-    container_name: greensteel-gateway
+    container_name: cbam-gateway
     ports:
       - "8080:8080"
     environment:
@@ -16,13 +16,13 @@ services:
       - auth-service
       - cal-boundary
     networks:
-      - greensteel-network
+      - cbam-network
     restart: unless-stopped
 
   # PostgreSQL 데이터베이스
   postgres:
     image: postgres:15-alpine
-    container_name: greensteel-postgres
+    container_name: cbam-postgres
     ports:
       - "5432:5432"
     environment:
@@ -32,17 +32,17 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
-      - greensteel-network
+      - cbam-network
     restart: unless-stopped
 
   # 인증 서비스
   auth-service:
     build: ./service/auth-service
-    container_name: greensteel-auth-service
+    container_name: cbam-auth-service
     ports:
-      - "8000:8000"
+      - "8000:8001"
     environment:
-      - PORT=8000
+      - PORT=8001
       # 로컬 개발용 PostgreSQL 설정
       - DB_HOST=postgres
       - DB_PORT=5432
@@ -54,13 +54,13 @@ services:
     depends_on:
       - postgres
     networks:
-      - greensteel-network
+      - cbam-network
     restart: unless-stopped
 
   # Cal_boundary 서비스 (실제 폴더명에 맞춤)
   cal-boundary:
-    build: ./service/Cal_boundary
-    container_name: greensteel-cal-boundary
+    build: ./service/boundary-service
+    container_name: cbam-cal-boundary
     ports:
       - "8001:8001"
     environment:
@@ -70,13 +70,13 @@ services:
     depends_on:
       - postgres
     networks:
-      - greensteel-network
+      - cbam-network
     restart: unless-stopped
 
   # Frontend 서비스 (개발용)
   frontend:
     build: ./frontend
-    container_name: greensteel-frontend
+    container_name: cbam-frontend
     ports:
       - "3000:3000"
     environment:
@@ -87,14 +87,14 @@ services:
       - gateway
       - cal-boundary
     networks:
-      - greensteel-network
+      - cbam-network
     restart: unless-stopped
     volumes:
       - ./frontend:/app
       - /app/node_modules
 
 networks:
-  greensteel-network:
+  cbam-network:
     driver: bridge
     ipam:
       config:

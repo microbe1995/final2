@@ -1,94 +1,58 @@
-// ============================================================================
-// 📦 필요한 모듈 import
-// ============================================================================
-
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
+import { Inter } from 'next/font/google';
+import Script from 'next/script';
 import './globals.css';
-import AppTopNavigation from '@/components/organisms/AppTopNavigation';
+import PWAInstallBanner from '@/components/PWAInstallBanner';
+import OfflineIndicator from '@/components/OfflineIndicator';
+import PWAServiceWorker from '@/components/PWAServiceWorker';
 
-// ============================================================================
-// 🎯 메타데이터 설정
-// ============================================================================
+const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'CBAM Calculator - 사용자 계정 관리 시스템',
-  description: 'CBAM Calculator의 사용자 계정 관리 시스템입니다. 안전하고 편리한 회원가입과 로그인을 제공합니다.',
-  keywords: 'CBAM, Calculator, 사용자관리, 회원가입, 로그인, PostgreSQL',
-  authors: [{ name: 'CBAM Calculator Team' }],
-  creator: 'CBAM Calculator',
-  publisher: 'CBAM Calculator',
-  formatDetection: {
-    email: false,
-    address: false,
-    telephone: false,
-  },
-  
-  // PWA 메타데이터
-  manifest: '/manifest.json',
-  themeColor: '#3b82f6',
-  
-  // PWA 관련 메타데이터
-  applicationName: 'CBAM Calculator',
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: 'default',
-    title: 'CBAM Calculator',
-  },
-  
-  // Open Graph
+  title: 'GreenSteel - ESG Management Platform',
+  description:
+    'Comprehensive ESG management platform for LCA, CBAM, and sustainability reporting. Track your environmental impact and compliance.',
+  keywords:
+    'ESG, LCA, CBAM, sustainability, carbon footprint, green steel, PWA, progressive web app',
+  authors: [{ name: 'GreenSteel Team' }],
+  creator: 'GreenSteel',
+  publisher: 'GreenSteel',
+  robots: 'index, follow',
   openGraph: {
-    type: 'website',
+    title: 'GreenSteel - ESG Management Platform',
+    description:
+      'Comprehensive ESG management platform for LCA, CBAM, and sustainability reporting. Track your environmental impact and compliance.',
+    url: 'https://greensteel.site',
+    siteName: 'GreenSteel',
     locale: 'ko_KR',
-    url: 'https://cbam-calculator.com',
-    title: 'CBAM Calculator - 사용자 계정 관리 시스템',
-    description: '안전하고 편리한 사용자 계정 관리 시스템',
-    siteName: 'CBAM Calculator',
+    type: 'website',
   },
-  
-  // Twitter
   twitter: {
     card: 'summary_large_image',
-    title: 'CBAM Calculator - 사용자 계정 관리 시스템',
-    description: '안전하고 편리한 사용자 계정 관리 시스템',
+    title: 'GreenSteel - ESG Management Platform',
+    description:
+      'Comprehensive ESG management platform for LCA, CBAM, and sustainability reporting. Track your environmental impact and compliance.',
   },
-  
-  // 아이콘
-  icons: {
-    icon: [
-      { url: '/favicon.ico' },
-      { url: '/icon-192x192.png', sizes: '192x192', type: 'image/png' },
-      { url: '/icon-512x512.png', sizes: '512x512', type: 'image/png' },
-    ],
-    apple: [
-      { url: '/icon-192x192.png', sizes: '192x192', type: 'image/png' },
-    ],
-  },
-
-  // 뷰포트
-  viewport: {
-    width: 'device-width',
-    initialScale: 1,
-    maximumScale: 1,
-    userScalable: false,
-  },
-  
-  // 기타
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: {
-      index: true,
-      follow: true,
-      'max-video-preview': -1,
-      'max-image-preview': 'large',
-      'max-snippet': -1,
-    },
+  other: {
+    'csrf-token': '{{csrf_token}}',
+    'mobile-web-app-capable': 'yes',
+    'apple-mobile-web-app-capable': 'yes',
+    'apple-mobile-web-app-status-bar-style': 'default',
+    'apple-mobile-web-app-title': 'GreenSteel',
+    'msapplication-TileColor': '#3b82f6',
+    'theme-color': '#3b82f6',
+    'application-name': 'GreenSteel',
+    'msapplication-TileImage': '/icon-192x192.svg',
   },
 };
 
-// ============================================================================
-// 🎨 루트 레이아웃 컴포넌트
-// ============================================================================
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: 'cover',
+};
 
 export default function RootLayout({
   children,
@@ -96,44 +60,69 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="ko" className="h-full">
+    <html lang='ko' className='dark'>
       <head>
-        {/* PWA 관련 메타 태그 */}
-        <meta name="application-name" content="CBAM Calculator" />
-        <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <meta name="apple-mobile-web-app-title" content="CBAM Calculator" />
-        <meta name="description" content="CBAM Calculator 사용자 계정 관리 시스템" />
-        <meta name="format-detection" content="telephone=no" />
-        <meta name="mobile-web-app-capable" content="yes" />
-        <meta name="msapplication-TileColor" content="#3b82f6" />
-        <meta name="msapplication-tap-highlight" content="no" />
-        
-        {/* 폰트 최적화 */}
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link rel='manifest' href='/manifest.json' />
+        <link rel='icon' href='/icon-192x192.svg' type='image/svg+xml' />
+        <link rel='apple-touch-icon' href='/apple-touch-icon.svg' />
+        <meta name='apple-mobile-web-app-capable' content='yes' />
+        <meta name='apple-mobile-web-app-status-bar-style' content='default' />
+        <meta name='apple-mobile-web-app-title' content='GreenSteel' />
+        <meta name='msapplication-TileColor' content='#3b82f6' />
+        <meta name='theme-color' content='#3b82f6' />
+        <meta name='application-name' content='GreenSteel' />
+        <meta name='msapplication-TileImage' content='/icon-192x192.svg' />
+
+        {/* PWA 관련 메타데이터 */}
+        <meta name='mobile-web-app-capable' content='yes' />
+        <meta name='apple-mobile-web-app-capable' content='yes' />
+        <meta
+          name='apple-mobile-web-app-status-bar-style'
+          content='black-translucent'
+        />
+        <meta name='apple-mobile-web-app-title' content='GreenSteel' />
+        <meta name='msapplication-TileColor' content='#3b82f6' />
+        <meta name='msapplication-TileImage' content='/icon-192x192.svg' />
+        <meta name='theme-color' content='#3b82f6' />
+        <meta name='msapplication-config' content='/browserconfig.xml' />
+
+        {/* iOS PWA 메타데이터 */}
+        <meta name='apple-touch-fullscreen' content='yes' />
+        <meta name='apple-mobile-web-app-orientations' content='portrait' />
+
+        {/* Android PWA 메타데이터 */}
+        <meta name='mobile-web-app-capable' content='yes' />
+        <meta name='theme-color' content='#3b82f6' />
+        <meta name='background-color' content='#0f172a' />
       </head>
-      
-      <body className="h-full bg-[#0b0c0f] transition-colors duration-200">
-        <div className="flex flex-col min-h-screen">
-          <AppTopNavigation />
-          <main className="min-h-screen bg-[#0b0c0f] transition-colors duration-200">
-            {children}
-          </main>
-          <footer className="bg-[#1e293b] border-t border-[#334155] mt-auto transition-colors duration-200">
-            <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-              <div className="text-center">
-                <p className="text-gray-500 text-sm transition-colors duration-200">
-                  © 2024 CBAM Calculator. 모든 권리 보유.
-                </p>
-                <p className="text-gray-400 text-xs mt-2 transition-colors duration-200">
-                  공정도 관리 시스템
-                </p>
-              </div>
-            </div>
-          </footer>
-        </div>
+      <body className={`${inter.className} antialiased`}>
+        {/* Google tag (gtag.js) */}
+        <Script
+          src='https://www.googletagmanager.com/gtag/js?id=G-2GFHCRYLT8'
+          strategy='afterInteractive'
+        />
+        <Script id='google-analytics' strategy='afterInteractive'>
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-2GFHCRYLT8');
+          `}
+        </Script>
+
+        {/* Daum Postcode Service */}
+        <Script
+          src='//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js'
+          strategy='afterInteractive'
+        />
+
+        {/* PWA Components */}
+        <PWAServiceWorker />
+        <OfflineIndicator />
+        <PWAInstallBanner />
+
+        {children}
       </body>
     </html>
   );
-} 
+}
