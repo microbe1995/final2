@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import axios from 'axios';
 import * as XLSX from 'xlsx';
-import CommonShell from '@/components/CommonShell';
+import CommonShell from '@/components/common/CommonShell';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 

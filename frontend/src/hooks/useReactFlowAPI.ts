@@ -2,37 +2,43 @@
 
 import { useCallback } from 'react';
 import type { Node, Edge } from '@xyflow/react';
-import { useAPI } from './useAPI';
 
 // ============================================================================
-// 🎯 React Flow 백엔드 연동 훅 (실제 API 연결)
+// 🎯 React Flow 백엔드 연동 훅 (Mock 버전)
 // ============================================================================
 
 export const useReactFlowAPI = () => {
-  const api = useAPI('/api/v1/boundary');  // Gateway를 통한 boundary 서비스 호출
   // ============================================================================
-  // 🎯 플로우 관리 API (실제 API 연결)
+  // 🎯 플로우 관리 API (Mock 구현)
   // ============================================================================
 
   const createFlow = useCallback(async (data: any): Promise<any | null> => {
-    try {
-      return await api.post('/flow', data);
-    } catch (error) {
-      console.error('플로우 생성 실패:', error);
-      return null;
-    }
-  }, [api]);
+    return {
+      id: `flow-${Date.now()}`,
+      name: data.name,
+      description: data.description,
+      viewport: { x: 0, y: 0, zoom: 1 },
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+  }, []);
 
   const getFlowState = useCallback(
     async (flowId: string): Promise<any | null> => {
-      try {
-        return await api.get(`/flow/${flowId}/state`);
-      } catch (error) {
-        console.error('플로우 상태 조회 실패:', error);
-        return null;
-      }
+      return {
+        flow: {
+          id: flowId,
+          name: '기존 플로우',
+          description: '로드된 플로우',
+          viewport: { x: 0, y: 0, zoom: 1 },
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        },
+        nodes: [],
+        edges: [],
+      };
     },
-    [api]
+    []
   );
 
   const updateFlow = useCallback(
@@ -51,17 +57,24 @@ export const useReactFlowAPI = () => {
   }, []);
 
   // ============================================================================
-  // 🎯 노드 관리 API (실제 API 연결)
+  // 🎯 노드 관리 API (Mock 구현)
   // ============================================================================
 
   const createNode = useCallback(async (data: any): Promise<any | null> => {
-    try {
-      return await api.post('/node', data);
-    } catch (error) {
-      console.error('노드 생성 실패:', error);
-      return null;
-    }
-  }, [api]);
+    return {
+      id: data.node_id,
+      flow_id: data.flow_id,
+      node_id: data.node_id,
+      type: data.type,
+      position: data.position,
+      data: data.data,
+      width: data.width,
+      height: data.height,
+      style: data.style,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+  }, []);
 
   const updateNode = useCallback(
     async (nodeId: string, data: any): Promise<any | null> => {
@@ -79,17 +92,25 @@ export const useReactFlowAPI = () => {
   }, []);
 
   // ============================================================================
-  // 🎯 엣지 관리 API (실제 API 연결)
+  // 🎯 엣지 관리 API (Mock 구현)
   // ============================================================================
 
   const createEdge = useCallback(async (data: any): Promise<any | null> => {
-    try {
-      return await api.post('/edge', data);
-    } catch (error) {
-      console.error('엣지 생성 실패:', error);
-      return null;
-    }
-  }, [api]);
+    return {
+      id: data.edge_id,
+      flow_id: data.flow_id,
+      edge_id: data.edge_id,
+      source: data.source,
+      target: data.target,
+      source_handle: data.source_handle,
+      target_handle: data.target_handle,
+      type: data.type,
+      data: data.data,
+      style: data.style,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+  }, []);
 
   const updateEdge = useCallback(
     async (edgeId: string, data: any): Promise<any | null> => {
@@ -106,20 +127,13 @@ export const useReactFlowAPI = () => {
     return true;
   }, []);
 
-  
   // ============================================================================
-  // 🎯 뷰포트 관리 API (실제 API 연결)
+  // 🎯 뷰포트 관리 API (Mock 구현)
   // ============================================================================
 
   const updateViewport = useCallback(async (data: any): Promise<boolean> => {
-    try {
-      await api.put('/viewport', data);
-      return true;
-    } catch (error) {
-      console.error('뷰포트 업데이트 실패:', error);
-      return false;
-    }
-  }, [api]);
+    return true;
+  }, []);
 
   // ============================================================================
   // 🎯 배치 작업 API (Mock 구현)
@@ -185,7 +199,7 @@ export const useReactFlowAPI = () => {
         return false;
       }
     },
-    [api, createFlow, createNode, createEdge, updateViewport]
+    [createFlow, createNode, createEdge, updateViewport]
   );
 
   // ============================================================================

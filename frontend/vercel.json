@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "name": "cbam-frontend",
+  "name": "greensteel-frontend",
   "buildCommand": "pnpm run build",
   "outputDirectory": ".next",
   "installCommand": "pnpm install",

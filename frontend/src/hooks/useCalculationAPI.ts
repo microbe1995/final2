@@ -1,173 +1,235 @@
-// ============================================================================
-// 🧮 CBAM 계산 API Hook
-// ============================================================================
-
 import { useCallback } from 'react';
-import { useAPI } from './useAPI';
 
 // ============================================================================
-// 📋 계산 요청/응답 타입 정의
+// 🧮 Calculation API Types
 // ============================================================================
 
-interface FuelCalculationRequest {
+// Request Types
+export interface FuelCalculationRequest {
   fuel_name: string;
-  activity_data: number;
-  activity_unit: string;
-  emission_factor?: number;
-  calorific_value?: number;
-  oxidation_factor?: number;
+  fuel_amount: number;
 }
 
-interface FuelCalculationResponse {
-  result_id: string;
-  fuel_name: string;
-  activity_data: number;
-  activity_unit: string;
-  emission_factor: number;
-  calorific_value: number;
-  oxidation_factor: number;
-  total_emissions: number;
-  calculation_timestamp: string;
-  message: string;
-}
-
-interface MaterialCalculationRequest {
+export interface MaterialCalculationRequest {
   material_name: string;
-  activity_data: number;
-  activity_unit: string;
-  emission_factor?: number;
-  conversion_factor?: number;
+  material_amount: number;
 }
 
-interface MaterialCalculationResponse {
-  result_id: string;
-  material_name: string;
-  activity_data: number;
-  activity_unit: string;
-  emission_factor: number;
-  conversion_factor: number;
-  total_emissions: number;
-  calculation_timestamp: string;
-  message: string;
-}
-
-interface PrecursorData {
-  precursor_id: string;
+export interface PrecursorData {
+  user_id: string;
   precursor_name: string;
-  quantity: number;
-  unit: string;
   emission_factor: number;
-  carbon_content?: number;
+  carbon_content: number;
 }
 
-interface CBAMCalculationRequest {
+export interface CBAMCalculationRequest {
   product_name: string;
   fuel_emissions: number;
   material_emissions: number;
   precursor_emissions: number;
-  cbam_rate?: number;
-  currency?: string;
 }
 
-interface CBAMCalculationResponse {
-  calculation_id: string;
-  product_name: string;
-  fuel_emissions: number;
-  material_emissions: number;
-  precursor_emissions: number;
-  total_emissions: number;
-  cbam_rate: number;
-  cbam_cost: number;
-  currency: string;
-  calculation_timestamp: string;
+// Response Types
+export interface FuelCalculationResponse {
+  emission: number;
+  fuel_name: string;
+  emission_factor: number;
+  net_calorific_value: number;
+  calculation_formula: string;
+}
+
+export interface MaterialCalculationResponse {
+  emission: number;
+  material_name: string;
+  emission_factor: number;
+  calculation_formula: string;
+}
+
+export interface PrecursorListResponse {
+  precursors: PrecursorData[];
+  total_count: number;
+}
+
+export interface PrecursorSaveResponse {
+  saved_count: number;
   message: string;
 }
 
+export interface CBAMCalculationResponse {
+  product_name: string;
+  emission: number;
+  cbam_cost: number;
+  cbam_rate: number;
+  breakdown: {
+    fuel_emissions: number;
+    material_emissions: number;
+    precursor_emissions: number;
+  };
+}
+
+export interface CalculationStatsResponse {
+  fuel_calculations: number;
+  material_calculations: number;
+  cbam_calculations: number;
+  total_calculations: number;
+  recent_calculations: Array<{
+    type: string;
+    timestamp: string;
+    emission: number;
+  }>;
+}
+
 // ============================================================================
-// 🧮 계산 API Hook
+// 🚀 Calculation API Hook (Mock Implementation)
 // ============================================================================
 
 export const useCalculationAPI = () => {
-  const api = useAPI('/api/v1/boundary');
-
-  // 🔥 연료 배출량 계산
+  // Mock implementations for now
   const calculateFuelEmission = useCallback(
     async (data: FuelCalculationRequest): Promise<FuelCalculationResponse | null> => {
       try {
-        return await api.post('/calc/fuel/calculate', data);
+        // Mock calculation
+        const emission = data.fuel_amount * 2.5;
+        return {
+          emission,
+          fuel_name: data.fuel_name,
+          emission_factor: 2.5,
+          net_calorific_value: 43.0,
+          calculation_formula: "연료량(톤) × 순발열량(TJ/Gg) × 배출계수(tCO2/TJ) × 1e-3"
+        };
       } catch (error) {
-        console.error('연료 배출량 계산 실패:', error);
+        console.error('Error calculating fuel emission:', error);
         return null;
       }
     },
-    [api]
+    []
   );
 
-  // 🏭 원료 배출량 계산
   const calculateMaterialEmission = useCallback(
     async (data: MaterialCalculationRequest): Promise<MaterialCalculationResponse | null> => {
       try {
-        return await api.post('/calc/material/calculate', data);
+        // Mock calculation
+        const emission = data.material_amount * 1.8;
+        return {
+          emission,
+          material_name: data.material_name,
+          emission_factor: 1.8,
+          calculation_formula: "원료량(톤) × 배출계수(tCO2/톤)"
+        };
       } catch (error) {
-        console.error('원료 배출량 계산 실패:', error);
+        console.error('Error calculating material emission:', error);
         return null;
       }
     },
-    [api]
+    []
   );
 
-  // 📋 전구물질 조회
   const getPrecursorList = useCallback(
-    async (userId: string): Promise<PrecursorData[] | null> => {
+    async (userId: string): Promise<PrecursorListResponse | null> => {
       try {
-        const response = await api.get(`/calc/precursor/user/${userId}`);
-        return response?.precursors || [];
+        // Mock data
+        return {
+          precursors: [
+            {
+              user_id: userId,
+              precursor_name: "석회석",
+              emission_factor: 0.44,
+              carbon_content: 12.0
+            }
+          ],
+          total_count: 1
+        };
       } catch (error) {
-        console.error('전구물질 조회 실패:', error);
+        console.error('Error fetching precursor list:', error);
         return null;
       }
     },
-    [api]
+    []
   );
 
-  // 💾 전구물질 저장
   const savePrecursorBatch = useCallback(
-    async (precursors: PrecursorData[]): Promise<boolean> => {
+    async (precursors: PrecursorData[]): Promise<PrecursorSaveResponse | null> => {
       try {
-        await api.post('/calc/precursor/save-batch', { precursors });
-        return true;
+        // Mock save
+        return {
+          saved_count: precursors.length,
+          message: `${precursors.length}개의 전구물질이 저장되었습니다.`
+        };
       } catch (error) {
-        console.error('전구물질 저장 실패:', error);
-        return false;
+        console.error('Error saving precursor batch:', error);
+        return null;
       }
     },
-    [api]
+    []
   );
 
-  // 🎯 CBAM 종합 계산
   const calculateCBAM = useCallback(
     async (data: CBAMCalculationRequest): Promise<CBAMCalculationResponse | null> => {
       try {
-        return await api.post('/calc/cbam', data);
+        const totalEmissions = data.fuel_emissions + data.material_emissions + data.precursor_emissions;
+        const cbamRate = 75.0; // EUR/tCO2eq
+        const cbamCost = totalEmissions * cbamRate;
+
+        return {
+          product_name: data.product_name,
+          emission: totalEmissions,
+          cbam_cost: cbamCost,
+          cbam_rate: cbamRate,
+          breakdown: {
+            fuel_emissions: data.fuel_emissions,
+            material_emissions: data.material_emissions,
+            precursor_emissions: data.precursor_emissions
+          }
+        };
       } catch (error) {
-        console.error('CBAM 종합 계산 실패:', error);
+        console.error('Error calculating CBAM:', error);
         return null;
       }
     },
-    [api]
+    []
   );
 
-  // 📊 계산 통계 조회
   const getCalculationStats = useCallback(
-    async (): Promise<any | null> => {
+    async (): Promise<CalculationStatsResponse | null> => {
       try {
-        return await api.get('/calc/stats');
+        // Mock stats
+        return {
+          fuel_calculations: 12,
+          material_calculations: 8,
+          cbam_calculations: 5,
+          total_calculations: 25,
+          recent_calculations: [
+            {
+              type: "연료",
+              timestamp: new Date().toISOString(),
+              emission: 125.5
+            },
+            {
+              type: "원료",
+              timestamp: new Date(Date.now() - 3600000).toISOString(),
+              emission: 89.2
+            }
+          ]
+        };
       } catch (error) {
-        console.error('계산 통계 조회 실패:', error);
+        console.error('Error fetching calculation stats:', error);
         return null;
       }
     },
-    [api]
+    []
+  );
+
+  const getCalculationHistory = useCallback(
+    async (type?: string, limit?: number): Promise<any[] | null> => {
+      try {
+        // Mock history
+        return [];
+      } catch (error) {
+        console.error('Error fetching calculation history:', error);
+        return null;
+      }
+    },
+    []
   );
 
   return {
@@ -177,15 +239,6 @@ export const useCalculationAPI = () => {
     savePrecursorBatch,
     calculateCBAM,
     getCalculationStats,
+    getCalculationHistory,
   };
-};
-
-export type {
-  FuelCalculationRequest,
-  FuelCalculationResponse,
-  MaterialCalculationRequest,
-  MaterialCalculationResponse,
-  PrecursorData,
-  CBAMCalculationRequest,
-  CBAMCalculationResponse,
 };

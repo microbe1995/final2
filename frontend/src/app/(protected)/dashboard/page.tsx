@@ -1,8 +1,8 @@
 'use client';
 
 import React from 'react';
-import CommonShell from '@/components/CommonShell';
-import GatewayStatus from '@/components/GatewayStatus';
+import CommonShell from '@/components/common/CommonShell';
+import GatewayStatus from '@/components/common/GatewayStatus';
 
 const DashboardPage: React.FC = () => {
   return (

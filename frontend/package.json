@@ -1,11 +1,11 @@
 {
-  "name": "cbam-frontend",
+  "name": "greensteel-frontend",
   "version": "0.1.0",
   "private": true,
-  "packageManager": "pnpm@8.x",
+  "packageManager": "pnpm@10.x",
   "engines": {
     "node": ">=18.0.0",
-    "pnpm": ">=8.0.0"
+    "pnpm": ">=10.0.0"
   },
   "scripts": {
     "dev": "next dev",
@@ -20,6 +20,7 @@
     "analyze": "ANALYZE=true next build"
   },
   "dependencies": {
+    "@heroicons/react": "^2.2.0",
     "@xyflow/react": "^12.8.3",
     "axios": "^1.7.9",
     "clsx": "^2.1.1",

@@ -2,9 +2,9 @@ import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import Script from 'next/script';
 import './globals.css';
-import PWAInstallBanner from '@/components/PWAInstallBanner';
-import OfflineIndicator from '@/components/OfflineIndicator';
-import PWAServiceWorker from '@/components/PWAServiceWorker';
+import PWAInstallBanner from '@/components/pwa/PWAInstallBanner';
+import OfflineIndicator from '@/components/common/OfflineIndicator';
+import PWAServiceWorker from '@/components/pwa/PWAServiceWorker';
 
 const inter = Inter({ subsets: ['latin'] });
 

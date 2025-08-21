@@ -1,10 +1,10 @@
 'use client';
 
 import React, { useState } from 'react';
-import CommonShell from '@/components/CommonShell';
-import TabGroup from '@/components/molecules/TabGroup';
-import Input from '@/components/atoms/Input';
-import Button from '@/components/atoms/Button';
+import CommonShell from '@/components/common/CommonShell';
+import TabGroup from '@/components/atomic/molecules/TabGroup';
+import Input from '@/components/atomic/atoms/Input';
+import Button from '@/components/atomic/atoms/Button';
 import { cn } from '@/lib/utils';
 
 const SettingsPage: React.FC = () => {
