@@ -2,8 +2,7 @@
 
 import { useParams } from 'next/navigation';
 import { useState } from 'react';
-import { saveScope } from '@/lib/actions';
-import type { ProjectMeta, AnalysisScope } from '@/lib/types';
+import { saveScope, type ProjectMeta, type AnalysisScope } from '@/lib/actions';
 
 export default function ScopePage() {
   const params = useParams();
@@ -28,6 +27,8 @@ export default function ScopePage() {
     dataQuality: '',
     exclusions: '',
     assumptions: '',
+    cutoffCriteria: '',
+    impactCategories: [],
     methodSet: '',
     summary: '',
   });

@@ -25,10 +25,10 @@ export default function ReportPage() {
     setMessage('');
 
     try {
-      const result = await requestReport(projectId, reportFormat);
-      if (result.success && 'reportId' in result) {
-        setReportId(result.reportId || '');
-        setReportUrl(result.reportUrl || '');
+      const result = await requestReport(projectId, reportFormat, {});
+      if (result.success && result.data && 'reportId' in result.data) {
+        setReportId(result.data.reportId || '');
+        setReportUrl('');
         setReportStatus('pending');
         setMessage('보고서 생성이 시작되었습니다!');
         // 상태 폴링 시작

@@ -2,8 +2,7 @@
 
 import { useParams } from 'next/navigation';
 import { useState } from 'react';
-import { saveLci, getLciData } from '@/lib/actions';
-import type { LciItem } from '@/lib/types';
+import { saveLci, getLciData, type LciItem } from '@/lib/actions';
 
 export default function LciPage() {
   const params = useParams();
@@ -13,8 +12,10 @@ export default function LciPage() {
   const [lciItems, setLciItems] = useState<LciItem[]>([]);
 
   const [newItem, setNewItem] = useState<Omit<LciItem, 'id'>>({
+    name: '',
     processName: '',
     category: '',
+    amount: 0,
     unit: '',
     value: 0,
     uncertainty: 0,
@@ -31,8 +32,10 @@ export default function LciPage() {
       };
       setLciItems([...lciItems, item]);
       setNewItem({
+        name: '',
         processName: '',
         category: '',
+        amount: 0,
         unit: '',
         value: 0,
         uncertainty: 0,
@@ -235,7 +238,7 @@ export default function LciPage() {
                       <td className='p-2'>{item.notes}</td>
                       <td className='p-2'>
                         <button
-                          onClick={() => handleRemoveItem(item.id)}
+                          onClick={() => handleRemoveItem(item.id || '')}
                           className='text-red-600 hover:text-red-800'
                         >
                           삭제
