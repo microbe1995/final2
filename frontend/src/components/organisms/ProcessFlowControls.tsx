@@ -40,16 +40,16 @@ const ProcessFlowControls: React.FC<ProcessFlowControlsProps> = ({
         <Button
           onClick={onDeleteSelected}
           disabled={readOnly}
-          variant="danger"
+          variant="outline"
+          className="w-full border-red-500 text-red-500 hover:bg-red-500 hover:text-white"
           size="sm"
-          className="w-full"
         >
           선택 삭제
         </Button>
         
         <Button
           onClick={onSave}
-          variant="success"
+          variant="primary"
           size="sm"
           className="w-full"
         >

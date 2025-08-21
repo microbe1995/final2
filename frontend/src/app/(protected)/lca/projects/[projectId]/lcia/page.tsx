@@ -49,7 +49,7 @@ export default function LciaPage() {
     setMessage('');
 
     try {
-      const result = await startLciaRun(projectId, config);
+      const result = await startLciaRun(projectId, config.method, config.categories);
       if (result.success) {
         setRunId(result.data?.runId || `run-${Date.now()}`);
         setMessage('LCIA 계산이 시작되었습니다!');

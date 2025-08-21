@@ -149,11 +149,11 @@ const ProcessFlowInfoPanel: React.FC<ProcessFlowInfoPanelProps> = ({
             + 공정 흐름
           </Button>
           <Button
-            variant="danger"
+            variant="outline"
+            className="w-full border-red-500 text-red-500 hover:bg-red-500 hover:text-white"
             size="sm"
             onClick={onDeleteSelected}
             disabled={isReadOnly}
-            className="w-full"
           >
             선택 삭제
           </Button>
@@ -199,10 +199,10 @@ const ProcessFlowInfoPanel: React.FC<ProcessFlowInfoPanelProps> = ({
                       로드
                     </Button>
                     <Button
-                      variant="danger"
+                      variant="outline"
+                      className="text-xs py-1 px-2 border-red-500 text-red-500 hover:bg-red-500 hover:text-white"
                       size="sm"
                       onClick={() => onDeleteCanvas(canvas.id)}
-                      className="text-xs py-1 px-2"
                     >
                       삭제
                     </Button>

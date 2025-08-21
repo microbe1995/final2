@@ -175,7 +175,7 @@ const LoginSignupCard: React.FC<AuthFormProps> = ({
           type="submit"
           variant="primary"
           size="lg"
-          isLoading={isLoading}
+          loading={isLoading}
           className="w-full"
         >
           {isLoading 

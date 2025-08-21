@@ -132,7 +132,8 @@ const ProcessFlowHeader: React.FC<ProcessFlowHeaderProps> = ({
 
             {/* 초기화 */}
             <Button
-              variant="danger"
+              variant="outline"
+              className="border-red-500 text-red-500 hover:bg-red-500 hover:text-white"
               size="sm"
               onClick={onClearFlow}
             >

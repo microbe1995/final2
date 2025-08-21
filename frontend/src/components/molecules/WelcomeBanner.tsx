@@ -1,5 +1,6 @@
 import React from 'react';
-import Button from '@/atoms/Button';
+import Link from 'next/link';
+import { Button } from '@/components';
 
 // ============================================================================
 // 🧩 WelcomeBanner Molecule Component
@@ -37,23 +38,25 @@ const WelcomeBanner: React.FC<WelcomeBannerProps> = ({
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button
-              href={primaryButtonHref}
-              variant="primary"
-              size="lg"
-              className="text-lg px-15 py-4 shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200"
-            >
-              {primaryButtonText}
-            </Button>
+            <Link href={primaryButtonHref}>
+              <Button
+                variant="primary"
+                size="lg"
+                className="text-lg px-15 py-4 shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200"
+              >
+                {primaryButtonText}
+              </Button>
+            </Link>
             
-            <Button
-              href={secondaryButtonHref}
-              variant="secondary"
-              size="lg"
-              className="text-lg px-15 py-4 shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200"
-            >
-              {secondaryButtonText}
-            </Button>
+            <Link href={secondaryButtonHref}>
+              <Button
+                variant="secondary"
+                size="lg"
+                className="text-lg px-15 py-4 shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200"
+              >
+                {secondaryButtonText}
+              </Button>
+            </Link>
           </div>
         </div>
       </div>

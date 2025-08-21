@@ -5,8 +5,7 @@ import { useAuthStore } from '@/zustand/authStore';
 import { useAuthAPI } from '@/hooks/useAuthAPI';
 import { useAppNavigation } from '@/hooks/useNavigation';
 import { useAsync } from '@/hooks';
-import ProfileForm from '@/organisms/ProfileForm';
-import Button from '@/atoms/Button';
+import { ProfileForm, Button } from '@/components';
 
 // ============================================================================
 // 👤 프로필 페이지 컴포넌트
@@ -151,8 +150,8 @@ export default function ProfilePage() {
           <div className="mt-8 text-center">
             <Button
               onClick={handleLogout}
-              variant="danger"
-              className="px-6 py-2"
+              variant="outline"
+              className="px-6 py-2 border-red-500 text-red-500 hover:bg-red-500 hover:text-white"
             >
               Logout
             </Button>

@@ -4,7 +4,7 @@ import { useAuthStore } from '@/zustand/authStore';
 import { useAuthAPI } from '@/hooks/useAuthAPI';
 import { useAppNavigation } from '@/hooks/useNavigation';
 import { useAsync } from '@/hooks';
-import LoginSignupCard from '@/organisms/LoginSignupCard';
+import { LoginSignupCard } from '@/components';
 
 // ============================================================================
 // 🔑 로그인 페이지 컴포넌트

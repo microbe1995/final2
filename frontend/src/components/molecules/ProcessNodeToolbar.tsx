@@ -36,9 +36,9 @@ const ProcessNodeToolbar: React.FC<ProcessNodeToolbarProps> = ({
         </Button>
         <Button
           onClick={onDelete}
-          variant="danger"
+          variant="outline"
           size="sm"
-          className="px-3 py-1"
+          className="px-3 py-1 border-red-500 text-red-500 hover:bg-red-500 hover:text-white"
         >
           삭제
         </Button>
