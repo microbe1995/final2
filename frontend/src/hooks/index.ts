@@ -11,6 +11,8 @@ export { useToast } from './useToast';
 // 도메인 특화 훅들
 export { useAuthAPI } from './useAuthAPI';
 export { useReactFlowAPI } from './useReactFlowAPI';
+export { useCalculationAPI } from './useCalculationAPI';
+export { useDataSearchAPI } from './useDataSearchAPI';
 export { useAppNavigation } from './useNavigation';
 
 // React Flow Provider

@@ -21,6 +21,10 @@ from app.domain.flow.flow_controller import flow_router
 from app.domain.edge.edge_controller import edge_router
 from app.domain.handle.handle_controller import handle_router
 from app.domain.Viewport.Viewport_controller import viewport_router
+
+# CBAM 도메인 라우터들
+from app.domain.calculation import calculation_router
+from app.domain.datasearch import datasearch_router
 # ============================================================================
 # 🔧 애플리케이션 설정
 # ============================================================================
@@ -96,6 +100,10 @@ app.include_router(flow_router, prefix="/api")
 app.include_router(edge_router, prefix="/api")
 app.include_router(handle_router, prefix="/api")
 app.include_router(viewport_router, prefix="/api")
+
+# CBAM 도메인 라우터들 등록
+app.include_router(calculation_router, prefix="/api")
+app.include_router(datasearch_router, prefix="/api")
 
 # ============================================================================
 # 🏥 헬스체크 엔드포인트
