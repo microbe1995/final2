@@ -44,14 +44,14 @@ calculation_router = APIRouter(tags=["calculation"])
 
 # 서비스 의존성
 def get_calculation_repository() -> CalculationRepository:
-    return CalculationRepository(use_database=False)  # 메모리 사용
+    return CalculationRepository(use_database=True)  # DB 사용
 
 def get_calculation_service() -> CalculationService:
     repository = get_calculation_repository()
     return CalculationService(repository=repository)
 
 # 전역 서비스 인스턴스 (새로운 테이블 API용)
-calculation_service = CalculationService(repository=CalculationRepository(use_database=False))
+calculation_service = CalculationService(repository=CalculationRepository(use_database=True))
 
 # ============================================================================
 # 🔥 연료 계산 API

@@ -441,7 +441,7 @@ export default function CalculationPage() {
 
     setLoading(true);
     try {
-      const response = await axiosClient.post('/api/v1/boundary/calc/boundary', boundaryForm);
+      const response = await axiosClient.post('/api/boundary', boundaryForm);
       
       if (response.status === 200 || response.status === 201) {
         const result = response.data;
@@ -469,7 +469,7 @@ export default function CalculationPage() {
     try {
       console.log('제품 생성 요청:', productForm);
       
-      const response = await axiosClient.post('/api/v1/boundary/product', productForm);
+      const response = await axiosClient.post('/api/product', productForm);
       
       console.log('제품 생성 응답 상태:', response.status);
       
@@ -509,7 +509,7 @@ export default function CalculationPage() {
 
     setLoading(true);
     try {
-      const response = await axiosClient.post('/api/v1/boundary/calc/operation', operationForm);
+      const response = await axiosClient.post('/api/operation', operationForm);
       
       if (response.status === 200 || response.status === 201) {
         const result = response.data;
@@ -545,7 +545,7 @@ export default function CalculationPage() {
 
     setLoading(true);
     try {
-      const response = await axiosClient.post('/api/v1/boundary/calc/node', nodeForm);
+      const response = await axiosClient.post('/api/node', nodeForm);
       
       if (response.status === 200 || response.status === 201) {
         const result = response.data;
@@ -578,7 +578,7 @@ export default function CalculationPage() {
 
     setLoading(true);
     try {
-      const response = await axiosClient.post('/api/v1/boundary/calc/edge', edgeForm);
+      const response = await axiosClient.post('/api/edge', edgeForm);
       
       if (response.status === 200 || response.status === 201) {
         const result = response.data;
@@ -610,7 +610,7 @@ export default function CalculationPage() {
 
     setLoading(true);
     try {
-      const response = await axiosClient.post('/api/v1/boundary/calc/production-emission', emissionForm);
+      const response = await axiosClient.post('/api/production-emission', emissionForm);
       
       if (response.status === 200 || response.status === 201) {
         const result = response.data;
