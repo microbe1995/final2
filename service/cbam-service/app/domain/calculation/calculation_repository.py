@@ -5,6 +5,8 @@
 import logging
 from typing import Optional, List, Dict, Any
 from datetime import datetime
+from sqlalchemy import text
+from app.common.database_base import create_database_engine, get_db_session
 
 logger = logging.getLogger(__name__)
 
@@ -20,9 +22,122 @@ class CalculationRepository:
         
         if self.use_database:
             logger.info("✅ PostgreSQL 계산 저장소 사용")
+            self._initialize_database()
         else:
             logger.info("✅ 메모리 계산 저장소 사용")
             self._initialize_memory_data()
+    
+    def _initialize_database(self):
+        """데이터베이스 초기화"""
+        try:
+            self.engine = create_database_engine()
+            self._create_tables()
+            logger.info("✅ 계산 저장소 데이터베이스 엔진 초기화 완료")
+        except Exception as e:
+            logger.error(f"❌ 데이터베이스 초기화 실패: {str(e)}")
+            logger.info("메모리 저장소로 폴백")
+            self.use_database = False
+            self._initialize_memory_data()
+    
+    def _create_tables(self):
+        """필요한 테이블들을 생성합니다"""
+        try:
+            with self.engine.connect() as conn:
+                # 연료 테이블 생성
+                conn.execute(text("""
+                    CREATE TABLE IF NOT EXISTS fuels (
+                        id SERIAL PRIMARY KEY,
+                        fuel_name VARCHAR(255) NOT NULL,
+                        fuel_eng VARCHAR(255),
+                        fuel_emfactor DECIMAL(10,2),
+                        net_calory DECIMAL(10,2),
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    )
+                """))
+                
+                # 원료 테이블 생성
+                conn.execute(text("""
+                    CREATE TABLE IF NOT EXISTS materials (
+                        id SERIAL PRIMARY KEY,
+                        item_name VARCHAR(255) NOT NULL,
+                        item_eng VARCHAR(255),
+                        carbon_factor DECIMAL(10,2),
+                        em_factor DECIMAL(10,2),
+                        cn_code VARCHAR(50),
+                        cn_code1 VARCHAR(50),
+                        cn_code2 VARCHAR(50),
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    )
+                """))
+                
+                # 전구물질 테이블 생성
+                conn.execute(text("""
+                    CREATE TABLE IF NOT EXISTS precursors (
+                        id SERIAL PRIMARY KEY,
+                        user_id VARCHAR(255) NOT NULL,
+                        calculation_type VARCHAR(50) NOT NULL,
+                        fuel_id INTEGER,
+                        material_id INTEGER,
+                        quantity DECIMAL(10,2) NOT NULL,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        FOREIGN KEY (fuel_id) REFERENCES fuels(id),
+                        FOREIGN KEY (material_id) REFERENCES materials(id)
+                    )
+                """))
+                
+                # 계산 결과 테이블 생성
+                conn.execute(text("""
+                    CREATE TABLE IF NOT EXISTS calculation_results (
+                        id SERIAL PRIMARY KEY,
+                        user_id VARCHAR(255) NOT NULL,
+                        calculation_type VARCHAR(50) NOT NULL,
+                        fuel_id INTEGER,
+                        material_id INTEGER,
+                        quantity DECIMAL(10,2) NOT NULL,
+                        result_data JSONB,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        FOREIGN KEY (fuel_id) REFERENCES fuels(id),
+                        FOREIGN KEY (material_id) REFERENCES materials(id)
+                    )
+                """))
+                
+                # 샘플 데이터 삽입 (테이블이 비어있을 때만)
+                self._insert_sample_data(conn)
+                
+                conn.commit()
+                logger.info("✅ 데이터베이스 테이블 생성 완료")
+                
+        except Exception as e:
+            logger.error(f"❌ 테이블 생성 실패: {str(e)}")
+            raise
+    
+    def _insert_sample_data(self, conn):
+        """샘플 데이터를 삽입합니다"""
+        try:
+            # 연료 샘플 데이터 확인 및 삽입
+            result = conn.execute(text("SELECT COUNT(*) FROM fuels"))
+            if result.scalar() == 0:
+                conn.execute(text("""
+                    INSERT INTO fuels (fuel_name, fuel_eng, fuel_emfactor, net_calory) VALUES
+                    ('천연가스', 'Natural Gas', 56.1, 48.0),
+                    ('석탄', 'Coal', 94.6, 25.8),
+                    ('중유', 'Heavy Oil', 77.4, 40.4)
+                """))
+                logger.info("✅ 연료 샘플 데이터 삽입 완료")
+            
+            # 원료 샘플 데이터 확인 및 삽입
+            result = conn.execute(text("SELECT COUNT(*) FROM materials"))
+            if result.scalar() == 0:
+                conn.execute(text("""
+                    INSERT INTO materials (item_name, item_eng, carbon_factor, em_factor, cn_code, cn_code1, cn_code2) VALUES
+                    ('철광석', 'Iron Ore', 0.5, 0.024, '2601', '260111', '26011100'),
+                    ('석회석', 'Limestone', 12.0, 0.034, '2521', '252100', '25210000')
+                """))
+                logger.info("✅ 원료 샘플 데이터 삽입 완료")
+                
+        except Exception as e:
+            logger.warning(f"샘플 데이터 삽입 중 경고: {str(e)}")
+            # 샘플 데이터 삽입 실패는 치명적이지 않으므로 계속 진행
     
     # ============================================================================
     # 🔥 연료 관련 메서드
@@ -52,15 +167,56 @@ class CalculationRepository:
     
     async def _get_fuel_by_name_db(self, fuel_name: str) -> Optional[Dict[str, Any]]:
         """PostgreSQL에서 연료명으로 조회"""
-        # TODO: PostgreSQL 연결 구현
-        logger.warning("PostgreSQL 연결이 구현되지 않음. 메모리 데이터 사용")
-        return self._get_fuel_by_name_memory(fuel_name)
+        try:
+            with self.engine.connect() as conn:
+                query = text("""
+                    SELECT id, fuel_name, fuel_eng, fuel_emfactor, net_calory
+                    FROM fuels 
+                    WHERE LOWER(fuel_name) LIKE LOWER(:fuel_name)
+                    LIMIT 1
+                """)
+                result = conn.execute(query, {"fuel_name": f"%{fuel_name}%"})
+                row = result.fetchone()
+                
+                if row:
+                    return {
+                        "id": row[0],
+                        "fuel_name": row[1],
+                        "fuel_eng": row[2],
+                        "fuel_emfactor": float(row[3]) if row[3] else 0.0,
+                        "net_calory": float(row[4]) if row[4] else 0.0
+                    }
+                return None
+        except Exception as e:
+            logger.error(f"❌ PostgreSQL 연료 조회 실패: {str(e)}")
+            return self._get_fuel_by_name_memory(fuel_name)
     
     async def _search_fuels_db(self, search: str, limit: int) -> List[Dict[str, Any]]:
         """PostgreSQL에서 연료 검색"""
-        # TODO: PostgreSQL 연결 구현
-        logger.warning("PostgreSQL 연결이 구현되지 않음. 메모리 데이터 사용")
-        return self._search_fuels_memory(search, limit)
+        try:
+            with self.engine.connect() as conn:
+                query = text("""
+                    SELECT id, fuel_name, fuel_eng, fuel_emfactor, net_calory
+                    FROM fuels 
+                    WHERE LOWER(fuel_name) LIKE LOWER(:search)
+                    ORDER BY fuel_name
+                    LIMIT :limit
+                """)
+                result = conn.execute(query, {"search": f"%{search}%", "limit": limit})
+                
+                fuels = []
+                for row in result:
+                    fuels.append({
+                        "id": row[0],
+                        "fuel_name": row[1],
+                        "fuel_eng": row[2],
+                        "fuel_emfactor": float(row[3]) if row[3] else 0.0,
+                        "net_calory": float(row[4]) if row[4] else 0.0
+                    })
+                return fuels
+        except Exception as e:
+            logger.error(f"❌ PostgreSQL 연료 검색 실패: {str(e)}")
+            return self._search_fuels_memory(search, limit)
     
     def _get_fuel_by_name_memory(self, fuel_name: str) -> Optional[Dict[str, Any]]:
         """메모리에서 연료명으로 조회"""
@@ -107,15 +263,62 @@ class CalculationRepository:
     
     async def _get_material_by_name_db(self, material_name: str) -> Optional[Dict[str, Any]]:
         """PostgreSQL에서 원료명으로 조회"""
-        # TODO: PostgreSQL 연결 구현
-        logger.warning("PostgreSQL 연결이 구현되지 않음. 메모리 데이터 사용")
-        return self._get_material_by_name_memory(material_name)
+        try:
+            with self.engine.connect() as conn:
+                query = text("""
+                    SELECT id, item_name, item_eng, carbon_factor, em_factor, cn_code, cn_code1, cn_code2
+                    FROM materials 
+                    WHERE LOWER(item_name) LIKE LOWER(:material_name)
+                    LIMIT 1
+                """)
+                result = conn.execute(query, {"material_name": f"%{material_name}%"})
+                row = result.fetchone()
+                
+                if row:
+                    return {
+                        "id": row[0],
+                        "item_name": row[1],
+                        "item_eng": row[2],
+                        "carbon_factor": float(row[3]) if row[3] else 0.0,
+                        "em_factor": float(row[4]) if row[4] else 0.0,
+                        "cn_code": row[5],
+                        "cn_code1": row[6],
+                        "cn_code2": row[7]
+                    }
+                return None
+        except Exception as e:
+            logger.error(f"❌ PostgreSQL 원료 조회 실패: {str(e)}")
+            return self._get_material_by_name_memory(material_name)
     
     async def _search_materials_db(self, search: str, limit: int) -> List[Dict[str, Any]]:
         """PostgreSQL에서 원료 검색"""
-        # TODO: PostgreSQL 연결 구현
-        logger.warning("PostgreSQL 연결이 구현되지 않음. 메모리 데이터 사용")
-        return self._search_materials_memory(search, limit)
+        try:
+            with self.engine.connect() as conn:
+                query = text("""
+                    SELECT id, item_name, item_eng, carbon_factor, em_factor, cn_code, cn_code1, cn_code2
+                    FROM materials 
+                    WHERE LOWER(item_name) LIKE LOWER(:search)
+                    ORDER BY item_name
+                    LIMIT :limit
+                """)
+                result = conn.execute(query, {"search": f"%{search}%", "limit": limit})
+                
+                materials = []
+                for row in result:
+                    materials.append({
+                        "id": row[0],
+                        "item_name": row[1],
+                        "item_eng": row[2],
+                        "carbon_factor": float(row[3]) if row[3] else 0.0,
+                        "em_factor": float(row[4]) if row[4] else 0.0,
+                        "cn_code": row[5],
+                        "cn_code1": row[6],
+                        "cn_code2": row[7]
+                    })
+                return materials
+        except Exception as e:
+            logger.error(f"❌ PostgreSQL 원료 검색 실패: {str(e)}")
+            return self._search_materials_memory(search, limit)
     
     def _get_material_by_name_memory(self, material_name: str) -> Optional[Dict[str, Any]]:
         """메모리에서 원료명으로 조회"""
@@ -184,27 +387,90 @@ class CalculationRepository:
     
     async def _create_precursor_db(self, precursor_data: Dict[str, Any]) -> Dict[str, Any]:
         """PostgreSQL에 전구물질 생성"""
-        # TODO: PostgreSQL 연결 구현
-        logger.warning("PostgreSQL 연결이 구현되지 않음. 메모리 데이터 사용")
-        return self._create_precursor_memory(precursor_data)
+        try:
+            with self.engine.connect() as conn:
+                query = text("""
+                    INSERT INTO precursors (user_id, calculation_type, fuel_id, material_id, quantity, created_at)
+                    VALUES (:user_id, :calculation_type, :fuel_id, :material_id, :quantity, NOW())
+                    RETURNING id
+                """)
+                result = conn.execute(query, precursor_data)
+                new_precursor_id = result.scalar()
+                
+                if new_precursor_id:
+                    return {**precursor_data, "id": new_precursor_id}
+                return None
+        except Exception as e:
+            logger.error(f"❌ PostgreSQL 전구물질 생성 실패: {str(e)}")
+            raise
     
     async def _get_precursor_by_id_db(self, precursor_id: int) -> Optional[Dict[str, Any]]:
         """PostgreSQL에서 전구물질 ID로 조회"""
-        # TODO: PostgreSQL 연결 구현
-        logger.warning("PostgreSQL 연결이 구현되지 않음. 메모리 데이터 사용")
-        return self._memory_precursors.get(precursor_id)
+        try:
+            with self.engine.connect() as conn:
+                query = text("""
+                    SELECT id, user_id, calculation_type, fuel_id, material_id, quantity, created_at
+                    FROM precursors
+                    WHERE id = :precursor_id
+                """)
+                result = conn.execute(query, {"precursor_id": precursor_id})
+                row = result.fetchone()
+                
+                if row:
+                    return {
+                        "id": row[0],
+                        "user_id": row[1],
+                        "calculation_type": row[2],
+                        "fuel_id": row[3],
+                        "material_id": row[4],
+                        "quantity": float(row[5]) if row[5] else 0.0,
+                        "created_at": row[6]
+                    }
+                return None
+        except Exception as e:
+            logger.error(f"❌ PostgreSQL 전구물질 조회 실패: {str(e)}")
+            return self._memory_precursors.get(precursor_id)
     
     async def _get_precursors_by_user_id_db(self, user_id: str) -> List[Dict[str, Any]]:
         """PostgreSQL에서 사용자별 전구물질 조회"""
-        # TODO: PostgreSQL 연결 구현
-        logger.warning("PostgreSQL 연결이 구현되지 않음. 메모리 데이터 사용")
-        return [p for p in self._memory_precursors.values() if p.get("user_id") == user_id]
+        try:
+            with self.engine.connect() as conn:
+                query = text("""
+                    SELECT id, user_id, calculation_type, fuel_id, material_id, quantity, created_at
+                    FROM precursors
+                    WHERE user_id = :user_id
+                    ORDER BY created_at DESC
+                """)
+                result = conn.execute(query, {"user_id": user_id})
+                
+                precursors = []
+                for row in result:
+                    precursors.append({
+                        "id": row[0],
+                        "user_id": row[1],
+                        "calculation_type": row[2],
+                        "fuel_id": row[3],
+                        "material_id": row[4],
+                        "quantity": float(row[5]) if row[5] else 0.0,
+                        "created_at": row[6]
+                    })
+                return precursors
+        except Exception as e:
+            logger.error(f"❌ PostgreSQL 사용자별 전구물질 조회 실패: {str(e)}")
+            return [p for p in self._memory_precursors.values() if p.get("user_id") == user_id]
     
     async def _delete_precursor_db(self, precursor_id: int) -> bool:
         """PostgreSQL에서 전구물질 삭제"""
-        # TODO: PostgreSQL 연결 구현
-        logger.warning("PostgreSQL 연결이 구현되지 않음. 메모리 데이터 사용")
-        return self._delete_precursor_memory(precursor_id)
+        try:
+            with self.engine.connect() as conn:
+                query = text("""
+                    DELETE FROM precursors WHERE id = :precursor_id
+                """)
+                result = conn.execute(query, {"precursor_id": precursor_id})
+                return result.rowcount > 0
+        except Exception as e:
+            logger.error(f"❌ PostgreSQL 전구물질 삭제 실패: {str(e)}")
+            return self._delete_precursor_memory(precursor_id)
     
     def _create_precursor_memory(self, precursor_data: Dict[str, Any]) -> Dict[str, Any]:
         """메모리에 전구물질 생성"""
@@ -257,15 +523,53 @@ class CalculationRepository:
     
     async def _save_calculation_result_db(self, result_data: Dict[str, Any]) -> Dict[str, Any]:
         """PostgreSQL에 계산 결과 저장"""
-        # TODO: PostgreSQL 연결 구현
-        logger.warning("PostgreSQL 연결이 구현되지 않음. 메모리 데이터 사용")
-        return self._save_calculation_result_memory(result_data)
+        try:
+            with self.engine.connect() as conn:
+                query = text("""
+                    INSERT INTO calculation_results (user_id, calculation_type, fuel_id, material_id, quantity, created_at)
+                    VALUES (:user_id, :calculation_type, :fuel_id, :material_id, :quantity, NOW())
+                    RETURNING id
+                """)
+                result = conn.execute(query, result_data)
+                new_result_id = result.scalar()
+                
+                if new_result_id:
+                    return {**result_data, "id": new_result_id}
+                return None
+        except Exception as e:
+            logger.error(f"❌ PostgreSQL 계산 결과 저장 실패: {str(e)}")
+            raise
     
     async def _get_calculation_stats_db(self) -> Dict[str, Any]:
         """PostgreSQL에서 계산 통계 조회"""
-        # TODO: PostgreSQL 연결 구현
-        logger.warning("PostgreSQL 연결이 구현되지 않음. 메모리 데이터 사용")
-        return self._get_calculation_stats_memory()
+        try:
+            with self.engine.connect() as conn:
+                query = text("""
+                    SELECT 
+                        COUNT(*) AS total_calculations,
+                        COUNT(CASE WHEN calculation_type = 'fuel' THEN 1 END) AS fuel_calculations,
+                        COUNT(CASE WHEN calculation_type = 'material' THEN 1 END) AS material_calculations,
+                        COUNT(DISTINCT user_id) AS total_users,
+                        COUNT(DISTINCT user_id) FILTER (WHERE user_id IS NOT NULL) AS active_users,
+                        COUNT(DISTINCT calculation_type) AS unique_calculation_types
+                    FROM calculation_results
+                """)
+                result = conn.execute(query)
+                row = result.fetchone()
+                
+                if row:
+                    return {
+                        "total_calculations": row[0],
+                        "fuel_calculations": row[1],
+                        "material_calculations": row[2],
+                        "total_users": row[3],
+                        "active_users": row[4],
+                        "unique_calculation_types": row[5]
+                    }
+                return {}
+        except Exception as e:
+            logger.error(f"❌ PostgreSQL 계산 통계 조회 실패: {str(e)}")
+            return self._get_calculation_stats_memory()
     
     def _save_calculation_result_memory(self, result_data: Dict[str, Any]) -> Dict[str, Any]:
         """메모리에 계산 결과 저장"""
