@@ -121,6 +121,18 @@ async def proxy_request(service: str, path: str, request: Request) -> Response:
 # 범용 프록시 라우트 (메인 라우팅 역할)
 @app.api_route("/api/v1/{service}/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"])
 async def proxy(service: str, path: str, request: Request):
+    # OPTIONS 요청은 CORS preflight이므로 Gateway에서 직접 처리
+    if request.method == "OPTIONS":
+        return Response(
+            status_code=200,
+            headers={
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, PATCH, OPTIONS",
+                "Access-Control-Allow-Headers": "*",
+                "Access-Control-Max-Age": "86400",
+            }
+        )
+    
     return await proxy_request(service, path, request)
 
 # 헬스 체크
