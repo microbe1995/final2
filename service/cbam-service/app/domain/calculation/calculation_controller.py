@@ -9,7 +9,7 @@ from loguru import logger
 from .calculation_service import CalculationService
 from .calculation_schema import ProductCreateRequest, ProductResponse
 
-router = APIRouter(prefix="/api", tags=["Product"])
+router = APIRouter(prefix="/api/v1/boundary", tags=["Product"])
 
 # 서비스 인스턴스 생성
 calculation_service = CalculationService()

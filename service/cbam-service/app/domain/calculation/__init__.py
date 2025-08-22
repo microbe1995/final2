@@ -22,7 +22,7 @@ from .calculation_schema import (
 )
 from .calculation_service import CalculationService
 from .calculation_repository import CalculationRepository
-from .calculation_controller import calculation_router
+from .calculation_controller import router as calculation_router
 
 __all__ = [
     # Entities

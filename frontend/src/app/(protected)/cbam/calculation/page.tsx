@@ -1421,6 +1421,52 @@ export default function CalculationPage() {
               className="w-full"
             />
           </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-white mb-2">
+              수출량 (톤)
+            </label>
+            <Input
+              type="number"
+              value={productForm.export_qty}
+              onChange={(e) => setProductForm(prev => ({ ...prev, export_qty: parseFloat(e.target.value) || 0 }))}
+              placeholder="0"
+              min="0"
+              step="0.01"
+              className="w-full"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-white mb-2">
+              재고량 (톤)
+            </label>
+            <Input
+              type="number"
+              value={productForm.inventory_qty}
+              onChange={(e) => setProductForm(prev => ({ ...prev, inventory_qty: parseFloat(e.target.value) || 0 }))}
+              placeholder="0"
+              min="0"
+              step="0.01"
+              className="w-full"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-white mb-2">
+              불량률 (%)
+            </label>
+            <Input
+              type="number"
+              value={productForm.defect_rate}
+              onChange={(e) => setProductForm(prev => ({ ...prev, defect_rate: parseFloat(e.target.value) || 0 }))}
+              placeholder="0"
+              min="0"
+              max="100"
+              step="0.01"
+              className="w-full"
+            />
+          </div>
         </div>
 
         <Button
@@ -1442,6 +1488,9 @@ export default function CalculationPage() {
               <p><strong>기간:</strong> {results.product.period_start} ~ {results.product.period_end}</p>
               <p><strong>생산량:</strong> {results.product.production_qty} 톤</p>
               <p><strong>외부판매량:</strong> {results.product.sales_qty} 톤</p>
+              <p><strong>수출량:</strong> {results.product.export_qty} 톤</p>
+              <p><strong>재고량:</strong> {results.product.inventory_qty} 톤</p>
+              <p><strong>불량률:</strong> {results.product.defect_rate}%</p>
             </div>
           </div>
         )}
