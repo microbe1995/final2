@@ -19,6 +19,7 @@ class CalculationRepository:
         self._memory_materials: Dict[str, Dict[str, Any]] = {}
         self._memory_precursors: Dict[int, Dict[str, Any]] = {}
         self._memory_results: Dict[int, Dict[str, Any]] = {}
+        self._memory_products: Dict[int, Dict[str, Any]] = {}
         
         if self.use_database:
             logger.info("✅ PostgreSQL 계산 저장소 사용")
