@@ -9,7 +9,7 @@ dist/
 build/
 
 # Cache
-.cache/
+.cache/ㅌ
 .vercel/
 
 # Environment files

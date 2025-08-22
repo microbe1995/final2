@@ -201,28 +201,28 @@ export const apiEndpoints = {
     
     // 새로운 테이블 API 엔드포인트들
     boundary: {
-        create: '/api/v1/boundary/calc/boundary',
-        list: '/api/v1/boundary/calc/boundary'
+        create: '/api/v1/boundary/boundary',
+        list: '/api/v1/boundary/boundary'
     },
     product: {
-        create: '/api/v1/boundary/calc/product',
-        list: '/api/v1/boundary/calc/product'
+        create: '/api/v1/boundary/product',
+        list: '/api/v1/boundary/product'
     },
     operation: {
-        create: '/api/v1/boundary/calc/operation',
-        list: '/api/v1/boundary/calc/operation'
+        create: '/api/v1/boundary/operation',
+        list: '/api/v1/boundary/operation'
     },
     node: {
-        create: '/api/v1/boundary/calc/node',
-        list: '/api/v1/boundary/calc/node'
+        create: '/api/v1/boundary/node',
+        list: '/api/v1/boundary/node'
     },
     edge: {
-        create: '/api/v1/boundary/calc/edge',
-        list: '/api/v1/boundary/calc/edge'
+        create: '/api/v1/boundary/edge',
+        list: '/api/v1/boundary/edge'
     },
     productionEmission: {
-        create: '/api/v1/boundary/calc/production-emission',
-        list: '/api/v1/boundary/calc/production-emission'
+        create: '/api/v1/boundary/production-emission',
+        list: '/api/v1/boundary/production-emission'
     }
 },
   // Data Upload (Gateway를 통해)
