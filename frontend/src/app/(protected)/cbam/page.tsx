@@ -1,9 +1,11 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import CommonShell from '@/components/common/CommonShell';
 import ProcessManager from '@/components/cbam/ProcessManager';
 import { ReactFlowProvider } from '@xyflow/react';
+import axiosClient from '@/lib/axiosClient';
 
 // ============================================================================
 // 🎯 CBAM 관리 페이지
@@ -11,7 +13,7 @@ import { ReactFlowProvider } from '@xyflow/react';
 
 export default function CBAMPage() {
   const [activeTab, setActiveTab] = useState<
-    'overview' | 'flow' | 'reports' | 'settings'
+    'overview' | 'flow' | 'calculation' | 'reports' | 'settings'
   >('overview');
 
   const renderOverview = () => (
@@ -57,6 +59,27 @@ export default function CBAMPage() {
           <ReactFlowProvider>
             <ProcessManager />
           </ReactFlowProvider>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderCalculation = () => (
+    <div className='space-y-6'>
+      <div className='stitch-card p-6'>
+        <h3 className='stitch-h1 text-lg font-semibold mb-4'>
+          CBAM 계산 관리
+        </h3>
+        <p className='stitch-caption text-white/60'>
+          CBAM 배출량 계산 및 비용 산출을 관리합니다.
+        </p>
+        <div className='mt-6'>
+          <Link 
+            href='/cbam/calculation'
+            className='inline-flex items-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors'
+          >
+            🧮 계산 페이지로 이동
+          </Link>
         </div>
       </div>
     </div>
@@ -126,6 +149,16 @@ export default function CBAMPage() {
             프로세스 관리
           </button>
           <button
+            onClick={() => setActiveTab('calculation')}
+            className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+              activeTab === 'calculation'
+                ? 'bg-primary text-white'
+                : 'text-white/60 hover:text-white hover:bg-white/5'
+            }`}
+          >
+            계산 관리
+          </button>
+          <button
             onClick={() => setActiveTab('reports')}
             className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
               activeTab === 'reports'
@@ -150,6 +183,7 @@ export default function CBAMPage() {
         {/* 탭 콘텐츠 */}
         {activeTab === 'overview' && renderOverview()}
         {activeTab === 'flow' && renderFlow()}
+        {activeTab === 'calculation' && renderCalculation()}
         {activeTab === 'reports' && renderReports()}
         {activeTab === 'settings' && renderSettings()}
       </div>

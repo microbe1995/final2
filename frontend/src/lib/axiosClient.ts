@@ -19,7 +19,7 @@ const generateRequestKey = (config: AxiosRequestConfig): string => {
 const isGatewayRequest = (url: string): boolean => {
   try {
     const requestUrl = new URL(url);
-    const gatewayUrl = new URL(env.NEXT_PUBLIC_GATEWAY_URL);
+    const gatewayUrl = new URL(env.NEXT_PUBLIC_API_BASE_URL);
     return requestUrl.hostname === gatewayUrl.hostname;
   } catch {
     return false;
@@ -59,7 +59,7 @@ const retryRequest = async (
 
 // axios 인스턴스 생성
 const axiosClient: AxiosInstance = axios.create({
-  baseURL: env.NEXT_PUBLIC_GATEWAY_URL,
+  baseURL: env.NEXT_PUBLIC_API_BASE_URL,
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json',

@@ -1,6 +1,6 @@
 export const env = {
-  NEXT_PUBLIC_GATEWAY_URL:
-    process.env.NEXT_PUBLIC_GATEWAY_URL || 'https://gateway-production-da31.up.railway.app',
+  NEXT_PUBLIC_API_BASE_URL:
+    process.env.NEXT_PUBLIC_API_BASE_URL || 'https://gateway-production-22ef.up.railway.app',
   NEXT_PUBLIC_ENV: process.env.NEXT_PUBLIC_ENV || 'development',
   NEXT_PUBLIC_APP_NAME: process.env.NEXT_PUBLIC_APP_NAME || 'greensteel',
   NEXT_PUBLIC_APP_VERSION: process.env.NEXT_PUBLIC_APP_VERSION || '1.0.0',
@@ -11,9 +11,9 @@ export const env = {
 } as const;
 
 // Gateway URL이 유효한지 확인 (환경 변수가 있을 때만)
-if (process.env.NEXT_PUBLIC_GATEWAY_URL) {
+if (process.env.NEXT_PUBLIC_API_BASE_URL) {
   try {
-    const url = new URL(env.NEXT_PUBLIC_GATEWAY_URL);
+    const url = new URL(env.NEXT_PUBLIC_API_BASE_URL);
     // localhost, 127.0.0.1, http://*3000 등은 허용하지 않음
     if (
       url.hostname === 'localhost' ||

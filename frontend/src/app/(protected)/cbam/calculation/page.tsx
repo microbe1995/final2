@@ -5,6 +5,7 @@ import Button from '@/components/atomic/atoms/Button';
 import Input from '@/components/atomic/atoms/Input';
 // StatusBadge has different props, so we'll use simple spans
 import { useCalculationAPI } from '@/hooks/useCalculationAPI';
+import axiosClient from '@/lib/axiosClient';
 import type {
   FuelCalculationRequest,
   MaterialCalculationRequest,
@@ -440,14 +441,10 @@ export default function CalculationPage() {
 
     setLoading(true);
     try {
-      const response = await fetch('/api/v1/boundary/calc/boundary', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(boundaryForm)
-      });
+      const response = await axiosClient.post('/api/v1/boundary/calc/boundary', boundaryForm);
       
-      if (response.ok) {
-        const result = await response.json();
+      if (response.status === 200 || response.status === 201) {
+        const result = response.data;
         setResults(prev => ({ ...prev, boundary: result }));
         setToast({ message: '경계가 성공적으로 생성되었습니다!', type: 'success' });
         setBoundaryForm({ name: '' }); // 폼 초기화
@@ -472,19 +469,12 @@ export default function CalculationPage() {
     try {
       console.log('제품 생성 요청:', productForm);
       
-      const response = await fetch('/api/v1/boundary/product', {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('auth_token') || ''}`
-        },
-        body: JSON.stringify(productForm)
-      });
+      const response = await axiosClient.post('/api/v1/boundary/product', productForm);
       
       console.log('제품 생성 응답 상태:', response.status);
       
-      if (response.ok) {
-        const result = await response.json();
+      if (response.status === 200 || response.status === 201) {
+        const result = response.data;
         console.log('제품 생성 성공:', result);
         setResults(prev => ({ ...prev, product: result }));
         setToast({ message: '제품이 성공적으로 생성되었습니다!', type: 'success' });
@@ -500,8 +490,7 @@ export default function CalculationPage() {
           defect_rate: 0
         }); // 폼 초기화
       } else {
-        const errorText = await response.text();
-        console.error('제품 생성 실패:', response.status, errorText);
+        console.error('제품 생성 실패:', response.status, response.data);
         setToast({ message: `제품 생성 중 오류가 발생했습니다. (${response.status})`, type: 'error' });
       }
     } catch (error) {
@@ -520,14 +509,10 @@ export default function CalculationPage() {
 
     setLoading(true);
     try {
-      const response = await fetch('/api/v1/boundary/calc/operation', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(operationForm)
-      });
+      const response = await axiosClient.post('/api/v1/boundary/calc/operation', operationForm);
       
-      if (response.ok) {
-        const result = await response.json();
+      if (response.status === 200 || response.status === 201) {
+        const result = response.data;
         setResults(prev => ({ ...prev, operation: result }));
         setToast({ message: '공정이 성공적으로 생성되었습니다!', type: 'success' });
         setOperationForm({
@@ -560,14 +545,10 @@ export default function CalculationPage() {
 
     setLoading(true);
     try {
-      const response = await fetch('/api/v1/boundary/calc/node', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(nodeForm)
-      });
+      const response = await axiosClient.post('/api/v1/boundary/calc/node', nodeForm);
       
-      if (response.ok) {
-        const result = await response.json();
+      if (response.status === 200 || response.status === 201) {
+        const result = response.data;
         setResults(prev => ({ ...prev, node: result }));
         setToast({ message: '노드가 성공적으로 생성되었습니다!', type: 'success' });
         setNodeForm({
@@ -597,14 +578,10 @@ export default function CalculationPage() {
 
     setLoading(true);
     try {
-      const response = await fetch('/api/v1/boundary/calc/edge', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(edgeForm)
-      });
+      const response = await axiosClient.post('/api/v1/boundary/calc/edge', edgeForm);
       
-      if (response.ok) {
-        const result = await response.json();
+      if (response.status === 200 || response.status === 201) {
+        const result = response.data;
         setResults(prev => ({ ...prev, edge: result }));
         setToast({ message: '엣지가 성공적으로 생성되었습니다!', type: 'success' });
         setEdgeForm({
@@ -633,14 +610,10 @@ export default function CalculationPage() {
 
     setLoading(true);
     try {
-      const response = await fetch('/api/v1/boundary/calc/production-emission', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(emissionForm)
-      });
+      const response = await axiosClient.post('/api/v1/boundary/calc/production-emission', emissionForm);
       
-      if (response.ok) {
-        const result = await response.json();
+      if (response.status === 200 || response.status === 201) {
+        const result = response.data;
         setResults(prev => ({ ...prev, emission: result }));
         setToast({ message: '생산 배출량이 성공적으로 생성되었습니다!', type: 'success' });
         setEmissionForm({
