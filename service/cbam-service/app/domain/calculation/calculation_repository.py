@@ -65,7 +65,7 @@ class CalculationRepository:
     def _get_fuel_by_name_memory(self, fuel_name: str) -> Optional[Dict[str, Any]]:
         """메모리에서 연료명으로 조회"""
         for fuel in self._memory_fuels.values():
-            if fuel_name.lower() in fuel["fuel_type_description"].lower():
+            if fuel_name.lower() in fuel["fuel_name"].lower():
                 return fuel
         return None
     
@@ -73,7 +73,7 @@ class CalculationRepository:
         """메모리에서 연료 검색"""
         results = []
         for fuel in self._memory_fuels.values():
-            if not search or search.lower() in fuel["fuel_type_description"].lower():
+            if not search or search.lower() in fuel["fuel_name"].lower():
                 results.append(fuel)
                 if len(results) >= limit:
                     break
@@ -312,24 +312,24 @@ class CalculationRepository:
         self._memory_fuels = {
             "천연가스": {
                 "id": 1,
-                "fuel_type_description": "천연가스",
-                "fuel_type_description_eng": "Natural Gas",
-                "emission_factor": 56.1,
-                "net_calorific_value": 48.0
+                "fuel_name": "천연가스",
+                "fuel_eng": "Natural Gas",
+                "fuel_emfactor": 56.1,
+                "net_calory": 48.0
             },
             "석탄": {
                 "id": 2,
-                "fuel_type_description": "석탄",
-                "fuel_type_description_eng": "Coal",
-                "emission_factor": 94.6,
-                "net_calorific_value": 25.8
+                "fuel_name": "석탄",
+                "fuel_eng": "Coal",
+                "fuel_emfactor": 94.6,
+                "net_calory": 25.8
             },
             "중유": {
                 "id": 3,
-                "fuel_type_description": "중유",
-                "fuel_type_description_eng": "Heavy Oil",
-                "emission_factor": 77.4,
-                "net_calorific_value": 40.4
+                "fuel_name": "중유",
+                "fuel_eng": "Heavy Oil",
+                "fuel_emfactor": 77.4,
+                "net_calory": 40.4
             }
         }
         
@@ -338,9 +338,9 @@ class CalculationRepository:
             "철광석": {
                 "id": 1,
                 "item_name": "철광석",
-                "item_name_eng": "Iron Ore",
-                "direct_factor": 0.024,
-                "indirect_factor": 0.012,
+                "item_eng": "Iron Ore",
+                "carbon_factor": 0.5,  # 탄소함량 (%)
+                "em_factor": 0.024,  # 배출계수 (tCO2/톤)
                 "cn_code": "2601",
                 "cn_code1": "260111",
                 "cn_code2": "26011100"
@@ -348,9 +348,9 @@ class CalculationRepository:
             "석회석": {
                 "id": 2,
                 "item_name": "석회석",
-                "item_name_eng": "Limestone",
-                "direct_factor": 0.034,
-                "indirect_factor": 0.018,
+                "item_eng": "Limestone",
+                "carbon_factor": 12.0,  # 탄소함량 (%)
+                "em_factor": 0.034,  # 배출계수 (tCO2/톤)
                 "cn_code": "2521",
                 "cn_code1": "252100",
                 "cn_code2": "25210000"

@@ -9,9 +9,14 @@ import type {
   FuelCalculationRequest,
   MaterialCalculationRequest,
   PrecursorData,
+  PrecursorCalculationRequest,
+  ElectricityCalculationRequest,
+  ProductionProcess,
   CBAMCalculationRequest,
   FuelCalculationResponse,
   MaterialCalculationResponse,
+  PrecursorCalculationResponse,
+  ElectricityCalculationResponse,
   CBAMCalculationResponse,
   CalculationStatsResponse
 } from '@/hooks/useCalculationAPI';
@@ -21,7 +26,7 @@ import type {
 // ============================================================================
 
 export default function CalculationPage() {
-  const [activeTab, setActiveTab] = useState<'fuel' | 'material' | 'precursor' | 'cbam' | 'stats'>('fuel');
+  const [activeTab, setActiveTab] = useState<'fuel' | 'material' | 'precursor' | 'electricity' | 'process' | 'cbam' | 'stats' | 'boundary' | 'product' | 'operation' | 'node' | 'edge' | 'emission'>('fuel');
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
 
@@ -29,6 +34,9 @@ export default function CalculationPage() {
   const {
     calculateFuelEmission,
     calculateMaterialEmission,
+    calculatePrecursorEmission,
+    calculateElectricityEmission,
+    calculateProcessEmissions,
     getPrecursorList,
     savePrecursorBatch,
     calculateCBAM,
@@ -56,17 +64,110 @@ export default function CalculationPage() {
 
   const [cbamForm, setCbamForm] = useState<CBAMCalculationRequest>({
     product_name: '',
-    fuel_emissions: 0,
-    material_emissions: 0,
-    precursor_emissions: 0
+    product_type: '단순',
+    user_id: '',
+    production_period: { start: '', end: '' },
+    cn_code: '',
+    production_quantity: 0,
+    processes: [],
+    fuels: [],
+    materials: [],
+    electricity: null,
+    precursors: []
+  });
+
+  const [electricityForm, setElectricityForm] = useState<ElectricityCalculationRequest>({
+    power_usage: 0,
+    emission_factor: 0.4567
+  });
+
+  const [processForm, setProcessForm] = useState<ProductionProcess>({
+    process_order: 1,
+    process_name: '',
+    start_date: '',
+    end_date: '',
+    duration_days: 0,
+    input_material_name: '',
+    input_material_amount: 0,
+    input_fuel_name: '',
+    input_fuel_amount: 0,
+    power_usage: 0,
+    direct_emission: 0,
+    indirect_emission: 0,
+    precursor_emission: 0,
+    total_emission: 0
+  });
+
+  // 새로운 테이블 폼 상태들
+  const [boundaryForm, setBoundaryForm] = useState({
+    name: ''
+  });
+
+  const [productForm, setProductForm] = useState({
+    name: '',
+    cn_code: '',
+    period_start: '',
+    period_end: '',
+    production_qty: 0,
+    sales_qty: 0,
+    export_qty: 0,
+    inventory_qty: 0,
+    defect_rate: 0
+  });
+
+  const [operationForm, setOperationForm] = useState({
+    name: '',
+    facility_id: 1,
+    category: '',
+    boundary_id: 1,
+    input_kind: 'material',
+    material_id: null,
+    fuel_id: null,
+    quantity: 0,
+    unit_id: 1
+  });
+
+  const [nodeForm, setNodeForm] = useState({
+    boundary_id: 1,
+    node_type: 'product',
+    ref_id: 1,
+    label: '',
+    pos_x: 0,
+    pos_y: 0
+  });
+
+  const [edgeForm, setEdgeForm] = useState({
+    boundary_id: 1,
+    sourcenode_id: '',
+    targetnode_id: '',
+    flow_type: 'material',
+    label: ''
+  });
+
+  const [emissionForm, setEmissionForm] = useState({
+    product_id: 1,
+    boundary_id: 1,
+    result_unit_id: 1,
+    dir_emission: 0,
+    indir_emission: 0,
+    see: 0
   });
 
   // Results
   const [results, setResults] = useState<{
     fuel?: FuelCalculationResponse;
     material?: MaterialCalculationResponse;
+    precursor?: PrecursorCalculationResponse;
+    electricity?: ElectricityCalculationResponse;
+    process?: ProductionProcess[];
     cbam?: CBAMCalculationResponse;
     stats?: CalculationStatsResponse;
+    boundary?: any;
+    product?: any;
+    operation?: any;
+    node?: any;
+    edge?: any;
+    emission?: any;
   }>({});
 
   const [precursorList, setPrecursorList] = useState<PrecursorData[]>([]);
@@ -156,6 +257,95 @@ export default function CalculationPage() {
   };
 
   // ============================================================================
+  // 🔬 전구물질 계산
+  // ============================================================================
+  
+  const handlePrecursorCalculation = async () => {
+    if (!precursorForm.precursor_name || precursorForm.emission_factor <= 0) {
+      setToast({ message: '전구물질명과 배출계수를 올바르게 입력해주세요.', type: 'error' });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const result = await calculatePrecursorEmission({
+        precursor_name: precursorForm.precursor_name,
+        precursor_amount: precursorForm.emission_factor, // 임시로 배출계수를 사용량으로 사용
+        emission_factor: precursorForm.emission_factor,
+        carbon_content: precursorForm.carbon_content
+      });
+      
+      if (result) {
+        setResults(prev => ({ ...prev, precursor: result }));
+        setToast({ message: '전구물질 배출량 계산이 완료되었습니다!', type: 'success' });
+      } else {
+        setToast({ message: '전구물질 계산 중 오류가 발생했습니다.', type: 'error' });
+      }
+    } catch (error) {
+      console.error('Precursor calculation error:', error);
+      setToast({ message: '전구물질 계산 중 오류가 발생했습니다.', type: 'error' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ============================================================================
+  // ⚡ 전력 사용 배출량 계산
+  // ============================================================================
+  
+  const handleElectricityCalculation = async () => {
+    if (electricityForm.power_usage <= 0) {
+      setToast({ message: '전력 사용량을 올바르게 입력해주세요.', type: 'error' });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const result = await calculateElectricityEmission(electricityForm);
+      
+      if (result) {
+        setResults(prev => ({ ...prev, electricity: result }));
+        setToast({ message: '전력 사용 배출량 계산이 완료되었습니다!', type: 'success' });
+      } else {
+        setToast({ message: '전력 계산 중 오류가 발생했습니다.', type: 'error' });
+      }
+    } catch (error) {
+      console.error('Electricity calculation error:', error);
+      setToast({ message: '전력 계산 중 오류가 발생했습니다.', type: 'error' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ============================================================================
+  // 🏭 생산 공정 계산
+  // ============================================================================
+  
+  const handleProcessCalculation = async () => {
+    if (!processForm.process_name || !processForm.start_date || !processForm.end_date) {
+      setToast({ message: '공정명과 시작/종료일을 입력해주세요.', type: 'error' });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const result = await calculateProcessEmissions([processForm]);
+      
+      if (result) {
+        setResults(prev => ({ ...prev, process: result }));
+        setToast({ message: '생산 공정 배출량 계산이 완료되었습니다!', type: 'success' });
+      } else {
+        setToast({ message: '공정 계산 중 오류가 발생했습니다.', type: 'error' });
+      }
+    } catch (error) {
+      console.error('Process calculation error:', error);
+      setToast({ message: '공정 계산 중 오류가 발생했습니다.', type: 'error' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ============================================================================
   // 🔬 전구물질 관리
   // ============================================================================
   
@@ -234,6 +424,230 @@ export default function CalculationPage() {
       loadStats();
     }
   }, [activeTab]);
+
+  // ============================================================================
+  // 🗄️ 새로운 테이블 핸들러들
+  // ============================================================================
+
+  const handleBoundaryCreate = async () => {
+    if (!boundaryForm.name) {
+      setToast({ message: '경계명을 입력해주세요.', type: 'error' });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await fetch('/api/v1/boundary/calc/boundary', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(boundaryForm)
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        setResults(prev => ({ ...prev, boundary: result }));
+        setToast({ message: '경계가 성공적으로 생성되었습니다!', type: 'success' });
+        setBoundaryForm({ name: '' }); // 폼 초기화
+      } else {
+        setToast({ message: '경계 생성 중 오류가 발생했습니다.', type: 'error' });
+      }
+    } catch (error) {
+      console.error('Boundary creation error:', error);
+      setToast({ message: '경계 생성 중 오류가 발생했습니다.', type: 'error' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleProductCreate = async () => {
+    if (!productForm.name || !productForm.period_start || !productForm.period_end) {
+      setToast({ message: '제품명과 기간을 입력해주세요.', type: 'error' });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await fetch('/api/v1/boundary/calc/product', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(productForm)
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        setResults(prev => ({ ...prev, product: result }));
+        setToast({ message: '제품이 성공적으로 생성되었습니다!', type: 'success' });
+        setProductForm({
+          name: '',
+          cn_code: '',
+          period_start: '',
+          period_end: '',
+          production_qty: 0,
+          sales_qty: 0,
+          export_qty: 0,
+          inventory_qty: 0,
+          defect_rate: 0
+        }); // 폼 초기화
+      } else {
+        setToast({ message: '제품 생성 중 오류가 발생했습니다.', type: 'error' });
+      }
+    } catch (error) {
+      console.error('Product creation error:', error);
+      setToast({ message: '제품 생성 중 오류가 발생했습니다.', type: 'error' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleOperationCreate = async () => {
+    if (!operationForm.name || !operationForm.input_kind) {
+      setToast({ message: '공정명과 입력 종류를 입력해주세요.', type: 'error' });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await fetch('/api/v1/boundary/calc/operation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(operationForm)
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        setResults(prev => ({ ...prev, operation: result }));
+        setToast({ message: '공정이 성공적으로 생성되었습니다!', type: 'success' });
+        setOperationForm({
+          name: '',
+          facility_id: 1,
+          category: '',
+          boundary_id: 1,
+          input_kind: 'material',
+          material_id: null,
+          fuel_id: null,
+          quantity: 0,
+          unit_id: 1
+        }); // 폼 초기화
+      } else {
+        setToast({ message: '공정 생성 중 오류가 발생했습니다.', type: 'error' });
+      }
+    } catch (error) {
+      console.error('Operation creation error:', error);
+      setToast({ message: '공정 생성 중 오류가 발생했습니다.', type: 'error' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleNodeCreate = async () => {
+    if (!nodeForm.node_type || !nodeForm.ref_id) {
+      setToast({ message: '노드 타입과 참조 ID를 입력해주세요.', type: 'error' });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await fetch('/api/v1/boundary/calc/node', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(nodeForm)
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        setResults(prev => ({ ...prev, node: result }));
+        setToast({ message: '노드가 성공적으로 생성되었습니다!', type: 'success' });
+        setNodeForm({
+          boundary_id: 1,
+          node_type: 'product',
+          ref_id: 1,
+          label: '',
+          pos_x: 0,
+          pos_y: 0
+        }); // 폼 초기화
+      } else {
+        setToast({ message: '노드 생성 중 오류가 발생했습니다.', type: 'error' });
+      }
+    } catch (error) {
+      console.error('Node creation error:', error);
+      setToast({ message: '노드 생성 중 오류가 발생했습니다.', type: 'error' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEdgeCreate = async () => {
+    if (!edgeForm.sourcenode_id || !edgeForm.targetnode_id || !edgeForm.flow_type) {
+      setToast({ message: '시작 노드, 도착 노드, 흐름 유형을 입력해주세요.', type: 'error' });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await fetch('/api/v1/boundary/calc/edge', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(edgeForm)
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        setResults(prev => ({ ...prev, edge: result }));
+        setToast({ message: '엣지가 성공적으로 생성되었습니다!', type: 'success' });
+        setEdgeForm({
+          boundary_id: 1,
+          sourcenode_id: '',
+          targetnode_id: '',
+          flow_type: 'material',
+          label: ''
+        }); // 폼 초기화
+      } else {
+        setToast({ message: '엣지 생성 중 오류가 발생했습니다.', type: 'error' });
+      }
+    } catch (error) {
+      console.error('Edge creation error:', error);
+      setToast({ message: '엣지 생성 중 오류가 발생했습니다.', type: 'error' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEmissionCreate = async () => {
+    if (!emissionForm.product_id || !emissionForm.boundary_id) {
+      setToast({ message: '제품 ID와 경계 ID를 입력해주세요.', type: 'error' });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await fetch('/api/v1/boundary/calc/production-emission', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(emissionForm)
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        setResults(prev => ({ ...prev, emission: result }));
+        setToast({ message: '생산 배출량이 성공적으로 생성되었습니다!', type: 'success' });
+        setEmissionForm({
+          product_id: 1,
+          boundary_id: 1,
+          result_unit_id: 1,
+          dir_emission: 0,
+          indir_emission: 0,
+          see: 0
+        }); // 폼 초기화
+      } else {
+        setToast({ message: '생산 배출량 생성 중 오류가 발생했습니다.', type: 'error' });
+      }
+    } catch (error) {
+      console.error('Emission creation error:', error);
+      setToast({ message: '생산 배출량 생성 중 오류가 발생했습니다.', type: 'error' });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // ============================================================================
   // 🎨 렌더링 함수들
@@ -349,6 +763,296 @@ export default function CalculationPage() {
               <p><strong>총 배출량:</strong> {results.material.emission?.toFixed(2)} tCO₂</p>
               <p><strong>배출계수:</strong> {results.material.emission_factor} tCO₂/톤</p>
               <p><strong>계산식:</strong> {results.material.calculation_formula}</p>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  const renderPrecursorCalculation = () => (
+    <div className="space-y-6">
+      <div className="bg-gray-800 border border-gray-700 rounded-lg p-6">
+        <h3 className="text-xl font-semibold text-white mb-6">🔬 전구물질 배출량 계산</h3>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          <div>
+            <label className="block text-sm font-medium text-white mb-2">
+              전구물질명 <span className="text-red-500">*</span>
+            </label>
+            <Input
+              value={precursorForm.precursor_name}
+              onChange={(e) => setPrecursorForm(prev => ({ ...prev, precursor_name: e.target.value }))}
+              placeholder="예: 석회석"
+              className="w-full"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-white mb-2">
+              사용량 (톤) <span className="text-red-500">*</span>
+            </label>
+            <Input
+              type="number"
+              value={precursorForm.emission_factor}
+              onChange={(e) => setPrecursorForm(prev => ({ ...prev, emission_factor: parseFloat(e.target.value) || 0 }))}
+              placeholder="0"
+              min="0"
+              step="0.01"
+              className="w-full"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-white mb-2">
+              배출계수 (tCO2/톤) <span className="text-red-500">*</span>
+            </label>
+            <Input
+              type="number"
+              value={precursorForm.emission_factor}
+              onChange={(e) => setPrecursorForm(prev => ({ ...prev, emission_factor: parseFloat(e.target.value) || 0 }))}
+              placeholder="0"
+              min="0"
+              step="0.01"
+              className="w-full"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-white mb-2">
+              탄소함량 (%)
+            </label>
+            <Input
+              type="number"
+              value={precursorForm.carbon_content}
+              onChange={(e) => setPrecursorForm(prev => ({ ...prev, carbon_content: parseFloat(e.target.value) || 0 }))}
+              placeholder="0"
+              min="0"
+              max="100"
+              step="0.01"
+              className="w-full"
+            />
+          </div>
+        </div>
+
+        <Button
+          onClick={handlePrecursorCalculation}
+          loading={loading}
+          variant="primary"
+          className="w-full md:w-auto"
+        >
+          전구물질 배출량 계산
+        </Button>
+
+        {results.precursor && (
+          <div className="mt-6 p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
+            <h4 className="font-semibold text-yellow-400 mb-3">🔬 전구물질 계산 결과</h4>
+            <div className="space-y-2 text-sm">
+              <p><strong>전구물질명:</strong> {results.precursor.precursor_name}</p>
+              <p><strong>총 배출량:</strong> {results.precursor.emission?.toFixed(2)} tCO₂</p>
+              <p><strong>배출계수:</strong> {results.precursor.emission_factor} tCO₂/톤</p>
+              <p><strong>탄소함량:</strong> {results.precursor.carbon_content}%</p>
+              <p><strong>계산식:</strong> {results.precursor.calculation_formula}</p>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  const renderElectricityCalculation = () => (
+    <div className="space-y-6">
+      <div className="bg-gray-800 border border-gray-700 rounded-lg p-6">
+        <h3 className="text-xl font-semibold text-white mb-6">⚡ 전력 사용 배출량 계산</h3>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          <div>
+            <label className="block text-sm font-medium text-white mb-2">
+              전력 사용량 (MWh) <span className="text-red-500">*</span>
+            </label>
+            <Input
+              type="number"
+              value={electricityForm.power_usage}
+              onChange={(e) => setElectricityForm(prev => ({ ...prev, power_usage: parseFloat(e.target.value) || 0 }))}
+              placeholder="0"
+              min="0"
+              step="0.01"
+              className="w-full"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-white mb-2">
+              배출계수 (tCO2/MWh)
+            </label>
+            <Input
+              type="number"
+              value={electricityForm.emission_factor}
+              onChange={(e) => setElectricityForm(prev => ({ ...prev, emission_factor: parseFloat(e.target.value) || 0.4567 }))}
+              placeholder="0.4567"
+              min="0"
+              step="0.0001"
+              className="w-full"
+            />
+          </div>
+        </div>
+
+        <div className="mb-6 p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+          <p className="text-sm text-blue-300">
+            <strong>참고:</strong> 전력배출계수는 2014~2016 연평균 기본값을 사용함 (0.4567 tCO2/MWh)
+          </p>
+        </div>
+
+        <Button
+          onClick={handleElectricityCalculation}
+          loading={loading}
+          variant="primary"
+          className="w-full md:w-auto"
+        >
+          전력 사용 배출량 계산
+        </Button>
+
+        {results.electricity && (
+          <div className="mt-6 p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+            <h4 className="font-semibold text-blue-400 mb-3">⚡ 전력 계산 결과</h4>
+            <div className="space-y-2 text-sm">
+              <p><strong>전력 사용량:</strong> {results.electricity.power_usage} MWh</p>
+              <p><strong>총 배출량:</strong> {results.electricity.emission?.toFixed(2)} tCO₂</p>
+              <p><strong>배출계수:</strong> {results.electricity.emission_factor} tCO₂/MWh</p>
+              <p><strong>계산식:</strong> {results.electricity.calculation_formula}</p>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  const renderProcessCalculation = () => (
+    <div className="space-y-6">
+      <div className="bg-gray-800 border border-gray-700 rounded-lg p-6">
+        <h3 className="text-xl font-semibold text-white mb-6">🏭 생산 공정 배출량 계산</h3>
+        
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div>
+            <label className="block text-sm font-medium text-white mb-2">
+              공정명 <span className="text-red-500">*</span>
+            </label>
+            <Input
+              value={processForm.process_name}
+              onChange={(e) => setProcessForm(prev => ({ ...prev, process_name: e.target.value }))}
+              placeholder="예: 용해 공정"
+              className="w-full"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-white mb-2">
+              시작일 <span className="text-red-500">*</span>
+            </label>
+            <Input
+              type="date"
+              value={processForm.start_date}
+              onChange={(e) => setProcessForm(prev => ({ ...prev, start_date: e.target.value }))}
+              className="w-full"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-white mb-2">
+              종료일 <span className="text-red-500">*</span>
+            </label>
+            <Input
+              type="date"
+              value={processForm.end_date}
+              onChange={(e) => setProcessForm(prev => ({ ...prev, end_date: e.target.value }))}
+              className="w-full"
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          <div>
+            <label className="block text-sm font-medium text-white mb-2">투입 연료명</label>
+            <Input
+              value={processForm.input_fuel_name || ''}
+              onChange={(e) => setProcessForm(prev => ({ ...prev, input_fuel_name: e.target.value }))}
+              placeholder="예: 천연가스"
+              className="w-full"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-white mb-2">투입 연료량 (톤)</label>
+            <Input
+              type="number"
+              value={processForm.input_fuel_amount || 0}
+              onChange={(e) => setProcessForm(prev => ({ ...prev, input_fuel_amount: parseFloat(e.target.value) || 0 }))}
+              placeholder="0"
+              min="0"
+              step="0.01"
+              className="w-full"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-white mb-2">투입 원료명</label>
+            <Input
+              value={processForm.input_material_name || ''}
+              onChange={(e) => setProcessForm(prev => ({ ...prev, input_material_name: e.target.value }))}
+              placeholder="예: 철광석"
+              className="w-full"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-white mb-2">투입 원료량 (톤)</label>
+            <Input
+              type="number"
+              value={processForm.input_material_amount || 0}
+              onChange={(e) => setProcessForm(prev => ({ ...prev, input_material_amount: parseFloat(e.target.value) || 0 }))}
+              placeholder="0"
+              min="0"
+              step="0.01"
+              className="w-full"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-white mb-2">전력 사용량 (MWh)</label>
+            <Input
+              type="number"
+              value={processForm.power_usage || 0}
+              onChange={(e) => setProcessForm(prev => ({ ...prev, power_usage: parseFloat(e.target.value) || 0 }))}
+              placeholder="0"
+              min="0"
+              step="0.01"
+              className="w-full"
+            />
+          </div>
+        </div>
+
+        <Button
+          onClick={handleProcessCalculation}
+          loading={loading}
+          variant="primary"
+          className="w-full md:w-auto"
+        >
+          공정 배출량 계산
+        </Button>
+
+        {results.process && results.process.length > 0 && (
+          <div className="mt-6 p-4 bg-purple-500/10 border border-purple-500/30 rounded-lg">
+            <h4 className="font-semibold text-purple-400 mb-3">🏭 공정 계산 결과</h4>
+            <div className="space-y-2 text-sm">
+              {results.process.map((process, index) => (
+                <div key={index} className="p-3 bg-gray-800 border border-gray-700 rounded-lg">
+                  <p><strong>공정명:</strong> {process.process_name}</p>
+                  <p><strong>직접 배출량:</strong> {process.direct_emission?.toFixed(2)} tCO₂</p>
+                  <p><strong>간접 배출량:</strong> {process.indirect_emission?.toFixed(2)} tCO₂</p>
+                  <p><strong>전구물질 배출량:</strong> {process.precursor_emission?.toFixed(2)} tCO₂</p>
+                  <p><strong>총 배출량:</strong> {process.total_emission?.toFixed(2)} tCO₂</p>
+                </div>
+              ))}
             </div>
           </div>
         )}
@@ -600,6 +1304,518 @@ export default function CalculationPage() {
     </div>
   );
 
+  const renderBoundaryForm = () => (
+    <div className="space-y-6">
+      <div className="bg-gray-800 border border-gray-700 rounded-lg p-6">
+        <h3 className="text-xl font-semibold text-white mb-6">🗺️ 경계 생성</h3>
+        
+        <div className="mb-6">
+          <label className="block text-sm font-medium text-white mb-2">
+            경계명 <span className="text-red-500">*</span>
+          </label>
+          <Input
+            value={boundaryForm.name}
+            onChange={(e) => setBoundaryForm(prev => ({ ...prev, name: e.target.value }))}
+            placeholder="예: 철강 생산 경계"
+            className="w-full"
+          />
+        </div>
+
+        <Button
+          onClick={handleBoundaryCreate}
+          loading={loading}
+          variant="primary"
+          className="w-full md:w-auto"
+        >
+          경계 생성
+        </Button>
+
+        {results.boundary && (
+          <div className="mt-6 p-4 bg-green-500/10 border border-green-500/30 rounded-lg">
+            <h4 className="font-semibold text-green-400 mb-3">✅ 경계 생성 결과</h4>
+            <div className="space-y-2 text-sm">
+              <p><strong>경계 ID:</strong> {results.boundary.boundary_id}</p>
+              <p><strong>경계명:</strong> {results.boundary.name}</p>
+              <p><strong>생성일:</strong> {results.boundary.created_at}</p>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  const renderProductForm = () => (
+    <div className="space-y-6">
+      <div className="bg-gray-800 border border-gray-700 rounded-lg p-6">
+        <h3 className="text-xl font-semibold text-white mb-6">📦 제품 생성</h3>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          <div>
+            <label className="block text-sm font-medium text-white mb-2">
+              제품명 <span className="text-red-500">*</span>
+            </label>
+            <Input
+              value={productForm.name}
+              onChange={(e) => setProductForm(prev => ({ ...prev, name: e.target.value }))}
+              placeholder="예: 철강 제품"
+              className="w-full"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-white mb-2">
+              CN 코드
+            </label>
+            <Input
+              value={productForm.cn_code}
+              onChange={(e) => setProductForm(prev => ({ ...prev, cn_code: e.target.value }))}
+              placeholder="예: 7208"
+              className="w-full"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-white mb-2">
+              시작일 <span className="text-red-500">*</span>
+            </label>
+            <Input
+              type="date"
+              value={productForm.period_start}
+              onChange={(e) => setProductForm(prev => ({ ...prev, period_start: e.target.value }))}
+              className="w-full"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-white mb-2">
+              종료일 <span className="text-red-500">*</span>
+            </label>
+            <Input
+              type="date"
+              value={productForm.period_end}
+              onChange={(e) => setProductForm(prev => ({ ...prev, period_end: e.target.value }))}
+              className="w-full"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-white mb-2">
+              생산량 (톤)
+            </label>
+            <Input
+              type="number"
+              value={productForm.production_qty}
+              onChange={(e) => setProductForm(prev => ({ ...prev, production_qty: parseFloat(e.target.value) || 0 }))}
+              placeholder="0"
+              min="0"
+              step="0.01"
+              className="w-full"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-white mb-2">
+              외부판매량 (톤)
+            </label>
+            <Input
+              type="number"
+              value={productForm.sales_qty}
+              onChange={(e) => setProductForm(prev => ({ ...prev, sales_qty: parseFloat(e.target.value) || 0 }))}
+              placeholder="0"
+              min="0"
+              step="0.01"
+              className="w-full"
+            />
+          </div>
+        </div>
+
+        <Button
+          onClick={handleProductCreate}
+          loading={loading}
+          variant="primary"
+          className="w-full md:w-auto"
+        >
+          제품 생성
+        </Button>
+
+        {results.product && (
+          <div className="mt-6 p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+            <h4 className="font-semibold text-blue-400 mb-3">✅ 제품 생성 결과</h4>
+            <div className="space-y-2 text-sm">
+              <p><strong>제품 ID:</strong> {results.product.product_id}</p>
+              <p><strong>제품명:</strong> {results.product.name}</p>
+              <p><strong>CN 코드:</strong> {results.product.cn_code}</p>
+              <p><strong>기간:</strong> {results.product.period_start} ~ {results.product.period_end}</p>
+              <p><strong>생산량:</strong> {results.product.production_qty} 톤</p>
+              <p><strong>외부판매량:</strong> {results.product.sales_qty} 톤</p>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  const renderOperationForm = () => (
+    <div className="space-y-6">
+      <div className="bg-gray-800 border border-gray-700 rounded-lg p-6">
+        <h3 className="text-xl font-semibold text-white mb-6">🏭 공정 생성</h3>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          <div>
+            <label className="block text-sm font-medium text-white mb-2">
+              공정명 <span className="text-red-500">*</span>
+            </label>
+            <Input
+              value={operationForm.name}
+              onChange={(e) => setOperationForm(prev => ({ ...prev, name: e.target.value }))}
+              placeholder="예: 용해 공정"
+              className="w-full"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-white mb-2">
+              공정 분류
+            </label>
+            <Input
+              value={operationForm.category}
+              onChange={(e) => setOperationForm(prev => ({ ...prev, category: e.target.value }))}
+              placeholder="예: 제강"
+              className="w-full"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-white mb-2">
+              입력 종류 <span className="text-red-500">*</span>
+            </label>
+            <select
+              value={operationForm.input_kind}
+              onChange={(e) => setOperationForm(prev => ({ ...prev, input_kind: e.target.value }))}
+              className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="material">원료 (material)</option>
+              <option value="fuel">연료 (fuel)</option>
+              <option value="electricity">전력 (electricity)</option>
+            </select>
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-white mb-2">
+              사용량
+            </label>
+            <Input
+              type="number"
+              value={operationForm.quantity}
+              onChange={(e) => setOperationForm(prev => ({ ...prev, quantity: parseFloat(e.target.value) || 0 }))}
+              placeholder="0"
+              min="0"
+              step="0.01"
+              className="w-full"
+            />
+          </div>
+        </div>
+
+        <Button
+          onClick={handleOperationCreate}
+          loading={loading}
+          variant="primary"
+          className="w-full md:w-auto"
+        >
+          공정 생성
+        </Button>
+
+        {results.operation && (
+          <div className="mt-6 p-4 bg-purple-500/10 border border-purple-500/30 rounded-lg">
+            <h4 className="font-semibold text-purple-400 mb-3">✅ 공정 생성 결과</h4>
+            <div className="space-y-2 text-sm">
+              <p><strong>공정 ID:</strong> {results.operation.operation_id}</p>
+              <p><strong>공정명:</strong> {results.operation.name}</p>
+              <p><strong>공정 분류:</strong> {results.operation.category}</p>
+              <p><strong>입력 종류:</strong> {results.operation.input_kind}</p>
+              <p><strong>사용량:</strong> {results.operation.quantity}</p>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  const renderNodeForm = () => (
+    <div className="space-y-6">
+      <div className="bg-gray-800 border border-gray-700 rounded-lg p-6">
+        <h3 className="text-xl font-semibold text-white mb-6">🔘 노드 생성</h3>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          <div>
+            <label className="block text-sm font-medium text-white mb-2">
+              노드 타입 <span className="text-red-500">*</span>
+            </label>
+            <select
+              value={nodeForm.node_type}
+              onChange={(e) => setNodeForm(prev => ({ ...prev, node_type: e.target.value }))}
+              className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="product">제품 (product)</option>
+              <option value="operation">공정 (operation)</option>
+            </select>
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-white mb-2">
+              참조 ID <span className="text-red-500">*</span>
+            </label>
+            <Input
+              type="number"
+              value={nodeForm.ref_id}
+              onChange={(e) => setNodeForm(prev => ({ ...prev, ref_id: parseInt(e.target.value) || 1 }))}
+              placeholder="1"
+              min="1"
+              className="w-full"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-white mb-2">
+              라벨
+            </label>
+            <Input
+              value={nodeForm.label}
+              onChange={(e) => setNodeForm(prev => ({ ...prev, label: e.target.value }))}
+              placeholder="화면 표시용 라벨"
+              className="w-full"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-white mb-2">
+              X 좌표
+            </label>
+            <Input
+              type="number"
+              value={nodeForm.pos_x}
+              onChange={(e) => setNodeForm(prev => ({ ...prev, pos_x: parseFloat(e.target.value) || 0 }))}
+              placeholder="0"
+              step="0.1"
+              className="w-full"
+            />
+          </div>
+        </div>
+
+        <Button
+          onClick={handleNodeCreate}
+          loading={loading}
+          variant="primary"
+          className="w-full md:w-auto"
+        >
+          노드 생성
+        </Button>
+
+        {results.node && (
+          <div className="mt-6 p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
+            <h4 className="font-semibold text-yellow-400 mb-3">✅ 노드 생성 결과</h4>
+            <div className="space-y-2 text-sm">
+              <p><strong>노드 ID:</strong> {results.node.node_id}</p>
+              <p><strong>노드 타입:</strong> {results.node.node_type}</p>
+              <p><strong>참조 ID:</strong> {results.node.ref_id}</p>
+              <p><strong>라벨:</strong> {results.node.label}</p>
+              <p><strong>위치:</strong> ({results.node.pos_x}, {results.node.pos_y})</p>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  const renderEdgeForm = () => (
+    <div className="space-y-6">
+      <div className="bg-gray-800 border border-gray-700 rounded-lg p-6">
+        <h3 className="text-xl font-semibold text-white mb-6">🔗 엣지 생성</h3>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          <div>
+            <label className="block text-sm font-medium text-white mb-2">
+              시작 노드 ID <span className="text-red-500">*</span>
+            </label>
+            <Input
+              value={edgeForm.sourcenode_id}
+              onChange={(e) => setEdgeForm(prev => ({ ...prev, sourcenode_id: e.target.value }))}
+              placeholder="예: node-1"
+              className="w-full"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-white mb-2">
+              도착 노드 ID <span className="text-red-500">*</span>
+            </label>
+            <Input
+              value={edgeForm.targetnode_id}
+              onChange={(e) => setEdgeForm(prev => ({ ...prev, targetnode_id: e.target.value }))}
+              placeholder="예: node-2"
+              className="w-full"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-white mb-2">
+              흐름 유형 <span className="text-red-500">*</span>
+            </label>
+            <select
+              value={edgeForm.flow_type}
+              onChange={(e) => setEdgeForm(prev => ({ ...prev, flow_type: e.target.value }))}
+              className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="material">원료 (material)</option>
+              <option value="fuel">연료 (fuel)</option>
+              <option value="electricity">전력 (electricity)</option>
+            </select>
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-white mb-2">
+              라벨
+            </label>
+            <Input
+              value={edgeForm.label}
+              onChange={(e) => setEdgeForm(prev => ({ ...prev, label: e.target.value }))}
+              placeholder="화면 표시용 라벨"
+              className="w-full"
+            />
+          </div>
+        </div>
+
+        <Button
+          onClick={handleEdgeCreate}
+          loading={loading}
+          variant="primary"
+          className="w-full md:w-auto"
+        >
+          엣지 생성
+        </Button>
+
+        {results.edge && (
+          <div className="mt-6 p-4 bg-orange-500/10 border border-orange-500/30 rounded-lg">
+            <h4 className="font-semibold text-orange-400 mb-3">✅ 엣지 생성 결과</h4>
+            <div className="space-y-2 text-sm">
+              <p><strong>엣지 ID:</strong> {results.edge.edge_id}</p>
+              <p><strong>시작 노드:</strong> {results.edge.sourcenode_id}</p>
+              <p><strong>도착 노드:</strong> {results.edge.targetnode_id}</p>
+              <p><strong>흐름 유형:</strong> {results.edge.flow_type}</p>
+              <p><strong>라벨:</strong> {results.edge.label}</p>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  const renderEmissionForm = () => (
+    <div className="space-y-6">
+      <div className="bg-gray-800 border border-gray-700 rounded-lg p-6">
+        <h3 className="text-xl font-semibold text-white mb-6">🌱 생산 배출량 생성</h3>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          <div>
+            <label className="block text-sm font-medium text-white mb-2">
+              제품 ID <span className="text-red-500">*</span>
+            </label>
+            <Input
+              type="number"
+              value={emissionForm.product_id}
+              onChange={(e) => setEmissionForm(prev => ({ ...prev, product_id: parseInt(e.target.value) || 1 }))}
+              placeholder="1"
+              min="1"
+              className="w-full"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-white mb-2">
+              경계 ID <span className="text-red-500">*</span>
+            </label>
+            <Input
+              type="number"
+              value={emissionForm.boundary_id}
+              onChange={(e) => setEmissionForm(prev => ({ ...prev, boundary_id: parseInt(e.target.value) || 1 }))}
+              placeholder="1"
+              min="1"
+              className="w-full"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-white mb-2">
+              간접귀속배출량 (tCO₂)
+            </label>
+            <Input
+              type="number"
+              value={emissionForm.dir_emission}
+              onChange={(e) => setEmissionForm(prev => ({ ...prev, dir_emission: parseFloat(e.target.value) || 0 }))}
+              placeholder="0"
+              min="0"
+              step="0.01"
+              className="w-full"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-white mb-2">
+              직접귀속배출량 (tCO₂)
+            </label>
+            <Input
+              type="number"
+              value={emissionForm.indir_emission}
+              onChange={(e) => setEmissionForm(prev => ({ ...prev, indir_emission: parseFloat(e.target.value) || 0 }))}
+              placeholder="0"
+              min="0"
+              step="0.01"
+              className="w-full"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-white mb-2">
+              제품 고유 내재배출량 (tCO₂)
+            </label>
+            <Input
+              type="number"
+              value={emissionForm.see}
+              onChange={(e) => setEmissionForm(prev => ({ ...prev, see: parseFloat(e.target.value) || 0 }))}
+              placeholder="0"
+              min="0"
+              step="0.01"
+              className="w-full"
+            />
+          </div>
+        </div>
+
+        <Button
+          onClick={handleEmissionCreate}
+          loading={loading}
+          variant="primary"
+          className="w-full md:w-auto"
+        >
+          생산 배출량 생성
+        </Button>
+
+        {results.emission && (
+          <div className="mt-6 p-4 bg-teal-500/10 border border-teal-500/30 rounded-lg">
+            <h4 className="font-semibold text-teal-400 mb-3">✅ 생산 배출량 생성 결과</h4>
+            <div className="space-y-2 text-sm">
+              <p><strong>결과 ID:</strong> {results.emission.prod_result_id}</p>
+              <p><strong>제품 ID:</strong> {results.emission.product_id}</p>
+              <p><strong>경계 ID:</strong> {results.emission.boundary_id}</p>
+              <p><strong>간접귀속배출량:</strong> {results.emission.dir_emission} tCO₂</p>
+              <p><strong>직접귀속배출량:</strong> {results.emission.indir_emission} tCO₂</p>
+              <p><strong>제품 고유 내재배출량:</strong> {results.emission.see} tCO₂</p>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 p-6">
       <div className="max-w-7xl mx-auto">
@@ -617,8 +1833,16 @@ export default function CalculationPage() {
             { key: 'fuel', label: '🔥 연료 계산', badge: 'Fuel' },
             { key: 'material', label: '🧱 원료 계산', badge: 'Material' },
             { key: 'precursor', label: '🔬 전구물질', badge: 'Precursor' },
+            { key: 'electricity', label: '⚡ 전력 계산', badge: 'Power' },
+            { key: 'process', label: '🏭 공정 계산', badge: 'Process' },
             { key: 'cbam', label: '🎯 CBAM 계산', badge: 'CBAM' },
-            { key: 'stats', label: '📊 통계', badge: 'Stats' }
+            { key: 'stats', label: '📊 통계', badge: 'Stats' },
+            { key: 'boundary', label: '🗺️ 경계', badge: 'Boundary' },
+            { key: 'product', label: '📦 제품', badge: 'Product' },
+            { key: 'operation', label: '🏭 공정', badge: 'Operation' },
+            { key: 'node', label: '🔘 노드', badge: 'Node' },
+            { key: 'edge', label: '🔗 엣지', badge: 'Edge' },
+            { key: 'emission', label: '🌱 배출량', badge: 'Emission' }
           ].map((tab) => (
             <button
               key={tab.key}
@@ -638,9 +1862,17 @@ export default function CalculationPage() {
         {/* Tab Content */}
         {activeTab === 'fuel' && renderFuelCalculation()}
         {activeTab === 'material' && renderMaterialCalculation()}
-        {activeTab === 'precursor' && renderPrecursorManagement()}
+        {activeTab === 'precursor' && renderPrecursorCalculation()}
+        {activeTab === 'electricity' && renderElectricityCalculation()}
+        {activeTab === 'process' && renderProcessCalculation()}
         {activeTab === 'cbam' && renderCBAMCalculation()}
         {activeTab === 'stats' && renderStats()}
+        {activeTab === 'boundary' && renderBoundaryForm()}
+        {activeTab === 'product' && renderProductForm()}
+        {activeTab === 'operation' && renderOperationForm()}
+        {activeTab === 'node' && renderNodeForm()}
+        {activeTab === 'edge' && renderEdgeForm()}
+        {activeTab === 'emission' && renderEmissionForm()}
 
         {/* Toast */}
         {toast && (

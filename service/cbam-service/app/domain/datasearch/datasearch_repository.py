@@ -263,8 +263,8 @@ class DataSearchRepository:
                     "품목_(cn기준)": "평판압연제품",
                     "품목_(cn기준_영문)": "Flat-rolled products",
                     "cn_코드": "7208",
-                    "직접": 1.89,
-                    "간접": 0.95
+                    "배출계수": 1.89,
+                    "탄소함량": 0.5
                 },
                 {
                     "id": 2,
@@ -274,8 +274,8 @@ class DataSearchRepository:
                     "품목_(cn기준)": "평판압연제품",
                     "품목_(cn기준_영문)": "Flat-rolled products",
                     "cn_코드": "7208",
-                    "직접": 1.92,
-                    "간접": 0.97
+                    "배출계수": 1.92,
+                    "탄소함량": 0.5
                 }
             ],
             "countries": [
@@ -286,21 +286,21 @@ class DataSearchRepository:
                 {"country_name": "Germany", "name_kr": "독일", "code": "DE"}
             ],
             "fuels": [
-                {"id": 1, "name": "천연가스", "name_eng": "Natural Gas", "emission_factor": 56.1, "net_calorific_value": 48.0},
-                {"id": 2, "name": "석탄", "name_eng": "Coal", "emission_factor": 94.6, "net_calorific_value": 25.8},
-                {"id": 3, "name": "중유", "name_eng": "Heavy Oil", "emission_factor": 77.4, "net_calorific_value": 40.4},
-                {"id": 4, "name": "경유", "name_eng": "Light Oil", "emission_factor": 74.1, "net_calorific_value": 43.0}
+                {"id": 1, "name": "천연가스", "name_eng": "Natural Gas", "fuel_emfactor": 56.1, "net_calory": 48.0},
+                {"id": 2, "name": "석탄", "name_eng": "Coal", "fuel_emfactor": 94.6, "net_calory": 25.8},
+                {"id": 3, "name": "중유", "name_eng": "Heavy Oil", "fuel_emfactor": 77.4, "net_calory": 40.4},
+                {"id": 4, "name": "경유", "name_eng": "Light Oil", "fuel_emfactor": 74.1, "net_calory": 43.0}
             ],
             "materials": [
-                {"id": 1, "name": "철광석", "name_eng": "Iron Ore", "direct_factor": 0.024, "cn_code": "2601", "cn_code1": "260111", "cn_code2": "26011100"},
-                {"id": 2, "name": "석회석", "name_eng": "Limestone", "direct_factor": 0.034, "cn_code": "2521", "cn_code1": "252100", "cn_code2": "25210000"},
-                {"id": 3, "name": "코크스", "name_eng": "Coke", "direct_factor": 3.2, "cn_code": "2704", "cn_code1": "270400", "cn_code2": "27040010"},
-                {"id": 4, "name": "스크랩", "name_eng": "Scrap", "direct_factor": 0.01, "cn_code": "7204", "cn_code1": "720410", "cn_code2": "72041000"}
+                {"id": 1, "name": "철광석", "name_eng": "Iron Ore", "em_factor": 0.024, "carbon_factor": 0.5, "cn_code": "2601", "cn_code1": "260111", "cn_code2": "26011100"},
+                {"id": 2, "name": "석회석", "name_eng": "Limestone", "em_factor": 0.034, "carbon_factor": 12.0, "cn_code": "2521", "cn_code1": "252100", "cn_code2": "25210000"},
+                {"id": 3, "name": "코크스", "name_eng": "Coke", "em_factor": 3.2, "carbon_factor": 85.0, "cn_code": "2704", "cn_code1": "270400", "cn_code2": "27040010"},
+                {"id": 4, "name": "스크랩", "name_eng": "Scrap", "em_factor": 0.01, "carbon_factor": 0.1, "cn_code": "7204", "cn_code1": "720410", "cn_code2": "72041000"}
             ],
             "precursors": [
-                {"id": 1, "name": "펠릿", "direct_factor": 0.15, "indirect_factor": 0.08, "cn_code": "2601"},
-                {"id": 2, "name": "소결광", "direct_factor": 0.12, "indirect_factor": 0.06, "cn_code": "2601"},
-                {"id": 3, "name": "괴광석", "direct_factor": 0.024, "indirect_factor": 0.012, "cn_code": "2601"},
-                {"id": 4, "name": "분광석", "direct_factor": 0.018, "indirect_factor": 0.009, "cn_code": "2601"}
+                {"id": 1, "precursor": "펠릿", "precursor_eng": "Pellet", "direct": 0.15, "indirect": 0.08, "cn1": "2601"},
+                {"id": 2, "precursor": "소결광", "precursor_eng": "Sinter", "direct": 0.12, "indirect": 0.06, "cn1": "2601"},
+                {"id": 3, "precursor": "괴광석", "precursor_eng": "Lump Ore", "direct": 0.024, "indirect": 0.012, "cn1": "2601"},
+                {"id": 4, "precursor": "분광석", "precursor_eng": "Fine Ore", "direct": 0.018, "indirect": 0.009, "cn1": "2601"}
             ]
         }

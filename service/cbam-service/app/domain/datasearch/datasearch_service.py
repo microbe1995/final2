@@ -90,8 +90,8 @@ class DataSearchService:
                     id=fuel.get("id", 0),
                     name=fuel.get("name", ""),
                     name_eng=fuel.get("name_eng", ""),
-                    emission_factor=fuel.get("emission_factor", 0.0),
-                    net_calorific_value=fuel.get("net_calorific_value", 0.0)
+                    fuel_emfactor=fuel.get("fuel_emfactor", 0.0),
+                    net_calory=fuel.get("net_calory", 0.0)
                 )
                 for fuel in fuels_data
             ]
@@ -120,7 +120,8 @@ class DataSearchService:
                     id=material.get("id", 0),
                     name=material.get("name", ""),
                     name_eng=material.get("name_eng", ""),
-                    direct_factor=material.get("direct_factor"),
+                    em_factor=material.get("em_factor"),
+                    carbon_factor=material.get("carbon_factor", 0.0),
                     cn_code=material.get("cn_code", ""),
                     cn_code1=material.get("cn_code1", ""),
                     cn_code2=material.get("cn_code2", "")
@@ -150,10 +151,11 @@ class DataSearchService:
             precursors = [
                 PrecursorData(
                     id=precursor.get("id", 0),
-                    name=precursor.get("name", ""),
-                    direct_factor=precursor.get("direct_factor", 0.0),
-                    indirect_factor=precursor.get("indirect_factor", 0.0),
-                    cn_code=precursor.get("cn_code", "")
+                    precursor=precursor.get("precursor", ""),
+                    precursor_eng=precursor.get("precursor_eng", ""),
+                    direct=precursor.get("direct", 0.0),
+                    indirect=precursor.get("indirect", 0.0),
+                    cn1=precursor.get("cn1", "")
                 )
                 for precursor in precursors_data
             ]

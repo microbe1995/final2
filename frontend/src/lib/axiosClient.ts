@@ -188,14 +188,43 @@ export const apiEndpoints = {
   },
   // Calculation Service (Gateway를 통해 boundary 서비스로)
   calculation: {
-    fuel: '/api/v1/boundary/calculation/fuel',
-    material: '/api/v1/boundary/calculation/material',
-    cbam: '/api/v1/boundary/calculation/cbam',
-    precursors: '/api/v1/boundary/precursors',
-    precursorsBatch: '/api/v1/boundary/precursors/batch',
-    stats: '/api/v1/boundary/calculation/stats',
-    history: '/api/v1/boundary/calculation/history',
-  },
+    fuel: '/api/v1/boundary/calc/fuel/calculate',
+    material: '/api/v1/boundary/calc/material/calculate',
+    precursor: '/api/v1/boundary/calc/precursor/calculate',
+    electricity: '/api/v1/boundary/calc/electricity/calculate',
+    process: '/api/v1/boundary/calc/process/calculate',
+    cbam: '/api/v1/boundary/calc/cbam',
+    precursors: '/api/v1/boundary/calc/precursor/user',
+    precursorsBatch: '/api/v1/boundary/calc/precursor/save-batch',
+    stats: '/api/v1/boundary/calc/stats',
+    history: '/api/v1/boundary/calc/history',
+    
+    // 새로운 테이블 API 엔드포인트들
+    boundary: {
+        create: '/api/v1/boundary/calc/boundary',
+        list: '/api/v1/boundary/calc/boundary'
+    },
+    product: {
+        create: '/api/v1/boundary/calc/product',
+        list: '/api/v1/boundary/calc/product'
+    },
+    operation: {
+        create: '/api/v1/boundary/calc/operation',
+        list: '/api/v1/boundary/calc/operation'
+    },
+    node: {
+        create: '/api/v1/boundary/calc/node',
+        list: '/api/v1/boundary/calc/node'
+    },
+    edge: {
+        create: '/api/v1/boundary/calc/edge',
+        list: '/api/v1/boundary/calc/edge'
+    },
+    productionEmission: {
+        create: '/api/v1/boundary/calc/production-emission',
+        list: '/api/v1/boundary/calc/production-emission'
+    }
+},
   // Data Upload (Gateway를 통해)
   upload: {
     data: '/api/datagather/upload',

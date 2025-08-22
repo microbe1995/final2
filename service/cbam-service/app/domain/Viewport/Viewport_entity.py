@@ -5,28 +5,30 @@
 import json
 from datetime import datetime
 from typing import Optional, Dict, Any
-from sqlalchemy import String, Float, Text, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, Numeric, DateTime, Text, Boolean, JSON, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from app.common.database_base import Base
+from sqlalchemy.ext.declarative import declarative_base
+
+Base = declarative_base()
 
 class ReactFlowViewport(Base):
     """ReactFlow 뷰포트 상태를 표현하는 엔티티"""
     __tablename__ = "reactflow_viewports"
     
     # 기본 필드
-    id: Mapped[str] = mapped_column(String(36), primary_key=True, index=True)
-    flow_id: Mapped[str] = mapped_column(String(36), ForeignKey("reactflow_states.id"), nullable=False, comment="플로우 ID")
+    id: Mapped[str] = mapped_column(Text, primary_key=True, index=True)
+    flow_id: Mapped[str] = mapped_column(Text, ForeignKey("reactflow_states.id"), nullable=False, comment="플로우 ID")
     
     # 뷰포트 상태
-    x: Mapped[float] = mapped_column(Float, nullable=False, default=0.0, comment="뷰포트 X 좌표")
-    y: Mapped[float] = mapped_column(Float, nullable=False, default=0.0, comment="뷰포트 Y 좌표")
-    zoom: Mapped[float] = mapped_column(Float, nullable=False, default=1.0, comment="뷰포트 줌 레벨")
+    x: Mapped[float] = mapped_column(Numeric(10, 4), nullable=False, default=0.0, comment="뷰포트 X 좌표")
+    y: Mapped[float] = mapped_column(Numeric(10, 4), nullable=False, default=0.0, comment="뷰포트 Y 좌표")
+    zoom: Mapped[float] = mapped_column(Numeric(5, 4), nullable=False, default=1.0, comment="뷰포트 줌 레벨")
     
     # 뷰포트 설정
-    min_zoom: Mapped[Optional[float]] = mapped_column(Float, nullable=True, default=0.1, comment="최소 줌 레벨")
-    max_zoom: Mapped[Optional[float]] = mapped_column(Float, nullable=True, default=5.0, comment="최대 줌 레벨")
-    pan_enabled: Mapped[bool] = mapped_column(String(5), nullable=False, default="true", comment="팬 활성화 여부")
-    zoom_enabled: Mapped[bool] = mapped_column(String(5), nullable=False, default="true", comment="줌 활성화 여부")
+    min_zoom: Mapped[Optional[float]] = mapped_column(Numeric(5, 4), nullable=True, default=0.1, comment="최소 줌 레벨")
+    max_zoom: Mapped[Optional[float]] = mapped_column(Numeric(5, 4), nullable=True, default=5.0, comment="최대 줌 레벨")
+    pan_enabled: Mapped[bool] = mapped_column(Text, nullable=False, default="true", comment="팬 활성화 여부")
+    zoom_enabled: Mapped[bool] = mapped_column(Text, nullable=False, default="true", comment="줌 활성화 여부")
     
     # 뷰포트 메타데이터
     settings_json: Mapped[Optional[str]] = mapped_column(Text, nullable=True, comment="뷰포트 설정 JSON")
@@ -43,9 +45,9 @@ class ReactFlowViewport(Base):
     def viewport_state(self) -> Dict[str, float]:
         """뷰포트 상태 반환"""
         return {
-            "x": self.x,
-            "y": self.y,
-            "zoom": self.zoom
+            "x": float(self.x) if self.x else 0.0,
+            "y": float(self.y) if self.y else 0.0,
+            "zoom": float(self.zoom) if self.zoom else 1.0
         }
     
     @viewport_state.setter
@@ -61,8 +63,8 @@ class ReactFlowViewport(Base):
         if self.settings_json:
             return json.loads(self.settings_json)
         return {
-            "minZoom": self.min_zoom or 0.1,
-            "maxZoom": self.max_zoom or 5.0,
+            "minZoom": float(self.min_zoom) if self.min_zoom else 0.1,
+            "maxZoom": float(self.max_zoom) if self.max_zoom else 5.0,
             "panEnabled": self.pan_enabled == "true",
             "zoomEnabled": self.zoom_enabled == "true"
         }

@@ -23,11 +23,11 @@ class HSCodeSearchResponse(BaseModel):
 
 class FuelData(BaseModel):
     """연료 데이터"""
-    id: int
+    id: int = Field(..., description="연료 ID")
     name: str = Field(..., description="연료명")
-    name_eng: Optional[str] = Field(default="", description="연료명(영문)")
-    emission_factor: float = Field(..., description="배출계수")
-    net_calorific_value: float = Field(..., description="순발열량")
+    name_eng: str = Field(..., description="연료영문명")
+    fuel_emfactor: float = Field(..., description="배출계수")
+    net_calory: float = Field(..., description="순발열량")
 
 class FuelSearchResponse(BaseModel):
     """연료 검색 응답"""
@@ -49,7 +49,14 @@ class MaterialData(BaseModel):
 
 class MaterialSearchResponse(BaseModel):
     """원료 검색 응답"""
-    materials: List[MaterialData] = Field(..., description="원료 목록")
+    id: int = Field(..., description="원료 ID")
+    name: str = Field(..., description="원료명")
+    name_eng: str = Field(..., description="원료영문명")
+    em_factor: Optional[float] = Field(default=None, description="배출계수")
+    carbon_factor: Optional[float] = Field(default=0.0, description="탄소함량 (%)")
+    cn_code: str = Field(..., description="CN코드")
+    cn_code1: str = Field(..., description="CN코드1")
+    cn_code2: str = Field(..., description="CN코드2")
 
 # ============================================================================
 # 🔗 전구물질 검색 스키마
@@ -57,11 +64,12 @@ class MaterialSearchResponse(BaseModel):
 
 class PrecursorData(BaseModel):
     """전구물질 데이터"""
-    id: int
-    name: str = Field(..., description="전구물질명")
-    direct_factor: Optional[float] = Field(default=0, description="직접배출계수")
-    indirect_factor: Optional[float] = Field(default=0, description="간접배출계수")
-    cn_code: Optional[str] = Field(default="", description="CN코드")
+    id: int = Field(..., description="전구물질 ID")
+    precursor: str = Field(..., description="전구물질명")
+    precursor_eng: str = Field(..., description="전구물질영문명")
+    direct: float = Field(..., description="직접 배출계수")
+    indirect: float = Field(..., description="간접 배출계수")
+    cn1: str = Field(..., description="CN코드1")
 
 class PrecursorSearchResponse(BaseModel):
     """전구물질 검색 응답"""

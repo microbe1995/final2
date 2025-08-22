@@ -23,6 +23,35 @@ export interface PrecursorData {
   carbon_content: number;
 }
 
+export interface PrecursorCalculationRequest {
+  precursor_name: string;
+  precursor_amount: number;
+  emission_factor: number;
+  carbon_content: number;
+}
+
+export interface ElectricityCalculationRequest {
+  power_usage: number;
+  emission_factor: number;
+}
+
+export interface ProductionProcess {
+  process_order: number;
+  process_name: string;
+  start_date: string;
+  end_date: string;
+  duration_days: number;
+  input_material_name?: string;
+  input_material_amount?: number;
+  input_fuel_name?: string;
+  input_fuel_amount?: number;
+  power_usage?: number;
+  direct_emission: number;
+  indirect_emission: number;
+  precursor_emission: number;
+  total_emission: number;
+}
+
 export interface CBAMCalculationRequest {
   product_name: string;
   fuel_emissions: number;
@@ -42,6 +71,21 @@ export interface FuelCalculationResponse {
 export interface MaterialCalculationResponse {
   emission: number;
   material_name: string;
+  emission_factor: number;
+  calculation_formula: string;
+}
+
+export interface PrecursorCalculationResponse {
+  emission: number;
+  precursor_name: string;
+  emission_factor: number;
+  carbon_content: number;
+  calculation_formula: string;
+}
+
+export interface ElectricityCalculationResponse {
+  emission: number;
+  power_usage: number;
   emission_factor: number;
   calculation_formula: string;
 }
@@ -189,9 +233,54 @@ export const useCalculationAPI = () => {
     []
   );
 
+  // 🔬 전구물질 계산 (실제 API 호출)
+  const calculatePrecursorEmission = useCallback(
+    async (data: PrecursorCalculationRequest): Promise<PrecursorCalculationResponse | null> => {
+      try {
+        const response = await axiosClient.post(apiEndpoints.calculation.precursor, data);
+        return response.data;
+      } catch (error) {
+        console.error('Error calculating precursor emission:', error);
+        return null;
+      }
+    },
+    []
+  );
+
+  // ⚡ 전력 사용 배출량 계산 (실제 API 호출)
+  const calculateElectricityEmission = useCallback(
+    async (data: ElectricityCalculationRequest): Promise<ElectricityCalculationResponse | null> => {
+      try {
+        const response = await axiosClient.post(apiEndpoints.calculation.electricity, data);
+        return response.data;
+      } catch (error) {
+        console.error('Error calculating electricity emission:', error);
+        return null;
+      }
+    },
+    []
+  );
+
+  // 🏭 생산 공정별 배출량 계산 (실제 API 호출)
+  const calculateProcessEmissions = useCallback(
+    async (processes: ProductionProcess[]): Promise<ProductionProcess[] | null> => {
+      try {
+        const response = await axiosClient.post(apiEndpoints.calculation.process, processes);
+        return response.data;
+      } catch (error) {
+        console.error('Error calculating process emissions:', error);
+        return null;
+      }
+    },
+    []
+  );
+
   return {
     calculateFuelEmission,
     calculateMaterialEmission,
+    calculatePrecursorEmission,
+    calculateElectricityEmission,
+    calculateProcessEmissions,
     getPrecursorList,
     savePrecursorBatch,
     calculateCBAM,

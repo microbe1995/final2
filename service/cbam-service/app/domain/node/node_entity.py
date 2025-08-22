@@ -5,29 +5,31 @@
 import json
 from datetime import datetime
 from typing import Optional, Dict, Any
-from sqlalchemy import String, Float, Text, DateTime, Boolean
+from sqlalchemy import Column, Integer, String, Numeric, DateTime, Text, Boolean, JSON
 from sqlalchemy.orm import Mapped, mapped_column
-from app.common.database_base import Base
+from sqlalchemy.ext.declarative import declarative_base
+
+Base = declarative_base()
 
 class ReactFlowNode(Base):
     """ReactFlow 노드를 표현하는 엔티티"""
     __tablename__ = "reactflow_nodes"
     
     # 기본 필드
-    id: Mapped[str] = mapped_column(String(36), primary_key=True, index=True)
-    flow_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True, comment="플로우 ID")
+    id: Mapped[str] = mapped_column(Text, primary_key=True, index=True)
+    flow_id: Mapped[str] = mapped_column(Text, nullable=False, index=True, comment="플로우 ID")
     
     # ReactFlow 노드 속성
-    node_type: Mapped[str] = mapped_column(String(50), nullable=False, default="default", comment="노드 타입")
-    position_x: Mapped[float] = mapped_column(Float, nullable=False, comment="X 좌표")
-    position_y: Mapped[float] = mapped_column(Float, nullable=False, comment="Y 좌표")
+    node_type: Mapped[str] = mapped_column(Text, nullable=False, default="default", comment="노드 타입")
+    position_x: Mapped[float] = mapped_column(Numeric(10, 4), nullable=False, comment="X 좌표")
+    position_y: Mapped[float] = mapped_column(Numeric(10, 4), nullable=False, comment="Y 좌표")
     
     # 노드 데이터 (JSON)
     data_json: Mapped[Optional[str]] = mapped_column(Text, nullable=True, comment="노드 데이터 JSON")
     
     # 노드 설정
-    width: Mapped[Optional[float]] = mapped_column(Float, nullable=True, comment="노드 너비")
-    height: Mapped[Optional[float]] = mapped_column(Float, nullable=True, comment="노드 높이")
+    width: Mapped[Optional[float]] = mapped_column(Numeric(10, 4), nullable=True, comment="노드 너비")
+    height: Mapped[Optional[float]] = mapped_column(Numeric(10, 4), nullable=True, comment="노드 높이")
     draggable: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, comment="드래그 가능 여부")
     selectable: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, comment="선택 가능 여부")
     deletable: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, comment="삭제 가능 여부")
@@ -42,7 +44,10 @@ class ReactFlowNode(Base):
     @property
     def position(self) -> Dict[str, float]:
         """노드 위치 반환"""
-        return {"x": self.position_x, "y": self.position_y}
+        return {
+            "x": float(self.position_x) if self.position_x else 0.0,
+            "y": float(self.position_y) if self.position_y else 0.0
+        }
     
     @position.setter
     def position(self, value: Dict[str, float]) -> None:
@@ -87,8 +92,8 @@ class ReactFlowNode(Base):
         }
         
         if self.width and self.height:
-            result["width"] = self.width
-            result["height"] = self.height
+            result["width"] = float(self.width) if self.width else None
+            result["height"] = float(self.height) if self.height else None
             
         if self.style:
             result["style"] = self.style
@@ -103,8 +108,8 @@ class ReactFlowNode(Base):
             "type": self.node_type,
             "position": self.position,
             "data": self.data,
-            "width": self.width,
-            "height": self.height,
+            "width": float(self.width) if self.width else None,
+            "height": float(self.height) if self.height else None,
             "draggable": self.draggable,
             "selectable": self.selectable,
             "deletable": self.deletable,
