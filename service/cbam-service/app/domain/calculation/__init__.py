@@ -18,11 +18,7 @@ CBAM 계산 도메인 패키지
 
 from .calculation_entity import Fuel, Material, Precursor, CalculationResult
 from .calculation_schema import (
-    FuelCalculationRequest, FuelCalculationResponse,
-    MaterialCalculationRequest, MaterialCalculationResponse,
-    PrecursorData, PrecursorListRequest, PrecursorListResponse,
-    CBAmCalculationRequest, CBAMCalculationResponse,
-    CalculationStatsResponse
+    ProductCreateRequest, ProductResponse
 )
 from .calculation_service import CalculationService
 from .calculation_repository import CalculationRepository
@@ -32,11 +28,7 @@ __all__ = [
     # Entities
     "Fuel", "Material", "Precursor", "CalculationResult",
     # Schemas
-    "FuelCalculationRequest", "FuelCalculationResponse",
-    "MaterialCalculationRequest", "MaterialCalculationResponse", 
-    "PrecursorData", "PrecursorListRequest", "PrecursorListResponse",
-    "CBAmCalculationRequest", "CBAMCalculationResponse",
-    "CalculationStatsResponse",
+    "ProductCreateRequest", "ProductResponse",
     # Services
     "CalculationService", "CalculationRepository",
     # Router
