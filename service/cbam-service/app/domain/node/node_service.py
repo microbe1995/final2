@@ -12,11 +12,12 @@ from app.domain.node.node_schema import (
     NodeCreateRequest,
     NodeUpdateRequest,
     NodeResponse,
-    ReactFlowNodeResponse,
     NodeListResponse,
-    NodeStatsResponse,
     NodeSearchRequest,
-    NodeBatchUpdateRequest
+    NodeStatsResponse,
+    NodeBatchUpdateRequest,
+    NodeChangesRequest,
+    NodeChangesResponse
 )
 
 class NodeService:
@@ -202,7 +203,7 @@ class NodeService:
     # 🔄 일괄 처리 메서드
     # ============================================================================
     
-    async def batch_update_nodes(self, request: NodeBatchUpdateRequest) -> List[ReactFlowNodeResponse]:
+    async def batch_update_nodes(self, request: NodeBatchUpdateRequest) -> List[NodeResponse]:
         """노드 일괄 수정 (ReactFlow onNodesChange 이벤트 처리)"""
         try:
             logger.info(f"🔄 노드 일괄 수정: {len(request.nodes)}개")
@@ -220,7 +221,7 @@ class NodeService:
                     updated_node = await self.node_repository.update_node(node_id, update_data)
                     
                     if updated_node:
-                        updated_nodes.append(self._convert_to_reactflow_response(updated_node))
+                        updated_nodes.append(self._convert_to_node_response(updated_node))
             
             logger.info(f"✅ 노드 일괄 수정 완료: {len(updated_nodes)}개")
             return updated_nodes
@@ -382,7 +383,7 @@ class NodeService:
             updated_at=node.get('updated_at', '')
         )
     
-    def _convert_to_reactflow_response(self, node: Dict[str, Any]) -> ReactFlowNodeResponse:
+    def _convert_to_reactflow_response(self, node: Dict[str, Any]) -> NodeResponse:
         """노드를 ReactFlowNodeResponse로 변환"""
         from app.domain.node.node_schema import NodePosition, NodeData
         
@@ -404,8 +405,9 @@ class NodeService:
             except:
                 style = {}
         
-        return ReactFlowNodeResponse(
+        return NodeResponse(
             id=node['id'],
+            flow_id=node['flow_id'],
             type=node.get('type', 'default'),
             position=NodePosition(
                 x=node.get('position', {}).get('x', 0),

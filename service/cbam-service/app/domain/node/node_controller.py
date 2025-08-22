@@ -12,11 +12,12 @@ from app.domain.node.node_schema import (
     NodeCreateRequest,
     NodeUpdateRequest,
     NodeResponse,
-    ReactFlowNodeResponse,
     NodeListResponse,
-    NodeStatsResponse,
     NodeSearchRequest,
-    NodeBatchUpdateRequest
+    NodeStatsResponse,
+    NodeBatchUpdateRequest,
+    NodeChangesRequest,
+    NodeChangesResponse
 )
 
 # 라우터 생성
@@ -179,7 +180,7 @@ async def delete_node(
 # 🔄 ReactFlow 이벤트 처리 API
 # ============================================================================
 
-@node_router.post("/node/batch-update", response_model=List[ReactFlowNodeResponse])
+@node_router.post("/node/batch-update", response_model=List[NodeResponse])
 async def batch_update_nodes(
     request: NodeBatchUpdateRequest,
     node_service: NodeService = Depends(get_node_service)

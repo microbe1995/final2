@@ -11,7 +11,7 @@ from sqlalchemy.engine import create_engine
 from sqlalchemy.pool import StaticPool
 
 from app.common.database_base import Base
-from app.domain.Viewport.Viewport_entity import ReactFlowViewport
+from app.domain.Viewport.Viewport_entity import Viewport
 
 # ============================================================================
 # 🗄️ 뷰포트 데이터베이스 연결
@@ -204,7 +204,7 @@ class ViewportRepository:
         """데이터베이스에 뷰포트 생성"""
         try:
             async with self._db_connection.get_session_context() as session:
-                viewport = ReactFlowViewport(
+                viewport = Viewport(
                     id=viewport_data.get("id"),
                     flow_id=viewport_data.get("flow_id"),
                     x=viewport_data.get("viewport", {}).get("x", 0.0),
@@ -233,7 +233,7 @@ class ViewportRepository:
         try:
             async with self._db_connection.get_session_context() as session:
                 result = await session.execute(
-                    select(ReactFlowViewport).where(ReactFlowViewport.id == viewport_id)
+                    select(Viewport).where(Viewport.id == viewport_id)
                 )
                 viewport = result.scalar_one_or_none()
                 
@@ -248,7 +248,7 @@ class ViewportRepository:
         try:
             async with self._db_connection.get_session_context() as session:
                 result = await session.execute(
-                    select(ReactFlowViewport).where(ReactFlowViewport.flow_id == flow_id)
+                    select(Viewport).where(Viewport.flow_id == flow_id)
                 )
                 viewport = result.scalar_one_or_none()
                 
@@ -279,8 +279,8 @@ class ViewportRepository:
                 update_fields["updated_at"] = datetime.utcnow()
                 
                 await session.execute(
-                    update(ReactFlowViewport)
-                    .where(ReactFlowViewport.id == viewport_id)
+                    update(Viewport)
+                    .where(Viewport.id == viewport_id)
                     .values(**update_fields)
                 )
                 await session.commit()
@@ -296,7 +296,7 @@ class ViewportRepository:
         try:
             async with self._db_connection.get_session_context() as session:
                 await session.execute(
-                    delete(ReactFlowViewport).where(ReactFlowViewport.id == viewport_id)
+                    delete(Viewport).where(Viewport.id == viewport_id)
                 )
                 await session.commit()
                 return True
@@ -309,7 +309,7 @@ class ViewportRepository:
         """데이터베이스에서 모든 뷰포트 조회"""
         try:
             async with self._db_connection.get_session_context() as session:
-                result = await session.execute(select(ReactFlowViewport))
+                result = await session.execute(select(Viewport))
                 viewports = result.scalars().all()
                 
                 return [viewport.to_dict() for viewport in viewports]

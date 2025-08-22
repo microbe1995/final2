@@ -11,7 +11,7 @@ from sqlalchemy.engine import create_engine
 from sqlalchemy.pool import StaticPool
 
 from app.common.database_base import Base
-from app.domain.node.node_entity import ReactFlowNode
+from app.domain.node.node_entity import Node
 
 # ============================================================================
 # 🔧 로거 설정
@@ -190,7 +190,7 @@ class NodeRepository:
         """PostgreSQL에 노드 생성"""
         try:
             async with node_db.get_session_context() as session:
-                node_entity = ReactFlowNode(
+                node_entity = Node(
                     id=node_data.get('id'),
                     flow_id=node_data.get('flow_id'),
                     node_type=node_data.get('type', 'default'),
@@ -221,7 +221,7 @@ class NodeRepository:
         try:
             async with node_db.get_session_context() as session:
                 result = await session.execute(
-                    select(ReactFlowNode).where(ReactFlowNode.id == node_id)
+                    select(Node).where(Node.id == node_id)
                 )
                 node_entity = result.scalar_one_or_none()
                 
@@ -238,7 +238,7 @@ class NodeRepository:
         try:
             async with node_db.get_session_context() as session:
                 result = await session.execute(
-                    select(ReactFlowNode).where(ReactFlowNode.flow_id == flow_id)
+                    select(Node).where(Node.flow_id == flow_id)
                 )
                 node_entities = result.scalars().all()
                 
@@ -284,13 +284,13 @@ class NodeRepository:
                     update_fields['updated_at'] = datetime.utcnow()
                     
                     await session.execute(
-                        update(ReactFlowNode).where(ReactFlowNode.id == node_id).values(**update_fields)
+                        update(Node).where(Node.id == node_id).values(**update_fields)
                     )
                     await session.commit()
                 
                 # 업데이트된 데이터 조회
                 result = await session.execute(
-                    select(ReactFlowNode).where(ReactFlowNode.id == node_id)
+                    select(Node).where(Node.id == node_id)
                 )
                 updated_node = result.scalar_one_or_none()
                 
@@ -308,7 +308,7 @@ class NodeRepository:
         try:
             async with node_db.get_session_context() as session:
                 result = await session.execute(
-                    delete(ReactFlowNode).where(ReactFlowNode.id == node_id)
+                    delete(Node).where(Node.id == node_id)
                 )
                 await session.commit()
                 
@@ -328,7 +328,7 @@ class NodeRepository:
         """PostgreSQL에서 모든 노드 조회"""
         try:
             async with node_db.get_session_context() as session:
-                result = await session.execute(select(ReactFlowNode))
+                result = await session.execute(select(Node))
                 node_entities = result.scalars().all()
                 
                 return [node.to_dict() for node in node_entities]

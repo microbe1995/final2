@@ -5,41 +5,45 @@
 import json
 from datetime import datetime
 from typing import Optional, Dict, Any
-from sqlalchemy import Column, Integer, String, Numeric, DateTime, Text, Boolean, JSON
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import Column, Integer, String, Numeric, DateTime, Text, Boolean, JSON, ForeignKey
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.ext.declarative import declarative_base
 
 Base = declarative_base()
 
-class ReactFlowNode(Base):
-    """ReactFlow 노드를 표현하는 엔티티"""
+class Node(Base):
+    """노드를 표현하는 엔티티"""
     __tablename__ = "reactflow_nodes"
     
-    # 기본 필드
-    id: Mapped[str] = mapped_column(Text, primary_key=True, index=True)
-    flow_id: Mapped[str] = mapped_column(Text, nullable=False, index=True, comment="플로우 ID")
+    # 기본 키
+    id: Mapped[str] = mapped_column(Text, primary_key=True, index=True, comment="노드 고유 ID")
+    flow_id: Mapped[str] = mapped_column(Text, ForeignKey("reactflow_states.id"), nullable=False, comment="플로우 ID")
     
     # ReactFlow 노드 속성
-    node_type: Mapped[str] = mapped_column(Text, nullable=False, default="default", comment="노드 타입")
-    position_x: Mapped[float] = mapped_column(Numeric(10, 4), nullable=False, comment="X 좌표")
-    position_y: Mapped[float] = mapped_column(Numeric(10, 4), nullable=False, comment="Y 좌표")
+    node_type: Mapped[str] = mapped_column(Text, nullable=False, comment="노드 타입")
+    position_x: Mapped[float] = mapped_column(Numeric, nullable=False, comment="X 좌표")
+    position_y: Mapped[float] = mapped_column(Numeric, nullable=False, comment="Y 좌표")
+    width: Mapped[float] = mapped_column(Numeric, nullable=True, comment="노드 너비")
+    height: Mapped[float] = mapped_column(Numeric, nullable=True, comment="노드 높이")
     
-    # 노드 데이터 (JSON)
+    # 노드 데이터 (JSON 형태로 저장)
     data_json: Mapped[Optional[str]] = mapped_column(Text, nullable=True, comment="노드 데이터 JSON")
     
-    # 노드 설정
-    width: Mapped[Optional[float]] = mapped_column(Numeric(10, 4), nullable=True, comment="노드 너비")
-    height: Mapped[Optional[float]] = mapped_column(Numeric(10, 4), nullable=True, comment="노드 높이")
-    draggable: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, comment="드래그 가능 여부")
-    selectable: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, comment="선택 가능 여부")
-    deletable: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, comment="삭제 가능 여부")
-    
-    # 스타일 (JSON)
+    # 노드 스타일 (JSON 형태로 저장)
     style_json: Mapped[Optional[str]] = mapped_column(Text, nullable=True, comment="노드 스타일 JSON")
     
+    # 노드 상태
+    hidden: Mapped[bool] = mapped_column(Boolean, default=False, comment="숨김 여부")
+    selected: Mapped[bool] = mapped_column(Boolean, default=False, comment="선택 여부")
+    deletable: Mapped[bool] = mapped_column(Boolean, default=True, comment="삭제 가능 여부")
+    
     # 메타데이터
-    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, comment="생성 시간")
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, comment="수정 시간")
+    
+    # 관계 설정
+    flow = relationship("Flow", back_populates="nodes")
+    handles = relationship("Handle", back_populates="node", cascade="all, delete-orphan")
     
     @property
     def position(self) -> Dict[str, float]:
@@ -86,8 +90,8 @@ class ReactFlowNode(Base):
             "type": self.node_type,
             "position": self.position,
             "data": self.data,
-            "draggable": self.draggable,
-            "selectable": self.selectable,
+            "draggable": True, # ReactFlow에서는 드래그 가능 여부를 노드 자체에서 관리하지 않음
+            "selectable": True, # ReactFlow에서는 선택 가능 여부를 노드 자체에서 관리하지 않음
             "deletable": self.deletable
         }
         
@@ -110,8 +114,8 @@ class ReactFlowNode(Base):
             "data": self.data,
             "width": float(self.width) if self.width else None,
             "height": float(self.height) if self.height else None,
-            "draggable": self.draggable,
-            "selectable": self.selectable,
+            "draggable": True,
+            "selectable": True,
             "deletable": self.deletable,
             "style": self.style,
             "created_at": self.created_at.isoformat() if self.created_at else None,

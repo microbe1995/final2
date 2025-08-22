@@ -11,7 +11,7 @@ from sqlalchemy.engine import create_engine
 from sqlalchemy.pool import StaticPool
 
 from app.common.database_base import Base
-from app.domain.handle.handle_entity import ReactFlowHandle
+from app.domain.handle.handle_entity import Handle
 
 # ============================================================================
 # 🔧 로거 설정
@@ -200,7 +200,7 @@ class HandleRepository:
         """PostgreSQL에 핸들 생성"""
         try:
             async with handle_db.get_session_context() as session:
-                handle_entity = ReactFlowHandle(
+                handle_entity = Handle(
                     id=handle_data.get('id'),
                     node_id=handle_data.get('node_id'),
                     flow_id=handle_data.get('flow_id'),
@@ -228,7 +228,7 @@ class HandleRepository:
         try:
             async with handle_db.get_session_context() as session:
                 result = await session.execute(
-                    select(ReactFlowHandle).where(ReactFlowHandle.id == handle_id)
+                    select(Handle).where(Handle.id == handle_id)
                 )
                 handle_entity = result.scalar_one_or_none()
                 
@@ -245,7 +245,7 @@ class HandleRepository:
         try:
             async with handle_db.get_session_context() as session:
                 result = await session.execute(
-                    select(ReactFlowHandle).where(ReactFlowHandle.node_id == node_id)
+                    select(Handle).where(Handle.node_id == node_id)
                 )
                 handle_entities = result.scalars().all()
                 
@@ -260,7 +260,7 @@ class HandleRepository:
         try:
             async with handle_db.get_session_context() as session:
                 result = await session.execute(
-                    select(ReactFlowHandle).where(ReactFlowHandle.flow_id == flow_id)
+                    select(Handle).where(Handle.flow_id == flow_id)
                 )
                 handle_entities = result.scalars().all()
                 
@@ -299,13 +299,13 @@ class HandleRepository:
                     update_fields['updated_at'] = datetime.utcnow()
                     
                     await session.execute(
-                        update(ReactFlowHandle).where(ReactFlowHandle.id == handle_id).values(**update_fields)
+                        update(Handle).where(Handle.id == handle_id).values(**update_fields)
                     )
                     await session.commit()
                 
                 # 업데이트된 데이터 조회
                 result = await session.execute(
-                    select(ReactFlowHandle).where(ReactFlowHandle.id == handle_id)
+                    select(Handle).where(Handle.id == handle_id)
                 )
                 updated_handle = result.scalar_one_or_none()
                 
@@ -323,7 +323,7 @@ class HandleRepository:
         try:
             async with handle_db.get_session_context() as session:
                 result = await session.execute(
-                    delete(ReactFlowHandle).where(ReactFlowHandle.id == handle_id)
+                    delete(Handle).where(Handle.id == handle_id)
                 )
                 await session.commit()
                 
@@ -343,7 +343,7 @@ class HandleRepository:
         """PostgreSQL에서 모든 핸들 조회"""
         try:
             async with handle_db.get_session_context() as session:
-                result = await session.execute(select(ReactFlowHandle))
+                result = await session.execute(select(Handle))
                 handle_entities = result.scalars().all()
                 
                 return [handle.to_dict() for handle in handle_entities]

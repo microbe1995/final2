@@ -74,38 +74,67 @@ class NodeBatchUpdateRequest(BaseModel):
 
 class NodeResponse(BaseModel):
     """노드 응답"""
-    id: str = Field(..., description="노드 ID")
-    flow_id: str = Field(..., description="플로우 ID")
-    type: str = Field(..., description="노드 타입")
-    position: NodePosition = Field(..., description="노드 위치")
-    data: NodeData = Field(..., description="노드 데이터")
-    width: Optional[float] = Field(default=None, description="노드 너비")
-    height: Optional[float] = Field(default=None, description="노드 높이")
-    draggable: bool = Field(..., description="드래그 가능 여부")
-    selectable: bool = Field(..., description="선택 가능 여부")
-    deletable: bool = Field(..., description="삭제 가능 여부")
-    style: Dict[str, Any] = Field(default_factory=dict, description="노드 스타일")
-    created_at: str = Field(..., description="생성 시간")
-    updated_at: str = Field(..., description="수정 시간")
-
-class ReactFlowNodeResponse(BaseModel):
-    """ReactFlow 형식 노드 응답"""
-    id: str = Field(..., description="노드 ID")
-    type: str = Field(..., description="노드 타입")
-    position: NodePosition = Field(..., description="노드 위치")
-    data: NodeData = Field(..., description="노드 데이터")
-    width: Optional[float] = Field(default=None, description="노드 너비")
-    height: Optional[float] = Field(default=None, description="노드 높이")
-    draggable: bool = Field(default=True, description="드래그 가능 여부")
-    selectable: bool = Field(default=True, description="선택 가능 여부")
-    deletable: bool = Field(default=True, description="삭제 가능 여부")
-    style: Dict[str, Any] = Field(default_factory=dict, description="노드 스타일")
+    id: str
+    flow_id: str
+    node_type: str
+    position_x: float
+    position_y: float
+    width: Optional[float] = None
+    height: Optional[float] = None
+    data: Optional[Dict[str, Any]] = None
+    style: Optional[Dict[str, Any]] = None
+    hidden: bool = False
+    selected: bool = False
+    deletable: bool = True
+    created_at: Optional[str] = None
+    updated_at: Optional[str] = None
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "id": "node_1",
+                "flow_id": "flow_123",
+                "node_type": "input",
+                "position_x": 250.0,
+                "position_y": 25.0,
+                "width": 150.0,
+                "height": 40.0,
+                "data": {"label": "Input Node"},
+                "style": {"background": "#fff", "border": "1px solid #333"},
+                "hidden": False,
+                "selected": False,
+                "deletable": True,
+                "created_at": "2024-01-01T00:00:00Z",
+                "updated_at": "2024-01-01T00:00:00Z"
+            }
+        }
 
 class NodeListResponse(BaseModel):
     """노드 목록 응답"""
-    nodes: List[ReactFlowNodeResponse] = Field(..., description="노드 목록")
+    nodes: List[NodeResponse] = Field(..., description="노드 목록")
     total: int = Field(..., description="전체 노드 수")
-    flow_id: str = Field(..., description="플로우 ID")
+    page: int = Field(..., description="현재 페이지")
+    size: int = Field(..., description="페이지 크기")
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "nodes": [
+                    {
+                        "id": "node_1",
+                        "flow_id": "flow_123",
+                        "node_type": "input",
+                        "position_x": 250.0,
+                        "position_y": 25.0,
+                        "data": {"label": "Input Node"},
+                        "created_at": "2024-01-01T00:00:00Z"
+                    }
+                ],
+                "total": 1,
+                "page": 1,
+                "size": 10
+            }
+        }
 
 # ============================================================================
 # 🔍 검색 스키마
