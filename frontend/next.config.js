@@ -2,7 +2,7 @@ const withPWA = require('next-pwa')({
   dest: 'public',
   register: true,
   skipWaiting: true,
-  disable: process.env.NODE_ENV === 'development',
+  disable: true, // 개발 환경에서 PWA 비활성화
   buildExcludes: [
     /middleware-manifest\.json$/,
     /app-build-manifest\.json$/,        // PWA에서 문제되는 파일 제외
