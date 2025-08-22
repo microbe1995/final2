@@ -12,7 +12,7 @@ ReactFlow 뷰포트 관리 도메인
 # 📦 주요 클래스 및 함수 export
 # ============================================================================
 
-from .Viewport_entity import ReactFlowViewport
+from .Viewport_entity import Viewport
 from .Viewport_schema import (
     ViewportState,
     ViewportSettings,
@@ -38,7 +38,7 @@ from .Viewport_controller import viewport_router
 
 __all__ = [
     # 엔티티
-    "ReactFlowViewport",
+    "Viewport",
     
     # 스키마
     "ViewportState",
