@@ -156,3 +156,20 @@ class NodeStatsResponse(BaseModel):
     nodes_by_type: Dict[str, int] = Field(..., description="타입별 노드 수")
     flows_with_nodes: int = Field(..., description="노드가 있는 플로우 수")
     average_nodes_per_flow: float = Field(..., description="플로우당 평균 노드 수")
+
+# ============================================================================
+# 🔄 변경사항 스키마
+# ============================================================================
+
+class NodeChangesRequest(BaseModel):
+    """노드 변경사항 요청"""
+    added: List[Dict[str, Any]] = Field(default_factory=list, description="추가된 노드들")
+    updated: List[Dict[str, Any]] = Field(default_factory=list, description="수정된 노드들")
+    removed: List[str] = Field(default_factory=list, description="삭제된 노드 ID들")
+
+class NodeChangesResponse(BaseModel):
+    """노드 변경사항 응답"""
+    added_nodes: List[NodeResponse] = Field(..., description="추가된 노드들")
+    updated_nodes: List[NodeResponse] = Field(..., description="수정된 노드들")
+    removed_node_ids: List[str] = Field(..., description="삭제된 노드 ID들")
+    message: str = Field(default="노드 변경사항이 성공적으로 처리되었습니다", description="처리 결과 메시지")

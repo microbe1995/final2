@@ -101,7 +101,7 @@ class NodeService:
             nodes = await self.node_repository.get_nodes_by_flow_id(flow_id)
             
             # ReactFlow 형식으로 변환
-            reactflow_nodes = [self._convert_to_reactflow_response(node) for node in nodes]
+            reactflow_nodes = [self._convert_to_node_response(node) for node in nodes]
             
             logger.info(f"✅ 플로우별 노드 조회 성공: {len(nodes)}개")
             return NodeListResponse(
@@ -268,7 +268,7 @@ class NodeService:
                 filtered_nodes.append(node)
             
             # ReactFlow 형식으로 변환
-            reactflow_nodes = [self._convert_to_reactflow_response(node) for node in filtered_nodes]
+            reactflow_nodes = [self._convert_to_node_response(node) for node in filtered_nodes]
             
             logger.info(f"✅ 노드 검색 완료: {len(filtered_nodes)}개")
             return NodeListResponse(
@@ -338,92 +338,19 @@ class NodeService:
     
     def _convert_to_node_response(self, node: Dict[str, Any]) -> NodeResponse:
         """노드를 NodeResponse로 변환"""
-        from app.domain.node.node_schema import NodePosition, NodeData
-        
-        # data 파싱
-        data = node.get('data', {})
-        if isinstance(data, str):
-            import json
-            try:
-                data = json.loads(data)
-            except:
-                data = {}
-        
-        # style 파싱  
-        style = node.get('style', {})
-        if isinstance(style, str):
-            import json
-            try:
-                style = json.loads(style)
-            except:
-                style = {}
-        
         return NodeResponse(
             id=node['id'],
             flow_id=node['flow_id'],
-            type=node.get('type', 'default'),
-            position=NodePosition(
-                x=node.get('position', {}).get('x', 0),
-                y=node.get('position', {}).get('y', 0)
-            ),
-            data=NodeData(
-                label=data.get('label', ''),
-                description=data.get('description'),
-                color=data.get('color'),
-                icon=data.get('icon'),
-                metadata=data.get('metadata', {})
-            ),
-            width=node.get('width'),
-            height=node.get('height'),
-            draggable=node.get('draggable', True),
-            selectable=node.get('selectable', True),
+            node_type=node.get('type', 'default'),
+            position_x=float(node.get('position_x', 0)),
+            position_y=float(node.get('position_y', 0)),
+            width=float(node['width']) if node.get('width') else None,
+            height=float(node['height']) if node.get('height') else None,
+            data=node.get('data'),
+            style=node.get('style'),
+            hidden=node.get('hidden', False),
+            selected=node.get('selected', False),
             deletable=node.get('deletable', True),
-            style=style,
-            created_at=node.get('created_at', ''),
-            updated_at=node.get('updated_at', '')
-        )
-    
-    def _convert_to_reactflow_response(self, node: Dict[str, Any]) -> NodeResponse:
-        """노드를 ReactFlowNodeResponse로 변환"""
-        from app.domain.node.node_schema import NodePosition, NodeData
-        
-        # data 파싱
-        data = node.get('data', {})
-        if isinstance(data, str):
-            import json
-            try:
-                data = json.loads(data)
-            except:
-                data = {}
-        
-        # style 파싱
-        style = node.get('style', {})
-        if isinstance(style, str):
-            import json
-            try:
-                style = json.loads(style)
-            except:
-                style = {}
-        
-        return NodeResponse(
-            id=node['id'],
-            flow_id=node['flow_id'],
-            type=node.get('type', 'default'),
-            position=NodePosition(
-                x=node.get('position', {}).get('x', 0),
-                y=node.get('position', {}).get('y', 0)
-            ),
-            data=NodeData(
-                label=data.get('label', ''),
-                description=data.get('description'),
-                color=data.get('color'),
-                icon=data.get('icon'),
-                metadata=data.get('metadata', {})
-            ),
-            width=node.get('width'),
-            height=node.get('height'),
-            draggable=node.get('draggable', True),
-            selectable=node.get('selectable', True),
-            deletable=node.get('deletable', True),
-            style=style
+            created_at=node.get('created_at'),
+            updated_at=node.get('updated_at')
         )
