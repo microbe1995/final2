@@ -15,6 +15,8 @@ from contextlib import asynccontextmanager
 from loguru import logger
 import time
 import os
+import re
+from sqlalchemy import create_engine, text
 from dotenv import load_dotenv
 
 # 라우터 임포트 (ReactFlow 기반 라우터들)
@@ -45,10 +47,113 @@ DEBUG_MODE = os.getenv("DEBUG_MODE", "false").lower() == "true"
 # 🔄 애플리케이션 생명주기 관리
 # ============================================================================
 
+def get_database_url():
+    """데이터베이스 URL 가져오기"""
+    database_url = os.getenv("DATABASE_URL")
+    if not database_url:
+        logger.warning("DATABASE_URL 환경변수가 설정되지 않았습니다.")
+        return None
+    return database_url
+
+def clean_database_url(url: str) -> str:
+    """데이터베이스 URL 정리"""
+    # Railway PostgreSQL에서 발생할 수 있는 잘못된 파라미터들 제거
+    invalid_params = [
+        'db_type', 'db_type=postgresql', 'db_type=postgres',
+        'db_type=mysql', 'db_type=sqlite'
+    ]
+    
+    for param in invalid_params:
+        if param in url:
+            url = url.replace(param, '')
+            logger.warning(f"잘못된 데이터베이스 파라미터 제거: {param}")
+    
+    # 연속된 & 제거
+    url = re.sub(r'&&+', '&', url)
+    url = re.sub(r'&+$', '', url)
+    
+    if '?' in url and url.split('?')[1].startswith('&'):
+        url = url.replace('?&', '?')
+    
+    return url
+
+def initialize_database():
+    """데이터베이스 초기화 및 마이그레이션"""
+    try:
+        database_url = get_database_url()
+        if not database_url:
+            logger.warning("데이터베이스 URL이 없어 마이그레이션을 건너뜁니다.")
+            return
+        
+        clean_url = clean_database_url(database_url)
+        
+        # Railway PostgreSQL 최적화 설정
+        engine_params = {
+            'pool_pre_ping': True,
+            'pool_recycle': 300,
+            'pool_size': 5,
+            'max_overflow': 10,
+            'echo': False,
+            'connect_args': {
+                'connect_timeout': 30,
+                'application_name': 'cbam-service',
+                'options': '-c timezone=utc -c client_encoding=utf8'
+            }
+        }
+        
+        # SSL 모드 설정
+        if 'postgresql' in clean_url.lower():
+            if '?' in clean_url:
+                clean_url += "&sslmode=require"
+            else:
+                clean_url += "?sslmode=require"
+        
+        logger.info(f"데이터베이스 연결 시도: {clean_url.split('@')[1] if '@' in clean_url else clean_url}")
+        
+        engine = create_engine(clean_url, **engine_params)
+        
+        # 연결 테스트 및 테이블 생성
+        with engine.connect() as conn:
+            conn.execute(text("SELECT 1"))
+            logger.info("✅ 데이터베이스 연결 성공")
+            
+            # 제품 테이블 생성
+            conn.execute(text("""
+                CREATE TABLE IF NOT EXISTS product (
+                    product_id SERIAL PRIMARY KEY,
+                    name VARCHAR(255) NOT NULL,
+                    cn_code VARCHAR(50),
+                    period_start DATE,
+                    period_end DATE,
+                    production_qty DECIMAL(10,2) DEFAULT 0,
+                    sales_qty DECIMAL(10,2) DEFAULT 0,
+                    export_qty DECIMAL(10,2) DEFAULT 0,
+                    inventory_qty DECIMAL(10,2) DEFAULT 0,
+                    defect_rate DECIMAL(5,4) DEFAULT 0,
+                    node_id VARCHAR(255),
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """))
+            logger.info("✅ product 테이블 생성 완료")
+            
+            # 인덱스 생성
+            conn.execute(text("CREATE INDEX IF NOT EXISTS idx_product_name ON product(name)"))
+            logger.info("✅ 인덱스 생성 완료")
+            
+            conn.commit()
+            logger.info("✅ 데이터베이스 마이그레이션 완료")
+        
+    except Exception as e:
+        logger.error(f"❌ 데이터베이스 마이그레이션 실패: {str(e)}")
+        # 치명적 오류가 아니므로 계속 진행
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """애플리케이션 시작/종료 시 실행되는 함수"""
     logger.info("🚀 Cal_boundary 서비스 시작 중...")
+    
+    # 데이터베이스 초기화 및 마이그레이션
+    initialize_database()
     
     # ReactFlow 기반 서비스 초기화
     logger.info("✅ ReactFlow 기반 서비스 초기화")
