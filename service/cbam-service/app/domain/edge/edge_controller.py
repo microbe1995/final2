@@ -21,8 +21,7 @@ from app.domain.edge.edge_schema import (
     ConnectionRequest,
     ConnectionResponse,
     EdgeChangesRequest,
-    EdgeChangesResponse,
-    ReactFlowEdgeResponse
+    EdgeChangesResponse
 )
 
 # 라우터 생성

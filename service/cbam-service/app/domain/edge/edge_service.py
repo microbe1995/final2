@@ -19,8 +19,7 @@ from app.domain.edge.edge_schema import (
     ConnectionRequest,
     ConnectionResponse,
     EdgeChangesRequest,
-    EdgeChangesResponse,
-    ReactFlowEdgeResponse
+    EdgeChangesResponse
 )
 
 class EdgeService:

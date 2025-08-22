@@ -49,3 +49,17 @@ class Edge(Base):
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None
         }
+    
+    @classmethod
+    def from_reactflow_data(cls, flow_id: str, edge_data: Dict[str, Any]) -> "Edge":
+        """ReactFlow 데이터로부터 엣지 엔티티 생성"""
+        return cls(
+            id=edge_data.get('id'),
+            flow_id=flow_id,
+            source=edge_data.get('source'),
+            target=edge_data.get('target'),
+            type=edge_data.get('type', 'default'),
+            style=edge_data.get('style'),
+            animated=edge_data.get('animated', False),
+            label=edge_data.get('label')
+        )

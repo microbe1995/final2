@@ -92,18 +92,28 @@ class EdgeResponse(BaseModel):
     flow_id: str
     source: str
     target: str
-    type: str
-    data: Optional[Dict[str, Any]] = None
-    style: Optional[Dict[str, Any]] = None
-    animated: bool
-    hidden: bool
-    deletable: bool
-    selected: bool
-    created_at: str
-    updated_at: str
+    type: str = "default"
+    style: Optional[str] = None
+    animated: bool = False
+    label: Optional[str] = None
+    created_at: Optional[str] = None
+    updated_at: Optional[str] = None
     
     class Config:
-        from_attributes = True
+        json_schema_extra = {
+            "example": {
+                "id": "edge_1",
+                "flow_id": "flow_123",
+                "source": "node_1",
+                "target": "node_2",
+                "type": "default",
+                "style": "stroke: #333; stroke-width: 2;",
+                "animated": False,
+                "label": "Connection",
+                "created_at": "2024-01-01T00:00:00Z",
+                "updated_at": "2024-01-01T00:00:00Z"
+            }
+        }
 
 class EdgeListResponse(BaseModel):
     """엣지 목록 응답"""

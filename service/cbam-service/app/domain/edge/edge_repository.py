@@ -11,7 +11,7 @@ from sqlalchemy.engine import create_engine
 from sqlalchemy.pool import StaticPool
 
 from app.common.database_base import Base
-from app.domain.edge.edge_entity import ReactFlowEdge
+from app.domain.edge.edge_entity import Edge
 
 # ============================================================================
 # 🔧 로거 설정
@@ -204,7 +204,7 @@ class EdgeRepository:
         """PostgreSQL에 엣지 생성"""
         try:
             async with edge_db.get_session_context() as session:
-                edge_entity = ReactFlowEdge.from_reactflow_data(
+                edge_entity = Edge.from_reactflow_data(
                     flow_id=edge_data.get('flow_id'),
                     edge_data=edge_data
                 )
@@ -225,7 +225,7 @@ class EdgeRepository:
         try:
             async with edge_db.get_session_context() as session:
                 result = await session.execute(
-                    select(ReactFlowEdge).where(ReactFlowEdge.id == edge_id)
+                    select(Edge).where(Edge.id == edge_id)
                 )
                 edge_entity = result.scalar_one_or_none()
                 
@@ -242,7 +242,7 @@ class EdgeRepository:
         try:
             async with edge_db.get_session_context() as session:
                 result = await session.execute(
-                    select(ReactFlowEdge).where(ReactFlowEdge.flow_id == flow_id)
+                    select(Edge).where(Edge.flow_id == flow_id)
                 )
                 edge_entities = result.scalars().all()
                 
@@ -292,13 +292,13 @@ class EdgeRepository:
                     update_fields['updated_at'] = datetime.utcnow()
                     
                     await session.execute(
-                        update(ReactFlowEdge).where(ReactFlowEdge.id == edge_id).values(**update_fields)
+                        update(Edge).where(Edge.id == edge_id).values(**update_fields)
                     )
                     await session.commit()
                 
                 # 업데이트된 데이터 조회
                 result = await session.execute(
-                    select(ReactFlowEdge).where(ReactFlowEdge.id == edge_id)
+                    select(Edge).where(Edge.id == edge_id)
                 )
                 updated_edge = result.scalar_one_or_none()
                 
@@ -316,7 +316,7 @@ class EdgeRepository:
         try:
             async with edge_db.get_session_context() as session:
                 result = await session.execute(
-                    delete(ReactFlowEdge).where(ReactFlowEdge.id == edge_id)
+                    delete(Edge).where(Edge.id == edge_id)
                 )
                 await session.commit()
                 
@@ -336,7 +336,7 @@ class EdgeRepository:
         """PostgreSQL에서 모든 엣지 조회"""
         try:
             async with edge_db.get_session_context() as session:
-                result = await session.execute(select(ReactFlowEdge))
+                result = await session.execute(select(Edge))
                 edge_entities = result.scalars().all()
                 
                 return [edge.to_dict() for edge in edge_entities]
