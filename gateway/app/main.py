@@ -38,6 +38,8 @@ SERVICE_MAP = {
     # 프론트엔드 호환용 별칭
     "cal-boundary": CAL_BOUNDARY_URL,
     "cal_boundary": CAL_BOUNDARY_URL,
+    # 국가/지역 관련 서비스 (boundary 서비스에서 처리)
+    "countries": CAL_BOUNDARY_URL,
 }
 
 @asynccontextmanager
@@ -85,9 +87,8 @@ async def proxy_request(service: str, path: str, request: Request) -> Response:
     # 서비스별 경로 정규화 (내부 서비스 라우터 prefix와 정렬)
     normalized_path = path
     if service == "auth":
-        # auth-service는 내부 라우터가 "/auth" prefix를 사용하므로 보정
-        if normalized_path and not normalized_path.startswith("auth/") and normalized_path != "auth":
-            normalized_path = f"auth/{normalized_path}"
+        # auth-service는 이미 라우터에서 "/auth" prefix를 사용하므로 그대로 전달
+        normalized_path = path
     elif service == "boundary" or service == "cal-boundary" or service == "cal_boundary":
         # boundary-service는 내부에서 "/api" prefix를 사용하므로 보정
         if normalized_path and not normalized_path.startswith("api/"):
@@ -120,6 +121,18 @@ async def proxy_request(service: str, path: str, request: Request) -> Response:
 # 범용 프록시 라우트 (메인 라우팅 역할)
 @app.api_route("/api/v1/{service}/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"])
 async def proxy(service: str, path: str, request: Request):
+    # OPTIONS 요청은 CORS preflight이므로 Gateway에서 직접 처리
+    if request.method == "OPTIONS":
+        return Response(
+            status_code=200,
+            headers={
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, PATCH, OPTIONS",
+                "Access-Control-Allow-Headers": "*",
+                "Access-Control-Max-Age": "86400",
+            }
+        )
+    
     return await proxy_request(service, path, request)
 
 # 헬스 체크

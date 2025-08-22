@@ -1,172 +1,213 @@
 'use client';
 
 import { useCallback } from 'react';
-import { useAPI } from './useAPI';
 import type { Node, Edge } from '@xyflow/react';
-import type {
-  FlowData,
-  FlowStateResponse,
-  CreateFlowRequest,
-  CreateNodeRequest,
-  CreateEdgeRequest,
-  UpdateViewportRequest,
-  NodeData,
-  EdgeData,
-} from '@/types/flowAPI';
 
 // ============================================================================
-// 🎯 React Flow 백엔드 연동 훅
+// 🎯 React Flow 백엔드 연동 훅 (Mock 버전)
 // ============================================================================
 
 export const useReactFlowAPI = () => {
-  const api = useAPI('/api/v1/boundary');
-
   // ============================================================================
-  // 🎯 플로우 관리 API
+  // 🎯 플로우 관리 API (Mock 구현)
   // ============================================================================
 
-  const createFlow = useCallback(async (data: CreateFlowRequest): Promise<FlowData | null> => {
-    return api.post('/flow', data, {
-      successMessage: '플로우가 생성되었습니다.',
-      errorMessage: '플로우 생성에 실패했습니다.'
-    });
-  }, [api]);
+  const createFlow = useCallback(async (data: any): Promise<any | null> => {
+    return {
+      id: `flow-${Date.now()}`,
+      name: data.name,
+      description: data.description,
+      viewport: { x: 0, y: 0, zoom: 1 },
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+  }, []);
 
-  const getFlowState = useCallback(async (flowId: string): Promise<FlowStateResponse | null> => {
-    return api.get(`/flow/${flowId}/state`, {
-      errorMessage: '플로우 상태 조회에 실패했습니다.'
-    });
-  }, [api]);
+  const getFlowState = useCallback(
+    async (flowId: string): Promise<any | null> => {
+      return {
+        flow: {
+          id: flowId,
+          name: '기존 플로우',
+          description: '로드된 플로우',
+          viewport: { x: 0, y: 0, zoom: 1 },
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        },
+        nodes: [],
+        edges: [],
+      };
+    },
+    []
+  );
 
-  const updateFlow = useCallback(async (flowId: string, data: Partial<FlowData>): Promise<FlowData | null> => {
-    return api.put(`/flow/${flowId}`, data, {
-      successMessage: '플로우가 업데이트되었습니다.',
-      errorMessage: '플로우 업데이트에 실패했습니다.'
-    });
-  }, [api]);
+  const updateFlow = useCallback(
+    async (flowId: string, data: any): Promise<any | null> => {
+      return {
+        id: flowId,
+        ...data,
+        updated_at: new Date().toISOString(),
+      };
+    },
+    []
+  );
 
   const deleteFlow = useCallback(async (flowId: string): Promise<boolean> => {
-    const result = await api.delete(`/flow/${flowId}`, {
-      successMessage: '플로우가 삭제되었습니다.',
-      errorMessage: '플로우 삭제에 실패했습니다.'
-    });
-    return !!result;
-  }, [api]);
+    return true;
+  }, []);
 
   // ============================================================================
-  // 🎯 노드 관리 API
+  // 🎯 노드 관리 API (Mock 구현)
   // ============================================================================
 
-  const createNode = useCallback(async (data: CreateNodeRequest): Promise<NodeData | null> => {
-    return api.post('/node', data, {
-      errorMessage: '노드 생성에 실패했습니다.'
-    });
-  }, [api]);
+  const createNode = useCallback(async (data: any): Promise<any | null> => {
+    return {
+      id: data.node_id,
+      flow_id: data.flow_id,
+      node_id: data.node_id,
+      type: data.type,
+      position: data.position,
+      data: data.data,
+      width: data.width,
+      height: data.height,
+      style: data.style,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+  }, []);
 
-  const updateNode = useCallback(async (nodeId: string, data: Partial<CreateNodeRequest>): Promise<NodeData | null> => {
-    return api.put(`/node/${nodeId}`, data, {
-      errorMessage: '노드 업데이트에 실패했습니다.'
-    });
-  }, [api]);
+  const updateNode = useCallback(
+    async (nodeId: string, data: any): Promise<any | null> => {
+      return {
+        id: nodeId,
+        ...data,
+        updated_at: new Date().toISOString(),
+      };
+    },
+    []
+  );
 
   const deleteNode = useCallback(async (nodeId: string): Promise<boolean> => {
-    const result = await api.delete(`/node/${nodeId}`, {
-      errorMessage: '노드 삭제에 실패했습니다.'
-    });
-    return !!result;
-  }, [api]);
+    return true;
+  }, []);
 
   // ============================================================================
-  // 🎯 엣지 관리 API
+  // 🎯 엣지 관리 API (Mock 구현)
   // ============================================================================
 
-  const createEdge = useCallback(async (data: CreateEdgeRequest): Promise<EdgeData | null> => {
-    return api.post('/edge', data, {
-      errorMessage: '엣지 생성에 실패했습니다.'
-    });
-  }, [api]);
+  const createEdge = useCallback(async (data: any): Promise<any | null> => {
+    return {
+      id: data.edge_id,
+      flow_id: data.flow_id,
+      edge_id: data.edge_id,
+      source: data.source,
+      target: data.target,
+      source_handle: data.source_handle,
+      target_handle: data.target_handle,
+      type: data.type,
+      data: data.data,
+      style: data.style,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+  }, []);
 
-  const updateEdge = useCallback(async (edgeId: string, data: Partial<CreateEdgeRequest>): Promise<EdgeData | null> => {
-    return api.put(`/edge/${edgeId}`, data, {
-      errorMessage: '엣지 업데이트에 실패했습니다.'
-    });
-  }, [api]);
+  const updateEdge = useCallback(
+    async (edgeId: string, data: any): Promise<any | null> => {
+      return {
+        id: edgeId,
+        ...data,
+        updated_at: new Date().toISOString(),
+      };
+    },
+    []
+  );
 
   const deleteEdge = useCallback(async (edgeId: string): Promise<boolean> => {
-    const result = await api.delete(`/edge/${edgeId}`, {
-      errorMessage: '엣지 삭제에 실패했습니다.'
-    });
-    return !!result;
-  }, [api]);
+    return true;
+  }, []);
 
   // ============================================================================
-  // 🎯 뷰포트 관리 API
+  // 🎯 뷰포트 관리 API (Mock 구현)
   // ============================================================================
 
-  const updateViewport = useCallback(async (data: UpdateViewportRequest): Promise<boolean> => {
-    const result = await api.post('/viewport', data, {
-      errorMessage: '뷰포트 업데이트에 실패했습니다.'
-    });
-    return !!result;
-  }, [api]);
+  const updateViewport = useCallback(async (data: any): Promise<boolean> => {
+    return true;
+  }, []);
 
   // ============================================================================
-  // 🎯 배치 작업 API (성능 최적화)
+  // 🎯 배치 작업 API (Mock 구현)
   // ============================================================================
 
-  const saveFlowState = useCallback(async (
-    flowId: string,
-    nodes: Node[],
-    edges: Edge[],
-    viewport: { x: number; y: number; zoom: number }
-  ): Promise<boolean> => {
-    try {
-      // 뷰포트 업데이트
-      await updateViewport({ flow_id: flowId, viewport });
+  const saveFlowState = useCallback(
+    async (
+      flowId: string,
+      nodes: Node[],
+      edges: Edge[],
+      viewport: { x: number; y: number; zoom: number }
+    ): Promise<boolean> => {
+      try {
+        // 플로우가 없으면 생성
+        if (!flowId) {
+          const flowData = await createFlow({
+            name: '새 플로우',
+            description: '새로 생성된 플로우',
+          });
+          if (!flowData) return false;
+          flowId = flowData.id;
+        }
 
-      // 기존 노드/엣지와 비교하여 변경사항만 처리 (실제로는 더 복잡한 로직 필요)
-      // 여기서는 간단히 전체 상태를 저장
-      const nodePromises = nodes.map(node => 
-        createNode({
+        // 노드들 저장
+        for (const node of nodes) {
+          await createNode({
+            flow_id: flowId,
+            node_id: node.id,
+            type: node.type,
+            position: node.position,
+            data: node.data,
+            width: node.width,
+            height: node.height,
+            style: node.style,
+          });
+        }
+
+        // 엣지들 저장
+        for (const edge of edges) {
+          await createEdge({
+            flow_id: flowId,
+            edge_id: edge.id,
+            source: edge.source,
+            target: edge.target,
+            source_handle: edge.sourceHandle,
+            target_handle: edge.targetHandle,
+            type: edge.type,
+            data: edge.data,
+            style: edge.style,
+          });
+        }
+
+        // 뷰포트 저장
+        await updateViewport({
           flow_id: flowId,
-          node_id: node.id,
-          type: node.type || 'default',
-          position: node.position,
-          data: node.data,
-          width: node.width,
-          height: node.height,
-          style: node.style,
-        })
-      );
+          x: viewport.x,
+          y: viewport.y,
+          zoom: viewport.zoom,
+        });
 
-      const edgePromises = edges.map(edge =>
-        createEdge({
-          flow_id: flowId,
-          edge_id: edge.id,
-          source: edge.source,
-          target: edge.target,
-          source_handle: edge.sourceHandle || undefined,
-          target_handle: edge.targetHandle || undefined,
-          type: edge.type,
-          data: edge.data,
-          style: edge.style,
-        })
-      );
-
-      await Promise.all([...nodePromises, ...edgePromises]);
-      return true;
-    } catch (error) {
-      console.error('플로우 상태 저장 실패:', error);
-      return false;
-    }
-  }, [updateViewport, createNode, createEdge]);
+        return true;
+      } catch (error) {
+        return false;
+      }
+    },
+    [createFlow, createNode, createEdge, updateViewport]
+  );
 
   // ============================================================================
   // 🎯 데이터 변환 유틸리티
   // ============================================================================
 
-  const convertBackendToFrontend = useCallback((backendState: FlowStateResponse) => {
-    const nodes: Node[] = backendState.nodes.map(nodeData => ({
+  const convertBackendToFrontend = useCallback((backendState: any) => {
+    const nodes: Node[] = backendState.nodes.map((nodeData: any) => ({
       id: nodeData.node_id,
       type: nodeData.type,
       position: nodeData.position,
@@ -176,7 +217,7 @@ export const useReactFlowAPI = () => {
       style: nodeData.style,
     }));
 
-    const edges: Edge[] = backendState.edges.map(edgeData => ({
+    const edges: Edge[] = backendState.edges.map((edgeData: any) => ({
       id: edgeData.edge_id,
       source: edgeData.source,
       target: edgeData.target,
@@ -202,23 +243,23 @@ export const useReactFlowAPI = () => {
     getFlowState,
     updateFlow,
     deleteFlow,
-    
+
     // 노드 관리
     createNode,
     updateNode,
     deleteNode,
-    
+
     // 엣지 관리
     createEdge,
     updateEdge,
     deleteEdge,
-    
+
     // 뷰포트 관리
     updateViewport,
-    
+
     // 배치 작업
     saveFlowState,
-    
+
     // 유틸리티
     convertBackendToFrontend,
   };

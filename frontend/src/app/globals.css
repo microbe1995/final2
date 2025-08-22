@@ -2,512 +2,434 @@
 @tailwind components;
 @tailwind utilities;
 
-/* React Flow Theme Styles */
-@import '../styles/reactflow-theme.css';
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
-/* ============================================================================
-   🎨 디자인 시스템 토큰 (desing.json 기반)
-   ============================================================================ */
+@layer base {
+  html {
+    font-family: 'Inter', system-ui, sans-serif;
+  }
 
-:root {
-  /* Typography */
-  --font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-  --font-size-body: 14px;
-  --font-size-body-large: 16px;
-  --font-size-h3: 18px;
-  --font-size-h2: 22px;
-  --font-size-h1: 28px;
-  --line-height-body: 1.5;
-  --line-height-heading: 1.3;
+  /* 다크 테마 강제 적용 */
+  :root {
+    color-scheme: dark;
+    --ecotrace-primary: #0d80f2;
+    --ecotrace-secondary: #293038;
+    --ecotrace-accent: #e6e8eb;
+    --ecotrace-text: #ffffff;
+    --ecotrace-text-secondary: #9cabba;
+    --ecotrace-background: #121417;
+    --ecotrace-surface: #1c2126;
+    --ecotrace-border: #3b4754;
 
-  /* Spacing Scale */
-  --space-4: 4px;
-  --space-8: 8px;
-  --space-12: 12px;
-  --space-16: 16px;
-  --space-20: 20px;
-  --space-24: 24px;
-  --space-32: 32px;
+    /* Stitch 다크 테마 디자인 토큰 */
+    --bg-start: #0b0e11; /* page top */
+    --bg-end: #0e1217; /* page bottom */
+    --card: rgba(255, 255, 255, 0.06);
+    --card-border: rgba(255, 255, 255, 0.12);
+    --card-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
 
-  /* Border Radius */
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-  --radius-pill: 999px;
+    --accent: #2e90fa; /* Stitch 계열 블루 */
+    --accent-2: #4cc9f0; /* 보조 */
+    --text-1: #e6edf3; /* heading */
+    --text-2: #c3cbd5; /* body */
+    --text-muted: #8b95a7; /* placeholder */
+    --danger: #ef4444;
+    --success: #22c55e;
+    --focus: rgba(46, 144, 250, 0.35);
+  }
 
-  /* Elevation (Shadows) */
-  --elevation-0: none;
-  --elevation-1: 0 1px 2px rgba(0, 0, 0, 0.06);
-  --elevation-2: 0 4px 12px rgba(0, 0, 0, 0.10);
+  body {
+    @apply bg-ecotrace-background text-ecotrace-text;
+    background-color: var(--ecotrace-background);
+    color: var(--ecotrace-text);
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+  }
 
-  /* Colors (desing.json 기반) */
-  --color-bg: #0b0c0f;
-  --color-surface: #1e293b;
-  --color-text-primary: #ffffff;
-  --color-text-secondary: #cbd5e1;
-  --color-border: #334155;
-  --color-accent: #2563eb;
-  --color-success: #16a34a;
-  --color-warning: #d97706;
-  --color-danger: #dc2626;
-  --color-muted: #475569;
-  --color-muted-foreground: #94a3b8;
+  /* 스크롤바 스타일링 */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
 
-  /* Interaction */
-  --transition-standard: 160ms cubic-bezier(0.2, 0, 0, 1);
-  --transition-fast: 120ms ease;
+  ::-webkit-scrollbar-track {
+    @apply bg-ecotrace-surface;
+    background-color: var(--ecotrace-surface);
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-ecotrace-border rounded-full;
+    background-color: var(--ecotrace-border);
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-ecotrace-textSecondary;
+    background-color: var(--ecotrace-text-secondary);
+  }
 }
 
-/* ============================================================================
-   🔤 기본 타이포그래피
-   ============================================================================ */
+@layer components {
+  /* 포커스 링 스타일 */
+  .focus-ring {
+    @apply focus:outline-none focus:ring-2 focus:ring-ecotrace-primary focus:ring-offset-2 focus:ring-offset-ecotrace-background;
+  }
 
-body {
-  font-family: var(--font-family);
-  font-size: var(--font-size-body);
-  line-height: var(--line-height-body);
-  color: var(--color-text-primary);
-  background-color: var(--color-bg);
-  transition: background-color var(--transition-standard), color var(--transition-standard);
+  /* 카드 스타일 */
+  .card {
+    @apply bg-ecotrace-surface border border-ecotrace-border rounded-lg p-6;
+    background-color: var(--ecotrace-surface);
+    border-color: var(--ecotrace-border);
+  }
+
+  /* 입력 필드 공통 스타일 */
+  .input-field {
+    @apply w-full px-4 py-3 bg-ecotrace-surface border border-ecotrace-border rounded-lg text-ecotrace-text placeholder-ecotrace-textSecondary transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-ecotrace-primary focus:border-ecotrace-primary;
+    background-color: var(--ecotrace-surface);
+    border-color: var(--ecotrace-border);
+    color: var(--ecotrace-text);
+  }
+
+  .input-field::placeholder {
+    color: var(--ecotrace-text-secondary);
+  }
+
+  /* 버튼 공통 스타일 */
+  .btn {
+    @apply inline-flex items-center justify-center font-medium rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-ecotrace-background disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-primary {
+    @apply btn bg-ecotrace-primary text-white hover:bg-blue-600 focus:ring-ecotrace-primary;
+    background-color: var(--ecotrace-primary);
+  }
+
+  .btn-secondary {
+    @apply btn bg-ecotrace-secondary text-white hover:bg-gray-700 focus:ring-ecotrace-secondary;
+    background-color: var(--ecotrace-secondary);
+  }
+
+  .btn-outline {
+    @apply btn border border-ecotrace-border bg-transparent text-ecotrace-text hover:bg-ecotrace-surface focus:ring-ecotrace-border;
+    border-color: var(--ecotrace-border);
+    color: var(--ecotrace-text);
+  }
+
+  .btn-outline:hover {
+    background-color: var(--ecotrace-surface);
+  }
 }
 
-h1, h2, h3, h4, h5, h6 {
-  line-height: var(--line-height-heading);
-  font-weight: 600;
+/* Stitch 다크 테마 컴포넌트 */
+@layer components {
+  /* 페이지 공통 배경 */
+  .stitch-bg {
+    background:
+      radial-gradient(
+        1200px 600px at 15% 10%,
+        rgba(46, 144, 250, 0.12),
+        transparent 60%
+      ),
+      radial-gradient(
+        1000px 500px at 85% 15%,
+        rgba(76, 201, 240, 0.1),
+        transparent 60%
+      ),
+      linear-gradient(180deg, var(--bg-start), var(--bg-end));
+  }
+
+  /* 유리 카드 */
+  .stitch-card {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    backdrop-filter: blur(10px);
+    box-shadow: var(--card-shadow);
+    border-radius: 18px;
+  }
+
+  /* 폼 타이포/라벨 */
+  .stitch-label {
+    color: var(--text-2);
+    font-size: 0.9rem;
+  }
+
+  .stitch-h1 {
+    color: var(--text-1);
+  }
+
+  /* 에러 메시지 */
+  .stitch-error {
+    color: var(--danger);
+    font-size: 0.8rem;
+  }
+
+  /* 탭 버튼 */
+  .stitch-tab {
+    border-radius: 9999px;
+    padding: 0.55rem 1rem;
+    transition:
+      transform 0.12s ease,
+      background-color 0.12s ease,
+      color 0.12s ease;
+  }
+
+  .stitch-tab[data-active='true'] {
+    background: var(--accent);
+    color: white;
+  }
+
+  .stitch-tab[data-active='false'] {
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--text-2);
+  }
+
+  .stitch-tab:active {
+    transform: translateY(1px);
+  }
 }
 
-h1 { font-size: var(--font-size-h1); }
-h2 { font-size: var(--font-size-h2); }
-h3 { font-size: var(--font-size-h3); }
+@layer utilities {
+  /* 컨테이너 쿼리 유틸리티 */
+  .container-query {
+    container-type: inline-size;
+  }
 
-/* ============================================================================
-   🎯 접근성 개선
-   ============================================================================ */
+  /* 안전 영역 유틸리티 */
+  .safe-top {
+    padding-top: env(safe-area-inset-top);
+  }
 
-/* Focus visible for keyboard navigation */
-*:focus-visible {
-  outline: 2px solid var(--color-accent);
-  outline-offset: 2px;
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .safe-left {
+    padding-left: env(safe-area-inset-left);
+  }
+
+  .safe-right {
+    padding-right: env(safe-area-inset-right);
+  }
+
+  /* 동적 뷰포트 높이 */
+  .dvh-full {
+    height: 100dvh;
+  }
+
+  .svh-full {
+    height: 100svh;
+  }
+
+  .lvh-full {
+    height: 100lvh;
+  }
+
+  /* 유동 타이포그래피 */
+  .fluid-text {
+    font-size: clamp(1rem, 4vw, 2rem);
+    line-height: 1.2;
+  }
+
+  .fluid-heading {
+    font-size: clamp(1.5rem, 6vw, 3rem);
+    line-height: 1.1;
+  }
 }
 
-/* Reduced motion support */
+/* 모바일 최적화 */
+@media (hover: none) and (pointer: coarse) {
+  .btn {
+    @apply min-h-[44px] min-w-[44px];
+  }
+
+  .input-field {
+    @apply min-h-[44px];
+  }
+}
+
+/* 고대비 모드 지원 */
+@media (prefers-contrast: high) {
+  .border {
+    @apply border-2;
+  }
+
+  .btn {
+    @apply border-2;
+  }
+}
+
+/* 모션 감소 설정 */
 @media (prefers-reduced-motion: reduce) {
-  * {
+  *,
+  *::before,
+  *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
 }
 
-/* ============================================================================
-   🔧 유틸리티 클래스
-   ============================================================================ */
+/* ===== STITCH DESIGN SYSTEM ===== */
+:root {
+  /* Color tokens */
+  --bg: #0b1117;
+  --bg-grad-1: #0b1117;
+  --bg-grad-2: #0e1620;
+  --card: rgba(20, 24, 31, 0.85);
+  --card-border: rgba(255, 255, 255, 0.08);
+  --text-1: #e6e8eb;
+  --text-2: #c3c8cf;
+  --text-muted: #8b94a5;
 
-/* 다크 테마 기본 스타일 */
-.bg-surface {
-  background-color: var(--color-surface);
+  --primary: #2f6bff; /* login button blue */
+  --primary-600: #2456d1;
+  --primary-700: #1e49b5;
+
+  --success-50: #eefaf1;
+  --success-200: #b9ebc6;
+  --success-700: #2a7a46;
+
+  --focus: rgba(47, 107, 255, 0.35);
+
+  /* Radii & spacing */
+  --radius-card: 16px; /* ~rounded-2xl */
+  --radius-input: 12px;
+  --radius-button: 12px;
+
+  /* Shadows */
+  --shadow-card: 0 10px 30px rgba(0, 0, 0, 0.35);
+  --shadow-focus: 0 0 0 3px var(--focus);
 }
 
-.text-primary {
-  color: var(--color-text-primary);
+/* App background: subtle radial/linear mix */
+.stitch-bg {
+  background:
+    radial-gradient(
+      1200px 600px at 20% -10%,
+      rgba(47, 107, 255, 0.15),
+      transparent 60%
+    ),
+    radial-gradient(
+      800px 400px at 80% 110%,
+      rgba(47, 107, 255, 0.12),
+      transparent 60%
+    ),
+    linear-gradient(180deg, var(--bg-grad-1), var(--bg-grad-2));
+  color: var(--text-1);
 }
 
-.text-secondary {
-  color: var(--color-text-secondary);
+/* Glass card */
+.stitch-card {
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  backdrop-filter: blur(10px);
 }
 
-.border-border {
-  border-color: var(--color-border);
+/* Typography */
+.stitch-h1 {
+  color: var(--text-1);
+  letter-spacing: 0.2px;
+}
+.stitch-label {
+  color: var(--text-2);
+  font-size: 13px;
+}
+.stitch-error {
+  color: #ff6b6b;
+  font-size: 12px;
 }
 
-/* Input 필드 다크 테마 스타일 */
-.input-dark {
-  background-color: var(--color-surface);
-  color: var(--color-text-primary);
-  border-color: var(--color-border);
+/* Inputs (used by <Input />) */
+.stitch-input {
+  width: 100%;
+  padding: 10px 12px;
+  background: #151a22;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-input);
+  color: var(--text-1);
+  outline: none;
+}
+.stitch-input::placeholder {
+  color: var(--text-muted);
+}
+.stitch-input:focus {
+  border-color: var(--primary);
+  box-shadow: var(--shadow-focus);
 }
 
-.input-dark::placeholder {
-  color: var(--color-muted-foreground);
-}
-
-/* Card 다크 테마 스타일 */
-.card-dark {
-  background-color: var(--color-surface);
-  color: var(--color-text-primary);
-  border-color: var(--color-border);
-}
-
-/* ============================================================================
-   🎭 기본 애니메이션 키프레임
-   ============================================================================ */
-
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes scaleIn {
-  from {
-    opacity: 0;
-    transform: scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-/* ============================================================================
-   🎨 컴포넌트 기본 스타일
-   ============================================================================ */
-
-/* Card Component */
-.card {
-  background: var(--color-surface);
-  border-radius: var(--radius-md);
-  box-shadow: var(--elevation-1);
-  padding: var(--space-16);
-  transition: all var(--transition-standard);
-  border: 1px solid var(--color-border);
-}
-
-.card:hover {
-  box-shadow: var(--elevation-2);
-  transform: translateY(-1px);
-}
-
-/* Button Component */
-.btn {
+/* Buttons (base + variants) */
+.stitch-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: var(--space-8);
-  padding: var(--space-12) var(--space-16);
-  border-radius: var(--radius-md);
-  font-size: var(--font-size-body);
-  font-weight: 500;
-  line-height: 1;
-  transition: all var(--transition-fast);
-  cursor: pointer;
-  border: none;
-  text-decoration: none;
-}
-
-.btn:disabled {
-  opacity: 0.5;
-  pointer-events: none;
-}
-
-.btn-primary {
-  background: var(--color-accent);
-  color: white;
-}
-
-.btn-primary:hover:not(:disabled) {
-  background: #1d4ed8;
-  transform: translateY(-1px);
-}
-
-.btn-secondary {
-  background: var(--color-surface);
-  color: var(--color-text-primary);
-  border: 1px solid var(--color-border);
-}
-
-.btn-secondary:hover:not(:disabled) {
-  background: var(--color-muted);
-  border-color: var(--color-border);
-}
-
-/* Form Components */
-.form-field {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-8);
-}
-
-.form-label {
-  font-size: var(--font-size-body);
-  font-weight: 500;
-  color: var(--color-text-primary);
-}
-
-.form-input {
-  padding: var(--space-12);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  font-size: var(--font-size-body);
-  transition: border-color var(--transition-fast);
-  background: var(--color-surface);
-  color: var(--color-text-primary);
-}
-
-.form-input:focus {
-  outline: none;
-  border-color: var(--color-accent);
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
-}
-
-.form-input.error {
-  border-color: var(--color-danger);
-}
-
-.form-error {
-  color: var(--color-danger);
-  font-size: 14px;
-  margin-top: var(--space-4);
-}
-
-/* Modal Component */
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.4);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  padding: var(--space-16);
-}
-
-.modal-content {
-  background: var(--color-surface);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--elevation-2);
-  max-width: 500px;
   width: 100%;
-  max-height: 90vh;
-  overflow-y: auto;
-  animation: modal-enter var(--transition-standard);
-  border: 1px solid var(--color-border);
+  height: 44px;
+  border-radius: var(--radius-button);
+  font-weight: 600;
+  border: 1px solid transparent;
+  outline: none;
+  transition:
+    transform 0.02s ease,
+    box-shadow 0.15s ease,
+    background-color 0.15s ease,
+    border-color 0.15s ease;
+}
+.stitch-btn:active {
+  transform: translateY(1px);
+}
+.stitch-btn:focus-visible {
+  box-shadow: var(--shadow-focus);
 }
 
-@keyframes modal-enter {
-  from {
-    opacity: 0;
-    transform: scale(0.95) translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-  }
-}
-
-/* Toast Component */
-.toast {
-  position: fixed;
-  bottom: var(--space-16);
-  right: var(--space-16);
-  background: var(--color-surface);
-  border-radius: var(--radius-md);
-  box-shadow: var(--elevation-2);
-  padding: var(--space-16);
-  z-index: 1001;
-  animation: toast-enter var(--transition-standard);
-  border: 1px solid var(--color-border);
-}
-
-@keyframes toast-enter {
-  from {
-    opacity: 0;
-    transform: translateX(100%);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-/* Loading States */
-.skeleton {
-  background: linear-gradient(90deg, var(--color-muted) 25%, var(--color-border) 50%, var(--color-muted) 75%);
-  background-size: 200% 100%;
-  animation: skeleton-loading 1.2s infinite;
-}
-
-@keyframes skeleton-loading {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
-}
-
-/* ============================================================================
-   📱 반응형 디자인
-   ============================================================================ */
-
-@media (max-width: 640px) {
-  .card {
-    padding: var(--space-12);
-  }
-  
-  .btn {
-    padding: var(--space-10) var(--space-12);
-  }
-  
-  .modal-content {
-    margin: var(--space-8);
-    max-height: calc(100vh - var(--space-16));
-  }
-}
-
-/* ============================================================================
-   🎨 상태별 스타일
-   ============================================================================ */
-
-/* Success State */
-.success {
-  color: var(--color-success);
-}
-
-/* Warning State */
-.warning {
-  color: var(--color-warning);
-}
-
-/* Error State */
-.error {
-  color: var(--color-danger);
-}
-
-/* Info State */
-.info {
-  color: var(--color-accent);
-}
-
-/* ============================================================================
-   🎨 커스텀 스크롤바
-   ============================================================================ */
-
-.custom-scrollbar::-webkit-scrollbar {
-  width: 6px;
-}
-
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: var(--color-muted);
-  border-radius: 3px;
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background: var(--color-border);
-  border-radius: 3px;
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: var(--color-text-secondary);
-} 
-
-/* React Flow 기본 스타일 */
-.react-flow__node {
-  cursor: grab;
-}
-
-.react-flow__node:active {
-  cursor: grabbing;
-}
-
-.react-flow__handle {
-  width: 8px;
-  height: 8px;
-  background: #1a192b;
-  border: 1px solid #fff;
-  border-radius: 50%;
-}
-
-.react-flow__handle:hover {
-  background: #555;
-}
-
-.react-flow__handle.connecting {
-  background: #ff6060;
-}
-
-.react-flow__edge {
-  stroke: #b1b1b7;
-  stroke-width: 2;
-}
-
-.react-flow__edge.selected {
-  stroke: #ff0072;
-}
-
-.react-flow__edge.animated {
-  stroke-dasharray: 5;
-  animation: dashdraw 0.5s linear infinite;
-}
-
-@keyframes dashdraw {
-  from {
-    stroke-dashoffset: 10;
-  }
-}
-
-.react-flow__controls {
-  background: #1e293b;
-  border: 1px solid #334155;
-  border-radius: 8px;
-  padding: 4px;
-}
-
-.react-flow__controls button {
-  background: #334155;
-  border: none;
+/* Primary */
+.stitch-btn--primary {
+  background: var(--primary);
   color: white;
-  border-radius: 4px;
-  padding: 4px;
-  margin: 2px;
+}
+.stitch-btn--primary:hover {
+  background: var(--primary-600);
+}
+.stitch-btn--primary:active {
+  background: var(--primary-700);
 }
 
-.react-flow__controls button:hover {
-  background: #475569;
+/* Outline (secondary) */
+.stitch-btn--outline {
+  background: transparent;
+  border-color: rgba(255, 255, 255, 0.12);
+  color: var(--text-1);
+}
+.stitch-btn--outline:hover {
+  background: rgba(255, 255, 255, 0.04);
 }
 
-.react-flow__minimap {
-  background: #1e293b;
-  border: 1px solid #334155;
-  border-radius: 8px;
+/* Ghost (tertiary / subtle) */
+.stitch-btn--ghost {
+  background: #0f141b;
+  color: var(--text-1);
+  border-color: rgba(255, 255, 255, 0.06);
+}
+.stitch-btn--ghost:hover {
+  background: #121923;
 }
 
-/* React Flow Background 패턴 강화 */
-.react-flow__background {
-  background: #0b0c0f;
+/* Success call-out (e.g., '데이터 수집 바로가기') */
+.stitch-btn--success-soft {
+  background: var(--success-50);
+  color: var(--success-700);
+  border-color: var(--success-200);
+}
+.stitch-btn--success-soft:hover {
+  background: #e3f5e7;
 }
 
-.react-flow__background-pattern {
-  stroke: #475569 !important;
-  stroke-width: 1 !important;
-  opacity: 0.6 !important;
+/* Section divider */
+.stitch-section {
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
-
-/* 점형태 패턴이 더 명확하게 보이도록 */
-.react-flow__background-pattern circle {
-  fill: #475569 !important;
-  opacity: 0.8 !important;
+.stitch-caption {
+  color: var(--text-muted);
+  font-size: 12.5px;
 }
-
-/* React Flow Canvas 영역 완전 다크 테마 */
-.react-flow {
-  background-color: #0b0c0f !important;
-}
-
-.react-flow__viewport {
-  background-color: #0b0c0f !important;
-}
-
-.react-flow__renderer {
-  background-color: #0b0c0f !important;
-}
-
-.react-flow__pane {
-  background-color: #0b0c0f !important;
-} 
