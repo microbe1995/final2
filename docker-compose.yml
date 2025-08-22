@@ -59,7 +59,7 @@ services:
 
   # Cal_boundary 서비스 (실제 폴더명에 맞춤)
   cal-boundary:
-    build: ./service/boundary-service
+    build: ./service/cbam-service
     container_name: cbam-cal-boundary
     ports:
       - "8001:8001"
@@ -73,32 +73,12 @@ services:
       - cbam-network
     restart: unless-stopped
 
-  # Frontend 서비스 (개발용)
-  frontend:
-    build: ./frontend
-    container_name: cbam-frontend
-    ports:
-      - "3000:3000"
-    environment:
-      - NEXT_PUBLIC_API_BASE_URL=http://localhost:8080/api/v1
-      - NEXT_PUBLIC_CAL_BOUNDARY_URL=http://localhost:8001
-      - NODE_ENV=development
-    depends_on:
-      - gateway
-      - cal-boundary
-    networks:
-      - cbam-network
-    restart: unless-stopped
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
+  # Frontend 서비스는 개발 환경에서 직접 실행
+  # docker-compose up -d gateway cal-boundary auth-service postgres
 
 networks:
   cbam-network:
     driver: bridge
-    ipam:
-      config:
-        - subnet: 172.25.0.0/16
 
 volumes:
   postgres_data:

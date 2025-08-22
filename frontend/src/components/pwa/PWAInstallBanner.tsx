@@ -23,7 +23,7 @@ export default function PWAInstallBanner() {
   useEffect(() => {
     // PWA 설치 이벤트 리스너
     const handleBeforeInstallPrompt = (e: Event) => {
-      e.preventDefault();
+      // preventDefault()를 제거하고 이벤트를 저장만 함
       setDeferredPrompt(e as BeforeInstallPromptEvent);
       setShowBanner(true);
     };

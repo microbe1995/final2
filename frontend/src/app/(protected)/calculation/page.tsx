@@ -470,14 +470,22 @@ export default function CalculationPage() {
 
     setLoading(true);
     try {
-      const response = await fetch('/api/v1/boundary/calc/product', {
+      console.log('제품 생성 요청:', productForm);
+      
+      const response = await fetch('/api/v1/boundary/product', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('auth_token') || ''}`
+        },
         body: JSON.stringify(productForm)
       });
       
+      console.log('제품 생성 응답 상태:', response.status);
+      
       if (response.ok) {
         const result = await response.json();
+        console.log('제품 생성 성공:', result);
         setResults(prev => ({ ...prev, product: result }));
         setToast({ message: '제품이 성공적으로 생성되었습니다!', type: 'success' });
         setProductForm({
@@ -492,11 +500,13 @@ export default function CalculationPage() {
           defect_rate: 0
         }); // 폼 초기화
       } else {
-        setToast({ message: '제품 생성 중 오류가 발생했습니다.', type: 'error' });
+        const errorText = await response.text();
+        console.error('제품 생성 실패:', response.status, errorText);
+        setToast({ message: `제품 생성 중 오류가 발생했습니다. (${response.status})`, type: 'error' });
       }
     } catch (error) {
       console.error('Product creation error:', error);
-      setToast({ message: '제품 생성 중 오류가 발생했습니다.', type: 'error' });
+      setToast({ message: '제품 생성 중 네트워크 오류가 발생했습니다.', type: 'error' });
     } finally {
       setLoading(false);
     }
