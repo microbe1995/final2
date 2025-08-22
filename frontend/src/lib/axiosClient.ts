@@ -15,15 +15,9 @@ const generateRequestKey = (config: AxiosRequestConfig): string => {
   return `${method?.toUpperCase() || 'GET'}:${url}:${JSON.stringify(data || {})}:${JSON.stringify(params || {})}`;
 };
 
-// Gateway 외 요청 차단을 위한 인터셉터
-const isGatewayRequest = (url: string): boolean => {
-  try {
-    const requestUrl = new URL(url);
-    const gatewayUrl = new URL(env.NEXT_PUBLIC_API_BASE_URL);
-    return requestUrl.hostname === gatewayUrl.hostname;
-  } catch {
-    return false;
-  }
+// API 요청 검증을 위한 인터셉터
+const isAPIRequest = (url: string): boolean => {
+  return url.startsWith('/api/');
 };
 
 // CSRF 토큰 가져오기
@@ -59,7 +53,7 @@ const retryRequest = async (
 
 // axios 인스턴스 생성
 const axiosClient: AxiosInstance = axios.create({
-  baseURL: env.NEXT_PUBLIC_API_BASE_URL,
+  baseURL: '', // 상대 경로 사용 (Next.js rewrites 활용)
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
@@ -85,10 +79,10 @@ axiosClient.interceptors.request.use(
     config.signal = controller.signal;
     pendingRequests.set(requestKey, controller);
 
-    // Gateway 외 요청 차단
-    if (config.url && !isGatewayRequest(config.baseURL + config.url)) {
+    // API 요청 검증
+    if (config.url && !isAPIRequest(config.baseURL + config.url)) {
       throw new Error(
-        'Direct service access is not allowed. Use Gateway only.'
+        'Direct service access is not allowed. Use API routes only.'
       );
     }
 
