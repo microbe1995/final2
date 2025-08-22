@@ -109,6 +109,14 @@ def fix_collation_issues(engine):
             conn.execute(text("SET client_encoding = 'UTF8'"))
             conn.execute(text("SET timezone = 'UTC'"))
             
+            # collation 버전 불일치 해결 시도
+            try:
+                # 데이터베이스 collation 버전 새로고침
+                conn.execute(text("ALTER DATABASE railway REFRESH COLLATION VERSION"))
+                logger.info("✅ Collation 버전 새로고침 완료")
+            except Exception as e:
+                logger.warning(f"Collation 버전 새로고침 실패 (무시 가능): {str(e)}")
+            
             # collation 버전 확인
             try:
                 result = conn.execute(text("""
@@ -134,73 +142,27 @@ def create_tables(engine):
         with engine.connect() as conn:
             logger.info("🗄️ 데이터베이스 테이블 생성 중...")
             
-            # 연료 테이블 생성
+            # 제품 테이블 생성
             conn.execute(text("""
-                CREATE TABLE IF NOT EXISTS fuels (
-                    id SERIAL PRIMARY KEY,
-                    fuel_name VARCHAR(255) NOT NULL,
-                    fuel_eng VARCHAR(255),
-                    fuel_emfactor DECIMAL(10,2),
-                    net_calory DECIMAL(10,2),
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                )
-            """))
-            logger.info("✅ fuels 테이블 생성 완료")
-            
-            # 원료 테이블 생성
-            conn.execute(text("""
-                CREATE TABLE IF NOT EXISTS materials (
-                    id SERIAL PRIMARY KEY,
-                    item_name VARCHAR(255) NOT NULL,
-                    item_eng VARCHAR(255),
-                    carbon_factor DECIMAL(10,2),
-                    em_factor DECIMAL(10,2),
+                CREATE TABLE IF NOT EXISTS product (
+                    product_id SERIAL PRIMARY KEY,
+                    name VARCHAR(255) NOT NULL,
                     cn_code VARCHAR(50),
-                    cn_code1 VARCHAR(50),
-                    cn_code2 VARCHAR(50),
+                    period_start DATE,
+                    period_end DATE,
+                    production_qty DECIMAL(10,2) DEFAULT 0,
+                    sales_qty DECIMAL(10,2) DEFAULT 0,
+                    export_qty DECIMAL(10,2) DEFAULT 0,
+                    inventory_qty DECIMAL(10,2) DEFAULT 0,
+                    defect_rate DECIMAL(5,4) DEFAULT 0,
+                    node_id VARCHAR(255),
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             """))
-            logger.info("✅ materials 테이블 생성 완료")
-            
-            # 전구물질 테이블 생성
-            conn.execute(text("""
-                CREATE TABLE IF NOT EXISTS precursors (
-                    id SERIAL PRIMARY KEY,
-                    user_id VARCHAR(255) NOT NULL,
-                    calculation_type VARCHAR(50) NOT NULL,
-                    fuel_id INTEGER,
-                    material_id INTEGER,
-                    quantity DECIMAL(10,2) NOT NULL,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY (fuel_id) REFERENCES fuels(id) ON DELETE SET NULL,
-                    FOREIGN KEY (material_id) REFERENCES materials(id) ON DELETE SET NULL
-                )
-            """))
-            logger.info("✅ precursors 테이블 생성 완료")
-            
-            # 계산 결과 테이블 생성
-            conn.execute(text("""
-                CREATE TABLE IF NOT EXISTS calculation_results (
-                    id SERIAL PRIMARY KEY,
-                    user_id VARCHAR(255) NOT NULL,
-                    calculation_type VARCHAR(50) NOT NULL,
-                    fuel_id INTEGER,
-                    material_id INTEGER,
-                    quantity DECIMAL(10,2) NOT NULL,
-                    result_data JSONB,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY (fuel_id) REFERENCES fuels(id) ON DELETE SET NULL,
-                    FOREIGN KEY (material_id) REFERENCES materials(id) ON DELETE SET NULL
-                )
-            """))
-            logger.info("✅ calculation_results 테이블 생성 완료")
+            logger.info("✅ product 테이블 생성 완료")
             
             # 인덱스 생성
-            conn.execute(text("CREATE INDEX IF NOT EXISTS idx_fuels_name ON fuels(fuel_name)"))
-            conn.execute(text("CREATE INDEX IF NOT EXISTS idx_materials_name ON materials(item_name)"))
-            conn.execute(text("CREATE INDEX IF NOT EXISTS idx_precursors_user ON precursors(user_id)"))
-            conn.execute(text("CREATE INDEX IF NOT EXISTS idx_calculation_results_user ON calculation_results(user_id)"))
+            conn.execute(text("CREATE INDEX IF NOT EXISTS idx_product_name ON product(name)"))
             logger.info("✅ 인덱스 생성 완료")
             
             conn.commit()
@@ -216,34 +178,17 @@ def insert_sample_data(engine):
         with engine.connect() as conn:
             logger.info("📊 샘플 데이터 삽입 중...")
             
-            # 연료 샘플 데이터 확인 및 삽입
-            result = conn.execute(text("SELECT COUNT(*) FROM fuels"))
+            # 제품 샘플 데이터 확인 및 삽입
+            result = conn.execute(text("SELECT COUNT(*) FROM product"))
             if result.scalar() == 0:
                 conn.execute(text("""
-                    INSERT INTO fuels (fuel_name, fuel_eng, fuel_emfactor, net_calory) VALUES
-                    ('천연가스', 'Natural Gas', 56.1, 48.0),
-                    ('석탄', 'Coal', 94.6, 25.8),
-                    ('중유', 'Heavy Oil', 77.4, 40.4),
-                    ('경유', 'Diesel', 74.1, 42.7),
-                    ('휘발유', 'Gasoline', 69.3, 44.3)
+                    INSERT INTO product (name, cn_code, period_start, period_end, production_qty, sales_qty, export_qty, inventory_qty, defect_rate) VALUES
+                    ('철강 제품 A', '7208', '2024-01-01', '2024-12-31', 1000.0, 800.0, 200.0, 100.0, 0.05),
+                    ('철강 제품 B', '7210', '2024-01-01', '2024-12-31', 500.0, 400.0, 100.0, 50.0, 0.03)
                 """))
-                logger.info("✅ 연료 샘플 데이터 삽입 완료")
+                logger.info("✅ 제품 샘플 데이터 삽입 완료")
             else:
-                logger.info("ℹ️ 연료 데이터가 이미 존재합니다")
-            
-            # 원료 샘플 데이터 확인 및 삽입
-            result = conn.execute(text("SELECT COUNT(*) FROM materials"))
-            if result.scalar() == 0:
-                conn.execute(text("""
-                    INSERT INTO materials (item_name, item_eng, carbon_factor, em_factor, cn_code, cn_code1, cn_code2) VALUES
-                    ('철광석', 'Iron Ore', 0.5, 0.024, '2601', '260111', '26011100'),
-                    ('석회석', 'Limestone', 12.0, 0.034, '2521', '252100', '25210000'),
-                    ('코크스', 'Coke', 85.0, 2.8, '2704', '270400', '27040000'),
-                    ('철스크랩', 'Iron Scrap', 0.1, 0.005, '7204', '720400', '72040000')
-                """))
-                logger.info("✅ 원료 샘플 데이터 삽입 완료")
-            else:
-                logger.info("ℹ️ 원료 데이터가 이미 존재합니다")
+                logger.info("ℹ️ 제품 데이터가 이미 존재합니다")
             
             conn.commit()
             
