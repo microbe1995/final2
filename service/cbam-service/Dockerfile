@@ -28,8 +28,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 # 애플리케이션 코드 복사
 COPY . .
 
-# 마이그레이션 스크립트 실행 권한 부여
-RUN chmod +x migrate_db.py
+# 마이그레이션 스크립트는 main.py의 lifespan에서 처리됨
 
 # 포트 노출
 EXPOSE 8001
@@ -38,25 +37,10 @@ EXPOSE 8001
 ENV PYTHONIOENCODING=utf-8
 ENV PYTHONUNBUFFERED=1
 
-# 시작 스크립트 생성
+# 시작 스크립트 생성 (마이그레이션은 main.py의 lifespan에서 처리)
 RUN echo '#!/bin/bash\n\
 echo "🚀 CBAM 서비스 시작 중..."\n\
-\n\
-# 데이터베이스 마이그레이션 실행\n\
-if [ -n "$DATABASE_URL" ]; then\n\
-    echo "🗄️ 데이터베이스 마이그레이션 실행 중..."\n\
-    python migrate_db.py\n\
-    if [ $? -eq 0 ]; then\n\
-        echo "✅ 데이터베이스 마이그레이션 완료"\n\
-    else\n\
-        echo "⚠️ 데이터베이스 마이그레이션 실패 (계속 진행)"\n\
-    fi\n\
-else\n\
-    echo "⚠️ DATABASE_URL이 설정되지 않음 (마이그레이션 건너뜀)"\n\
-fi\n\
-\n\
-# 애플리케이션 실행\n\
-echo "🚀 애플리케이션 시작..."\n\
+echo "🚀 애플리케이션 시작 (마이그레이션은 자동 처리됨)..."\n\
 exec uvicorn app.main:app --host 0.0.0.0 --port 8001\n\
 ' > /CBAM/start.sh && chmod +x /CBAM/start.sh
 
