@@ -102,6 +102,24 @@ class CalculationRepository:
                     )
                 """))
                 
+                # 제품 테이블 생성
+                conn.execute(text("""
+                    CREATE TABLE IF NOT EXISTS product (
+                        product_id SERIAL PRIMARY KEY,
+                        name VARCHAR(255) NOT NULL,
+                        cn_code VARCHAR(50),
+                        period_start DATE,
+                        period_end DATE,
+                        production_qty DECIMAL(10,2) DEFAULT 0,
+                        sales_qty DECIMAL(10,2) DEFAULT 0,
+                        export_qty DECIMAL(10,2) DEFAULT 0,
+                        inventory_qty DECIMAL(10,2) DEFAULT 0,
+                        defect_rate DECIMAL(5,4) DEFAULT 0,
+                        node_id VARCHAR(255),
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    )
+                """))
+                
                 # 샘플 데이터 삽입 (테이블이 비어있을 때만)
                 self._insert_sample_data(conn)
                 
@@ -608,63 +626,6 @@ class CalculationRepository:
         }
     
     # ============================================================================
-    # 🔧 초기화 및 유틸리티 메서드
-    # ============================================================================
-    
-    def _initialize_memory_data(self):
-        """메모리 저장소 샘플 데이터 초기화"""
-        # 샘플 연료 데이터
-        self._memory_fuels = {
-            "천연가스": {
-                "id": 1,
-                "fuel_name": "천연가스",
-                "fuel_eng": "Natural Gas",
-                "fuel_emfactor": 56.1,
-                "net_calory": 48.0
-            },
-            "석탄": {
-                "id": 2,
-                "fuel_name": "석탄",
-                "fuel_eng": "Coal",
-                "fuel_emfactor": 94.6,
-                "net_calory": 25.8
-            },
-            "중유": {
-                "id": 3,
-                "fuel_name": "중유",
-                "fuel_eng": "Heavy Oil",
-                "fuel_emfactor": 77.4,
-                "net_calory": 40.4
-            }
-        }
-        
-        # 샘플 원료 데이터
-        self._memory_materials = {
-            "철광석": {
-                "id": 1,
-                "item_name": "철광석",
-                "item_eng": "Iron Ore",
-                "carbon_factor": 0.5,  # 탄소함량 (%)
-                "em_factor": 0.024,  # 배출계수 (tCO2/톤)
-                "cn_code": "2601",
-                "cn_code1": "260111",
-                "cn_code2": "26011100"
-            },
-            "석회석": {
-                "id": 2,
-                "item_name": "석회석",
-                "item_eng": "Limestone",
-                "carbon_factor": 12.0,  # 탄소함량 (%)
-                "em_factor": 0.034,  # 배출계수 (tCO2/톤)
-                "cn_code": "2521",
-                "cn_code1": "252100",
-                "cn_code2": "25210000"
-            }
-        }
-        
-        logger.info("✅ 메모리 저장소 샘플 데이터 초기화 완료")
-    
-    # ============================================================================
     # 📦 Product 관련 메서드
     # ============================================================================
     
@@ -695,7 +656,7 @@ class CalculationRepository:
         try:
             with self.engine.connect() as conn:
                 query = text("""
-                    INSERT INTO products (name, cn_code, period_start, period_end, production_qty, sales_qty, export_qty, inventory_qty, defect_rate, node_id)
+                    INSERT INTO product (name, cn_code, period_start, period_end, production_qty, sales_qty, export_qty, inventory_qty, defect_rate, node_id)
                     VALUES (:name, :cn_code, :period_start, :period_end, :production_qty, :sales_qty, :export_qty, :inventory_qty, :defect_rate, :node_id)
                     RETURNING product_id, name, cn_code, period_start, period_end, production_qty, sales_qty, export_qty, inventory_qty, defect_rate, node_id, created_at
                 """)
@@ -729,7 +690,7 @@ class CalculationRepository:
             with self.engine.connect() as conn:
                 query = text("""
                     SELECT product_id, name, cn_code, period_start, period_end, production_qty, sales_qty, export_qty, inventory_qty, defect_rate, node_id, created_at
-                    FROM products
+                    FROM product
                     ORDER BY created_at DESC
                 """)
                 result = conn.execute(query)
