@@ -112,28 +112,18 @@ const nextConfig = {
       },
     ];
   },
+  // API 프록시 설정
   async rewrites() {
     const GATEWAY_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://gateway-production-22ef.up.railway.app';
     
     return [
       {
-        source: '/sitemap.xml',
-        destination: '/api/sitemap',
+        source: '/api/v1/:path*',
+        destination: `${GATEWAY_URL}/api/v1/:path*`,
       },
-      // 지리 정보 API (새 /geo 프리픽스)
       {
-        source: '/geo/:path*',
-        destination: `${GATEWAY_URL}/geo/:path*`,
-      },
-      // 인증 관련 API
-      {
-        source: '/auth/:path*',
-        destination: `${GATEWAY_URL}/auth/:path*`,
-      },
-      // Gateway 직접 접근
-      {
-        source: '/gateway/:path*',
-        destination: `${GATEWAY_URL}/:path*`,
+        source: '/api/:path*',
+        destination: `${GATEWAY_URL}/api/:path*`,
       },
     ];
   },
