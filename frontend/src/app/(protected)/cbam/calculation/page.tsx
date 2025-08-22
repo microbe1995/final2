@@ -104,7 +104,10 @@ export default function CalculationPage() {
 
   // 새로운 테이블 폼 상태들
   const [boundaryForm, setBoundaryForm] = useState({
-    name: ''
+    name: '',
+    boundary_type: 'individual',
+    description: '',
+    company_id: 1
   });
 
   const [productForm, setProductForm] = useState({
@@ -434,20 +437,25 @@ export default function CalculationPage() {
   // ============================================================================
 
   const handleBoundaryCreate = async () => {
-    if (!boundaryForm.name) {
-      setToast({ message: '경계명을 입력해주세요.', type: 'error' });
+    if (!boundaryForm.name || !boundaryForm.boundary_type) {
+      setToast({ message: '경계명과 경계 유형을 입력해주세요.', type: 'error' });
       return;
     }
 
     setLoading(true);
     try {
-      const response = await axiosClient.post('/api/boundary', boundaryForm);
+      const response = await axiosClient.post('/api/v1/boundary/calc/boundary', boundaryForm);
       
       if (response.status === 200 || response.status === 201) {
         const result = response.data;
         setResults(prev => ({ ...prev, boundary: result }));
         setToast({ message: '경계가 성공적으로 생성되었습니다!', type: 'success' });
-        setBoundaryForm({ name: '' }); // 폼 초기화
+        setBoundaryForm({
+          name: '',
+          boundary_type: 'individual',
+          description: '',
+          company_id: 1
+        }); // 폼 초기화
       } else {
         setToast({ message: '경계 생성 중 오류가 발생했습니다.', type: 'error' });
       }
@@ -469,7 +477,7 @@ export default function CalculationPage() {
     try {
       console.log('제품 생성 요청:', productForm);
       
-      const response = await axiosClient.post('/api/product', productForm);
+      const response = await axiosClient.post('/api/v1/boundary/product', productForm);
       
       console.log('제품 생성 응답 상태:', response.status);
       
@@ -509,7 +517,7 @@ export default function CalculationPage() {
 
     setLoading(true);
     try {
-      const response = await axiosClient.post('/api/operation', operationForm);
+      const response = await axiosClient.post('/api/v1/boundary/calc/operation', operationForm);
       
       if (response.status === 200 || response.status === 201) {
         const result = response.data;
@@ -545,7 +553,7 @@ export default function CalculationPage() {
 
     setLoading(true);
     try {
-      const response = await axiosClient.post('/api/node', nodeForm);
+      const response = await axiosClient.post('/api/v1/boundary/calc/node', nodeForm);
       
       if (response.status === 200 || response.status === 201) {
         const result = response.data;
@@ -578,7 +586,7 @@ export default function CalculationPage() {
 
     setLoading(true);
     try {
-      const response = await axiosClient.post('/api/edge', edgeForm);
+      const response = await axiosClient.post('/api/v1/boundary/calc/edge', edgeForm);
       
       if (response.status === 200 || response.status === 201) {
         const result = response.data;
@@ -610,7 +618,7 @@ export default function CalculationPage() {
 
     setLoading(true);
     try {
-      const response = await axiosClient.post('/api/production-emission', emissionForm);
+      const response = await axiosClient.post('/api/v1/boundary/calc/production-emission', emissionForm);
       
       if (response.status === 200 || response.status === 201) {
         const result = response.data;

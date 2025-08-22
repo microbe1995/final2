@@ -17,7 +17,8 @@ const generateRequestKey = (config: AxiosRequestConfig): string => {
 
 // API 요청 검증을 위한 인터셉터
 const isAPIRequest = (url: string): boolean => {
-  return url.startsWith('/api/');
+  // Gateway URL로 직접 요청하는 경우 허용
+  return true;
 };
 
 // CSRF 토큰 가져오기
@@ -53,7 +54,7 @@ const retryRequest = async (
 
 // axios 인스턴스 생성
 const axiosClient: AxiosInstance = axios.create({
-  baseURL: '', // 상대 경로 사용 (Next.js rewrites 활용)
+  baseURL: env.NEXT_PUBLIC_API_BASE_URL || 'https://gateway-production-22ef.up.railway.app',
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json',

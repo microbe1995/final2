@@ -130,16 +130,6 @@ const nextConfig = {
         source: '/auth/:path*',
         destination: `${GATEWAY_URL}/auth/:path*`,
       },
-      // 기존 API 요청들 (호환성 유지) - 먼저 처리
-      {
-        source: '/api/:path*',
-        destination: `${GATEWAY_URL}/api/:path*`,
-      },
-      // API 요청들을 Gateway로 프록시 (CORS 해결) - 나중에 처리
-      {
-        source: '/api/v1/:path*',
-        destination: `${GATEWAY_URL}/api/v1/:path*`,
-      },
       // Gateway 직접 접근
       {
         source: '/gateway/:path*',
