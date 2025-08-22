@@ -25,8 +25,8 @@ from app.domain.handle.handle_controller import handle_router
 from app.domain.Viewport.Viewport_controller import viewport_router
 
 # CBAM 도메인 라우터들
-from app.domain.calculation import calculation_router
-from app.domain.datasearch import datasearch_router
+from app.domain.calculation.calculation_controller import calculation_router
+from app.domain.datasearch.datasearch_controller import datasearch_router
 # ============================================================================
 # 🔧 애플리케이션 설정
 # ============================================================================

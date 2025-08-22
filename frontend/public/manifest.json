@@ -2,7 +2,7 @@
   "name": "GreenSteel - ESG Management Platform",
   "short_name": "GreenSteel",
   "description": "Comprehensive ESG management platform for LCA, CBAM, and sustainability reporting. Track your environmental impact and compliance.",
-  "start_url": "/dashboard",
+  "start_url": "/",
   "display": "standalone",
   "background_color": "#0f172a",
   "theme_color": "#3b82f6",
