@@ -101,7 +101,7 @@ const GatewayStatus: React.FC = () => {
       <div className='mb-6 p-4 bg-gray-50 rounded-md'>
         <h3 className='text-lg font-semibold mb-2'>연결 정보</h3>
         <p className='text-sm text-gray-600'>
-          <strong>Gateway URL:</strong> {env.NEXT_PUBLIC_GATEWAY_URL}
+          <strong>Gateway URL:</strong> {env.NEXT_PUBLIC_API_BASE_URL}
         </p>
         <p className='text-sm text-gray-600'>
           <strong>환경:</strong> {env.NEXT_PUBLIC_ENV}
@@ -204,7 +204,7 @@ const GatewayStatus: React.FC = () => {
         <ul className='text-sm text-blue-700 space-y-1'>
           <li>• Gateway 서비스가 실행 중인지 확인하세요 (포트 8080)</li>
           <li>
-            • 환경 변수 NEXT_PUBLIC_GATEWAY_URL이 올바르게 설정되었는지
+            • 환경 변수 NEXT_PUBLIC_API_BASE_URL이 올바르게 설정되었는지
             확인하세요
           </li>
           <li>
