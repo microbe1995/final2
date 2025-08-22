@@ -54,6 +54,16 @@ export interface ProductionProcess {
 
 export interface CBAMCalculationRequest {
   product_name: string;
+  product_type?: string;
+  user_id?: string;
+  production_period?: { start: string; end: string };
+  cn_code?: string;
+  production_quantity?: number;
+  processes?: ProductionProcess[];
+  fuels?: any[];
+  materials?: any[];
+  electricity?: any;
+  precursors?: any[];
   fuel_emissions: number;
   material_emissions: number;
   precursor_emissions: number;

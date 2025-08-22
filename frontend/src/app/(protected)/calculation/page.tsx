@@ -73,7 +73,10 @@ export default function CalculationPage() {
     fuels: [],
     materials: [],
     electricity: null,
-    precursors: []
+    precursors: [],
+    fuel_emissions: 0,
+    material_emissions: 0,
+    precursor_emissions: 0
   });
 
   const [electricityForm, setElectricityForm] = useState<ElectricityCalculationRequest>({
