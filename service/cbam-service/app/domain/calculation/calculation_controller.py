@@ -38,6 +38,9 @@ def get_calculation_service() -> CalculationService:
     repository = get_calculation_repository()
     return CalculationService(repository=repository)
 
+# 전역 서비스 인스턴스 (새로운 테이블 API용)
+calculation_service = CalculationService(repository=CalculationRepository(use_database=False))
+
 # ============================================================================
 # 🔥 연료 계산 API
 # ============================================================================

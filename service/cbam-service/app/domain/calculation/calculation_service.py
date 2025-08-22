@@ -608,250 +608,250 @@ class CalculationService:
             logger.warning(f"⚠️ 계산 결과 저장 실패: {str(e)}")
             # 계산 결과 저장 실패는 전체 계산을 중단시키지 않음
 
-# ============================================================================
-# 🗄️ 새로운 테이블 서비스 메서드들
-# ============================================================================
+    # ============================================================================
+    # 🗄️ 새로운 테이블 서비스 메서드들
+    # ============================================================================
 
-async def create_boundary(request: BoundaryCreateRequest) -> BoundaryResponse:
-    """경계 생성"""
-    try:
-        # 실제 DB 연동 시에는 여기서 DB 저장 로직 구현
-        boundary_data = {
-            "boundary_id": 1,  # 실제로는 DB에서 자동 생성
-            "name": request.name,
-            "created_at": datetime.now().isoformat()
-        }
-        return BoundaryResponse(**boundary_data)
-    except Exception as e:
-        logger.error(f"Error creating boundary: {e}")
-        raise e
-
-async def get_boundaries() -> List[BoundaryResponse]:
-    """경계 목록 조회"""
-    try:
-        # 실제 DB 연동 시에는 여기서 DB 조회 로직 구현
-        boundaries = [
-            {
-                "boundary_id": 1,
-                "name": "기본 경계",
+    async def create_boundary(self, request: BoundaryCreateRequest) -> BoundaryResponse:
+        """경계 생성"""
+        try:
+            # 실제 DB 연동 시에는 여기서 DB 저장 로직 구현
+            boundary_data = {
+                "boundary_id": 1,  # 실제로는 DB에서 자동 생성
+                "name": request.name,
                 "created_at": datetime.now().isoformat()
             }
-        ]
-        return [BoundaryResponse(**boundary) for boundary in boundaries]
-    except Exception as e:
-        logger.error(f"Error getting boundaries: {e}")
-        raise e
+            return BoundaryResponse(**boundary_data)
+        except Exception as e:
+            logger.error(f"Error creating boundary: {e}")
+            raise e
 
-async def create_product(request: ProductCreateRequest) -> ProductResponse:
-    """제품 생성"""
-    try:
-        # 실제 DB 연동 시에는 여기서 DB 저장 로직 구현
-        product_data = {
-            "product_id": 1,  # 실제로는 DB에서 자동 생성
-            "name": request.name,
-            "cn_code": request.cn_code,
-            "period_start": request.period_start,
-            "period_end": request.period_end,
-            "production_qty": request.production_qty,
-            "sales_qty": request.sales_qty,
-            "export_qty": request.export_qty,
-            "inventory_qty": request.inventory_qty,
-            "defect_rate": request.defect_rate,
-            "node_id": None,
-            "created_at": datetime.now().isoformat()
-        }
-        return ProductResponse(**product_data)
-    except Exception as e:
-        logger.error(f"Error creating product: {e}")
-        raise e
+    async def get_boundaries(self) -> List[BoundaryResponse]:
+        """경계 목록 조회"""
+        try:
+            # 실제 DB 연동 시에는 여기서 DB 조회 로직 구현
+            boundaries = [
+                {
+                    "boundary_id": 1,
+                    "name": "기본 경계",
+                    "created_at": datetime.now().isoformat()
+                }
+            ]
+            return [BoundaryResponse(**boundary) for boundary in boundaries]
+        except Exception as e:
+            logger.error(f"Error getting boundaries: {e}")
+            raise e
 
-async def get_products() -> List[ProductResponse]:
-    """제품 목록 조회"""
-    try:
-        # 실제 DB 연동 시에는 여기서 DB 조회 로직 구현
-        products = [
-            {
-                "product_id": 1,
-                "name": "철강 제품",
-                "cn_code": "7208",
-                "period_start": "2024-01-01",
-                "period_end": "2024-12-31",
-                "production_qty": 1000.0,
-                "sales_qty": 800.0,
-                "export_qty": 200.0,
-                "inventory_qty": 100.0,
-                "defect_rate": 0.05,
+    async def create_product(self, request: ProductCreateRequest) -> ProductResponse:
+        """제품 생성"""
+        try:
+            # 실제 DB 연동 시에는 여기서 DB 저장 로직 구현
+            product_data = {
+                "product_id": 1,  # 실제로는 DB에서 자동 생성
+                "name": request.name,
+                "cn_code": request.cn_code,
+                "period_start": request.period_start,
+                "period_end": request.period_end,
+                "production_qty": request.production_qty,
+                "sales_qty": request.sales_qty,
+                "export_qty": request.export_qty,
+                "inventory_qty": request.inventory_qty,
+                "defect_rate": request.defect_rate,
                 "node_id": None,
                 "created_at": datetime.now().isoformat()
             }
-        ]
-        return [ProductResponse(**product) for product in products]
-    except Exception as e:
-        logger.error(f"Error getting products: {e}")
-        raise e
+            return ProductResponse(**product_data)
+        except Exception as e:
+            logger.error(f"Error creating product: {e}")
+            raise e
 
-async def create_operation(request: OperationCreateRequest) -> OperationResponse:
-    """공정 생성"""
-    try:
-        # 실제 DB 연동 시에는 여기서 DB 저장 로직 구현
-        operation_data = {
-            "operation_id": 1,  # 실제로는 DB에서 자동 생성
-            "name": request.name,
-            "facility_id": request.facility_id,
-            "category": request.category,
-            "boundary_id": request.boundary_id,
-            "node_id": request.node_id,
-            "input_kind": request.input_kind,
-            "material_id": request.material_id,
-            "fuel_id": request.fuel_id,
-            "quantity": request.quantity,
-            "unit_id": request.unit_id,
-            "created_at": datetime.now().isoformat()
-        }
-        return OperationResponse(**operation_data)
-    except Exception as e:
-        logger.error(f"Error creating operation: {e}")
-        raise e
+    async def get_products(self) -> List[ProductResponse]:
+        """제품 목록 조회"""
+        try:
+            # 실제 DB 연동 시에는 여기서 DB 조회 로직 구현
+            products = [
+                {
+                    "product_id": 1,
+                    "name": "철강 제품",
+                    "cn_code": "7208",
+                    "period_start": "2024-01-01",
+                    "period_end": "2024-12-31",
+                    "production_qty": 1000.0,
+                    "sales_qty": 800.0,
+                    "export_qty": 200.0,
+                    "inventory_qty": 100.0,
+                    "defect_rate": 0.05,
+                    "node_id": None,
+                    "created_at": datetime.now().isoformat()
+                }
+            ]
+            return [ProductResponse(**product) for product in products]
+        except Exception as e:
+            logger.error(f"Error getting products: {e}")
+            raise e
 
-async def get_operations() -> List[OperationResponse]:
-    """공정 목록 조회"""
-    try:
-        # 실제 DB 연동 시에는 여기서 DB 조회 로직 구현
-        operations = [
-            {
-                "operation_id": 1,
-                "name": "용해 공정",
-                "facility_id": 1,
-                "category": "제강",
-                "boundary_id": 1,
-                "node_id": "node-1",
-                "input_kind": "fuel",
-                "material_id": None,
-                "fuel_id": 1,
-                "quantity": 100.0,
-                "unit_id": 1,
+    async def create_operation(self, request: OperationCreateRequest) -> OperationResponse:
+        """공정 생성"""
+        try:
+            # 실제 DB 연동 시에는 여기서 DB 저장 로직 구현
+            operation_data = {
+                "operation_id": 1,  # 실제로는 DB에서 자동 생성
+                "name": request.name,
+                "facility_id": request.facility_id,
+                "category": request.category,
+                "boundary_id": request.boundary_id,
+                "node_id": request.node_id,
+                "input_kind": request.input_kind,
+                "material_id": request.material_id,
+                "fuel_id": request.fuel_id,
+                "quantity": request.quantity,
+                "unit_id": request.unit_id,
                 "created_at": datetime.now().isoformat()
             }
-        ]
-        return [OperationResponse(**operation) for operation in operations]
-    except Exception as e:
-        logger.error(f"Error getting operations: {e}")
-        raise e
+            return OperationResponse(**operation_data)
+        except Exception as e:
+            logger.error(f"Error creating operation: {e}")
+            raise e
 
-async def create_node(request: NodeCreateRequest) -> NodeResponse:
-    """노드 생성"""
-    try:
-        # 실제 DB 연동 시에는 여기서 DB 저장 로직 구현
-        node_data = {
-            "node_id": "node-" + str(uuid.uuid4()),  # 실제로는 DB에서 자동 생성
-            "boundary_id": request.boundary_id,
-            "node_type": request.node_type,
-            "ref_id": request.ref_id,
-            "label": request.label,
-            "pos_x": request.pos_x,
-            "pos_y": request.pos_y,
-            "created_at": datetime.now().isoformat()
-        }
-        return NodeResponse(**node_data)
-    except Exception as e:
-        logger.error(f"Error creating node: {e}")
-        raise e
+    async def get_operations(self) -> List[OperationResponse]:
+        """공정 목록 조회"""
+        try:
+            # 실제 DB 연동 시에는 여기서 DB 조회 로직 구현
+            operations = [
+                {
+                    "operation_id": 1,
+                    "name": "용해 공정",
+                    "facility_id": 1,
+                    "category": "제강",
+                    "boundary_id": 1,
+                    "node_id": "node-1",
+                    "input_kind": "fuel",
+                    "material_id": None,
+                    "fuel_id": 1,
+                    "quantity": 100.0,
+                    "unit_id": 1,
+                    "created_at": datetime.now().isoformat()
+                }
+            ]
+            return [OperationResponse(**operation) for operation in operations]
+        except Exception as e:
+            logger.error(f"Error getting operations: {e}")
+            raise e
 
-async def get_nodes() -> List[NodeResponse]:
-    """노드 목록 조회"""
-    try:
-        # 실제 DB 연동 시에는 여기서 DB 조회 로직 구현
-        nodes = [
-            {
-                "node_id": "node-1",
-                "boundary_id": 1,
-                "node_type": "product",
-                "ref_id": 1,
-                "label": "철강 제품",
-                "pos_x": 100.0,
-                "pos_y": 100.0,
+    async def create_node(self, request: NodeCreateRequest) -> NodeResponse:
+        """노드 생성"""
+        try:
+            # 실제 DB 연동 시에는 여기서 DB 저장 로직 구현
+            node_data = {
+                "node_id": "node-" + str(uuid.uuid4()),  # 실제로는 DB에서 자동 생성
+                "boundary_id": request.boundary_id,
+                "node_type": request.node_type,
+                "ref_id": request.ref_id,
+                "label": request.label,
+                "pos_x": request.pos_x,
+                "pos_y": request.pos_y,
                 "created_at": datetime.now().isoformat()
             }
-        ]
-        return [NodeResponse(**node) for node in nodes]
-    except Exception as e:
-        logger.error(f"Error getting nodes: {e}")
-        raise e
+            return NodeResponse(**node_data)
+        except Exception as e:
+            logger.error(f"Error creating node: {e}")
+            raise e
 
-async def create_edge(request: EdgeCreateRequest) -> EdgeResponse:
-    """엣지 생성"""
-    try:
-        # 실제 DB 연동 시에는 여기서 DB 저장 로직 구현
-        edge_data = {
-            "edge_id": "edge-" + str(uuid.uuid4()),  # 실제로는 DB에서 자동 생성
-            "boundary_id": request.boundary_id,
-            "sourcenode_id": request.sourcenode_id,
-            "targetnode_id": request.targetnode_id,
-            "flow_type": request.flow_type,
-            "label": request.label,
-            "created_at": datetime.now().isoformat()
-        }
-        return EdgeResponse(**edge_data)
-    except Exception as e:
-        logger.error(f"Error creating edge: {e}")
-        raise e
+    async def get_nodes(self) -> List[NodeResponse]:
+        """노드 목록 조회"""
+        try:
+            # 실제 DB 연동 시에는 여기서 DB 조회 로직 구현
+            nodes = [
+                {
+                    "node_id": "node-1",
+                    "boundary_id": 1,
+                    "node_type": "product",
+                    "ref_id": 1,
+                    "label": "철강 제품",
+                    "pos_x": 100.0,
+                    "pos_y": 100.0,
+                    "created_at": datetime.now().isoformat()
+                }
+            ]
+            return [NodeResponse(**node) for node in nodes]
+        except Exception as e:
+            logger.error(f"Error getting nodes: {e}")
+            raise e
 
-async def get_edges() -> List[EdgeResponse]:
-    """엣지 목록 조회"""
-    try:
-        # 실제 DB 연동 시에는 여기서 DB 조회 로직 구현
-        edges = [
-            {
-                "edge_id": "edge-1",
-                "boundary_id": 1,
-                "sourcenode_id": "node-1",
-                "targetnode_id": "node-2",
-                "flow_type": "material",
-                "label": "원료 흐름",
+    async def create_edge(self, request: EdgeCreateRequest) -> EdgeResponse:
+        """엣지 생성"""
+        try:
+            # 실제 DB 연동 시에는 여기서 DB 저장 로직 구현
+            edge_data = {
+                "edge_id": "edge-" + str(uuid.uuid4()),  # 실제로는 DB에서 자동 생성
+                "boundary_id": request.boundary_id,
+                "sourcenode_id": request.sourcenode_id,
+                "targetnode_id": request.targetnode_id,
+                "flow_type": request.flow_type,
+                "label": request.label,
                 "created_at": datetime.now().isoformat()
             }
-        ]
-        return [EdgeResponse(**edge) for edge in edges]
-    except Exception as e:
-        logger.error(f"Error getting edges: {e}")
-        raise e
+            return EdgeResponse(**edge_data)
+        except Exception as e:
+            logger.error(f"Error creating edge: {e}")
+            raise e
 
-async def create_production_emission(request: ProductionEmissionCreateRequest) -> ProductionEmissionResponse:
-    """생산 배출량 생성"""
-    try:
-        # 실제 DB 연동 시에는 여기서 DB 저장 로직 구현
-        emission_data = {
-            "prod_result_id": 1,  # 실제로는 DB에서 자동 생성
-            "product_id": request.product_id,
-            "boundary_id": request.boundary_id,
-            "result_unit_id": request.result_unit_id,
-            "dir_emission": request.dir_emission,
-            "indir_emission": request.indir_emission,
-            "see": request.see,
-            "created_at": datetime.now().isoformat()
-        }
-        return ProductionEmissionResponse(**emission_data)
-    except Exception as e:
-        logger.error(f"Error creating production emission: {e}")
-        raise e
+    async def get_edges(self) -> List[EdgeResponse]:
+        """엣지 목록 조회"""
+        try:
+            # 실제 DB 연동 시에는 여기서 DB 조회 로직 구현
+            edges = [
+                {
+                    "edge_id": "edge-1",
+                    "boundary_id": 1,
+                    "sourcenode_id": "node-1",
+                    "targetnode_id": "node-2",
+                    "flow_type": "material",
+                    "label": "원료 흐름",
+                    "created_at": datetime.now().isoformat()
+                }
+            ]
+            return [EdgeResponse(**edge) for edge in edges]
+        except Exception as e:
+            logger.error(f"Error getting edges: {e}")
+            raise e
 
-async def get_production_emissions() -> List[ProductionEmissionResponse]:
-    """생산 배출량 목록 조회"""
-    try:
-        # 실제 DB 연동 시에는 여기서 DB 조회 로직 구현
-        emissions = [
-            {
-                "prod_result_id": 1,
-                "product_id": 1,
-                "boundary_id": 1,
-                "result_unit_id": 1,
-                "dir_emission": 50.0,
-                "indir_emission": 30.0,
-                "see": 20.0,
+    async def create_production_emission(self, request: ProductionEmissionCreateRequest) -> ProductionEmissionResponse:
+        """생산 배출량 생성"""
+        try:
+            # 실제 DB 연동 시에는 여기서 DB 저장 로직 구현
+            emission_data = {
+                "prod_result_id": 1,  # 실제로는 DB에서 자동 생성
+                "product_id": request.product_id,
+                "boundary_id": request.boundary_id,
+                "result_unit_id": request.result_unit_id,
+                "dir_emission": request.dir_emission,
+                "indir_emission": request.indir_emission,
+                "see": request.see,
                 "created_at": datetime.now().isoformat()
             }
-        ]
-        return [ProductionEmissionResponse(**emission) for emission in emissions]
-    except Exception as e:
-        logger.error(f"Error getting production emissions: {e}")
-        raise e
+            return ProductionEmissionResponse(**emission_data)
+        except Exception as e:
+            logger.error(f"Error creating production emission: {e}")
+            raise e
+
+    async def get_production_emissions(self) -> List[ProductionEmissionResponse]:
+        """생산 배출량 목록 조회"""
+        try:
+            # 실제 DB 연동 시에는 여기서 DB 조회 로직 구현
+            emissions = [
+                {
+                    "prod_result_id": 1,
+                    "product_id": 1,
+                    "boundary_id": 1,
+                    "result_unit_id": 1,
+                    "dir_emission": 50.0,
+                    "indir_emission": 30.0,
+                    "see": 20.0,
+                    "created_at": datetime.now().isoformat()
+                }
+            ]
+            return [ProductionEmissionResponse(**emission) for emission in emissions]
+        except Exception as e:
+            logger.error(f"Error getting production emissions: {e}")
+            raise e
