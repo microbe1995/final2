@@ -53,38 +53,32 @@ class FlowListResponse(BaseModel):
     flows: List[FlowResponse] = Field(..., description="플로우 목록")
     total: int = Field(..., description="전체 플로우 수")
 
-class ReactFlowStateResponse(BaseModel):
-    """ReactFlow 전체 상태 응답"""
-    flow: FlowResponse = Field(..., description="플로우 정보")
-    nodes: List[Dict[str, Any]] = Field(default_factory=list, description="노드 목록")
-    edges: List[Dict[str, Any]] = Field(default_factory=list, description="엣지 목록")
+class FlowStateResponse(BaseModel):
+    """ReactFlow 상태 응답"""
+    id: str
+    name: str
+    description: Optional[str] = None
+    settings: Dict[str, Any] = Field(default_factory=dict)
+    metadata: Dict[str, Any] = Field(default_factory=dict)
+    created_at: str
+    updated_at: str
     
     class Config:
         json_schema_extra = {
             "example": {
-                "flow": {
-                    "id": "flow_123",
-                    "name": "My Flow",
-                    "description": "ReactFlow 예시",
-                    # "viewport": {"x": 0, "y": 0, "zoom": 1.0},  # Viewport 도메인으로 분리됨
-                    "settings": {},
-                    "metadata": {}
+                "id": "flow-123",
+                "name": "철강 생산 플로우",
+                "description": "철강 생산 공정을 위한 플로우",
+                "settings": {
+                    "autoLayout": True,
+                    "snapToGrid": True
                 },
-                "nodes": [
-                    {
-                        "id": "node_1",
-                        "type": "input",
-                        "position": {"x": 250, "y": 25},
-                        "data": {"label": "Input Node"}
-                    }
-                ],
-                "edges": [
-                    {
-                        "id": "edge_1",
-                        "source": "node_1",
-                        "target": "node_2"
-                    }
-                ]
+                "metadata": {
+                    "version": "1.0.0",
+                    "author": "user123"
+                },
+                "created_at": "2024-01-01T00:00:00Z",
+                "updated_at": "2024-01-01T00:00:00Z"
             }
         }
 

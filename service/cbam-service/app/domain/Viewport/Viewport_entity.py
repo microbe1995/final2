@@ -39,7 +39,7 @@ class ReactFlowViewport(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
     
     # 관계 설정
-    flow = relationship("ReactFlowState", back_populates="viewport")
+    flow = relationship("Flow", back_populates="viewport")
     
     @property
     def viewport_state(self) -> Dict[str, float]:

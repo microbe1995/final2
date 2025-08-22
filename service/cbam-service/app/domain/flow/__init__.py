@@ -13,13 +13,13 @@ ReactFlow 플로우 관리 도메인
 # 📦 주요 클래스 및 함수 export
 # ============================================================================
 
-from .flow_entity import ReactFlowState
+from .flow_entity import Flow
 from .flow_schema import (
     FlowCreateRequest,
     FlowUpdateRequest,
     FlowResponse,
     FlowListResponse,
-    ReactFlowStateResponse,
+    FlowStateResponse,
     FlowSearchRequest,
     FlowStatsResponse
 )
@@ -33,14 +33,14 @@ from .flow_controller import flow_router
 
 __all__ = [
     # 엔티티
-    "ReactFlowState",
+    "Flow",
     
     # 스키마
     "FlowCreateRequest",
     "FlowUpdateRequest",
     "FlowResponse",
     "FlowListResponse",
-    "ReactFlowStateResponse",
+    "FlowStateResponse",
     "FlowSearchRequest",
     "FlowStatsResponse",
     

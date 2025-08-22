@@ -13,10 +13,9 @@ from app.domain.flow.flow_repository import FlowRepository
 from app.domain.flow.flow_schema import (
     FlowCreateRequest,
     FlowUpdateRequest,
-    # FlowViewportUpdateRequest,  # Viewport 도메인으로 분리됨
     FlowResponse,
     FlowListResponse,
-    ReactFlowStateResponse,
+    FlowStateResponse,
     FlowSearchRequest,
     FlowStatsResponse
 )
@@ -194,7 +193,7 @@ async def delete_flow(flow_id: str):
 # 🎯 ReactFlow 전체 상태 API
 # ============================================================================
 
-@flow_router.get("/flow/{flow_id}/state", response_model=ReactFlowStateResponse)
+@flow_router.get("/flow/{flow_id}/state", response_model=FlowStateResponse)
 async def get_flow_state(flow_id: str):
     """
     🎯 **ReactFlow 전체 상태 조회**
@@ -228,7 +227,7 @@ async def get_flow_state(flow_id: str):
         flow_data = flows_storage[flow_id]
         
         # 임시로 빈 노드/엣지 반환 (실제로는 Node/Edge 서비스에서 조회)
-        response = ReactFlowStateResponse(
+        response = FlowStateResponse(
             flow=FlowResponse(**flow_data),
             nodes=[],  # 실제로는 node_service.get_nodes_by_flow_id(flow_id) 호출
             edges=[]   # 실제로는 edge_service.get_edges_by_flow_id(flow_id) 호출

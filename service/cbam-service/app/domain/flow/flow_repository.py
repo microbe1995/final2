@@ -11,7 +11,7 @@ from sqlalchemy.engine import create_engine
 from sqlalchemy.pool import StaticPool
 
 from app.common.database_base import Base
-from app.domain.flow.flow_entity import ReactFlowState
+from app.domain.flow.flow_entity import Flow
 
 # ============================================================================
 # 🔧 로거 설정
@@ -178,7 +178,7 @@ class FlowRepository:
         """PostgreSQL에 플로우 생성"""
         try:
             async with flow_db.get_session_context() as session:
-                flow_entity = ReactFlowState(
+                flow_entity = Flow(
                     id=flow_data.get('id'),
                     name=flow_data.get('name'),
                     description=flow_data.get('description'),
@@ -205,7 +205,7 @@ class FlowRepository:
         try:
             async with flow_db.get_session_context() as session:
                 result = await session.execute(
-                    select(ReactFlowState).where(ReactFlowState.id == flow_id)
+                    select(Flow).where(Flow.id == flow_id)
                 )
                 flow_entity = result.scalar_one_or_none()
                 
@@ -246,13 +246,13 @@ class FlowRepository:
                     update_fields['updated_at'] = datetime.utcnow()
                     
                     await session.execute(
-                        update(ReactFlowState).where(ReactFlowState.id == flow_id).values(**update_fields)
+                        update(Flow).where(Flow.id == flow_id).values(**update_fields)
                     )
                     await session.commit()
                 
                 # 업데이트된 데이터 조회
                 result = await session.execute(
-                    select(ReactFlowState).where(ReactFlowState.id == flow_id)
+                    select(Flow).where(Flow.id == flow_id)
                 )
                 updated_flow = result.scalar_one_or_none()
                 
@@ -270,7 +270,7 @@ class FlowRepository:
         try:
             async with flow_db.get_session_context() as session:
                 result = await session.execute(
-                    delete(ReactFlowState).where(ReactFlowState.id == flow_id)
+                    delete(Flow).where(Flow.id == flow_id)
                 )
                 await session.commit()
                 
@@ -290,7 +290,7 @@ class FlowRepository:
         """PostgreSQL에서 모든 플로우 조회"""
         try:
             async with flow_db.get_session_context() as session:
-                result = await session.execute(select(ReactFlowState))
+                result = await session.execute(select(Flow))
                 flow_entities = result.scalars().all()
                 
                 return [flow.to_dict() for flow in flow_entities]

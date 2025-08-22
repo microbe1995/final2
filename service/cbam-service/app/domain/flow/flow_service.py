@@ -11,10 +11,9 @@ from app.domain.flow.flow_repository import FlowRepository
 from app.domain.flow.flow_schema import (
     FlowCreateRequest,
     FlowUpdateRequest,
-    # FlowViewportUpdateRequest,  # Viewport 도메인으로 분리됨
     FlowResponse,
     FlowListResponse,
-    ReactFlowStateResponse,
+    FlowStateResponse,
     FlowSearchRequest,
     FlowStatsResponse
 )
@@ -181,7 +180,7 @@ class FlowService:
     # 🎯 ReactFlow 전체 상태 관리
     # ============================================================================
     
-    async def get_flow_state(self, flow_id: str) -> Optional[ReactFlowStateResponse]:
+    async def get_flow_state(self, flow_id: str) -> Optional[FlowStateResponse]:
         """ReactFlow 전체 상태 조회 (플로우 + 노드 + 엣지)"""
         try:
             logger.info(f"🎯 ReactFlow 상태 조회: {flow_id}")
@@ -201,7 +200,7 @@ class FlowService:
             nodes = []
             edges = []
             
-            response = ReactFlowStateResponse(
+            response = FlowStateResponse(
                 flow=self._convert_to_flow_response(flow),
                 nodes=nodes,
                 edges=edges
