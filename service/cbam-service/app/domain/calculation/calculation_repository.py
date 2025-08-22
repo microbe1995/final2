@@ -655,17 +655,36 @@ class CalculationRepository:
         """PostgreSQL에 제품 저장"""
         try:
             with self.engine.connect() as conn:
-                query = text("""
-                    INSERT INTO product (name, cn_code, period_start, period_end, production_qty, sales_qty, export_qty, inventory_qty, defect_rate, node_id)
-                    VALUES (:name, :cn_code, :period_start, :period_end, :production_qty, :sales_qty, :export_qty, :inventory_qty, :defect_rate, :node_id)
-                    RETURNING product_id, name, cn_code, period_start, period_end, production_qty, sales_qty, export_qty, inventory_qty, defect_rate, node_id, created_at
-                """)
+                # 먼저 테이블 구조 확인
+                result = conn.execute(text("""
+                    SELECT column_name 
+                    FROM information_schema.columns 
+                    WHERE table_name = 'product'
+                """))
+                columns = [row[0] for row in result.fetchall()]
+                
+                # created_at 컬럼이 있는지 확인
+                has_created_at = 'created_at' in columns
+                
+                if has_created_at:
+                    query = text("""
+                        INSERT INTO product (name, cn_code, period_start, period_end, production_qty, sales_qty, export_qty, inventory_qty, defect_rate, node_id)
+                        VALUES (:name, :cn_code, :period_start, :period_end, :production_qty, :sales_qty, :export_qty, :inventory_qty, :defect_rate, :node_id)
+                        RETURNING product_id, name, cn_code, period_start, period_end, production_qty, sales_qty, export_qty, inventory_qty, defect_rate, node_id, created_at
+                    """)
+                else:
+                    query = text("""
+                        INSERT INTO product (name, cn_code, period_start, period_end, production_qty, sales_qty, export_qty, inventory_qty, defect_rate, node_id)
+                        VALUES (:name, :cn_code, :period_start, :period_end, :production_qty, :sales_qty, :export_qty, :inventory_qty, :defect_rate, :node_id)
+                        RETURNING product_id, name, cn_code, period_start, period_end, production_qty, sales_qty, export_qty, inventory_qty, defect_rate, node_id
+                    """)
+                
                 result = conn.execute(query, product_data)
                 row = result.fetchone()
                 conn.commit()
                 
                 if row:
-                    return {
+                    response_data = {
                         "product_id": row[0],
                         "name": row[1],
                         "cn_code": row[2],
@@ -677,8 +696,15 @@ class CalculationRepository:
                         "inventory_qty": float(row[8]) if row[8] else 0,
                         "defect_rate": float(row[9]) if row[9] else 0,
                         "node_id": row[10],
-                        "created_at": row[11].isoformat() if row[11] else None
                     }
+                    
+                    # created_at 컬럼이 있으면 추가
+                    if has_created_at and len(row) > 11:
+                        response_data["created_at"] = row[11].isoformat() if row[11] else None
+                    else:
+                        response_data["created_at"] = datetime.utcnow().isoformat()
+                    
+                    return response_data
                 return None
         except Exception as e:
             logger.error(f"❌ PostgreSQL 제품 저장 실패: {str(e)}")
@@ -688,16 +714,35 @@ class CalculationRepository:
         """PostgreSQL에서 제품 목록 조회"""
         try:
             with self.engine.connect() as conn:
-                query = text("""
-                    SELECT product_id, name, cn_code, period_start, period_end, production_qty, sales_qty, export_qty, inventory_qty, defect_rate, node_id, created_at
-                    FROM product
-                    ORDER BY created_at DESC
-                """)
+                # 먼저 테이블 구조 확인
+                result = conn.execute(text("""
+                    SELECT column_name 
+                    FROM information_schema.columns 
+                    WHERE table_name = 'product'
+                """))
+                columns = [row[0] for row in result.fetchall()]
+                
+                # created_at 컬럼이 있는지 확인
+                has_created_at = 'created_at' in columns
+                
+                if has_created_at:
+                    query = text("""
+                        SELECT product_id, name, cn_code, period_start, period_end, production_qty, sales_qty, export_qty, inventory_qty, defect_rate, node_id, created_at
+                        FROM product
+                        ORDER BY created_at DESC
+                    """)
+                else:
+                    query = text("""
+                        SELECT product_id, name, cn_code, period_start, period_end, production_qty, sales_qty, export_qty, inventory_qty, defect_rate, node_id
+                        FROM product
+                        ORDER BY product_id DESC
+                    """)
+                
                 result = conn.execute(query)
                 products = []
                 
                 for row in result:
-                    products.append({
+                    product_data = {
                         "product_id": row[0],
                         "name": row[1],
                         "cn_code": row[2],
@@ -709,8 +754,15 @@ class CalculationRepository:
                         "inventory_qty": float(row[8]) if row[8] else 0,
                         "defect_rate": float(row[9]) if row[9] else 0,
                         "node_id": row[10],
-                        "created_at": row[11].isoformat() if row[11] else None
-                    })
+                    }
+                    
+                    # created_at 컬럼이 있으면 추가
+                    if has_created_at and len(row) > 11:
+                        product_data["created_at"] = row[11].isoformat() if row[11] else None
+                    else:
+                        product_data["created_at"] = datetime.utcnow().isoformat()
+                    
+                    products.append(product_data)
                 
                 return products
         except Exception as e:
