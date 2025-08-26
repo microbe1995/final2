@@ -161,25 +161,14 @@ const CustomNode = ({
       onDragStart={handleDragStart}
       onMouseDown={handleMouseDown}
     >
-      {/* 🎯 모든 방향 핸들 추가 (상하좌우 양방향 완전 구현) */}
+      {/* 🎯 모든 방향 핸들 추가 (상하좌우 단일 핸들) */}
       
-       {/* 왼쪽 핸들들 (Target + Source) */}
+       {/* 왼쪽 핸들 */}
        <Handle
          type='target'
          position={Position.Left}
          isConnectable={true}
          className={getHandleStyle('target')}
-         style={{
-           filter: 'drop-shadow(0 0 8px rgba(59, 130, 246, 0.3))',
-         }}
-         onMouseDown={(e) => e.stopPropagation()}
-         onClick={(e) => e.stopPropagation()}
-       />
-       <Handle
-         type='source'
-         position={Position.Left}
-         isConnectable={true}
-         className={getHandleStyle('source')}
          style={{
            filter: 'drop-shadow(0 0 8px rgba(59, 130, 246, 0.3))',
          }}
@@ -187,18 +176,7 @@ const CustomNode = ({
          onClick={(e) => e.stopPropagation()}
        />
        
-       {/* 오른쪽 핸들들 (Target + Source) */}
-       <Handle
-         type='target'
-         position={Position.Right}
-         isConnectable={true}
-         className={getHandleStyle('target')}
-         style={{
-           filter: 'drop-shadow(0 0 8px rgba(34, 197, 94, 0.3))',
-         }}
-         onMouseDown={(e) => e.stopPropagation()}
-         onClick={(e) => e.stopPropagation()}
-       />
+       {/* 오른쪽 핸들 */}
        <Handle
          type='source'
          position={Position.Right}
@@ -211,23 +189,12 @@ const CustomNode = ({
          onClick={(e) => e.stopPropagation()}
        />
        
-       {/* 위쪽 핸들들 (Target + Source) */}
+       {/* 위쪽 핸들 */}
        <Handle
          type='target'
          position={Position.Top}
          isConnectable={true}
          className={getHandleStyle('target')}
-         style={{
-           filter: 'drop-shadow(0 0 8px rgba(147, 51, 234, 0.3))',
-         }}
-         onMouseDown={(e) => e.stopPropagation()}
-         onClick={(e) => e.stopPropagation()}
-       />
-       <Handle
-         type='source'
-         position={Position.Top}
-         isConnectable={true}
-         className={getHandleStyle('source')}
          style={{
            filter: 'drop-shadow(0 0 8px rgba(147, 51, 234, 0.3))',
          }}
@@ -235,18 +202,7 @@ const CustomNode = ({
          onClick={(e) => e.stopPropagation()}
        />
        
-       {/* 아래쪽 핸들들 (Target + Source) */}
-       <Handle
-         type='target'
-         position={Position.Bottom}
-         isConnectable={true}
-         className={getHandleStyle('target')}
-         style={{
-           filter: 'drop-shadow(0 0 8px rgba(249, 115, 22, 0.3))',
-         }}
-         onMouseDown={(e) => e.stopPropagation()}
-         onClick={(e) => e.stopPropagation()}
-       />
+       {/* 아래쪽 핸들 */}
        <Handle
          type='source'
          position={Position.Bottom}
