@@ -114,7 +114,7 @@ const nextConfig = {
   },
   // API 프록시 설정
   async rewrites() {
-    const GATEWAY_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://gateway-production-22ef.up.railway.app';
+    const GATEWAY_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://gateway-production-da31.up.railway.app';
     
     return [
       {

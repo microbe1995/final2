@@ -512,7 +512,7 @@ export default function ProcessManager() {
   const fetchProducts = useCallback(async () => {
     setIsLoadingProducts(true);
     try {
-      const response = await axiosClient.get('/product');
+      const response = await axiosClient.get('/api/v1/boundary/product');
       setProducts(response.data.products || []);
     } catch (error) {
       console.error('제품 데이터 가져오기 오류:', error);
@@ -648,18 +648,18 @@ export default function ProcessManager() {
           // 백엔드 API 호출 (선택적)
           if (selectedFlow) {
             try {
-              const response = await fetch(`/api/v1/cbam/flow/${selectedFlow.id}/connect`, {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                  source: params.source,
-                  target: params.target,
-                  sourceHandle: params.sourceHandle,
-                  targetHandle: params.targetHandle
-                })
-              });
+                             const response = await fetch(`/api/v1/boundary/flow/${selectedFlow.id}/connect`, {
+                 method: 'POST',
+                 headers: {
+                   'Content-Type': 'application/json',
+                 },
+                 body: JSON.stringify({
+                   source: params.source,
+                   target: params.target,
+                   sourceHandle: params.sourceHandle,
+                   targetHandle: params.targetHandle
+                 })
+               });
               
               if (response.ok) {
                 const result = await response.json();

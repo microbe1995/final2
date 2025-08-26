@@ -17,7 +17,7 @@ const generateRequestKey = (config: AxiosRequestConfig): string => {
 
 // API 요청인지 확인하는 함수
 const isAPIRequest = (url: string): boolean => {
-  return url.startsWith('/api/') || url.startsWith('/product') || url.startsWith('/health');
+  return url.startsWith('/api/') || url.startsWith('/health');
 };
 
 // CSRF 토큰 가져오기
