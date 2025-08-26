@@ -512,7 +512,7 @@ export default function ProcessManager() {
   const fetchProducts = useCallback(async () => {
     setIsLoadingProducts(true);
     try {
-      const response = await axiosClient.get('/api/v1/cbam/product');
+      const response = await axiosClient.get('/product');
       setProducts(response.data.products || []);
     } catch (error) {
       console.error('제품 데이터 가져오기 오류:', error);
