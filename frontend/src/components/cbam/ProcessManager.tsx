@@ -261,6 +261,8 @@ export default function ProcessManager() {
   // 그룹 관련 상태
   const [selectedNodes, setSelectedNodes] = useState<string[]>([]);
   const [showGroupModal, setShowGroupModal] = useState(false);
+  const [groupName, setGroupName] = useState('');
+  const [groupType, setGroupType] = useState<'product' | 'process'>('product');
 
   // React Flow 상태 관리
   const [nodes, setNodes, onNodesChange] = useNodesState<any>([]);
@@ -559,6 +561,99 @@ export default function ProcessManager() {
   );
 
   // ============================================================================
+  // 🎯 그룹 관리
+  // ============================================================================
+
+  const onNodeSelectionChange = useCallback((params: any) => {
+    setSelectedNodes(params.nodes.map((node: any) => node.id));
+  }, []);
+
+  const createGroupFromSelectedNodes = useCallback(() => {
+    if (selectedNodes.length < 2) {
+      alert('그룹을 만들려면 2개 이상의 노드를 선택해주세요.');
+      return;
+    }
+    setShowGroupModal(true);
+  }, [selectedNodes]);
+
+  const handleCreateGroup = useCallback(() => {
+    if (!groupName.trim()) {
+      alert('그룹 이름을 입력해주세요.');
+      return;
+    }
+
+    // 선택된 노드들의 위치를 기반으로 그룹 위치 계산
+    const selectedNodeObjects = nodes.filter(node => selectedNodes.includes(node.id));
+    if (selectedNodeObjects.length === 0) return;
+
+    const minX = Math.min(...selectedNodeObjects.map(n => n.position.x));
+    const minY = Math.min(...selectedNodeObjects.map(n => n.position.y));
+    const maxX = Math.max(...selectedNodeObjects.map(n => n.position.x));
+    const maxY = Math.max(...selectedNodeObjects.map(n => n.position.y));
+
+    const groupNode: Node<any> = {
+      id: `group-${Date.now()}`,
+      type: 'group',
+      position: { x: minX - 50, y: minY - 50 },
+      data: {
+        label: groupName,
+        type: groupType,
+        nodes: selectedNodes,
+        isCollapsed: false,
+        boundaryType: groupType === 'product' ? 'output' : 'internal',
+        cbamData: {
+          carbonIntensity: 0,
+          materialFlow: 0,
+          energyConsumption: 0
+        }
+      },
+      style: {
+        width: maxX - minX + 200,
+        height: maxY - minY + 200,
+      }
+    };
+
+    addNodes(groupNode);
+    setShowGroupModal(false);
+    setGroupName('');
+    setSelectedNodes([]);
+  }, [groupName, groupType, selectedNodes, nodes, addNodes]);
+
+  const removeNodeFromGroup = useCallback((groupId: string, nodeId: string) => {
+    setNodes(prevNodes => 
+      prevNodes.map(node => {
+        if (node.id === groupId && node.data.nodes) {
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              nodes: node.data.nodes.filter((id: string) => id !== nodeId)
+            }
+          };
+        }
+        return node;
+      })
+    );
+  }, [setNodes]);
+
+  const addNodeToGroup = useCallback((groupId: string, nodeId: string) => {
+    setNodes(prevNodes => 
+      prevNodes.map(node => {
+        if (node.id === groupId && node.data.nodes) {
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              nodes: [...node.data.nodes, nodeId]
+            }
+          };
+        }
+        return node;
+      })
+    );
+  }, [setNodes]);
+
+  // ============================================================================
   // 🎯 연결 관리
   // ============================================================================
 
@@ -709,38 +804,49 @@ export default function ProcessManager() {
                 저장
               </Button>
 
-              <Button
-                onClick={addProductNode}
-                className='flex items-center gap-2 bg-purple-600 hover:bg-purple-700'
-              >
-                <Plus className='h-4 w-4' />
-                제품 노드
-              </Button>
+                             <Button
+                 onClick={addProductNode}
+                 className='flex items-center gap-2 bg-purple-600 hover:bg-purple-700'
+               >
+                 <Plus className='h-4 w-4' />
+                 제품 노드
+               </Button>
+
+               {selectedNodes.length >= 2 && (
+                 <Button
+                   onClick={createGroupFromSelectedNodes}
+                   className='flex items-center gap-2 bg-orange-600 hover:bg-orange-700'
+                 >
+                   <Settings className='h-4 w-4' />
+                   그룹 생성 ({selectedNodes.length}개 선택)
+                 </Button>
+               )}
             </div>
           </div>
 
           {/* React Flow 캔버스 */}
           <div className='h-[600px] border-2 border-gray-200 rounded-lg overflow-hidden'>
-            <ReactFlow
-              nodes={nodes}
-              edges={edges}
-              onNodesChange={onNodesChange}
-              onEdgesChange={onEdgesChange}
-              onConnect={onConnect}
-              onConnectStart={onConnectStart}
-              onConnectEnd={onConnectEnd}
-              nodeTypes={nodeTypes}
-              edgeTypes={edgeTypes}
-              connectionMode={ConnectionMode.Loose}
-              deleteKeyCode='Delete'
-              multiSelectionKeyCode='Shift'
-              panOnDrag={true}
-              zoomOnScroll={true}
-              zoomOnPinch={true}
-              panOnScroll={false}
-              preventScrolling={true}
-              className='bg-gray-50'
-            >
+                         <ReactFlow
+               nodes={nodes}
+               edges={edges}
+               onNodesChange={onNodesChange}
+               onEdgesChange={onEdgesChange}
+               onConnect={onConnect}
+               onConnectStart={onConnectStart}
+               onConnectEnd={onConnectEnd}
+               onSelectionChange={onNodeSelectionChange}
+               nodeTypes={nodeTypes}
+               edgeTypes={edgeTypes}
+               connectionMode={ConnectionMode.Loose}
+               deleteKeyCode='Delete'
+               multiSelectionKeyCode='Shift'
+               panOnDrag={true}
+               zoomOnScroll={true}
+               zoomOnPinch={true}
+               panOnScroll={false}
+               preventScrolling={true}
+               className='bg-gray-50'
+             >
               <Background gap={12} size={1} />
               <Controls />
                              <MiniMap
@@ -943,8 +1049,85 @@ export default function ProcessManager() {
         </div>
       )}
 
-      {/* 제품 상세 정보 모달 */}
-      {showProductDetailModal && selectedProductNode && (
+             {/* 그룹 생성 모달 */}
+       {showGroupModal && (
+         <div className='fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50'>
+           <div className='bg-white rounded-lg p-6 w-full max-w-md'>
+             <div className='flex items-center justify-between mb-4'>
+               <h2 className='text-xl font-semibold text-gray-900'>그룹 생성</h2>
+               <button
+                 onClick={() => setShowGroupModal(false)}
+                 className='text-gray-400 hover:text-gray-600'
+               >
+                 ✕
+               </button>
+             </div>
+             
+             <div className='space-y-4'>
+               <div>
+                 <label className='block text-sm font-medium text-gray-700 mb-2'>
+                   그룹 이름
+                 </label>
+                 <input
+                   type='text'
+                   value={groupName}
+                   onChange={(e) => setGroupName(e.target.value)}
+                   className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+                   placeholder='그룹 이름을 입력하세요'
+                 />
+               </div>
+               
+               <div>
+                 <label className='block text-sm font-medium text-gray-700 mb-2'>
+                   그룹 타입
+                 </label>
+                 <select
+                   value={groupType}
+                   onChange={(e) => setGroupType(e.target.value as 'product' | 'process')}
+                   className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+                 >
+                   <option value='product'>제품 그룹</option>
+                   <option value='process'>공정 그룹</option>
+                 </select>
+               </div>
+               
+               <div>
+                 <label className='block text-sm font-medium text-gray-700 mb-2'>
+                   선택된 노드 ({selectedNodes.length}개)
+                 </label>
+                 <div className='max-h-32 overflow-y-auto border border-gray-200 rounded-md p-2'>
+                   {selectedNodes.map((nodeId) => {
+                     const node = nodes.find(n => n.id === nodeId);
+                     return (
+                       <div key={nodeId} className='text-sm text-gray-600 py-1'>
+                         • {node?.data?.name || nodeId}
+                       </div>
+                     );
+                   })}
+                 </div>
+               </div>
+               
+               <div className='flex gap-3 pt-4'>
+                 <button
+                   onClick={() => setShowGroupModal(false)}
+                   className='flex-1 px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50'
+                 >
+                   취소
+                 </button>
+                 <button
+                   onClick={handleCreateGroup}
+                   className='flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700'
+                 >
+                   그룹 생성
+                 </button>
+               </div>
+             </div>
+           </div>
+         </div>
+       )}
+
+       {/* 제품 상세 정보 모달 */}
+       {showProductDetailModal && selectedProductNode && (
         <div className='fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50'>
           <div className='bg-white rounded-lg p-6 w-full max-w-2xl max-h-[80vh] overflow-y-auto'>
             <div className='flex items-center justify-between mb-4'>
