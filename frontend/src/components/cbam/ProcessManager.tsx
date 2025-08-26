@@ -17,6 +17,7 @@ import {
 import ProcessStepModal from './ProcessStepModal';
 import GroupNode from './GroupNode';
 import SourceStreamEdge from './SourceStreamEdge';
+import ProcessNode from '@/components/atomic/atoms/ProcessNode';
 import axiosClient from '@/lib/axiosClient';
 import {
   ReactFlow,
@@ -64,200 +65,8 @@ interface ProcessFlow {
 }
 
 // ============================================================================
-// 🎯 커스텀 노드 타입 정의
+// 🎯 아토믹 디자인 패턴 적용 - ProcessNode 사용
 // ============================================================================
-
-const CustomNode = ({
-  data,
-  selected,
-  onClick,
-  onDoubleClick,
-  id,
-}: {
-  data: ProcessStepData;
-  selected?: boolean;
-  onClick?: (node: any) => void;
-  onDoubleClick?: (node: any) => void;
-  id: string;
-}) => {
-  const getNodeStyle = () => {
-    const baseStyle = 'p-3 rounded-lg border-2 min-w-[150px] transition-all relative';
-
-    switch (data.type) {
-      case 'input':
-        return `${baseStyle} bg-blue-100 border-blue-300 text-blue-800 ${
-          selected ? 'border-blue-500 shadow-lg' : ''
-        }`;
-      case 'process':
-        return `${baseStyle} bg-green-100 border-green-300 text-green-800 ${
-          selected ? 'border-green-500 shadow-lg' : ''
-        }`;
-      case 'output':
-        return `${baseStyle} bg-purple-100 border-purple-300 text-purple-800 ${
-          selected ? 'border-purple-500 shadow-lg' : ''
-        }`;
-      default:
-        return `${baseStyle} bg-gray-100 border-gray-300 text-gray-800 ${
-          selected ? 'border-gray-500 shadow-lg' : ''
-        }`;
-    }
-  };
-
-  const getHandleStyle = (type: 'source' | 'target') => {
-    const baseStyle = '!w-4 !h-4 !border-2 !border-white transition-all duration-200 cursor-crosshair hover:!scale-110 hover:!shadow-lg hover:!ring-4 hover:!ring-opacity-50 pointer-events-auto';
-    
-    switch (data.type) {
-      case 'input':
-        return `${baseStyle} !bg-blue-600 hover:!bg-blue-700 hover:!ring-blue-300`;
-      case 'process':
-        return `${baseStyle} !bg-green-600 hover:!bg-green-700 hover:!ring-green-300`;
-      case 'output':
-        return `${baseStyle} !bg-purple-600 hover:!bg-purple-700 hover:!ring-purple-300`;
-      default:
-        return `${baseStyle} !bg-gray-600 hover:!bg-gray-700 hover:!ring-gray-300`;
-    }
-  };
-
-  const getStatusColor = () => {
-    switch (data.status) {
-      case 'active':
-        return 'bg-green-500';
-      case 'inactive':
-        return 'bg-gray-500';
-      case 'error':
-        return 'bg-red-500';
-      default:
-        return 'bg-gray-500';
-    }
-  };
-
-  const handleDragStart = (event: React.DragEvent) => {
-    // ReactFlow의 기본 드래그와 충돌 방지
-    event.stopPropagation();
-    event.dataTransfer.setData('application/reactflow', id);
-    event.dataTransfer.effectAllowed = 'move';
-    console.log('드래그 시작:', id);
-  };
-
-  const handleMouseDown = (event: React.MouseEvent) => {
-    // 마우스 다운 시 드래그 데이터 설정 (백업 방법)
-    if (event.button === 0) { // 왼쪽 클릭만
-      event.currentTarget.setAttribute('data-draggable-id', id);
-    }
-  };
-
-  // 드래그 가능한 영역을 명확히 하기 위한 스타일
-  const getDragHandleStyle = () => {
-    return 'absolute top-2 right-2 w-6 h-6 bg-gray-200 hover:bg-gray-300 rounded cursor-move flex items-center justify-center text-xs';
-  };
-
-  return (
-    <div 
-      className={getNodeStyle()}
-      onClick={() => onClick && onClick({ data, selected })}
-      onDoubleClick={() => onDoubleClick && onDoubleClick({ data, selected })}
-      style={{ cursor: data.type === 'output' && data.productData ? 'pointer' : 'default' }}
-      draggable
-      onDragStart={handleDragStart}
-      onMouseDown={handleMouseDown}
-    >
-      {/* 🎯 모든 방향 핸들 추가 (상하좌우 단일 핸들) */}
-      
-       {/* 왼쪽 핸들 */}
-       <Handle
-         type='target'
-         position={Position.Left}
-         isConnectable={true}
-         className={getHandleStyle('target')}
-         style={{
-           filter: 'drop-shadow(0 0 8px rgba(59, 130, 246, 0.3))',
-         }}
-         onMouseDown={(e) => e.stopPropagation()}
-         onClick={(e) => e.stopPropagation()}
-       />
-       
-       {/* 오른쪽 핸들 */}
-       <Handle
-         type='source'
-         position={Position.Right}
-         isConnectable={true}
-         className={getHandleStyle('source')}
-         style={{
-           filter: 'drop-shadow(0 0 8px rgba(34, 197, 94, 0.3))',
-         }}
-         onMouseDown={(e) => e.stopPropagation()}
-         onClick={(e) => e.stopPropagation()}
-       />
-       
-       {/* 위쪽 핸들 */}
-       <Handle
-         type='target'
-         position={Position.Top}
-         isConnectable={true}
-         className={getHandleStyle('target')}
-         style={{
-           filter: 'drop-shadow(0 0 8px rgba(147, 51, 234, 0.3))',
-         }}
-         onMouseDown={(e) => e.stopPropagation()}
-         onClick={(e) => e.stopPropagation()}
-       />
-       
-       {/* 아래쪽 핸들 */}
-       <Handle
-         type='source'
-         position={Position.Bottom}
-         isConnectable={true}
-         className={getHandleStyle('source')}
-         style={{
-           filter: 'drop-shadow(0 0 8px rgba(249, 115, 22, 0.3))',
-         }}
-         onMouseDown={(e) => e.stopPropagation()}
-         onClick={(e) => e.stopPropagation()}
-       />
-
-      <div className='flex items-center justify-between mb-2'>
-        <div className='flex items-center gap-2'>
-          <span className='text-xs font-medium uppercase opacity-70'>
-            {data.type}
-          </span>
-          <div className={`w-2 h-2 rounded-full ${getStatusColor()}`} />
-        </div>
-      </div>
-      <div className='font-semibold text-sm mb-1'>{data.name}</div>
-      <div className='text-xs opacity-70 mb-2'>{data.description}</div>
-      
-      {/* 드래그 핸들 */}
-      <div 
-        className={getDragHandleStyle()}
-        draggable
-        onDragStart={handleDragStart}
-        onMouseDown={handleMouseDown}
-        title="드래그하여 그룹에 추가"
-      >
-        ⋮⋮
-      </div>
-
-      {/* 파라미터 미리보기 */}
-      {Object.keys(data.parameters).length > 0 && (
-        <div className='text-xs opacity-60'>
-          {Object.entries(data.parameters)
-            .slice(0, 2)
-            .map(([key, value]) => (
-              <div key={key} className='flex justify-between'>
-                <span>{key}:</span>
-                <span className='font-medium'>{String(value)}</span>
-              </div>
-            ))}
-          {Object.keys(data.parameters).length > 2 && (
-            <div className='text-center opacity-50'>...</div>
-          )}
-        </div>
-      )}
-
-
-    </div>
-  );
-};
 
 // nodeTypes는 함수 내부에서 정의됩니다
 
@@ -574,14 +383,21 @@ export default function ProcessManager() {
   }, [fetchProducts]);
 
   const handleProductSelect = useCallback((product: any) => {
-    const newNode: Node<ProcessStepData> = {
+    const newNode: Node<any> = {
       id: `product-${Date.now()}`,
       type: 'custom',
       position: { x: Math.random() * 400 + 100, y: Math.random() * 300 + 100 },
       data: {
+        label: product.name,
+        description: `제품: ${product.name}`,
+        variant: 'product', // ProcessNode의 product variant 사용
+        productData: product, // 제품 상세 데이터 저장
+        // 4방향 핸들 설정
+        targetPosition: [Position.Left, Position.Top],
+        sourcePosition: [Position.Right, Position.Bottom],
+        // 기존 데이터도 유지 (호환성)
         name: product.name,
         type: 'output',
-        description: `제품: ${product.name}`,
         parameters: {
           product_id: product.product_id,
           cn_code: product.cn_code,
@@ -594,7 +410,6 @@ export default function ProcessManager() {
           period_end: product.period_end,
         },
         status: 'active',
-        productData: product, // 제품 상세 데이터 저장
       },
     };
 
@@ -616,9 +431,9 @@ export default function ProcessManager() {
     }
   }, []);
 
-  // nodeTypes 정의 (함수 내부에서 handleProductNodeClick 사용)
+  // nodeTypes 정의 (아토믹 디자인 패턴 적용)
   const nodeTypes: NodeTypes = {
-    custom: (props: any) => <CustomNode {...props} onClick={handleProductNodeClick} onDoubleClick={handleProductNodeDoubleClick} />,
+    custom: (props: any) => <ProcessNode {...props} onClick={handleProductNodeClick} onDoubleClick={handleProductNodeDoubleClick} />,
     group: (props: any) => <GroupNode {...props} />,
   };
 
@@ -923,6 +738,28 @@ export default function ProcessManager() {
     setConnectionStart(null);
   }, []);
 
+  // 엣지 더블클릭 핸들러
+  const onEdgeDoubleClick = useCallback((event: React.MouseEvent, edge: Edge) => {
+    console.log('엣지 더블클릭:', edge);
+    if (edge.type === 'sourceStream') {
+      setEditingEdge(edge);
+      const edgeData = edge.data as any;
+      setStreamData({
+        streamType: edgeData?.streamType || 'material',
+        flowRate: edgeData?.flowRate || 100,
+        unit: edgeData?.unit || 't/h',
+        carbonIntensity: edgeData?.carbonIntensity || 2.5,
+        description: edgeData?.description || ''
+      });
+      setShowStreamModal(true);
+    }
+  }, []);
+
+  // 엣지 클릭 핸들러
+  const onEdgeClick = useCallback((event: React.MouseEvent, edge: Edge) => {
+    console.log('엣지 클릭:', edge);
+  }, []);
+
   // ============================================================================
   // 🎯 메인 렌더링
   // ============================================================================
@@ -1034,6 +871,8 @@ export default function ProcessManager() {
                onConnectStart={onConnectStart}
                onConnectEnd={onConnectEnd}
                onSelectionChange={onNodeSelectionChange}
+               onEdgeClick={onEdgeClick}
+               onEdgeDoubleClick={onEdgeDoubleClick}
                nodeTypes={nodeTypes}
                edgeTypes={edgeTypes}
                connectionMode={ConnectionMode.Loose}
@@ -1325,88 +1164,201 @@ export default function ProcessManager() {
          </div>
        )}
 
-       {/* 제품 상세 정보 모달 */}
-       {showProductDetailModal && selectedProductNode && (
-        <div className='fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50'>
-          <div className='bg-white rounded-lg p-6 w-full max-w-2xl max-h-[80vh] overflow-y-auto'>
-            <div className='flex items-center justify-between mb-4'>
-              <h2 className='text-xl font-semibold text-gray-900'>제품 상세 정보</h2>
-              <button
-                onClick={() => setShowProductDetailModal(false)}
-                className='text-gray-400 hover:text-gray-600'
-              >
-                ✕
-              </button>
-            </div>
-            
-            <div className='space-y-4'>
-              <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+               {/* 제품 상세 정보 모달 */}
+        {showProductDetailModal && selectedProductNode && (
+         <div className='fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50'>
+           <div className='bg-white rounded-lg p-6 w-full max-w-2xl max-h-[80vh] overflow-y-auto'>
+             <div className='flex items-center justify-between mb-4'>
+               <h2 className='text-xl font-semibold text-gray-900'>제품 상세 정보</h2>
+               <button
+                 onClick={() => setShowProductDetailModal(false)}
+                 className='text-gray-400 hover:text-gray-600'
+               >
+                 ✕
+               </button>
+             </div>
+             
+             <div className='space-y-4'>
+               <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+                 <div>
+                   <h3 className='font-semibold text-gray-900 mb-2'>기본 정보</h3>
+                   <div className='space-y-2 text-sm'>
+                     <div className='flex justify-between'>
+                       <span className='text-gray-600'>제품명:</span>
+                       <span className='font-medium'>{selectedProductNode.name}</span>
+                     </div>
+                     <div className='flex justify-between'>
+                       <span className='text-gray-600'>제품 ID:</span>
+                       <span className='font-medium'>{selectedProductNode.product_id}</span>
+                     </div>
+                     <div className='flex justify-between'>
+                       <span className='text-gray-600'>CN 코드:</span>
+                       <span className='font-medium'>{selectedProductNode.cn_code || 'N/A'}</span>
+                     </div>
+                   </div>
+                 </div>
+                 
+                 <div>
+                   <h3 className='font-semibold text-gray-900 mb-2'>기간 정보</h3>
+                   <div className='space-y-2 text-sm'>
+                     <div className='flex justify-between'>
+                       <span className='text-gray-600'>시작일:</span>
+                       <span className='font-medium'>{selectedProductNode.period_start || 'N/A'}</span>
+                     </div>
+                     <div className='flex justify-between'>
+                       <span className='text-gray-600'>종료일:</span>
+                       <span className='font-medium'>{selectedProductNode.period_end || 'N/A'}</span>
+                     </div>
+                   </div>
+                 </div>
+               </div>
+               
+               <div>
+                 <h3 className='font-semibold text-gray-900 mb-2'>수량 정보</h3>
+                 <div className='grid grid-cols-2 md:grid-cols-4 gap-4'>
+                   <div className='text-center p-3 bg-blue-50 rounded-lg'>
+                     <div className='text-2xl font-bold text-blue-600'>{selectedProductNode.production_qty || 0}</div>
+                     <div className='text-sm text-gray-600'>생산량</div>
+                   </div>
+                   <div className='text-center p-3 bg-green-50 rounded-lg'>
+                     <div className='text-2xl font-bold text-green-600'>{selectedProductNode.sales_qty || 0}</div>
+                     <div className='text-sm text-gray-600'>판매량</div>
+                   </div>
+                   <div className='text-center p-3 bg-purple-50 rounded-lg'>
+                     <div className='text-2xl font-bold text-purple-600'>{selectedProductNode.export_qty || 0}</div>
+                     <div className='text-sm text-gray-600'>수출량</div>
+                   </div>
+                   <div className='text-center p-3 bg-orange-50 rounded-lg'>
+                     <div className='text-2xl font-bold text-orange-600'>{selectedProductNode.inventory_qty || 0}</div>
+                     <div className='text-sm text-gray-600'>재고량</div>
+                   </div>
+                 </div>
+               </div>
+               
+               <div>
+                 <h3 className='font-semibold text-gray-900 mb-2'>품질 정보</h3>
+                 <div className='text-center p-4 bg-red-50 rounded-lg'>
+                   <div className='text-2xl font-bold text-red-600'>{(selectedProductNode.defect_rate * 100 || 0).toFixed(2)}%</div>
+                   <div className='text-sm text-gray-600'>불량률</div>
+                 </div>
+               </div>
+             </div>
+           </div>
+         </div>
+       )}
+
+        {/* 소스스트림 엣지 편집 모달 */}
+        {showStreamModal && editingEdge && (
+          <div className='fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50'>
+            <div className='bg-white rounded-lg p-6 w-full max-w-md'>
+              <div className='flex items-center justify-between mb-4'>
+                <h2 className='text-xl font-semibold text-gray-900'>소스스트림 편집</h2>
+                <button
+                  onClick={() => setShowStreamModal(false)}
+                  className='text-gray-400 hover:text-gray-600'
+                >
+                  ✕
+                </button>
+              </div>
+              
+              <div className='space-y-4'>
                 <div>
-                  <h3 className='font-semibold text-gray-900 mb-2'>기본 정보</h3>
-                  <div className='space-y-2 text-sm'>
-                    <div className='flex justify-between'>
-                      <span className='text-gray-600'>제품명:</span>
-                      <span className='font-medium'>{selectedProductNode.name}</span>
-                    </div>
-                    <div className='flex justify-between'>
-                      <span className='text-gray-600'>제품 ID:</span>
-                      <span className='font-medium'>{selectedProductNode.product_id}</span>
-                    </div>
-                    <div className='flex justify-between'>
-                      <span className='text-gray-600'>CN 코드:</span>
-                      <span className='font-medium'>{selectedProductNode.cn_code || 'N/A'}</span>
-                    </div>
-                  </div>
+                  <label className='block text-sm font-medium text-gray-700 mb-2'>
+                    스트림 타입
+                  </label>
+                  <select
+                    value={streamData.streamType}
+                    onChange={(e) => setStreamData(prev => ({ ...prev, streamType: e.target.value as any }))}
+                    className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+                  >
+                    <option value='material'>📦 Material (물질)</option>
+                    <option value='energy'>⚡ Energy (에너지)</option>
+                    <option value='carbon'>🌱 Carbon (탄소)</option>
+                    <option value='waste'>♻️ Waste (폐기물)</option>
+                  </select>
                 </div>
                 
                 <div>
-                  <h3 className='font-semibold text-gray-900 mb-2'>기간 정보</h3>
-                  <div className='space-y-2 text-sm'>
-                    <div className='flex justify-between'>
-                      <span className='text-gray-600'>시작일:</span>
-                      <span className='font-medium'>{selectedProductNode.period_start || 'N/A'}</span>
-                    </div>
-                    <div className='flex justify-between'>
-                      <span className='text-gray-600'>종료일:</span>
-                      <span className='font-medium'>{selectedProductNode.period_end || 'N/A'}</span>
-                    </div>
-                  </div>
+                  <label className='block text-sm font-medium text-gray-700 mb-2'>
+                    흐름량
+                  </label>
+                  <input
+                    type='number'
+                    value={streamData.flowRate}
+                    onChange={(e) => setStreamData(prev => ({ ...prev, flowRate: Number(e.target.value) }))}
+                    className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+                    placeholder='100'
+                  />
                 </div>
-              </div>
-              
-              <div>
-                <h3 className='font-semibold text-gray-900 mb-2'>수량 정보</h3>
-                <div className='grid grid-cols-2 md:grid-cols-4 gap-4'>
-                  <div className='text-center p-3 bg-blue-50 rounded-lg'>
-                    <div className='text-2xl font-bold text-blue-600'>{selectedProductNode.production_qty || 0}</div>
-                    <div className='text-sm text-gray-600'>생산량</div>
-                  </div>
-                  <div className='text-center p-3 bg-green-50 rounded-lg'>
-                    <div className='text-2xl font-bold text-green-600'>{selectedProductNode.sales_qty || 0}</div>
-                    <div className='text-sm text-gray-600'>판매량</div>
-                  </div>
-                  <div className='text-center p-3 bg-purple-50 rounded-lg'>
-                    <div className='text-2xl font-bold text-purple-600'>{selectedProductNode.export_qty || 0}</div>
-                    <div className='text-sm text-gray-600'>수출량</div>
-                  </div>
-                  <div className='text-center p-3 bg-orange-50 rounded-lg'>
-                    <div className='text-2xl font-bold text-orange-600'>{selectedProductNode.inventory_qty || 0}</div>
-                    <div className='text-sm text-gray-600'>재고량</div>
-                  </div>
+                
+                <div>
+                  <label className='block text-sm font-medium text-gray-700 mb-2'>
+                    단위
+                  </label>
+                  <input
+                    type='text'
+                    value={streamData.unit}
+                    onChange={(e) => setStreamData(prev => ({ ...prev, unit: e.target.value }))}
+                    className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+                    placeholder='t/h'
+                  />
                 </div>
-              </div>
-              
-              <div>
-                <h3 className='font-semibold text-gray-900 mb-2'>품질 정보</h3>
-                <div className='text-center p-4 bg-red-50 rounded-lg'>
-                  <div className='text-2xl font-bold text-red-600'>{(selectedProductNode.defect_rate * 100 || 0).toFixed(2)}%</div>
-                  <div className='text-sm text-gray-600'>불량률</div>
+                
+                <div>
+                  <label className='block text-sm font-medium text-gray-700 mb-2'>
+                    탄소 강도 (kgCO2/t)
+                  </label>
+                  <input
+                    type='number'
+                    step='0.1'
+                    value={streamData.carbonIntensity}
+                    onChange={(e) => setStreamData(prev => ({ ...prev, carbonIntensity: Number(e.target.value) }))}
+                    className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+                    placeholder='2.5'
+                  />
+                </div>
+                
+                <div>
+                  <label className='block text-sm font-medium text-gray-700 mb-2'>
+                    설명
+                  </label>
+                  <textarea
+                    value={streamData.description}
+                    onChange={(e) => setStreamData(prev => ({ ...prev, description: e.target.value }))}
+                    className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+                    rows={3}
+                    placeholder='스트림에 대한 설명을 입력하세요'
+                  />
+                </div>
+                
+                <div className='flex gap-3 pt-4'>
+                  <button
+                    onClick={() => setShowStreamModal(false)}
+                    className='flex-1 px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50'
+                  >
+                    취소
+                  </button>
+                  <button
+                    onClick={() => {
+                      // 엣지 데이터 업데이트
+                      setEdges(prevEdges => 
+                        prevEdges.map(edge => 
+                          edge.id === editingEdge.id 
+                            ? { ...edge, data: streamData }
+                            : edge
+                        )
+                      );
+                      setShowStreamModal(false);
+                    }}
+                    className='flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700'
+                  >
+                    저장
+                  </button>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
     </div>
   );
 }

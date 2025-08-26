@@ -111,7 +111,9 @@ const SourceStreamEdge: React.FC<EdgeProps<any>> = ({
           ...style,
           stroke: getEdgeColor(),
           strokeWidth: getEdgeWidth(),
+          cursor: 'pointer',
         }}
+        onDoubleClick={handleDoubleClick}
       />
       
       {/* 엣지 라벨 */}
