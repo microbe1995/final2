@@ -938,7 +938,7 @@ export default function ProcessManager() {
                connectionMode={ConnectionMode.Loose}
                deleteKeyCode='Delete'
                multiSelectionKeyCode='Shift'
-               panOnDrag={true}
+               panOnDrag={[1, 2]}
                zoomOnScroll={true}
                zoomOnPinch={true}
                panOnScroll={false}

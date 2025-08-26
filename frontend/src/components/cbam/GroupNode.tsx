@@ -188,7 +188,7 @@ const GroupNode: React.FC<NodeProps<any>> = ({ data, selected, id }) => {
                     >
                       ✕
                     </button>
-                  </div>
+                  </div>간ㅡㅇ
                 ))
               ) : (
                 <div className="text-gray-500">노드가 없습니다</div>
