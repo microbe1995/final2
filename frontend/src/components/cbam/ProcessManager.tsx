@@ -17,7 +17,7 @@ import {
 import ProcessStepModal from './ProcessStepModal';
 import GroupNode from './GroupNode';
 import SourceStreamEdge from './SourceStreamEdge';
-import ProcessNode from '@/components/atomic/atoms/ProcessNode';
+import ProductNode from '@/components/atomic/atoms/ProductNode';
 import axiosClient from '@/lib/axiosClient';
 import {
   ReactFlow,
@@ -65,7 +65,7 @@ interface ProcessFlow {
 }
 
 // ============================================================================
-// 🎯 아토믹 디자인 패턴 적용 - ProcessNode 사용
+// 🎯 아토믹 디자인 패턴 적용 - ProductNode 사용
 // ============================================================================
 
 // nodeTypes는 함수 내부에서 정의됩니다
@@ -433,7 +433,7 @@ export default function ProcessManager() {
 
   // nodeTypes 정의 (아토믹 디자인 패턴 적용)
   const nodeTypes: NodeTypes = {
-    custom: (props: any) => <ProcessNode {...props} onClick={handleProductNodeClick} onDoubleClick={handleProductNodeDoubleClick} />,
+    custom: (props: any) => <ProductNode {...props} onClick={handleProductNodeClick} onDoubleClick={handleProductNodeDoubleClick} />,
     group: (props: any) => <GroupNode {...props} />,
   };
 

@@ -3,7 +3,7 @@
 import { memo } from 'react';
 import { Handle, Position } from '@xyflow/react';
 
-interface ProcessNodeProps {
+interface ProductNodeProps {
   data: {
     label: string;
     description?: string;
@@ -40,7 +40,7 @@ const sizeStyles = {
   lg: 'px-6 py-4 min-w-[160px] text-base',
 };
 
-function ProcessNode({
+function ProductNode({
   data,
   isConnectable = true,
   targetPosition,
@@ -51,7 +51,7 @@ function ProcessNode({
   onClick,
   onDoubleClick,
   selected,
-}: ProcessNodeProps) {
+}: ProductNodeProps) {
   // data에서 props 추출 (React Flow 패턴)
   const finalTargetPosition =
     targetPosition || data.targetPosition || Position.Top;
@@ -183,5 +183,5 @@ function ProcessNode({
   );
 }
 
-export { ProcessNode };
-export default memo(ProcessNode);
+export { ProductNode };
+export default memo(ProductNode);
