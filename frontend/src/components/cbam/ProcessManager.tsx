@@ -15,6 +15,9 @@ import {
   Unlink,
 } from 'lucide-react';
 import ProcessStepModal from './ProcessStepModal';
+# 
+import GroupNode from './GroupNode';
+import SourceStreamEdge from './SourceStreamEdge';
 import axiosClient from '@/lib/axiosClient';
 import {
   ReactFlow,
@@ -231,6 +234,7 @@ const CustomEdge = ({
 
 const edgeTypes: EdgeTypes = {
   custom: CustomEdge,
+  sourceStream: (props: any) => <SourceStreamEdge {...props} />,
 };
 
 // ============================================================================
@@ -254,6 +258,10 @@ export default function ProcessManager() {
   const [isLoadingProducts, setIsLoadingProducts] = useState(false);
   const [showProductDetailModal, setShowProductDetailModal] = useState(false);
   const [selectedProductNode, setSelectedProductNode] = useState<any>(null);
+
+  // 그룹 관련 상태
+  const [selectedNodes, setSelectedNodes] = useState<string[]>([]);
+  const [showGroupModal, setShowGroupModal] = useState(false);
 
   // React Flow 상태 관리
   const [nodes, setNodes, onNodesChange] = useNodesState<any>([]);
@@ -597,6 +605,7 @@ export default function ProcessManager() {
   // nodeTypes 정의 (함수 내부에서 handleProductNodeClick 사용)
   const nodeTypes: NodeTypes = {
     custom: (props: any) => <CustomNode {...props} onClick={handleProductNodeClick} />,
+    group: (props: any) => <GroupNode {...props} />,
   };
 
   // ============================================================================
@@ -841,18 +850,18 @@ export default function ProcessManager() {
             >
               <Background gap={12} size={1} />
               <Controls />
-              <MiniMap
-                nodeStrokeColor={(n: any) => {
-                  if (n.type === 'input') return '#3b82f6';
-                  if (n.type === 'output') return '#8b5cf6';
-                  return '#22c55e';
-                }}ㅎ
-                nodeColor={(n: any) => {
-                  if (n.type === 'input') return '#dbeafe';
-                  if (n.type === 'output') return '#f3e8ff';
-                  return '#dcfce7';
-                }}
-              />
+                             <MiniMap
+                 nodeStrokeColor={(n: any) => {
+                   if (n.type === 'input') return '#3b82f6';
+                   if (n.type === 'output') return '#8b5cf6';
+                   return '#22c55e';
+                 }}
+                 nodeColor={(n: any) => {
+                   if (n.type === 'input') return '#dbeafe';
+                   if (n.type === 'output') return '#f3e8ff';
+                   return '#dcfce7';
+                 }}
+               />
 
               {/* 상단 패널 */}
               <Panel
