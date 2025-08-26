@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
-import { Button } from '@/components/ui/Button';
+import Button from '@/components/atomic/atoms/Button';
 import {
   Plus,
   Trash2,
@@ -14,7 +14,7 @@ import {
   Unlink,
 } from 'lucide-react';
 
-import SourceStreamEdge from './SourceStreamEdge';
+
 import ProductNode from '@/components/atomic/atoms/ProductNode';
 import axiosClient from '@/lib/axiosClient';
 import {
@@ -117,7 +117,6 @@ const CustomEdge = ({
 
 const edgeTypes: EdgeTypes = {
   custom: CustomEdge,
-  sourceStream: (props: any) => <SourceStreamEdge {...props} />,
 };
 
 // ============================================================================
@@ -141,16 +140,7 @@ export default function ProcessManager() {
 
 
 
-  // 소스스트림 관련 상태
-  const [showStreamModal, setShowStreamModal] = useState(false);
-  const [editingEdge, setEditingEdge] = useState<Edge | null>(null);
-  const [streamData, setStreamData] = useState({
-    streamType: 'material' as 'material' | 'energy' | 'carbon' | 'waste',
-    flowRate: 100,
-    unit: 't/h',
-    carbonIntensity: 2.5,
-    description: ''
-  });
+
 
 
 
@@ -501,7 +491,7 @@ export default function ProcessManager() {
                   sourceHandle: params.sourceHandle,
                   targetHandle: params.targetHandle,
                   edgeType: edgeType,
-                  streamData: streamData
+                  
                 })
               });
               
@@ -535,27 +525,7 @@ export default function ProcessManager() {
     setConnectionStart(null);
   }, []);
 
-  // 엣지 더블클릭 핸들러
-  const onEdgeDoubleClick = useCallback((event: React.MouseEvent, edge: Edge) => {
-    console.log('엣지 더블클릭:', edge);
-    if (edge.type === 'sourceStream') {
-      setEditingEdge(edge);
-      const edgeData = edge.data as any;
-      setStreamData({
-        streamType: edgeData?.streamType || 'material',
-        flowRate: edgeData?.flowRate || 100,
-        unit: edgeData?.unit || 't/h',
-        carbonIntensity: edgeData?.carbonIntensity || 2.5,
-        description: edgeData?.description || ''
-      });
-      setShowStreamModal(true);
-    }
-  }, []);
 
-  // 엣지 클릭 핸들러
-  const onEdgeClick = useCallback((event: React.MouseEvent, edge: Edge) => {
-    console.log('엣지 클릭:', edge);
-  }, []);
 
   // ============================================================================
   // 🎯 메인 렌더링
@@ -662,8 +632,7 @@ export default function ProcessManager() {
                onConnectStart={onConnectStart}
                onConnectEnd={onConnectEnd}
                onSelectionChange={onNodeSelectionChange}
-               onEdgeClick={onEdgeClick}
-               onEdgeDoubleClick={onEdgeDoubleClick}
+               
                nodeTypes={nodeTypes}
                edgeTypes={edgeTypes}
                connectionMode={ConnectionMode.Loose}
@@ -930,118 +899,7 @@ export default function ProcessManager() {
          </div>
        )}
 
-        {/* 소스스트림 엣지 편집 모달 */}
-        {showStreamModal && editingEdge && (
-          <div className='fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50'>
-            <div className='bg-white rounded-lg p-6 w-full max-w-md'>
-              <div className='flex items-center justify-between mb-4'>
-                <h2 className='text-xl font-semibold text-gray-900'>소스스트림 편집</h2>
-                <button
-                  onClick={() => setShowStreamModal(false)}
-                  className='text-gray-400 hover:text-gray-600'
-                >
-                  ✕
-                </button>
-              </div>
-              
-              <div className='space-y-4'>
-                <div>
-                  <label className='block text-sm font-medium text-gray-700 mb-2'>
-                    스트림 타입
-                  </label>
-                  <select
-                    value={streamData.streamType}
-                    onChange={(e) => setStreamData(prev => ({ ...prev, streamType: e.target.value as any }))}
-                    className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
-                  >
-                    <option value='material'>📦 Material (물질)</option>
-                    <option value='energy'>⚡ Energy (에너지)</option>
-                    <option value='carbon'>🌱 Carbon (탄소)</option>
-                    <option value='waste'>♻️ Waste (폐기물)</option>
-                  </select>
-                </div>
-                
-                <div>
-                  <label className='block text-sm font-medium text-gray-700 mb-2'>
-                    흐름량
-                  </label>
-                  <input
-                    type='number'
-                    value={streamData.flowRate}
-                    onChange={(e) => setStreamData(prev => ({ ...prev, flowRate: Number(e.target.value) }))}
-                    className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
-                    placeholder='100'
-                  />
-                </div>
-                
-                <div>
-                  <label className='block text-sm font-medium text-gray-700 mb-2'>
-                    단위
-                  </label>
-                  <input
-                    type='text'
-                    value={streamData.unit}
-                    onChange={(e) => setStreamData(prev => ({ ...prev, unit: e.target.value }))}
-                    className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
-                    placeholder='t/h'
-                  />
-                </div>
-                
-                <div>
-                  <label className='block text-sm font-medium text-gray-700 mb-2'>
-                    탄소 강도 (kgCO2/t)
-                  </label>
-                  <input
-                    type='number'
-                    step='0.1'
-                    value={streamData.carbonIntensity}
-                    onChange={(e) => setStreamData(prev => ({ ...prev, carbonIntensity: Number(e.target.value) }))}
-                    className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
-                    placeholder='2.5'
-                  />
-                </div>
-                
-                <div>
-                  <label className='block text-sm font-medium text-gray-700 mb-2'>
-                    설명
-                  </label>
-                  <textarea
-                    value={streamData.description}
-                    onChange={(e) => setStreamData(prev => ({ ...prev, description: e.target.value }))}
-                    className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
-                    rows={3}
-                    placeholder='스트림에 대한 설명을 입력하세요'
-                  />
-                </div>
-                
-                <div className='flex gap-3 pt-4'>
-                  <button
-                    onClick={() => setShowStreamModal(false)}
-                    className='flex-1 px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50'
-                  >
-                    취소
-                  </button>
-                  <button
-                    onClick={() => {
-                      // 엣지 데이터 업데이트
-                      setEdges(prevEdges => 
-                        prevEdges.map(edge => 
-                          edge.id === editingEdge.id 
-                            ? { ...edge, data: streamData }
-                            : edge
-                        )
-                      );
-                      setShowStreamModal(false);
-                    }}
-                    className='flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700'
-                  >
-                    저장
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+        
 
 
     </div>
