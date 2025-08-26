@@ -132,6 +132,7 @@ const CustomNode = ({
   const handleDragStart = (event: React.DragEvent) => {
     event.dataTransfer.setData('application/reactflow', id);
     event.dataTransfer.effectAllowed = 'move';
+    console.log('드래그 시작:', id);
   };
 
   return (
@@ -151,6 +152,20 @@ const CustomNode = ({
           className={getHandleStyle('target')}
         />
       )}
+
+      {/* 🎯 상하 핸들 추가 */}
+      <Handle
+        type='target'
+        position={Position.Top}
+        isConnectable={true}
+        className={getHandleStyle('target')}
+      />
+      <Handle
+        type='source'
+        position={Position.Bottom}
+        isConnectable={true}
+        className={getHandleStyle('source')}
+      />
 
       <div className='flex items-center justify-between mb-2'>
         <div className='flex items-center gap-2'>

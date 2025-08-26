@@ -81,6 +81,8 @@ const GroupNode: React.FC<NodeProps<any>> = ({ data, selected, id }) => {
     setIsDragOver(false);
     
     const draggedNodeId = event.dataTransfer.getData('application/reactflow');
+    console.log('드롭된 노드 ID:', draggedNodeId, '그룹 ID:', id);
+    
     if (draggedNodeId && draggedNodeId !== id) {
       // 그룹에 노드 추가
       setNodes((nodes) =>
@@ -88,6 +90,7 @@ const GroupNode: React.FC<NodeProps<any>> = ({ data, selected, id }) => {
           if (node.id === id && node.data.nodes && Array.isArray(node.data.nodes)) {
             // 이미 그룹에 있는 노드인지 확인
             if (!node.data.nodes.includes(draggedNodeId)) {
+              console.log('노드를 그룹에 추가:', draggedNodeId, '->', id);
               return {
                 ...node,
                 data: {
@@ -159,7 +162,8 @@ const GroupNode: React.FC<NodeProps<any>> = ({ data, selected, id }) => {
           {/* 포함된 노드 목록 */}
           <div className="bg-white/30 rounded p-2">
             <div className="font-medium text-xs mb-1">포함된 노드</div>
-            <div className="text-xs text-gray-600">h             {data.nodes && Array.isArray(data.nodes) && data.nodes.length > 0 ? (
+            <div className="text-xs text-gray-600">
+              {data.nodes && Array.isArray(data.nodes) && data.nodes.length > 0 ? (
                 data.nodes.slice(0, 3).map((nodeId: any, index: number) => (
                   <div key={index} className="flex items-center justify-between">
                     <div className="flex items-center gap-1">
