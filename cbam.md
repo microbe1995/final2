@@ -113,4 +113,191 @@ import {
   </ReactFlowProvider>
 </div>
 
+
+
+'use client';
+
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import Button from '@/components/atomic/atoms/Button';
+import {
+  Plus, Trash2, Save, Download
+} from 'lucide-react';
+
+import ProductNode from '@/components/atomic/atoms/ProductNode';
+import GroupNode from '@/components/atomic/atoms/GroupNode';
+import axiosClient from '@/lib/axiosClient';
+import {
+  ReactFlow,
+  ReactFlowProvider,
+  Background,
+  Controls,
+  MiniMap,
+  useNodesState,
+  useEdgesState,
+  addEdge,
+  Connection,
+  Edge,
+  Node,
+  NodeTypes,
+  EdgeTypes,
+  Panel,
+  useReactFlow,
+  ConnectionMode,
+  MarkerType
+} from '@xyflow/react';
+import '@xyflow/react/dist/style.css';
+
+// ==============================
+// Edge 타입 정의
+// ==============================
+const CustomEdge = ({ id, sourceX, sourceY, targetX, targetY, selected }: any) => {
+  const [edgePath] = useMemo(() => {
+    const centerX = (sourceX + targetX) / 2;
+    const path = `M ${sourceX} ${sourceY} Q ${centerX} ${sourceY} ${targetX} ${targetY}`;
+    return [path];
+  }, [sourceX, sourceY, targetX, targetY]);
+
+  return (
+    <>
+      <path id={id} className="react-flow__edge-path" d={edgePath} stroke={selected ? '#3b82f6' : '#6b7280'} strokeWidth={selected ? 3 : 2} fill="none" markerEnd="url(#arrowhead)" />
+    </>
+  );
+};
+
+const edgeTypes: EdgeTypes = { custom: CustomEdge };
+
+// ==============================
+// 메인 컴포넌트
+// ==============================
+export default function ProcessManager() {
+  const [nodes, setNodes, onNodesChange] = useNodesState<any>([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState<any>([]);
+  const { addNodes, addEdges, deleteElements } = useReactFlow();
+
+  // 더미 제품 데이터
+  const [products, setProducts] = useState<any[]>([]);
+  const [showProductModal, setShowProductModal] = useState(false);
+
+  const fetchProducts = useCallback(async () => {
+    try {
+      const response = await axiosClient.get('/api/v1/boundary/product');
+      setProducts(response.data.products || []);
+    } catch (error) {
+      // ✅ API 실패 시 더미 데이터라도 넣어주기
+      setProducts([
+        { product_id: 'dummy-1', name: '테스트 제품', cn_code: '7208.51.00', production_qty: 100 }
+      ]);
+    }
+  }, []);
+
+  const addProductNode = useCallback(async () => {
+    await fetchProducts();
+    setShowProductModal(true);
+  }, [fetchProducts]);
+
+  const handleProductSelect = useCallback((product: any) => {
+    const newNode: Node<any> = {
+      id: `product-${Date.now()}`,
+      type: 'custom',
+      position: { x: 200, y: 200 },
+      data: { label: product.name, description: `제품: ${product.name}`, variant: 'product', productData: product }
+    };
+    addNodes(newNode);
+    setShowProductModal(false);
+  }, [addNodes]);
+
+  const addGroupNode = useCallback(() => {
+    const newGroup: Node<any> = {
+      id: `group-${Date.now()}`,
+      type: 'group',
+      position: { x: 400, y: 100 },
+      data: { label: '새 그룹', description: '그룹 노드' },
+      style: { width: 300, height: 200 }
+    };
+    addNodes(newGroup);
+  }, [addNodes]);
+
+  const nodeTypes: NodeTypes = {
+    custom: ProductNode,
+    group: GroupNode
+  };
+
+  return (
+    // ✅ Provider를 최상위에 둠
+    <ReactFlowProvider>
+      <div className="h-[800px] border rounded">
+        <div className="flex gap-2 p-2">
+          <Button onClick={addProductNode}><Plus className="h-4 w-4"/> 제품 노드</Button>
+          <Button onClick={addGroupNode}><Plus className="h-4 w-4"/> 그룹 노드</Button>
+        </div>
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
+          onConnect={(params: Connection) => addEdges({
+            id: `${params.source}-${params.target}`,
+            source: params.source!,
+            target: params.target!,
+            type: 'custom',
+            markerEnd: { type: MarkerType.ArrowClosed }
+          })}
+          nodeTypes={nodeTypes}
+          edgeTypes={edgeTypes}
+          connectionMode={ConnectionMode.Loose}
+          deleteKeyCode="Delete"
+          className="bg-gray-50"
+        >
+          <Background />
+          <Controls />
+          <MiniMap />
+        </ReactFlow>
+
+        {/* 제품 선택 모달 */}
+        {showProductModal && (
+          <div className="fixed inset-0 flex items-center justify-center bg-black/40">
+            <div className="bg-white p-4 rounded shadow">
+              <h3>제품 선택</h3>
+              {products.map(p => (
+                <div key={p.product_id} className="p-2 border rounded mb-2 cursor-pointer" onClick={() => handleProductSelect(p)}>
+                  {p.name}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </ReactFlowProvider>
+  );
+}
+
+'use client';
+
+import React from 'react';
+
+export default function GroupNode({ data }: any) {
+  return (
+    <div style={{ width: '100%', height: '100%', background: '#e0f2fe', border: '2px solid #38bdf8', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      {data.label}
+    </div>
+  );
+}
+
+
+내 코드에서 제품 노드와 그룹 노드가 생성되지 않는 문제가 있다.
+
+맥락:
+- ProductNode는 핸들까지 잘 정의했지만, ProcessManager에서 addProductNode가 실제 노드를 생성하지 않고 모달만 띄운다.
+- /api/v1/boundary/product API가 실패하면서 products 배열이 빈 값이 되고, handleProductSelect가 실행되지 않아 제품 노드가 추가되지 않는다.
+- addGroupNode는 실행되지만, ReactFlowProvider가 ReactFlow 안쪽에 있어서 zustand store가 공유되지 않아 노드가 보이지 않는다.
+- GroupNode 컴포넌트도 실제 렌더링을 하지 않아 화면에 안 보일 수 있다.
+
+수정 요구:
+1. ReactFlowProvider를 최상위에 두어 모든 훅(useNodesState, useEdgesState, useReactFlow)이 정상 동작하게 해라.
+2. fetchProducts에서 API가 실패해도 더미 데이터를 넣어 테스트 가능하게 만들어라.
+3. handleProductSelect에서 제품을 클릭하면 실제로 ProductNode가 생성되게 해라.
+4. addGroupNode 실행 시 GroupNode가 화면에 보이도록 GroupNode 컴포넌트를 단순 div라도 렌더링하게 고쳐라.
+
+위 내용을 반영한 전체 수정본 코드를 다시 작성해 줘.
+
 위 코드와 프롬프트를 참고해서 수정해줘
