@@ -227,43 +227,102 @@ const GroupNode: React.FC<NodeProps<any>> = ({ data, selected, id }) => {
         </div>
       )}
 
-      {/* 연결 핸들들 */}
-      <Handle
-        type="target"
-        position={Position.Left}
-        className="!w-4 !h-4 !bg-blue-600 !border-2 !border-white transition-all duration-200 cursor-crosshair hover:!scale-110 hover:!ring-4 hover:!ring-blue-300 hover:!ring-opacity-50 hover:!animate-pulse"
-        isConnectable={true}
-        style={{
-          filter: 'drop-shadow(0 0 8px rgba(59, 130, 246, 0.3))',
-        }}
-      />
-      <Handle
-        type="source"
-        position={Position.Right}
-        className="!w-4 !h-4 !bg-green-600 !border-2 !border-white transition-all duration-200 cursor-crosshair hover:!scale-110 hover:!ring-4 hover:!ring-green-300 hover:!ring-opacity-50 hover:!animate-pulse"
-        isConnectable={true}
-        style={{
-          filter: 'drop-shadow(0 0 8px rgba(34, 197, 94, 0.3))',
-        }}
-      />
-      <Handle
-        type="target"
-        position={Position.Top}
-        className="!w-4 !h-4 !bg-purple-600 !border-2 !border-white transition-all duration-200 cursor-crosshair hover:!scale-110 hover:!ring-4 hover:!ring-purple-300 hover:!ring-opacity-50 hover:!animate-pulse"
-        isConnectable={true}
-        style={{
-          filter: 'drop-shadow(0 0 8px rgba(147, 51, 234, 0.3))',
-        }}
-      />
-      <Handle
-        type="source"
-        position={Position.Bottom}
-        className="!w-4 !h-4 !bg-orange-600 !border-2 !border-white transition-all duration-200 cursor-crosshair hover:!scale-110 hover:!ring-4 hover:!ring-orange-300 hover:!ring-opacity-50 hover:!animate-pulse"
-        isConnectable={true}
-        style={{
-          filter: 'drop-shadow(0 0 8px rgba(249, 115, 22, 0.3))',
-        }}
-      />
+             {/* 연결 핸들들 (양방향) */}
+       {/* 왼쪽 핸들들 (Target + Source) */}
+       <Handle
+         type="target"
+         position={Position.Left}
+         className="!w-4 !h-4 !bg-blue-600 !border-2 !border-white transition-all duration-200 cursor-crosshair hover:!scale-110 hover:!ring-4 hover:!ring-blue-300 hover:!ring-opacity-50 pointer-events-auto"
+         isConnectable={true}
+         style={{
+           filter: 'drop-shadow(0 0 8px rgba(59, 130, 246, 0.3))',
+         }}
+         onMouseDown={(e) => e.stopPropagation()}
+         onClick={(e) => e.stopPropagation()}
+       />
+       <Handle
+         type="source"
+         position={Position.Left}
+         className="!w-4 !h-4 !bg-blue-600 !border-2 !border-white transition-all duration-200 cursor-crosshair hover:!scale-110 hover:!ring-4 hover:!ring-blue-300 hover:!ring-opacity-50 pointer-events-auto"
+         isConnectable={true}
+         style={{
+           filter: 'drop-shadow(0 0 8px rgba(59, 130, 246, 0.3))',
+         }}
+         onMouseDown={(e) => e.stopPropagation()}
+         onClick={(e) => e.stopPropagation()}
+       />
+       
+       {/* 오른쪽 핸들들 (Target + Source) */}
+       <Handle
+         type="target"
+         position={Position.Right}
+         className="!w-4 !h-4 !bg-green-600 !border-2 !border-white transition-all duration-200 cursor-crosshair hover:!scale-110 hover:!ring-4 hover:!ring-green-300 hover:!ring-opacity-50 pointer-events-auto"
+         isConnectable={true}
+         style={{
+           filter: 'drop-shadow(0 0 8px rgba(34, 197, 94, 0.3))',
+         }}
+         onMouseDown={(e) => e.stopPropagation()}
+         onClick={(e) => e.stopPropagation()}
+       />
+       <Handle
+         type="source"
+         position={Position.Right}
+         className="!w-4 !h-4 !bg-green-600 !border-2 !border-white transition-all duration-200 cursor-crosshair hover:!scale-110 hover:!ring-4 hover:!ring-green-300 hover:!ring-opacity-50 pointer-events-auto"
+         isConnectable={true}
+         style={{
+           filter: 'drop-shadow(0 0 8px rgba(34, 197, 94, 0.3))',
+         }}
+         onMouseDown={(e) => e.stopPropagation()}
+         onClick={(e) => e.stopPropagation()}
+       />
+       
+       {/* 위쪽 핸들들 (Target + Source) */}
+       <Handle
+         type="target"
+         position={Position.Top}
+         className="!w-4 !h-4 !bg-purple-600 !border-2 !border-white transition-all duration-200 cursor-crosshair hover:!scale-110 hover:!ring-4 hover:!ring-purple-300 hover:!ring-opacity-50 pointer-events-auto"
+         isConnectable={true}
+         style={{
+           filter: 'drop-shadow(0 0 8px rgba(147, 51, 234, 0.3))',
+         }}
+         onMouseDown={(e) => e.stopPropagation()}
+         onClick={(e) => e.stopPropagation()}
+       />
+       <Handle
+         type="source"
+         position={Position.Top}
+         className="!w-4 !h-4 !bg-purple-600 !border-2 !border-white transition-all duration-200 cursor-crosshair hover:!scale-110 hover:!ring-4 hover:!ring-purple-300 hover:!ring-opacity-50 pointer-events-auto"
+         isConnectable={true}
+         style={{
+           filter: 'drop-shadow(0 0 8px rgba(147, 51, 234, 0.3))',
+         }}
+         onMouseDown={(e) => e.stopPropagation()}
+         onClick={(e) => e.stopPropagation()}
+       />
+       
+       {/* 아래쪽 핸들들 (Target + Source) */}
+       <Handle
+         type="target"
+         position={Position.Bottom}
+         className="!w-4 !h-4 !bg-orange-600 !border-2 !border-white transition-all duration-200 cursor-crosshair hover:!scale-110 hover:!ring-4 hover:!ring-orange-300 hover:!ring-opacity-50 pointer-events-auto"
+         isConnectable={true}
+         style={{
+           filter: 'drop-shadow(0 0 8px rgba(249, 115, 22, 0.3))',
+         }}
+         onMouseDown={(e) => e.stopPropagation()}
+         onClick={(e) => e.stopPropagation()}
+       />
+       <Handle
+         type="source"
+         position={Position.Bottom}
+         className="!w-4 !h-4 !bg-orange-600 !border-2 !border-white transition-all duration-200 cursor-crosshair hover:!scale-110 hover:!ring-4 hover:!ring-orange-300 hover:!ring-opacity-50 pointer-events-auto"
+         isConnectable={true}
+         style={{
+           filter: 'drop-shadow(0 0 8px rgba(249, 115, 22, 0.3))',
+         }}
+         onMouseDown={(e) => e.stopPropagation()}
+         onClick={(e) => e.stopPropagation()}
+       />
     </div>
   );
 };

@@ -104,17 +104,17 @@ const CustomNode = ({
   };
 
   const getHandleStyle = (type: 'source' | 'target') => {
-    const baseStyle = '!w-4 !h-4 !border-2 !border-white transition-all duration-200 cursor-crosshair hover:!scale-110 relative';
+    const baseStyle = '!w-4 !h-4 !border-2 !border-white transition-all duration-200 cursor-crosshair hover:!scale-110 hover:!shadow-lg hover:!ring-4 hover:!ring-opacity-50 pointer-events-auto';
     
     switch (data.type) {
       case 'input':
-        return `${baseStyle} !bg-blue-600 hover:!bg-blue-700 hover:!shadow-lg hover:!ring-4 hover:!ring-blue-300 hover:!ring-opacity-50`;
+        return `${baseStyle} !bg-blue-600 hover:!bg-blue-700 hover:!ring-blue-300`;
       case 'process':
-        return `${baseStyle} !bg-green-600 hover:!bg-green-700 hover:!shadow-lg hover:!ring-4 hover:!ring-green-300 hover:!ring-opacity-50`;
+        return `${baseStyle} !bg-green-600 hover:!bg-green-700 hover:!ring-green-300`;
       case 'output':
-        return `${baseStyle} !bg-purple-600 hover:!bg-purple-700 hover:!shadow-lg hover:!ring-4 hover:!ring-purple-300 hover:!ring-opacity-50`;
+        return `${baseStyle} !bg-purple-600 hover:!bg-purple-700 hover:!ring-purple-300`;
       default:
-        return `${baseStyle} !bg-gray-600 hover:!bg-gray-700 hover:!shadow-lg hover:!ring-4 hover:!ring-gray-300 hover:!ring-opacity-50`;
+        return `${baseStyle} !bg-gray-600 hover:!bg-gray-700 hover:!ring-gray-300`;
     }
   };
 
@@ -161,51 +161,103 @@ const CustomNode = ({
       onDragStart={handleDragStart}
       onMouseDown={handleMouseDown}
     >
-      {/* 🎯 모든 방향 핸들 추가 (상하좌우 완전 구현) */}
+      {/* 🎯 모든 방향 핸들 추가 (상하좌우 양방향 완전 구현) */}
       
-      {/* 왼쪽 핸들 (Target) */}
-      <Handle
-        type='target'
-        position={Position.Left}
-        isConnectable={true}
-        className={`${getHandleStyle('target')} hover:!animate-pulse`}
-        style={{
-          filter: 'drop-shadow(0 0 8px rgba(59, 130, 246, 0.3))',
-        }}
-      />
-      
-      {/* 오른쪽 핸들 (Source) */}
-      <Handle
-        type='source'
-        position={Position.Right}
-        isConnectable={true}
-        className={`${getHandleStyle('source')} hover:!animate-pulse`}
-        style={{
-          filter: 'drop-shadow(0 0 8px rgba(34, 197, 94, 0.3))',
-        }}
-      />
-      
-      {/* 위쪽 핸들 (Target) */}
-      <Handle
-        type='target'
-        position={Position.Top}
-        isConnectable={true}
-        className={`${getHandleStyle('target')} hover:!animate-pulse`}
-        style={{
-          filter: 'drop-shadow(0 0 8px rgba(147, 51, 234, 0.3))',
-        }}
-      />
-      
-      {/* 아래쪽 핸들 (Source) */}
-      <Handle
-        type='source'
-        position={Position.Bottom}
-        isConnectable={true}
-        className={`${getHandleStyle('source')} hover:!animate-pulse`}
-        style={{
-          filter: 'drop-shadow(0 0 8px rgba(249, 115, 22, 0.3))',
-        }}
-      />
+       {/* 왼쪽 핸들들 (Target + Source) */}
+       <Handle
+         type='target'
+         position={Position.Left}
+         isConnectable={true}
+         className={getHandleStyle('target')}
+         style={{
+           filter: 'drop-shadow(0 0 8px rgba(59, 130, 246, 0.3))',
+         }}
+         onMouseDown={(e) => e.stopPropagation()}
+         onClick={(e) => e.stopPropagation()}
+       />
+       <Handle
+         type='source'
+         position={Position.Left}
+         isConnectable={true}
+         className={getHandleStyle('source')}
+         style={{
+           filter: 'drop-shadow(0 0 8px rgba(59, 130, 246, 0.3))',
+         }}
+         onMouseDown={(e) => e.stopPropagation()}
+         onClick={(e) => e.stopPropagation()}
+       />
+       
+       {/* 오른쪽 핸들들 (Target + Source) */}
+       <Handle
+         type='target'
+         position={Position.Right}
+         isConnectable={true}
+         className={getHandleStyle('target')}
+         style={{
+           filter: 'drop-shadow(0 0 8px rgba(34, 197, 94, 0.3))',
+         }}
+         onMouseDown={(e) => e.stopPropagation()}
+         onClick={(e) => e.stopPropagation()}
+       />
+       <Handle
+         type='source'
+         position={Position.Right}
+         isConnectable={true}
+         className={getHandleStyle('source')}
+         style={{
+           filter: 'drop-shadow(0 0 8px rgba(34, 197, 94, 0.3))',
+         }}
+         onMouseDown={(e) => e.stopPropagation()}
+         onClick={(e) => e.stopPropagation()}
+       />
+       
+       {/* 위쪽 핸들들 (Target + Source) */}
+       <Handle
+         type='target'
+         position={Position.Top}
+         isConnectable={true}
+         className={getHandleStyle('target')}
+         style={{
+           filter: 'drop-shadow(0 0 8px rgba(147, 51, 234, 0.3))',
+         }}
+         onMouseDown={(e) => e.stopPropagation()}
+         onClick={(e) => e.stopPropagation()}
+       />
+       <Handle
+         type='source'
+         position={Position.Top}
+         isConnectable={true}
+         className={getHandleStyle('source')}
+         style={{
+           filter: 'drop-shadow(0 0 8px rgba(147, 51, 234, 0.3))',
+         }}
+         onMouseDown={(e) => e.stopPropagation()}
+         onClick={(e) => e.stopPropagation()}
+       />
+       
+       {/* 아래쪽 핸들들 (Target + Source) */}
+       <Handle
+         type='target'
+         position={Position.Bottom}
+         isConnectable={true}
+         className={getHandleStyle('target')}
+         style={{
+           filter: 'drop-shadow(0 0 8px rgba(249, 115, 22, 0.3))',
+         }}
+         onMouseDown={(e) => e.stopPropagation()}
+         onClick={(e) => e.stopPropagation()}
+       />
+       <Handle
+         type='source'
+         position={Position.Bottom}
+         isConnectable={true}
+         className={getHandleStyle('source')}
+         style={{
+           filter: 'drop-shadow(0 0 8px rgba(249, 115, 22, 0.3))',
+         }}
+         onMouseDown={(e) => e.stopPropagation()}
+         onClick={(e) => e.stopPropagation()}
+       />
 
       <div className='flex items-center justify-between mb-2'>
         <div className='flex items-center gap-2'>
@@ -246,15 +298,7 @@ const CustomNode = ({
         </div>
       )}
 
-      {/* 🎯 Source 핸들 (출력) */}
-      {data.type !== 'output' && (
-        <Handle
-          type='source'
-          position={Position.Right}
-          isConnectable={true}
-          className={getHandleStyle('source')}
-        />
-      )}
+
     </div>
   );
 };
