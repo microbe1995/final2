@@ -80,7 +80,21 @@ const GroupNode: React.FC<NodeProps<any>> = ({ data, selected, id }) => {
     event.preventDefault();
     setIsDragOver(false);
     
-    const draggedNodeId = event.dataTransfer.getData('application/reactflow');
+    // 여러 방법으로 드래그된 노드 ID 가져오기
+    let draggedNodeId = event.dataTransfer.getData('application/reactflow');
+    
+    // 백업 방법: DOM 속성에서 가져오기
+    if (!draggedNodeId) {
+      const draggedElement = document.querySelector('[data-draggable-id]');
+      if (draggedElement) {
+        const attrValue = draggedElement.getAttribute('data-draggable-id');
+        if (attrValue) {
+          draggedNodeId = attrValue;
+          draggedElement.removeAttribute('data-draggable-id');
+        }
+      }
+    }
+    
     console.log('드롭된 노드 ID:', draggedNodeId, '그룹 ID:', id);
     
     if (draggedNodeId && draggedNodeId !== id) {

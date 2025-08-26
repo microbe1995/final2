@@ -102,17 +102,17 @@ const CustomNode = ({
   };
 
   const getHandleStyle = (type: 'source' | 'target') => {
-    const baseStyle = '!w-3 !h-3 !border-2 !border-white transition-colors';
+    const baseStyle = '!w-4 !h-4 !border-2 !border-white transition-all duration-200 cursor-crosshair hover:!scale-110';
     
     switch (data.type) {
       case 'input':
-        return `${baseStyle} !bg-blue-600 hover:!bg-blue-700`;
+        return `${baseStyle} !bg-blue-600 hover:!bg-blue-700 hover:!shadow-lg`;
       case 'process':
-        return `${baseStyle} !bg-green-600 hover:!bg-green-700`;
+        return `${baseStyle} !bg-green-600 hover:!bg-green-700 hover:!shadow-lg`;
       case 'output':
-        return `${baseStyle} !bg-purple-600 hover:!bg-purple-700`;
+        return `${baseStyle} !bg-purple-600 hover:!bg-purple-700 hover:!shadow-lg`;
       default:
-        return `${baseStyle} !bg-gray-600 hover:!bg-gray-700`;
+        return `${baseStyle} !bg-gray-600 hover:!bg-gray-700 hover:!shadow-lg`;
     }
   };
 
@@ -130,9 +130,18 @@ const CustomNode = ({
   };
 
   const handleDragStart = (event: React.DragEvent) => {
+    // ReactFlow의 기본 드래그와 충돌 방지
+    event.stopPropagation();
     event.dataTransfer.setData('application/reactflow', id);
     event.dataTransfer.effectAllowed = 'move';
     console.log('드래그 시작:', id);
+  };
+
+  const handleMouseDown = (event: React.MouseEvent) => {
+    // 마우스 다운 시 드래그 데이터 설정 (백업 방법)
+    if (event.button === 0) { // 왼쪽 클릭만
+      event.currentTarget.setAttribute('data-draggable-id', id);
+    }
   };
 
   return (
@@ -142,24 +151,35 @@ const CustomNode = ({
       style={{ cursor: data.type === 'output' && data.productData ? 'pointer' : 'default' }}
       draggable
       onDragStart={handleDragStart}
+      onMouseDown={handleMouseDown}
     >
-      {/* 🎯 Target 핸들 (입력) */}
-      {data.type !== 'input' && (
-        <Handle
-          type='target'
-          position={Position.Left}
-          isConnectable={true}
-          className={getHandleStyle('target')}
-        />
-      )}
-
-      {/* 🎯 상하 핸들 추가 */}
+      {/* 🎯 모든 방향 핸들 추가 (상하좌우 완전 구현) */}
+      
+      {/* 왼쪽 핸들 (Target) */}
+      <Handle
+        type='target'
+        position={Position.Left}
+        isConnectable={true}
+        className={getHandleStyle('target')}
+      />
+      
+      {/* 오른쪽 핸들 (Source) */}
+      <Handle
+        type='source'
+        position={Position.Right}
+        isConnectable={true}
+        className={getHandleStyle('source')}
+      />
+      
+      {/* 위쪽 핸들 (Target) */}
       <Handle
         type='target'
         position={Position.Top}
         isConnectable={true}
         className={getHandleStyle('target')}
       />
+      
+      {/* 아래쪽 핸들 (Source) */}
       <Handle
         type='source'
         position={Position.Bottom}
