@@ -20,6 +20,7 @@ import GroupNode from '@/components/atomic/atoms/GroupNode';
 import axiosClient from '@/lib/axiosClient';
 import {
   ReactFlow,
+  ReactFlowProvider,
   Background,
   Controls,
   MiniMap,
@@ -671,31 +672,33 @@ export default function ProcessManager() {
             </div>
           </div>
 
-          {/* React Flow 캔버스 */}
-          <div className='h-[1000px] border-2 border-gray-200 rounded-lg overflow-hidden'>
-                         <ReactFlow
-               nodes={nodes}
-               edges={edges}
-               onNodesChange={handleNodesChange}
-               onEdgesChange={onEdgesChange}
-               onConnect={onConnect}
-               onConnectStart={onConnectStart}
-               onConnectEnd={onConnectEnd}
-               onSelectionChange={onNodeSelectionChange}
-               
-               nodeTypes={nodeTypes}
-               edgeTypes={edgeTypes}
-               connectionMode={ConnectionMode.Loose}
-               deleteKeyCode='Delete'
-               multiSelectionKeyCode='Shift'
-               panOnDrag={[1, 2]}
-               zoomOnScroll={true}
-               zoomOnPinch={true}
-               panOnScroll={false}
-               preventScrolling={true}
-               className='bg-gray-50'
-               defaultEdgeOptions={{ zIndex: 1 }} // 🎯 Sub Flows: 엣지가 노드 위에 렌더링되도록 설정
-             >
+                     {/* React Flow 캔버스 */}
+           <div className='h-[1000px] border-2 border-gray-200 rounded-lg overflow-hidden'>
+             {/* ✅ Provider 추가 */}
+             <ReactFlowProvider>
+               <ReactFlow
+                 nodes={nodes}
+                 edges={edges}
+                 onNodesChange={handleNodesChange}
+                 onEdgesChange={onEdgesChange}
+                 onConnect={onConnect}
+                 onConnectStart={onConnectStart}
+                 onConnectEnd={onConnectEnd}
+                 onSelectionChange={onNodeSelectionChange}
+                 
+                 nodeTypes={nodeTypes}
+                 edgeTypes={edgeTypes}
+                 connectionMode={ConnectionMode.Loose}
+                 deleteKeyCode='Delete'
+                 multiSelectionKeyCode='Shift'
+                 panOnDrag={[1, 2]}
+                 zoomOnScroll={true}
+                 zoomOnPinch={true}
+                 panOnScroll={false}
+                 preventScrolling={true}
+                 className='bg-gray-50'
+                 defaultEdgeOptions={{ zIndex: 1 }} // 🎯 Sub Flows: 엣지가 노드 위에 렌더링되도록 설정
+               >
               <Background gap={12} size={1} />
               <Controls />
                              <MiniMap
@@ -754,10 +757,11 @@ export default function ProcessManager() {
                       🔗 연결 중... {connectionStart && `(${connectionStart})`}
                     </div>
                   )}
-                </div>
-              </Panel>
-            </ReactFlow>
-          </div>
+                                 </div>
+               </Panel>
+               </ReactFlow>
+             </ReactFlowProvider>
+           </div>
 
           {/* 노드 상세 정보 */}
           <div className='space-y-4'>
