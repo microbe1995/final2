@@ -7,7 +7,6 @@ import {
 } from 'lucide-react';
 
 import ProductNode from '@/components/atomic/atoms/ProductNode';
-import GroupNode from '@/components/atomic/atoms/GroupNode';
 import axiosClient from '@/lib/axiosClient';
 import {
   ReactFlow,
@@ -42,7 +41,8 @@ const CustomEdge = ({ id, sourceX, sourceY, targetX, targetY, selected }: any) =
 
   return (
     <>
-      <path id={id} className="react-flow__edge-path" d={edgePath} stroke={selected ? '#3b82f6' : '#6b7280'} strokeWidth={selected ? 3 : 2} fill="none" markerEnd="url(#arrowhead)" />
+      {/* ✅ markerEnd 속성 제거 (중복 방지) */}
+      <path id={id} className="react-flow__edge-path" d={edgePath} stroke={selected ? '#3b82f6' : '#6b7280'} strokeWidth={selected ? 3 : 2} fill="none" />
     </>
   );
 };
@@ -111,24 +111,30 @@ function ProcessManagerInner() {
   }, [addNodes]);
 
   const addGroupNode = useCallback(() => {
+    // ✅ group 노드는 내장 타입 사용, style로만 테두리/배경 지정
     const newGroup: Node<any> = {
       id: `group-${Date.now()}`,
-      type: 'group',
+      type: 'group', // ✅ 내장 타입 사용
       position: { x: Math.random() * 400 + 100, y: Math.random() * 300 + 100 },
       data: { 
         label: `그룹 ${Date.now()}`, 
         description: '새로운 그룹',
-        width: 400,
-        height: 300,
       },
-      style: { width: 400, height: 300 }
+      style: { 
+        width: 400, 
+        height: 300,
+        border: '2px dashed #3b82f6',
+        background: 'rgba(59, 130, 246, 0.1)',
+        borderRadius: '8px',
+        pointerEvents: 'auto' // ✅ pointerEvents 설정
+      }
     };
     addNodes(newGroup);
   }, [addNodes]);
 
+  // ✅ nodeTypes에서 group 매핑 제거, custom만 남김
   const nodeTypes: NodeTypes = {
-    custom: ProductNode,
-    group: GroupNode
+    custom: ProductNode
   };
 
   return (
@@ -162,19 +168,29 @@ function ProcessManagerInner() {
           edges={edges}
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
-          onConnect={(params: Connection) => addEdges({
-            id: `${params.source}-${params.target}`,
-            source: params.source!,
-            target: params.target!,
-            type: 'custom',
-            markerEnd: { type: MarkerType.ArrowClosed }
-          })}
+          onConnect={(params: Connection) => {
+            // ✅ params.sourceHandle과 params.targetHandle을 edge에 포함
+            addEdges({
+              id: `${params.source}-${params.target}-${params.sourceHandle}-${params.targetHandle}`,
+              source: params.source!,
+              target: params.target!,
+              sourceHandle: params.sourceHandle, // ✅ sourceHandle 포함
+              targetHandle: params.targetHandle, // ✅ targetHandle 포함
+              type: 'custom',
+              markerEnd: { type: MarkerType.ArrowClosed }
+            });
+          }}
           nodeTypes={nodeTypes}
           edgeTypes={edgeTypes}
           connectionMode={ConnectionMode.Loose}
           deleteKeyCode="Delete"
           className="bg-gray-50"
           fitView
+          // ✅ defaultEdgeOptions 설정
+          defaultEdgeOptions={{ 
+            type: 'custom', 
+            markerEnd: { type: MarkerType.ArrowClosed } 
+          }}
         >
           <Background />
           <Controls />
