@@ -71,11 +71,13 @@ const CustomNode = ({
   data,
   selected,
   onClick,
+  onDoubleClick,
   id,
 }: {
   data: ProcessStepData;
   selected?: boolean;
   onClick?: (node: any) => void;
+  onDoubleClick?: (node: any) => void;
   id: string;
 }) => {
   const getNodeStyle = () => {
@@ -102,17 +104,17 @@ const CustomNode = ({
   };
 
   const getHandleStyle = (type: 'source' | 'target') => {
-    const baseStyle = '!w-4 !h-4 !border-2 !border-white transition-all duration-200 cursor-crosshair hover:!scale-110';
+    const baseStyle = '!w-4 !h-4 !border-2 !border-white transition-all duration-200 cursor-crosshair hover:!scale-110 relative';
     
     switch (data.type) {
       case 'input':
-        return `${baseStyle} !bg-blue-600 hover:!bg-blue-700 hover:!shadow-lg`;
+        return `${baseStyle} !bg-blue-600 hover:!bg-blue-700 hover:!shadow-lg hover:!ring-4 hover:!ring-blue-300 hover:!ring-opacity-50`;
       case 'process':
-        return `${baseStyle} !bg-green-600 hover:!bg-green-700 hover:!shadow-lg`;
+        return `${baseStyle} !bg-green-600 hover:!bg-green-700 hover:!shadow-lg hover:!ring-4 hover:!ring-green-300 hover:!ring-opacity-50`;
       case 'output':
-        return `${baseStyle} !bg-purple-600 hover:!bg-purple-700 hover:!shadow-lg`;
+        return `${baseStyle} !bg-purple-600 hover:!bg-purple-700 hover:!shadow-lg hover:!ring-4 hover:!ring-purple-300 hover:!ring-opacity-50`;
       default:
-        return `${baseStyle} !bg-gray-600 hover:!bg-gray-700 hover:!shadow-lg`;
+        return `${baseStyle} !bg-gray-600 hover:!bg-gray-700 hover:!shadow-lg hover:!ring-4 hover:!ring-gray-300 hover:!ring-opacity-50`;
     }
   };
 
@@ -144,10 +146,16 @@ const CustomNode = ({
     }
   };
 
+  // 드래그 가능한 영역을 명확히 하기 위한 스타일
+  const getDragHandleStyle = () => {
+    return 'absolute top-2 right-2 w-6 h-6 bg-gray-200 hover:bg-gray-300 rounded cursor-move flex items-center justify-center text-xs';
+  };
+
   return (
     <div 
       className={getNodeStyle()}
       onClick={() => onClick && onClick({ data, selected })}
+      onDoubleClick={() => onDoubleClick && onDoubleClick({ data, selected })}
       style={{ cursor: data.type === 'output' && data.productData ? 'pointer' : 'default' }}
       draggable
       onDragStart={handleDragStart}
@@ -160,7 +168,10 @@ const CustomNode = ({
         type='target'
         position={Position.Left}
         isConnectable={true}
-        className={getHandleStyle('target')}
+        className={`${getHandleStyle('target')} hover:!animate-pulse`}
+        style={{
+          filter: 'drop-shadow(0 0 8px rgba(59, 130, 246, 0.3))',
+        }}
       />
       
       {/* 오른쪽 핸들 (Source) */}
@@ -168,7 +179,10 @@ const CustomNode = ({
         type='source'
         position={Position.Right}
         isConnectable={true}
-        className={getHandleStyle('source')}
+        className={`${getHandleStyle('source')} hover:!animate-pulse`}
+        style={{
+          filter: 'drop-shadow(0 0 8px rgba(34, 197, 94, 0.3))',
+        }}
       />
       
       {/* 위쪽 핸들 (Target) */}
@@ -176,7 +190,10 @@ const CustomNode = ({
         type='target'
         position={Position.Top}
         isConnectable={true}
-        className={getHandleStyle('target')}
+        className={`${getHandleStyle('target')} hover:!animate-pulse`}
+        style={{
+          filter: 'drop-shadow(0 0 8px rgba(147, 51, 234, 0.3))',
+        }}
       />
       
       {/* 아래쪽 핸들 (Source) */}
@@ -184,7 +201,10 @@ const CustomNode = ({
         type='source'
         position={Position.Bottom}
         isConnectable={true}
-        className={getHandleStyle('source')}
+        className={`${getHandleStyle('source')} hover:!animate-pulse`}
+        style={{
+          filter: 'drop-shadow(0 0 8px rgba(249, 115, 22, 0.3))',
+        }}
       />
 
       <div className='flex items-center justify-between mb-2'>
@@ -197,6 +217,17 @@ const CustomNode = ({
       </div>
       <div className='font-semibold text-sm mb-1'>{data.name}</div>
       <div className='text-xs opacity-70 mb-2'>{data.description}</div>
+      
+      {/* 드래그 핸들 */}
+      <div 
+        className={getDragHandleStyle()}
+        draggable
+        onDragStart={handleDragStart}
+        onMouseDown={handleMouseDown}
+        title="드래그하여 그룹에 추가"
+      >
+        ⋮⋮
+      </div>
 
       {/* 파라미터 미리보기 */}
       {Object.keys(data.parameters).length > 0 && (
@@ -573,6 +604,12 @@ export default function ProcessManager() {
   }, [addNodes]);
 
   const handleProductNodeClick = useCallback((node: Node<ProcessStepData>) => {
+    // 단일 클릭은 선택만 처리 (상세페이지 열지 않음)
+    console.log('노드 클릭:', node.data.name);
+  }, []);
+
+  const handleProductNodeDoubleClick = useCallback((node: Node<ProcessStepData>) => {
+    // 더블클릭 시 상세페이지 열기
     if (node.data.type === 'output' && node.data.productData) {
       setSelectedProductNode(node.data.productData);
       setShowProductDetailModal(true);
@@ -581,7 +618,7 @@ export default function ProcessManager() {
 
   // nodeTypes 정의 (함수 내부에서 handleProductNodeClick 사용)
   const nodeTypes: NodeTypes = {
-    custom: (props: any) => <CustomNode {...props} onClick={handleProductNodeClick} />,
+    custom: (props: any) => <CustomNode {...props} onClick={handleProductNodeClick} onDoubleClick={handleProductNodeDoubleClick} />,
     group: (props: any) => <GroupNode {...props} />,
   };
 
@@ -620,8 +657,25 @@ export default function ProcessManager() {
   // ============================================================================
 
   const onNodeSelectionChange = useCallback((params: any) => {
-    setSelectedNodes(params.nodes.map((node: any) => node.id));
-  }, []);
+    const selectedNodeIds = params.nodes.map((node: any) => node.id);
+    setSelectedNodes(selectedNodeIds);
+    
+    // 그룹 노드가 선택되면 포함된 노드들도 선택 상태로 표시
+    const groupNodes = params.nodes.filter((node: any) => node.type === 'group');
+    if (groupNodes.length > 0) {
+      const allGroupNodeIds = groupNodes.flatMap((groupNode: any) => 
+        groupNode.data.nodes || []
+      );
+      
+      // 그룹에 포함된 노드들을 시각적으로 강조
+      setNodes(prevNodes => 
+        prevNodes.map(node => ({
+          ...node,
+          selected: selectedNodeIds.includes(node.id) || allGroupNodeIds.includes(node.id)
+        }))
+      );
+    }
+  }, [setNodes]);
 
   const createGroupFromSelectedNodes = useCallback(() => {
     if (selectedNodes.length < 2) {
@@ -669,10 +723,22 @@ export default function ProcessManager() {
     };
 
     addNodes(groupNode);
+    
+    // 그룹 생성 후 시각적 피드백
+    setTimeout(() => {
+      // 그룹 노드를 선택 상태로 만들기
+      setNodes(prevNodes => 
+        prevNodes.map(node => ({
+          ...node,
+          selected: node.id === groupNode.id
+        }))
+      );
+    }, 100);
+    
     setShowGroupModal(false);
     setGroupName('');
     setSelectedNodes([]);
-  }, [groupName, groupType, selectedNodes, nodes, addNodes]);
+  }, [groupName, groupType, selectedNodes, nodes, addNodes, setNodes]);
 
   // 그룹 크기 자동 조정 함수
   const updateGroupSize = useCallback((groupId: string) => {

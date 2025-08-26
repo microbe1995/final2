@@ -23,21 +23,21 @@ const GroupNode: React.FC<NodeProps<any>> = ({ data, selected, id }) => {
   const { setNodes } = useReactFlow();
 
   const getGroupStyle = () => {
-    const baseStyle = 'border-2 rounded-lg p-4 min-w-[200px] transition-all';
+    const baseStyle = 'border-2 rounded-lg p-4 min-w-[200px] transition-all relative';
     
     switch (data.type) {
       case 'product':
-        return `${baseStyle} bg-purple-50 border-purple-300 ${
-          selected ? 'border-purple-500 shadow-lg' : ''
-        }`;
+        return `${baseStyle} bg-purple-50/80 border-purple-300 ${
+          selected ? 'border-purple-500 shadow-lg ring-2 ring-purple-200' : ''
+        } ${isDragOver ? 'ring-2 ring-blue-500 bg-blue-50' : ''}`;
       case 'process':
-        return `${baseStyle} bg-green-50 border-green-300 ${
-          selected ? 'border-green-500 shadow-lg' : ''
-        }`;
+        return `${baseStyle} bg-green-50/80 border-green-300 ${
+          selected ? 'border-green-500 shadow-lg ring-2 ring-green-200' : ''
+        } ${isDragOver ? 'ring-2 ring-blue-500 bg-blue-50' : ''}`;
       default:
-        return `${baseStyle} bg-gray-50 border-gray-300 ${
-          selected ? 'border-gray-500 shadow-lg' : ''
-        }`;
+        return `${baseStyle} bg-gray-50/80 border-gray-300 ${
+          selected ? 'border-gray-500 shadow-lg ring-2 ring-gray-200' : ''
+        } ${isDragOver ? 'ring-2 ring-blue-500 bg-blue-50' : ''}`;
     }
   };
 
@@ -122,11 +122,17 @@ const GroupNode: React.FC<NodeProps<any>> = ({ data, selected, id }) => {
 
   return (
     <div 
-      className={`${getGroupStyle()} ${isDragOver ? 'ring-2 ring-blue-500 bg-blue-50' : ''}`}
+      className={getGroupStyle()}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
+      {/* 드롭 영역 표시 */}
+      {isDragOver && (
+        <div className="absolute inset-0 bg-blue-100/50 border-2 border-dashed border-blue-400 rounded-lg flex items-center justify-center">
+          <div className="text-blue-600 font-medium text-sm">여기에 노드를 드롭하세요</div>
+        </div>
+      )}
       {/* 그룹 헤더 */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
@@ -225,26 +231,38 @@ const GroupNode: React.FC<NodeProps<any>> = ({ data, selected, id }) => {
       <Handle
         type="target"
         position={Position.Left}
-        className="!w-4 !h-4 !bg-blue-600 !border-2 !border-white"
+        className="!w-4 !h-4 !bg-blue-600 !border-2 !border-white transition-all duration-200 cursor-crosshair hover:!scale-110 hover:!ring-4 hover:!ring-blue-300 hover:!ring-opacity-50 hover:!animate-pulse"
         isConnectable={true}
+        style={{
+          filter: 'drop-shadow(0 0 8px rgba(59, 130, 246, 0.3))',
+        }}
       />
       <Handle
         type="source"
         position={Position.Right}
-        className="!w-4 !h-4 !bg-green-600 !border-2 !border-white"
+        className="!w-4 !h-4 !bg-green-600 !border-2 !border-white transition-all duration-200 cursor-crosshair hover:!scale-110 hover:!ring-4 hover:!ring-green-300 hover:!ring-opacity-50 hover:!animate-pulse"
         isConnectable={true}
+        style={{
+          filter: 'drop-shadow(0 0 8px rgba(34, 197, 94, 0.3))',
+        }}
       />
       <Handle
         type="target"
         position={Position.Top}
-        className="!w-4 !h-4 !bg-purple-600 !border-2 !border-white"
+        className="!w-4 !h-4 !bg-purple-600 !border-2 !border-white transition-all duration-200 cursor-crosshair hover:!scale-110 hover:!ring-4 hover:!ring-purple-300 hover:!ring-opacity-50 hover:!animate-pulse"
         isConnectable={true}
+        style={{
+          filter: 'drop-shadow(0 0 8px rgba(147, 51, 234, 0.3))',
+        }}
       />
       <Handle
         type="source"
         position={Position.Bottom}
-        className="!w-4 !h-4 !bg-orange-600 !border-2 !border-white"
+        className="!w-4 !h-4 !bg-orange-600 !border-2 !border-white transition-all duration-200 cursor-crosshair hover:!scale-110 hover:!ring-4 hover:!ring-orange-300 hover:!ring-opacity-50 hover:!animate-pulse"
         isConnectable={true}
+        style={{
+          filter: 'drop-shadow(0 0 8px rgba(249, 115, 22, 0.3))',
+        }}
       />
     </div>
   );
