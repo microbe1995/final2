@@ -3,11 +3,12 @@
 import React, { memo } from 'react';
 import { Handle, Position } from '@xyflow/react';
 
-interface ProductNodeProps {
+interface ProcessNodeProps {
   data: {
     label: string;
     description?: string;
-    productData?: any; // 제품 데이터 추가
+    processType?: 'input' | 'process' | 'output';
+    processData?: any; // 공정 데이터
     [key: string]: any;
   };
   isConnectable?: boolean;
@@ -15,7 +16,7 @@ interface ProductNodeProps {
   targetPosition?: Position | Position[]; // 입력 핸들 위치(들)
   sourcePosition?: Position | Position[]; // 출력 핸들 위치(들)
   // 🎨 스타일 커스터마이징
-  variant?: 'default' | 'primary' | 'success' | 'warning' | 'danger' | 'product'; // product variant 추가
+  variant?: 'default' | 'primary' | 'success' | 'warning' | 'danger';
   size?: 'sm' | 'md' | 'lg';
   showHandles?: boolean; // 핸들 표시 여부
   // 🎯 이벤트 핸들러
@@ -24,14 +25,13 @@ interface ProductNodeProps {
   selected?: boolean;
 }
 
-// 🎨 스타일 변형
+// 🎨 스타일 변형 (공정 노드용)
 const variantStyles = {
   default: 'bg-white border-gray-800 text-gray-800',
   primary: 'bg-blue-50 border-blue-600 text-blue-900',
   success: 'bg-green-50 border-green-600 text-green-900',
   warning: 'bg-yellow-50 border-yellow-600 text-yellow-900',
   danger: 'bg-red-50 border-red-600 text-red-900',
-  product: 'bg-purple-50 border-purple-300 text-purple-800', // 제품 노드 스타일 추가
 };
 
 const sizeStyles = {
@@ -40,7 +40,7 @@ const sizeStyles = {
   lg: 'px-6 py-4 min-w-[160px] text-base',
 };
 
-function ProductNode({
+function ProcessNode({
   data,
   isConnectable = true,
   targetPosition,
@@ -51,7 +51,7 @@ function ProductNode({
   onClick,
   onDoubleClick,
   selected,
-}: ProductNodeProps) {
+}: ProcessNodeProps) {
   // data에서 props 추출 (React Flow 패턴)
   const finalVariant = variant || data.variant || 'default';
   const finalSize = size || data.size || 'md';
@@ -73,7 +73,7 @@ function ProductNode({
     hover:scale-105 cursor-pointer
   `.trim();
 
-  // 🎯 핸들 스타일 (variant에 따라 색상 변경)
+  // 🎯 핸들 스타일 (공정 노드용)
   const getHandleStyle = (type: 'source' | 'target') => {
     const baseStyle = '!w-4 !h-4 !border-2 !border-white transition-all duration-200 cursor-crosshair hover:!scale-110 hover:!shadow-lg hover:!ring-4 hover:!ring-opacity-50 pointer-events-auto';
 
@@ -86,8 +86,6 @@ function ProductNode({
         return `${baseStyle} !bg-yellow-600 hover:!bg-yellow-700 hover:!ring-yellow-300`;
       case 'danger':
         return `${baseStyle} !bg-red-600 hover:!bg-red-700 hover:!ring-red-300`;
-      case 'product':
-        return `${baseStyle} !bg-purple-600 hover:!bg-purple-700 hover:!ring-purple-300`;
       default:
         return `${baseStyle} !bg-gray-600 hover:!bg-gray-700 hover:!ring-gray-300`;
     }
@@ -102,12 +100,26 @@ function ProductNode({
     if (onDoubleClick) onDoubleClick({ data, selected });
   };
 
+  // 🎯 공정 타입에 따른 아이콘
+  const getProcessIcon = () => {
+    const processType = data.processType || 'process';
+    switch (processType) {
+      case 'input':
+        return '📥';
+      case 'output':
+        return '📤';
+      case 'process':
+      default:
+        return '⚙️';
+    }
+  };
+
   return (
     <div 
       className={`${nodeClasses} ${selected ? 'border-2 border-opacity-100 shadow-lg' : ''}`}
       onClick={handleClick}
       onDoubleClick={handleDoubleClick}
-      style={{ cursor: data.productData ? 'pointer' : 'default' }}
+      style={{ cursor: 'pointer' }}
     >
       {/* 🎯 4방향 모든 핸들 렌더링 (자유로운 연결을 위해) */}
       {finalShowHandles &&
@@ -141,7 +153,7 @@ function ProductNode({
         <div
           className={`font-semibold mb-1 ${finalSize === 'lg' ? 'text-lg' : finalSize === 'sm' ? 'text-xs' : 'text-sm'}`}
         >
-          {finalVariant === 'product' ? '📦 ' : ''}{data.label}
+          {getProcessIcon()} {data.label}
         </div>
         {data.description && (
           <div
@@ -151,17 +163,19 @@ function ProductNode({
           </div>
         )}
 
-        {/* 🎯 제품 정보 미리보기 */}
-        {data.productData && finalVariant === 'product' && (
+        {/* 🎯 공정 정보 미리보기 */}
+        {data.processData && (
           <div className='text-xs opacity-60 mt-2'>
             <div className='flex justify-between'>
-              <span>생산량:</span>
-              <span className='font-medium'>{data.productData.production_qty || 0}</span>
+              <span>타입:</span>
+              <span className='font-medium'>{data.processType || 'process'}</span>
             </div>
-            <div className='flex justify-between'>
-              <span>수출량:</span>
-              <span className='font-medium'>{data.productData.export_qty || 0}</span>
-            </div>
+            {data.processData.efficiency && (
+              <div className='flex justify-between'>
+                <span>효율:</span>
+                <span className='font-medium'>{data.processData.efficiency}%</span>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -169,5 +183,5 @@ function ProductNode({
   );
 }
 
-export { ProductNode };
-export default memo(ProductNode);
+export { ProcessNode };
+export default memo(ProcessNode);

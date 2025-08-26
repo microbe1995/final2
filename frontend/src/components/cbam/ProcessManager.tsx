@@ -18,6 +18,7 @@ import ProcessStepModal from './ProcessStepModal';
 import GroupNode from './GroupNode';
 import SourceStreamEdge from './SourceStreamEdge';
 import ProductNode from '@/components/atomic/atoms/ProductNode';
+import NodeWrapper from '@/components/atomic/atoms/NodeWrapper';
 import axiosClient from '@/lib/axiosClient';
 import {
   ReactFlow,
@@ -69,6 +70,23 @@ interface ProcessFlow {
 // ============================================================================
 
 // nodeTypes는 함수 내부에서 정의됩니다
+
+// ============================================================================
+// 🎯 NodeWrapper를 사용하는 커스텀 노드 컴포넌트
+// ============================================================================
+
+const WrappedNode: React.FC<any> = ({ data, ...props }) => {
+  return (
+    <NodeWrapper
+      top={data.wrapperTop}
+      left={data.wrapperLeft}
+      width={data.wrapperWidth}
+      height={data.wrapperHeight}
+    >
+      <ProductNode data={data} {...props} />
+    </NodeWrapper>
+  );
+};
 
 // ============================================================================
 // 🎯 커스텀 엣지 타입 정의
@@ -157,6 +175,15 @@ export default function ProcessManager() {
     unit: 't/h',
     carbonIntensity: 2.5,
     description: ''
+  });
+
+  // NodeWrapper 관련 상태
+  const [showWrapperModal, setShowWrapperModal] = useState(false);
+  const [wrapperSettings, setWrapperSettings] = useState({
+    top: 100,
+    left: 200,
+    width: 150,
+    height: 80
   });
 
   // React Flow 상태 관리
@@ -390,11 +417,8 @@ export default function ProcessManager() {
       data: {
         label: product.name,
         description: `제품: ${product.name}`,
-        variant: 'product', // ProcessNode의 product variant 사용
+        variant: 'product', // ProductNode의 product variant 사용
         productData: product, // 제품 상세 데이터 저장
-        // 4방향 핸들 설정
-        targetPosition: [Position.Left, Position.Top],
-        sourcePosition: [Position.Right, Position.Bottom],
         // 기존 데이터도 유지 (호환성)
         name: product.name,
         type: 'output',
@@ -418,6 +442,44 @@ export default function ProcessManager() {
     setSelectedProduct(null);
   }, [addNodes]);
 
+  // NodeWrapper를 사용하는 노드 추가 함수
+  const addWrappedNode = useCallback(() => {
+    const wrappedNode: Node<any> = {
+      id: `wrapped-${Date.now()}`,
+      type: 'wrapped',
+      position: { x: 0, y: 0 }, // NodeWrapper가 위치를 제어하므로 (0,0)으로 설정
+      data: {
+        label: 'NodeWrapper 테스트',
+        description: 'NodeWrapper로 감싸진 노드',
+        variant: 'primary',
+        productData: {
+          name: '테스트 제품',
+          production_qty: 100,
+          export_qty: 50
+        },
+        // NodeWrapper 설정
+        wrapperTop: wrapperSettings.top,
+        wrapperLeft: wrapperSettings.left,
+        wrapperWidth: wrapperSettings.width,
+        wrapperHeight: wrapperSettings.height,
+        name: 'NodeWrapper 테스트',
+        type: 'output',
+        parameters: {
+          test_param: 'NodeWrapper 기능 테스트'
+        },
+        status: 'active',
+      },
+    };
+
+    addNodes(wrappedNode);
+    console.log('NodeWrapper 노드 추가됨:', wrappedNode);
+  }, [addNodes, wrapperSettings]);
+
+  // NodeWrapper 설정 모달 열기
+  const openWrapperModal = useCallback(() => {
+    setShowWrapperModal(true);
+  }, []);
+
   const handleProductNodeClick = useCallback((node: Node<ProcessStepData>) => {
     // 단일 클릭은 선택만 처리 (상세페이지 열지 않음)
     console.log('노드 클릭:', node.data.name);
@@ -435,6 +497,7 @@ export default function ProcessManager() {
   const nodeTypes: NodeTypes = {
     custom: (props: any) => <ProductNode {...props} onClick={handleProductNodeClick} onDoubleClick={handleProductNodeDoubleClick} />,
     group: (props: any) => <GroupNode {...props} />,
+    wrapped: (props: any) => <WrappedNode {...props} onClick={handleProductNodeClick} onDoubleClick={handleProductNodeDoubleClick} />,
   };
 
 
@@ -846,6 +909,14 @@ export default function ProcessManager() {
                >
                  <Plus className='h-4 w-4' />
                  제품 노드
+               </Button>
+
+               <Button
+                 onClick={openWrapperModal}
+                 className='flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700'
+               >
+                 <Eye className='h-4 w-4' />
+                 NodeWrapper 테스트
                </Button>
 
                {selectedNodes.length >= 2 && (
@@ -1353,6 +1424,109 @@ export default function ProcessManager() {
                     className='flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700'
                   >
                     저장
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* NodeWrapper 설정 모달 */}
+        {showWrapperModal && (
+          <div className='fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50'>
+            <div className='bg-white rounded-lg p-6 w-full max-w-md'>
+              <div className='flex items-center justify-between mb-4'>
+                <h2 className='text-xl font-semibold text-gray-900'>NodeWrapper 설정</h2>
+                <button
+                  onClick={() => setShowWrapperModal(false)}
+                  className='text-gray-400 hover:text-gray-600'
+                >
+                  ✕
+                </button>
+              </div>
+              
+              <div className='space-y-4'>
+                <div className='grid grid-cols-2 gap-4'>
+                  <div>
+                    <label className='block text-sm font-medium text-gray-700 mb-2'>
+                      Top (위치)
+                    </label>
+                    <input
+                      type='number'
+                      value={wrapperSettings.top}
+                      onChange={(e) => setWrapperSettings(prev => ({ ...prev, top: Number(e.target.value) }))}
+                      className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+                      placeholder='100'
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className='block text-sm font-medium text-gray-700 mb-2'>
+                      Left (위치)
+                    </label>
+                    <input
+                      type='number'
+                      value={wrapperSettings.left}
+                      onChange={(e) => setWrapperSettings(prev => ({ ...prev, left: Number(e.target.value) }))}
+                      className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+                      placeholder='200'
+                    />
+                  </div>
+                </div>
+                
+                <div className='grid grid-cols-2 gap-4'>
+                  <div>
+                    <label className='block text-sm font-medium text-gray-700 mb-2'>
+                      Width (너비)
+                    </label>
+                    <input
+                      type='number'
+                      value={wrapperSettings.width}
+                      onChange={(e) => setWrapperSettings(prev => ({ ...prev, width: Number(e.target.value) }))}
+                      className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+                      placeholder='150'
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className='block text-sm font-medium text-gray-700 mb-2'>
+                      Height (높이)
+                    </label>
+                    <input
+                      type='number'
+                      value={wrapperSettings.height}
+                      onChange={(e) => setWrapperSettings(prev => ({ ...prev, height: Number(e.target.value) }))}
+                      className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+                      placeholder='80'
+                    />
+                  </div>
+                </div>
+
+                <div className='bg-blue-50 p-3 rounded-lg'>
+                  <h3 className='font-medium text-blue-900 mb-2'>NodeWrapper 기능 설명</h3>
+                  <div className='text-sm text-blue-800 space-y-1'>
+                    <div>• <strong>Top/Left:</strong> 노드의 절대 위치 지정</div>
+                    <div>• <strong>Width/Height:</strong> 노드의 크기 제어</div>
+                    <div>• <strong>Z-Index:</strong> 다른 요소들 위에 표시</div>
+                    <div>• <strong>절대 위치:</strong> ReactFlow 캔버스와 독립적인 배치</div>
+                  </div>
+                </div>
+                
+                <div className='flex gap-3 pt-4'>
+                  <button
+                    onClick={() => setShowWrapperModal(false)}
+                    className='flex-1 px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50'
+                  >
+                    취소
+                  </button>
+                  <button
+                    onClick={() => {
+                      addWrappedNode();
+                      setShowWrapperModal(false);
+                    }}
+                    className='flex-1 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700'
+                  >
+                    NodeWrapper 노드 추가
                   </button>
                 </div>
               </div>
