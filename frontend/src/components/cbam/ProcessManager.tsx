@@ -15,6 +15,7 @@ import {
   Unlink,
 } from 'lucide-react';
 import ProcessStepModal from './ProcessStepModal';
+import axiosClient from '@/lib/axiosClient';
 import {
   ReactFlow,
   Background,
@@ -67,9 +68,11 @@ interface ProcessFlow {
 const CustomNode = ({
   data,
   selected,
+  onClick,
 }: {
   data: ProcessStepData;
   selected?: boolean;
+  onClick?: (node: any) => void;
 }) => {
   const getNodeStyle = () => {
     const baseStyle = 'p-3 rounded-lg border-2 min-w-[150px] transition-all relative';
@@ -123,7 +126,11 @@ const CustomNode = ({
   };
 
   return (
-    <div className={getNodeStyle()}>
+    <div 
+      className={getNodeStyle()}
+      onClick={() => onClick && onClick({ data, selected })}
+      style={{ cursor: data.type === 'output' && data.productData ? 'pointer' : 'default' }}
+    >
       {/* 🎯 Target 핸들 (입력) */}
       {data.type !== 'input' && (
         <Handle
@@ -175,9 +182,7 @@ const CustomNode = ({
   );
 };
 
-const nodeTypes: NodeTypes = {
-  custom: CustomNode,
-};
+// nodeTypes는 함수 내부에서 정의됩니다
 
 // ============================================================================
 // 🎯 커스텀 엣지 타입 정의
@@ -241,6 +246,14 @@ export default function ProcessManager() {
   );
   const [isConnecting, setIsConnecting] = useState(false);
   const [connectionStart, setConnectionStart] = useState<string | null>(null);
+
+  // 제품 노드 관련 상태
+  const [showProductModal, setShowProductModal] = useState(false);
+  const [products, setProducts] = useState<any[]>([]);
+  const [selectedProduct, setSelectedProduct] = useState<any>(null);
+  const [isLoadingProducts, setIsLoadingProducts] = useState(false);
+  const [showProductDetailModal, setShowProductDetailModal] = useState(false);
+  const [selectedProductNode, setSelectedProductNode] = useState<any>(null);
 
   // React Flow 상태 관리
   const [nodes, setNodes, onNodesChange] = useNodesState<any>([]);
@@ -493,6 +506,70 @@ export default function ProcessManager() {
   );
 
   // ============================================================================
+  // 🎯 제품 노드 관련 함수들
+  // ============================================================================
+
+  const fetchProducts = useCallback(async () => {
+    setIsLoadingProducts(true);
+    try {
+      const response = await axiosClient.get('/api/v1/cbam/product');
+      setProducts(response.data.products || []);
+    } catch (error) {
+      console.error('제품 데이터 가져오기 오류:', error);
+      setProducts([]);
+    } finally {
+      setIsLoadingProducts(false);
+    }
+  }, []);
+
+  const addProductNode = useCallback(async () => {
+    await fetchProducts();
+    setShowProductModal(true);
+  }, [fetchProducts]);
+
+  const handleProductSelect = useCallback((product: any) => {
+    const newNode: Node<ProcessStepData> = {
+      id: `product-${Date.now()}`,
+      type: 'custom',
+      position: { x: Math.random() * 400 + 100, y: Math.random() * 300 + 100 },
+      data: {
+        name: product.name,
+        type: 'output',
+        description: `제품: ${product.name}`,
+        parameters: {
+          product_id: product.product_id,
+          cn_code: product.cn_code,
+          production_qty: product.production_qty,
+          sales_qty: product.sales_qty,
+          export_qty: product.export_qty,
+          inventory_qty: product.inventory_qty,
+          defect_rate: product.defect_rate,
+          period_start: product.period_start,
+          period_end: product.period_end,
+        },
+        status: 'active',
+        productData: product, // 제품 상세 데이터 저장
+      },
+    };
+
+    addNodes(newNode);
+    setShowProductModal(false);
+    setSelectedProduct(null);
+  }, [addNodes]);
+
+  const handleProductNodeClick = useCallback((node: Node<ProcessStepData>) => {
+    if (node.data.type === 'output' && node.data.productData) {
+      setSelectedProductNode(node.data.productData);
+      setShowProductDetailModal(true);
+    }
+  }, []);
+
+  // nodeTypes 정의 (함수 내부에서 handleProductNodeClick 사용)
+  const nodeTypes: NodeTypes = {
+    custom: (props: any) => <CustomNode {...props} onClick={handleProductNodeClick} />,
+  };
+
+  // ============================================================================
   // 🎯 새 노드 추가
   // ============================================================================
 
@@ -700,6 +777,13 @@ export default function ProcessManager() {
                 <Plus className='h-4 w-4' />
                 노드 추가
               </Button>
+              <Button
+                onClick={addProductNode}
+                className='flex items-center gap-2 bg-purple-600 hover:bg-purple-700'
+              >
+                <Plus className='h-4 w-4' />
+                제품 노드
+              </Button>
             </div>
           </div>
 
@@ -880,6 +964,135 @@ export default function ProcessManager() {
         node={editingNode}
         onSave={saveNode}
       />
+
+      {/* 제품 선택 모달 */}
+      {showProductModal && (
+        <div className='fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50'>
+          <div className='bg-white rounded-lg p-6 w-full max-w-2xl max-h-[80vh] overflow-y-auto'>
+            <div className='flex items-center justify-between mb-4'>
+              <h2 className='text-xl font-semibold text-gray-900'>제품 선택</h2>
+              <button
+                onClick={() => setShowProductModal(false)}
+                className='text-gray-400 hover:text-gray-600'
+              >
+                ✕
+              </button>
+            </div>
+            
+            {isLoadingProducts ? (
+              <div className='text-center py-8'>
+                <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto'></div>
+                <p className='mt-2 text-gray-600'>제품 데이터를 불러오는 중...</p>
+              </div>
+            ) : products.length === 0 ? (
+              <div className='text-center py-8'>
+                <p className='text-gray-600'>등록된 제품이 없습니다.</p>
+              </div>
+            ) : (
+              <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+                {products.map((product) => (
+                  <div
+                    key={product.product_id}
+                    onClick={() => handleProductSelect(product)}
+                    className='p-4 border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 cursor-pointer transition-colors'
+                  >
+                    <h3 className='font-semibold text-gray-900 mb-2'>{product.name}</h3>
+                    <div className='text-sm text-gray-600 space-y-1'>
+                      <p><span className='font-medium'>CN 코드:</span> {product.cn_code || 'N/A'}</p>
+                      <p><span className='font-medium'>생산량:</span> {product.production_qty || 0}</p>
+                      <p><span className='font-medium'>판매량:</span> {product.sales_qty || 0}</p>
+                      <p><span className='font-medium'>수출량:</span> {product.export_qty || 0}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* 제품 상세 정보 모달 */}
+      {showProductDetailModal && selectedProductNode && (
+        <div className='fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50'>
+          <div className='bg-white rounded-lg p-6 w-full max-w-2xl max-h-[80vh] overflow-y-auto'>
+            <div className='flex items-center justify-between mb-4'>
+              <h2 className='text-xl font-semibold text-gray-900'>제품 상세 정보</h2>
+              <button
+                onClick={() => setShowProductDetailModal(false)}
+                className='text-gray-400 hover:text-gray-600'
+              >
+                ✕
+              </button>
+            </div>
+            
+            <div className='space-y-4'>
+              <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+                <div>
+                  <h3 className='font-semibold text-gray-900 mb-2'>기본 정보</h3>
+                  <div className='space-y-2 text-sm'>
+                    <div className='flex justify-between'>
+                      <span className='text-gray-600'>제품명:</span>
+                      <span className='font-medium'>{selectedProductNode.name}</span>
+                    </div>
+                    <div className='flex justify-between'>
+                      <span className='text-gray-600'>제품 ID:</span>
+                      <span className='font-medium'>{selectedProductNode.product_id}</span>
+                    </div>
+                    <div className='flex justify-between'>
+                      <span className='text-gray-600'>CN 코드:</span>
+                      <span className='font-medium'>{selectedProductNode.cn_code || 'N/A'}</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div>
+                  <h3 className='font-semibold text-gray-900 mb-2'>기간 정보</h3>
+                  <div className='space-y-2 text-sm'>
+                    <div className='flex justify-between'>
+                      <span className='text-gray-600'>시작일:</span>
+                      <span className='font-medium'>{selectedProductNode.period_start || 'N/A'}</span>
+                    </div>
+                    <div className='flex justify-between'>
+                      <span className='text-gray-600'>종료일:</span>
+                      <span className='font-medium'>{selectedProductNode.period_end || 'N/A'}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div>
+                <h3 className='font-semibold text-gray-900 mb-2'>수량 정보</h3>
+                <div className='grid grid-cols-2 md:grid-cols-4 gap-4'>
+                  <div className='text-center p-3 bg-blue-50 rounded-lg'>
+                    <div className='text-2xl font-bold text-blue-600'>{selectedProductNode.production_qty || 0}</div>
+                    <div className='text-sm text-gray-600'>생산량</div>
+                  </div>
+                  <div className='text-center p-3 bg-green-50 rounded-lg'>
+                    <div className='text-2xl font-bold text-green-600'>{selectedProductNode.sales_qty || 0}</div>
+                    <div className='text-sm text-gray-600'>판매량</div>
+                  </div>
+                  <div className='text-center p-3 bg-purple-50 rounded-lg'>
+                    <div className='text-2xl font-bold text-purple-600'>{selectedProductNode.export_qty || 0}</div>
+                    <div className='text-sm text-gray-600'>수출량</div>
+                  </div>
+                  <div className='text-center p-3 bg-orange-50 rounded-lg'>
+                    <div className='text-2xl font-bold text-orange-600'>{selectedProductNode.inventory_qty || 0}</div>
+                    <div className='text-sm text-gray-600'>재고량</div>
+                  </div>
+                </div>
+              </div>
+              
+              <div>
+                <h3 className='font-semibold text-gray-900 mb-2'>품질 정보</h3>
+                <div className='text-center p-4 bg-red-50 rounded-lg'>
+                  <div className='text-2xl font-bold text-red-600'>{(selectedProductNode.defect_rate * 100 || 0).toFixed(2)}%</div>
+                  <div className='text-sm text-gray-600'>불량률</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
