@@ -1,0 +1,21 @@
+  CBAM[m
+  CBAM_back[m
+  cbam-service-only[m
+* [32mmain[m
+  [31mremotes/greensteel/CBAM[m
+  [31mremotes/greensteel/CBAM_back[m
+  [31mremotes/greensteel/feature/ai-material-correction-system[m
+  [31mremotes/greensteel/feature/data-collection-system[m
+  [31mremotes/greensteel/feature/prettier-formatting-fix[m
+  [31mremotes/greensteel/lca-frontend-update[m
+  [31mremotes/greensteel/main[m
+  [31mremotes/greensteel/structure_deploy[m
+  [31mremotes/origin/CBAM[m
+  [31mremotes/origin/CBAM_back[m
+  [31mremotes/origin/HEAD[m -> origin/main
+  [31mremotes/origin/feature/ai-material-correction-system[m
+  [31mremotes/origin/feature/data-collection-system[m
+  [31mremotes/origin/feature/prettier-formatting-fix[m
+  [31mremotes/origin/lca-frontend-update[m
+  [31mremotes/origin/main[m
+  [31mremotes/origin/structure_deploy[m

@@ -32,6 +32,8 @@ import {
   useReactFlow,
   ConnectionMode,
   MarkerType,
+  Handle,
+  Position,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
@@ -70,7 +72,7 @@ const CustomNode = ({
   selected?: boolean;
 }) => {
   const getNodeStyle = () => {
-    const baseStyle = 'p-3 rounded-lg border-2 min-w-[150px] transition-all';
+    const baseStyle = 'p-3 rounded-lg border-2 min-w-[150px] transition-all relative';
 
     switch (data.type) {
       case 'input':
@@ -92,6 +94,21 @@ const CustomNode = ({
     }
   };
 
+  const getHandleStyle = (type: 'source' | 'target') => {
+    const baseStyle = '!w-3 !h-3 !border-2 !border-white transition-colors';
+    
+    switch (data.type) {
+      case 'input':
+        return `${baseStyle} !bg-blue-600 hover:!bg-blue-700`;
+      case 'process':
+        return `${baseStyle} !bg-green-600 hover:!bg-green-700`;
+      case 'output':
+        return `${baseStyle} !bg-purple-600 hover:!bg-purple-700`;
+      default:
+        return `${baseStyle} !bg-gray-600 hover:!bg-gray-700`;
+    }
+  };
+
   const getStatusColor = () => {
     switch (data.status) {
       case 'active':
@@ -107,6 +124,16 @@ const CustomNode = ({
 
   return (
     <div className={getNodeStyle()}>
+      {/* 🎯 Target 핸들 (입력) */}
+      {data.type !== 'input' && (
+        <Handle
+          type='target'
+          position={Position.Left}
+          isConnectable={true}
+          className={getHandleStyle('target')}
+        />
+      )}
+
       <div className='flex items-center justify-between mb-2'>
         <div className='flex items-center gap-2'>
           <span className='text-xs font-medium uppercase opacity-70'>
@@ -133,6 +160,16 @@ const CustomNode = ({
             <div className='text-center opacity-50'>...</div>
           )}
         </div>
+      )}
+
+      {/* 🎯 Source 핸들 (출력) */}
+      {data.type !== 'output' && (
+        <Handle
+          type='source'
+          position={Position.Right}
+          isConnectable={true}
+          className={getHandleStyle('source')}
+        />
       )}
     </div>
   );
@@ -511,19 +548,60 @@ export default function ProcessManager() {
   // ============================================================================
 
   const onConnect = useCallback(
-    (params: Connection) => {
+    async (params: Connection) => {
       if (params.source && params.target) {
-        const newEdge: Edge = {
-          id: `e${params.source}-${params.target}`,
-          source: params.source,
-          target: params.target,
-          type: 'custom',
-          markerEnd: { type: MarkerType.ArrowClosed },
-        };
-        addEdges(newEdge);
+        try {
+          console.log('🔗 연결 시도:', params);
+          
+          // 로컬 상태에 즉시 추가 (사용자 경험 향상)
+          const newEdge: Edge = {
+            id: `e${params.source}-${params.target}`,
+            source: params.source,
+            target: params.target,
+            type: 'custom',
+            markerEnd: { type: MarkerType.ArrowClosed },
+            data: {
+              label: '연결',
+              processType: 'standard'
+            }
+          };
+          
+          addEdges(newEdge);
+          
+          // 백엔드 API 호출 (선택적)
+          if (selectedFlow) {
+            try {
+              const response = await fetch(`/api/v1/cbam/flow/${selectedFlow.id}/connect`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  source: params.source,
+                  target: params.target,
+                  sourceHandle: params.sourceHandle,
+                  targetHandle: params.targetHandle
+                })
+              });
+              
+              if (response.ok) {
+                const result = await response.json();
+                console.log('✅ 백엔드 연결 성공:', result);
+              } else {
+                console.warn('⚠️ 백엔드 연결 실패, 로컬 상태만 유지');
+              }
+            } catch (apiError) {
+              console.warn('⚠️ 백엔드 API 호출 실패, 로컬 상태만 유지:', apiError);
+            }
+          }
+          
+          console.log('✅ 연결 완료:', newEdge.id);
+        } catch (error) {
+          console.error('❌ 연결 실패:', error);
+        }
       }
     },
-    [addEdges]
+    [addEdges, selectedFlow]
   );
 
   const onConnectStart = useCallback((event: any, params: any) => {
@@ -683,9 +761,15 @@ export default function ProcessManager() {
                 className='bg-white/90 backdrop-blur-sm rounded-lg p-3 shadow-lg'
               >
                 <div className='text-sm text-gray-600'>
-                  <div>💡 노드를 드래그하여 연결하세요</div>
+                  <div>💡 노드의 핸들을 드래그하여 연결하세요</div>
+                  <div>🔗 파란색 핸들: 입력, 초록색 핸들: 출력</div>
                   <div>🔄 연결선을 드래그하여 재연결</div>
                   <div>🗑️ Delete 키로 선택된 요소 삭제</div>
+                  {isConnecting && (
+                    <div className='text-blue-600 font-medium mt-2'>
+                      🔗 연결 중... {connectionStart && `(${connectionStart})`}
+                    </div>
+                  )}
                 </div>
               </Panel>
             </ReactFlow>
