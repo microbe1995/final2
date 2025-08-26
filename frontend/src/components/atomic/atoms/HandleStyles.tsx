@@ -73,32 +73,26 @@ export const getHandleStyleObject = (type: HandleType, position: Position) => {
 // 🎯 4방향 핸들 렌더링 함수
 export const renderFourDirectionHandles = (
   isConnectable: boolean = true,
-  onMouseDown?: (e: React.MouseEvent) => void,
-  onClick?: (e: React.MouseEvent) => void
 ) => {
   const positions = [Position.Left, Position.Right, Position.Top, Position.Bottom];
   
   return positions.map((position) => (
     <React.Fragment key={`handles-${position}`}>
-      {/* Target 핸들 (입력) */}
       <Handle
         type='target'
         position={position}
+        id={`${position}-target`}
         isConnectable={isConnectable}
         className={getHandleStyle('target', position)}
         style={getHandleStyleObject('target', position)}
-        onMouseDown={onMouseDown}
-        onClick={onClick}
       />
-      {/* Source 핸들 (출력) */}
       <Handle
         type='source'
         position={position}
+        id={`${position}-source`}
         isConnectable={isConnectable}
         className={getHandleStyle('source', position)}
         style={getHandleStyleObject('source', position)}
-        onMouseDown={onMouseDown}
-        onClick={onClick}
       />
     </React.Fragment>
   ));

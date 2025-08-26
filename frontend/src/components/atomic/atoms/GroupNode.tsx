@@ -40,11 +40,7 @@ function GroupNode({
       }}
     >
       {/* 그룹 노드 자체의 핸들 (외부 연결용) */}
-      {renderFourDirectionHandles(
-        isConnectable,
-        (e) => e.stopPropagation(),
-        (e) => e.stopPropagation()
-      )}
+      {renderFourDirectionHandles(isConnectable)}
 
       {/* 그룹 헤더 */}
       <div className="absolute top-0 left-0 right-0 bg-gray-100 px-3 py-2 rounded-t-lg border-b border-gray-300">

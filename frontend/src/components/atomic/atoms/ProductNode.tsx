@@ -103,80 +103,72 @@ function ProductNode({
           <Handle
             type="target"
             position={Position.Left}
+            id="left-target"
             isConnectable={isConnectable}
             className="!w-4 !h-4 !bg-blue-600 !border-2 !border-white hover:!bg-blue-700 hover:!scale-110 transition-all duration-200 cursor-crosshair"
             style={{ filter: 'drop-shadow(0 0 8px rgba(59, 130, 246, 0.3))' }}
-            onMouseDown={handleMouseDown}
-            onClick={handleClickEvent}
           />
           <Handle
             type="source"
             position={Position.Left}
+            id="left-source"
             isConnectable={isConnectable}
             className="!w-4 !h-4 !bg-green-600 !border-2 !border-white hover:!bg-green-700 hover:!scale-110 transition-all duration-200 cursor-crosshair"
             style={{ filter: 'drop-shadow(0 0 8px rgba(34, 197, 94, 0.3))' }}
-            onMouseDown={handleMouseDown}
-            onClick={handleClickEvent}
           />
 
           {/* 오른쪽 핸들들 */}
           <Handle
             type="target"
             position={Position.Right}
+            id="right-target"
             isConnectable={isConnectable}
             className="!w-4 !h-4 !bg-blue-600 !border-2 !border-white hover:!bg-blue-700 hover:!scale-110 transition-all duration-200 cursor-crosshair"
             style={{ filter: 'drop-shadow(0 0 8px rgba(59, 130, 246, 0.3))' }}
-            onMouseDown={handleMouseDown}
-            onClick={handleClickEvent}
           />
           <Handle
             type="source"
             position={Position.Right}
+            id="right-source"
             isConnectable={isConnectable}
             className="!w-4 !h-4 !bg-green-600 !border-2 !border-white hover:!bg-green-700 hover:!scale-110 transition-all duration-200 cursor-crosshair"
             style={{ filter: 'drop-shadow(0 0 8px rgba(34, 197, 94, 0.3))' }}
-            onMouseDown={handleMouseDown}
-            onClick={handleClickEvent}
           />
 
           {/* 위쪽 핸들들 */}
           <Handle
             type="target"
             position={Position.Top}
+            id="top-target"
             isConnectable={isConnectable}
             className="!w-4 !h-4 !bg-blue-600 !border-2 !border-white hover:!bg-blue-700 hover:!scale-110 transition-all duration-200 cursor-crosshair"
             style={{ filter: 'drop-shadow(0 0 8px rgba(59, 130, 246, 0.3))' }}
-            onMouseDown={handleMouseDown}
-            onClick={handleClickEvent}
           />
           <Handle
             type="source"
             position={Position.Top}
+            id="top-source"
             isConnectable={isConnectable}
             className="!w-4 !h-4 !bg-green-600 !border-2 !border-white hover:!bg-green-700 hover:!scale-110 transition-all duration-200 cursor-crosshair"
             style={{ filter: 'drop-shadow(0 0 8px rgba(34, 197, 94, 0.3))' }}
-            onMouseDown={handleMouseDown}
-            onClick={handleClickEvent}
           />
 
           {/* 아래쪽 핸들들 */}
           <Handle
             type="target"
             position={Position.Bottom}
+            id="bottom-target"
             isConnectable={isConnectable}
             className="!w-4 !h-4 !bg-blue-600 !border-2 !border-white hover:!bg-blue-700 hover:!scale-110 transition-all duration-200 cursor-crosshair"
             style={{ filter: 'drop-shadow(0 0 8px rgba(59, 130, 246, 0.3))' }}
-            onMouseDown={handleMouseDown}
-            onClick={handleClickEvent}
           />
           <Handle
             type="source"
             position={Position.Bottom}
+            id="bottom-source"
             isConnectable={isConnectable}
             className="!w-4 !h-4 !bg-green-600 !border-2 !border-white hover:!bg-green-700 hover:!scale-110 transition-all duration-200 cursor-crosshair"
             style={{ filter: 'drop-shadow(0 0 8px rgba(34, 197, 94, 0.3))' }}
-            onMouseDown={handleMouseDown}
-            onClick={handleClickEvent}
           />
         </>
       )}

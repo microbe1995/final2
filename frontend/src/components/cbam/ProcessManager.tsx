@@ -495,35 +495,37 @@ export default function ProcessManager() {
 
   const onConnect = useCallback(
     async (params: Connection) => {
-             if (params.source && params.target) {
-         try {
+      if (params.source && params.target) {
+        try {
           
           // 소스와 타겟 노드 확인
           const sourceNode = nodes.find(node => node.id === params.source);
           const targetNode = nodes.find(node => node.id === params.target);
           
-                     // 노드 간 연결 확인
-           const isNodeToNode = sourceNode && targetNode;
+          // 노드 간 연결 확인
+          const isNodeToNode = sourceNode && targetNode;
           
-                     // 엣지 타입 결정 (모든 연결을 custom으로 처리)
-           const edgeType = 'custom';
-           
-           // 연결 데이터 생성
-           const connectionData = {
-             label: '연결',
-             processType: 'standard',
-             description: `${sourceNode?.data?.label || '노드'} → ${targetNode?.data?.label || '노드'}`
-           };
+          // 엣지 타입 결정 (모든 연결을 custom으로 처리)
+          const edgeType = 'custom';
           
-                     // 로컬 상태에 즉시 추가 (사용자 경험 향상)
-           const newEdge: Edge = {
-             id: `e${params.source}-${params.target}`,
-             source: params.source,
-             target: params.target,
-             type: edgeType,
-             markerEnd: { type: MarkerType.ArrowClosed },
-             data: connectionData
-           };
+          // 연결 데이터 생성
+          const connectionData = {
+            label: '연결',
+            processType: 'standard',
+            description: `${params.sourceHandle || 'source'} → ${params.targetHandle || 'target'}`
+          };
+          
+          // 로컬 상태에 즉시 추가 (사용자 경험 향상)
+          const newEdge: Edge = {
+            id: `e${params.source}-${params.target}-${params.sourceHandle}-${params.targetHandle}`,
+            source: params.source,
+            target: params.target,
+            sourceHandle: params.sourceHandle,   // ✅ 핸들 id 저장
+            targetHandle: params.targetHandle,   // ✅ 핸들 id 저장
+            type: edgeType,
+            markerEnd: { type: MarkerType.ArrowClosed },
+            data: connectionData
+          };
           
           addEdges(newEdge);
           
