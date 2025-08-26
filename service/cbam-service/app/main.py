@@ -231,45 +231,11 @@ async def health_check():
     }
 
 # ============================================================================
-# 📦 제품 데이터 엔드포인트
+# 📦 제품 데이터 엔드포인트는 calculation_controller.py에서 관리
 # ============================================================================
 
-@app.get("/product", tags=["product"])
-async def get_product_data():
-    """제품 데이터 조회 (health 엔드포인트와 유사한 형태)"""
-    try:
-        logger.info("📋 제품 데이터 조회 요청")
-        
-        # CalculationService 인스턴스 생성
-        from app.domain.calculation.calculation_service import CalculationService
-        calculation_service = CalculationService()
-        
-        products = await calculation_service.get_products()
-        
-        # health 엔드포인트와 유사한 응답 형태
-        response_data = {
-            "status": "success",
-            "service": APP_NAME,
-            "version": APP_VERSION,
-            "timestamp": time.time(),
-            "total_count": len(products),
-            "products": [product.dict() for product in products]
-        }
-        
-        logger.info(f"✅ 제품 데이터 조회 성공: {len(products)}개")
-        return response_data
-        
-    except Exception as e:
-        logger.error(f"❌ 제품 데이터 조회 실패: {str(e)}")
-        return {
-            "status": "error",
-            "service": APP_NAME,
-            "version": APP_VERSION,
-            "timestamp": time.time(),
-            "message": "제품 데이터 조회 중 오류가 발생했습니다",
-            "error": str(e),
-            "products": []
-        }
+# 제품 관련 엔드포인트는 /api/product로 접근 가능
+# calculation_router가 /api prefix로 등록되어 있음
 
 # ============================================================================
 # 🚨 예외 처리 핸들러
