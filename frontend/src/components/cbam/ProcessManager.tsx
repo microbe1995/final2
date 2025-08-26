@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import React, { useState, useCallback } from 'react';
 import Button from '@/components/atomic/atoms/Button';
 import {
   Plus, Trash2, Save, Download
@@ -34,7 +34,7 @@ import '@xyflow/react/dist/style.css';
 // Edge 타입 정의
 // ==============================
 const CustomEdge = ({ id, sourceX, sourceY, targetX, targetY, selected }: any) => {
-  const [edgePath] = useMemo(() => {
+  const [edgePath] = React.useMemo(() => {
     const centerX = (sourceX + targetX) / 2;
     const path = `M ${sourceX} ${sourceY} Q ${centerX} ${sourceY} ${targetX} ${targetY}`;
     return [path];
@@ -50,9 +50,9 @@ const CustomEdge = ({ id, sourceX, sourceY, targetX, targetY, selected }: any) =
 const edgeTypes: EdgeTypes = { custom: CustomEdge };
 
 // ==============================
-// 메인 컴포넌트
+// 내부 컴포넌트 (ReactFlowProvider 내부에서 사용)
 // ==============================
-export default function ProcessManager() {
+function ProcessManagerInner() {
   const [nodes, setNodes, onNodesChange] = useNodesState<any>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<any>([]);
   const { addNodes, addEdges, deleteElements } = useReactFlow();
@@ -132,13 +132,31 @@ export default function ProcessManager() {
   };
 
   return (
-    // ✅ Provider를 최상위에 둠
-    <ReactFlowProvider>
-      <div className="h-[800px] border rounded">
-        <div className="flex gap-2 p-2">
-          <Button onClick={addProductNode}><Plus className="h-4 w-4"/> 제품 노드</Button>
-          <Button onClick={addGroupNode}><Plus className="h-4 w-4"/> 그룹 노드</Button>
-        </div>
+    <div className="w-full h-full flex flex-col">
+      {/* 헤더 */}
+      <div className="bg-gray-900 text-white p-4">
+        <h1 className="text-2xl font-bold">CBAM 프로세스 관리</h1>
+        <p className="text-gray-300">CBAM 관련 프로세스 플로우를 생성하고 관리합니다.</p>
+      </div>
+
+      {/* 버튼 영역 */}
+      <div className="bg-gray-800 p-4 flex gap-2">
+        <Button 
+          onClick={addProductNode}
+          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+        >
+          <Plus className="h-4 w-4"/> 제품 노드
+        </Button>
+        <Button 
+          onClick={addGroupNode}
+          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+        >
+          <Plus className="h-4 w-4"/> 그룹 노드
+        </Button>
+      </div>
+
+      {/* ReactFlow 캔버스 */}
+      <div className="flex-1 bg-gray-100">
         <ReactFlow
           nodes={nodes}
           edges={edges}
@@ -156,42 +174,56 @@ export default function ProcessManager() {
           connectionMode={ConnectionMode.Loose}
           deleteKeyCode="Delete"
           className="bg-gray-50"
+          fitView
         >
           <Background />
           <Controls />
           <MiniMap />
         </ReactFlow>
+      </div>
 
-        {/* 제품 선택 모달 */}
-        {showProductModal && (
-          <div className="fixed inset-0 flex items-center justify-center bg-black/40 z-50">
-            <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full mx-4">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-semibold">제품 선택</h3>
-                <button 
-                  onClick={() => setShowProductModal(false)}
-                  className="text-gray-400 hover:text-gray-600"
+      {/* 제품 선택 모달 */}
+      {showProductModal && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black/40 z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full mx-4">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold">제품 선택</h3>
+              <button 
+                onClick={() => setShowProductModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="space-y-2">
+              {products.map(p => (
+                <div 
+                  key={p.product_id} 
+                  className="p-3 border rounded-lg cursor-pointer hover:bg-blue-50 hover:border-blue-300 transition-colors" 
+                  onClick={() => handleProductSelect(p)}
                 >
-                  ✕
-                </button>
-              </div>
-              <div className="space-y-2">
-                {products.map(p => (
-                  <div 
-                    key={p.product_id} 
-                    className="p-3 border rounded-lg cursor-pointer hover:bg-blue-50 hover:border-blue-300 transition-colors" 
-                    onClick={() => handleProductSelect(p)}
-                  >
-                    <div className="font-medium">{p.name}</div>
-                    <div className="text-sm text-gray-600">CN: {p.cn_code}</div>
-                    <div className="text-sm text-gray-600">생산량: {p.production_qty}</div>
-                  </div>
-                ))}
-              </div>
+                  <div className="font-medium">{p.name}</div>
+                  <div className="text-sm text-gray-600">CN: {p.cn_code}</div>
+                  <div className="text-sm text-gray-600">생산량: {p.production_qty}</div>
+                </div>
+              ))}
             </div>
           </div>
-        )}
-      </div>
-    </ReactFlowProvider>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ==============================
+// 메인 컴포넌트 (ReactFlowProvider로 감싸기)
+// ==============================
+export default function ProcessManager() {
+  return (
+    <div className="w-full h-screen">
+      <ReactFlowProvider>
+        <ProcessManagerInner />
+      </ReactFlowProvider>
+    </div>
   );
 }
