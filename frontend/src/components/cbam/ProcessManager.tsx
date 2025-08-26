@@ -343,91 +343,12 @@ export default function ProcessManager() {
   // ============================================================================
 
   const createNewFlow = useCallback(() => {
-    const defaultNodes: Node<ProcessStepData>[] = [
-      {
-        id: 'input-1',
-        type: 'custom',
-        position: { x: 100, y: 100 },
-        data: {
-          name: '원료 입력',
-          type: 'input',
-          description: '철광석, 코크스 등 원료 투입',
-          parameters: { material: 'iron_ore', quantity: 1000, unit: 'ton' },
-          status: 'active',
-        },
-      },
-      {
-        id: 'process-1',
-        type: 'custom',
-        position: { x: 350, y: 100 },
-        data: {
-          name: '고로 공정',
-          type: 'process',
-          description: '철광석 환원 및 용융 공정',
-          parameters: { temperature: 1500, pressure: 1.2, duration: 8 },
-          status: 'active',
-        },
-      },
-      {
-        id: 'process-2',
-        type: 'custom',
-        position: { x: 600, y: 100 },
-        data: {
-          name: '제강 공정',
-          type: 'process',
-          description: '탄소 함량 조절 및 정련',
-          parameters: { carbon_content: 0.15, oxygen_blow: true, duration: 4 },
-          status: 'active',
-        },
-      },
-      {
-        id: 'output-1',
-        type: 'custom',
-        position: { x: 850, y: 100 },
-        data: {
-          name: '최종 제품',
-          type: 'output',
-          description: '철강 제품 (강판, 강재)',
-          parameters: {
-            product_type: 'steel_plate',
-            quantity: 800,
-            unit: 'ton',
-          },
-          status: 'active',
-        },
-      },
-    ];
-
-    const defaultEdges: Edge[] = [
-      {
-        id: 'e1-2',
-        source: 'input-1',
-        target: 'process-1',
-        type: 'custom',
-        markerEnd: { type: MarkerType.ArrowClosed },
-      },
-      {
-        id: 'e2-3',
-        source: 'process-1',
-        target: 'process-2',
-        type: 'custom',
-        markerEnd: { type: MarkerType.ArrowClosed },
-      },
-      {
-        id: 'e3-4',
-        source: 'process-2',
-        target: 'output-1',
-        type: 'custom',
-        markerEnd: { type: MarkerType.ArrowClosed },
-      },
-    ];
-
     const newFlow: ProcessFlow = {
       id: `flow-${Date.now()}`,
       name: '새 CBAM 프로세스',
       description: '새로 생성된 CBAM 프로세스 플로우',
-      nodes: defaultNodes,
-      edges: defaultEdges,
+      nodes: [],
+      edges: [],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       version: '1.0.0',
@@ -607,28 +528,7 @@ export default function ProcessManager() {
     group: (props: any) => <GroupNode {...props} />,
   };
 
-  // ============================================================================
-  // 🎯 새 노드 추가
-  // ============================================================================
 
-  const addNewNode = useCallback(() => {
-    if (!selectedFlow) return;
-
-    const newNode: Node<ProcessStepData> = {
-      id: `node-${Date.now()}`,
-      type: 'custom',
-      position: { x: Math.random() * 400 + 100, y: Math.random() * 300 + 100 },
-      data: {
-        name: '새 단계',
-        type: 'process',
-        description: '새로 추가된 프로세스 단계',
-        parameters: {},
-        status: 'active',
-      },
-    };
-
-    addNodes(newNode);
-  }, [selectedFlow, addNodes]);
 
   // ============================================================================
   // 🎯 노드 편집
@@ -808,13 +708,7 @@ export default function ProcessManager() {
                 <Save className='h-4 w-4' />
                 저장
               </Button>
-              <Button
-                onClick={addNewNode}
-                className='flex items-center gap-2 bg-green-600 hover:bg-green-700'
-              >
-                <Plus className='h-4 w-4' />
-                노드 추가
-              </Button>
+
               <Button
                 onClick={addProductNode}
                 className='flex items-center gap-2 bg-purple-600 hover:bg-purple-700'
