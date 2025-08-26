@@ -146,7 +146,7 @@ export const useCalculationAPI = () => {
         const response = await axiosClient.post(apiEndpoints.calculation.fuel, data);
         return response.data;
       } catch (error) {
-        console.error('Error calculating fuel emission:', error);
+
         return null;
       }
     },
@@ -160,7 +160,7 @@ export const useCalculationAPI = () => {
         const response = await axiosClient.post(apiEndpoints.calculation.material, data);
         return response.data;
       } catch (error) {
-        console.error('Error calculating material emission:', error);
+
         return null;
       }
     },
@@ -174,7 +174,7 @@ export const useCalculationAPI = () => {
         const response = await axiosClient.get(`${apiEndpoints.calculation.precursors}/${userId}`);
         return response.data;
       } catch (error) {
-        console.error('Error fetching precursor list:', error);
+
         return null;
       }
     },
@@ -190,7 +190,7 @@ export const useCalculationAPI = () => {
         });
         return response.data;
       } catch (error) {
-        console.error('Error saving precursor batch:', error);
+
         return null;
       }
     },
@@ -204,7 +204,7 @@ export const useCalculationAPI = () => {
         const response = await axiosClient.post(apiEndpoints.calculation.cbam, data);
         return response.data;
       } catch (error) {
-        console.error('Error calculating CBAM:', error);
+
         return null;
       }
     },
@@ -218,7 +218,7 @@ export const useCalculationAPI = () => {
         const response = await axiosClient.get(apiEndpoints.calculation.stats);
         return response.data;
       } catch (error) {
-        console.error('Error fetching calculation stats:', error);
+
         return null;
       }
     },
@@ -236,7 +236,7 @@ export const useCalculationAPI = () => {
         const response = await axiosClient.get(apiEndpoints.calculation.history, { params });
         return response.data;
       } catch (error) {
-        console.error('Error fetching calculation history:', error);
+
         return null;
       }
     },

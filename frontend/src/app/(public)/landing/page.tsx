@@ -42,7 +42,7 @@ export default function LandingPage() {
 
   const handleInstallPWA = () => {
     // PWA 설치 로직
-    console.log('PWA 설치 시작');
+
   };
 
   // 모바일 PWA 화면

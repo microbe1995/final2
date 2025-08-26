@@ -192,7 +192,7 @@ export default function RegisterPage() {
       });
       
       const result = await response.json();
-      console.log('API Response:', result); // 디버깅용
+      
       setCompanyIdAvailability(result.data?.available);
     } catch (error) {
       setCompanyIdAvailability(null);

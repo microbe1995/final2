@@ -168,7 +168,6 @@ export default function ProcessManager() {
         }
       }
     } catch (error) {
-      console.error('백엔드에서 플로우 데이터 가져오기 실패:', error);
       // 백엔드 연결 실패 시 빈 배열로 초기화
       setFlows([]);
     }
@@ -214,11 +213,23 @@ export default function ProcessManager() {
       }
       setFlows(newFlows);
     } catch (error) {
-      console.error('백엔드 플로우 저장 실패:', error);
       // 로컬 상태는 업데이트하되 백엔드 저장은 실패
       setFlows(newFlows);
     }
   }, []);
+
+  // ============================================================================
+  // 🎯 플로우 선택
+  // ============================================================================
+
+  const selectFlow = useCallback(
+    (flow: ProcessFlow) => {
+      setSelectedFlow(flow);
+      setNodes(flow.nodes);
+      setEdges(flow.edges);
+    },
+    [setNodes, setEdges]
+  );
 
   // ============================================================================
   // 🎯 새 플로우 생성
@@ -239,20 +250,7 @@ export default function ProcessManager() {
     const updatedFlows = [...flows, newFlow];
     saveFlows(updatedFlows);
     selectFlow(newFlow);
-  }, [flows, saveFlows]);
-
-  // ============================================================================
-  // 🎯 플로우 선택
-  // ============================================================================
-
-  const selectFlow = useCallback(
-    (flow: ProcessFlow) => {
-      setSelectedFlow(flow);
-      setNodes(flow.nodes);
-      setEdges(flow.edges);
-    },
-    [setNodes, setEdges]
-  );
+  }, [flows, saveFlows, selectFlow]);
 
   // ============================================================================
   // 🎯 플로우 삭제
@@ -355,7 +353,6 @@ export default function ProcessManager() {
       const response = await axiosClient.get('/api/v1/boundary/product');
       setProducts(response.data.products || []);
     } catch (error) {
-      console.error('제품 데이터 가져오기 오류:', error);
       setProducts([]);
     } finally {
       setIsLoadingProducts(false);
@@ -494,17 +491,17 @@ export default function ProcessManager() {
               
                              if (response.ok) {
                  const result = await response.json();
-               } else {
-                console.warn('⚠️ 백엔드 연결 실패, 로컬 상태만 유지');
+                               } else {
+                  // 백엔드 연결 실패, 로컬 상태만 유지
+                }
+              } catch (apiError) {
+                // 백엔드 API 호출 실패, 로컬 상태만 유지
               }
-            } catch (apiError) {
-              console.warn('⚠️ 백엔드 API 호출 실패, 로컬 상태만 유지:', apiError);
             }
-                     }
-           
-         } catch (error) {
-          console.error('❌ 연결 실패:', error);
-        }
+            
+          } catch (error) {
+            // 연결 실패
+          }
       }
     },
     [addEdges, selectedFlow, nodes]

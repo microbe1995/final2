@@ -69,7 +69,7 @@ export default function ProductPage() {
       });
 
     } catch (error) {
-      console.error('제품 생성 실패:', error);
+
       setToast({
         message: '제품 생성에 실패했습니다.',
         type: 'error'

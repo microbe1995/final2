@@ -70,7 +70,7 @@ export default function LciaPage() {
         setResults(result.data.results || []);
       }
     } catch (error) {
-      console.error('결과 조회 실패:', error);
+
     }
   };
 
@@ -81,7 +81,7 @@ export default function LciaPage() {
         setHistory(result.data.runs || []);
       }
     } catch (error) {
-      console.error('히스토리 조회 실패:', error);
+
     }
   };
 
