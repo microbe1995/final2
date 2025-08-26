@@ -264,25 +264,30 @@ export default function ProcessManager() {
   // 🎯 초기 데이터 로드
   // ============================================================================
 
-  useEffect(() => {
-    const savedFlows = localStorage.getItem('cbam-process-flows');
-    if (savedFlows) {
-      try {
-        const parsedFlows = JSON.parse(savedFlows);
-        setFlows(parsedFlows);
-
+  const fetchFlowsFromBackend = useCallback(async () => {
+    try {
+      const response = await axiosClient.get('/api/v1/boundary/flow');
+      if (response.data && response.data.flows) {
+        setFlows(response.data.flows);
         // 첫 번째 플로우가 있으면 자동 선택
-        if (parsedFlows.length > 0 && !selectedFlow) {
-          selectFlow(parsedFlows[0]);
-        }
-      } catch (error) {
-        // 개발 환경에서만 에러 로그 출력
-        if (process.env.NODE_ENV === 'development') {
-          console.error('저장된 플로우 로드 실패:', error);
+        if (response.data.flows.length > 0 && !selectedFlow) {
+          // selectFlow 함수가 정의되기 전이므로 직접 처리
+          const firstFlow = response.data.flows[0];
+          setSelectedFlow(firstFlow);
+          setNodes(firstFlow.nodes || []);
+          setEdges(firstFlow.edges || []);
         }
       }
+    } catch (error) {
+      console.error('백엔드에서 플로우 데이터 가져오기 실패:', error);
+      // 백엔드 연결 실패 시 빈 배열로 초기화
+      setFlows([]);
     }
-  }, []);
+  }, [selectedFlow, setNodes, setEdges]);
+
+  useEffect(() => {
+    fetchFlowsFromBackend();
+  }, [fetchFlowsFromBackend]);
 
   // selectedFlow가 변경될 때 자동으로 선택
   useEffect(() => {
@@ -296,9 +301,34 @@ export default function ProcessManager() {
   // 🎯 플로우 저장
   // ============================================================================
 
-  const saveFlows = useCallback((newFlows: ProcessFlow[]) => {
-    localStorage.setItem('cbam-process-flows', JSON.stringify(newFlows));
-    setFlows(newFlows);
+  const saveFlows = useCallback(async (newFlows: ProcessFlow[]) => {
+    try {
+      // 백엔드 API를 통한 플로우 저장
+      for (const flow of newFlows) {
+        if (flow.id.startsWith('flow-')) {
+          // 새로 생성된 플로우인 경우 생성 API 호출
+          await axiosClient.post('/api/v1/boundary/flow', {
+            name: flow.name,
+            description: flow.description,
+            nodes: flow.nodes,
+            edges: flow.edges
+          });
+        } else {
+          // 기존 플로우인 경우 업데이트 API 호출
+          await axiosClient.put(`/api/v1/boundary/flow/${flow.id}`, {
+            name: flow.name,
+            description: flow.description,
+            nodes: flow.nodes,
+            edges: flow.edges
+          });
+        }
+      }
+      setFlows(newFlows);
+    } catch (error) {
+      console.error('백엔드 플로우 저장 실패:', error);
+      // 로컬 상태는 업데이트하되 백엔드 저장은 실패
+      setFlows(newFlows);
+    }
   }, []);
 
   // ============================================================================
@@ -453,7 +483,7 @@ export default function ProcessManager() {
 
     saveFlows(updatedFlows);
     setSelectedFlow(updatedFlow);
-    alert('플로우가 저장되었습니다!');
+    alert('플로우가 저장되었습니다! (백엔드 연동 예정)');
   }, [selectedFlow, nodes, edges, flows, saveFlows]);
 
   // ============================================================================
@@ -816,7 +846,7 @@ export default function ProcessManager() {
                   if (n.type === 'input') return '#3b82f6';
                   if (n.type === 'output') return '#8b5cf6';
                   return '#22c55e';
-                }}
+                }}ㅎ
                 nodeColor={(n: any) => {
                   if (n.type === 'input') return '#dbeafe';
                   if (n.type === 'output') return '#f3e8ff';
