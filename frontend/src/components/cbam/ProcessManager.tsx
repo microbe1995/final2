@@ -763,16 +763,24 @@ export default function ProcessManager() {
               노드 상세 정보
             </h3>
             <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
-                             {nodes.map((node: Node<ProcessStepData>) => (
+                             {nodes.map((node: Node<any>) => (
                  <div
                    key={node.id}
-                   className='p-4 rounded-lg border-2 border-purple-200 bg-purple-50'
+                   className={`p-4 rounded-lg border-2 ${
+                     node.type === 'group' 
+                       ? 'border-blue-200 bg-blue-50' 
+                       : 'border-purple-200 bg-purple-50'
+                   }`}
                  >
                    <div className='flex items-center justify-between mb-3'>
-                     <span className='px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800'>
-                       제품
+                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                       node.type === 'group'
+                         ? 'bg-blue-100 text-blue-800'
+                         : 'bg-purple-100 text-purple-800'
+                     }`}>
+                       {node.type === 'group' ? '그룹' : '제품'}
                      </span>
-                                         <div className='flex gap-2'>
+                     <div className='flex gap-2'>
                        <button
                          onClick={() => deleteElements({ nodes: [node] })}
                          className='p-1 hover:bg-red-100 rounded text-red-600'
@@ -780,16 +788,16 @@ export default function ProcessManager() {
                          <Trash2 className='h-3 w-3' />
                        </button>
                      </div>
-                  </div>
-                  <h4 className='font-semibold text-gray-900 mb-2'>
-                    {node.data.name}
-                  </h4>
-                  <p className='text-sm text-gray-600 mb-3'>
-                    {node.data.description}
-                  </p>
+                   </div>
+                   <h4 className='font-semibold text-gray-900 mb-2'>
+                     {node.data.label || node.data.name || '이름 없음'}
+                   </h4>
+                   <p className='text-sm text-gray-600 mb-3'>
+                     {node.data.description || '설명 없음'}
+                   </p>
 
                   {/* 파라미터 표시 */}
-                  {Object.keys(node.data.parameters).length > 0 && (
+                  {node.data.parameters && Object.keys(node.data.parameters).length > 0 && (
                     <div className='space-y-2'>
                       <h5 className='text-xs font-medium text-gray-700 uppercase'>
                         파라미터
