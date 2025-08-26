@@ -71,10 +71,12 @@ const CustomNode = ({
   data,
   selected,
   onClick,
+  id,
 }: {
   data: ProcessStepData;
   selected?: boolean;
   onClick?: (node: any) => void;
+  id: string;
 }) => {
   const getNodeStyle = () => {
     const baseStyle = 'p-3 rounded-lg border-2 min-w-[150px] transition-all relative';
@@ -127,11 +129,18 @@ const CustomNode = ({
     }
   };
 
+  const handleDragStart = (event: React.DragEvent) => {
+    event.dataTransfer.setData('application/reactflow', id);
+    event.dataTransfer.effectAllowed = 'move';
+  };
+
   return (
     <div 
       className={getNodeStyle()}
       onClick={() => onClick && onClick({ data, selected })}
       style={{ cursor: data.type === 'output' && data.productData ? 'pointer' : 'default' }}
+      draggable
+      onDragStart={handleDragStart}
     >
       {/* 🎯 Target 핸들 (입력) */}
       {data.type !== 'input' && (
