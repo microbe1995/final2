@@ -609,7 +609,7 @@ export default function ProcessManager() {
     (updatedData: ProcessStepData) => {
       if (!editingNode) return;
 
-      const updatedNodes = nodes.map(node =>
+      const updatedNodes = nodes.map((node: Node<ProcessStepData>) =>
         node.id === editingNode.id ? { ...node, data: updatedData } : node
       );
 
@@ -812,12 +812,12 @@ export default function ProcessManager() {
               <Background gap={12} size={1} />
               <Controls />
               <MiniMap
-                nodeStrokeColor={n => {
+                nodeStrokeColor={(n: any) => {
                   if (n.type === 'input') return '#3b82f6';
                   if (n.type === 'output') return '#8b5cf6';
                   return '#22c55e';
                 }}
-                nodeColor={n => {
+                nodeColor={(n: any) => {
                   if (n.type === 'input') return '#dbeafe';
                   if (n.type === 'output') return '#f3e8ff';
                   return '#dcfce7';
@@ -865,7 +865,7 @@ export default function ProcessManager() {
               노드 상세 정보
             </h3>
             <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
-              {nodes.map(node => (
+              {nodes.map((node: Node<ProcessStepData>) => (
                 <div
                   key={node.id}
                   className={`p-4 rounded-lg border-2 ${
