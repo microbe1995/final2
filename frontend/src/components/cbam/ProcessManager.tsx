@@ -4,7 +4,6 @@ import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/Button';
 import {
   Plus,
-  Edit,
   Trash2,
   Save,
   Download,
@@ -14,11 +13,9 @@ import {
   Link,
   Unlink,
 } from 'lucide-react';
-import ProcessStepModal from './ProcessStepModal';
-import GroupNode from './GroupNode';
+
 import SourceStreamEdge from './SourceStreamEdge';
 import ProductNode from '@/components/atomic/atoms/ProductNode';
-import NodeWrapper from '@/components/atomic/atoms/NodeWrapper';
 import axiosClient from '@/lib/axiosClient';
 import {
   ReactFlow,
@@ -48,7 +45,7 @@ import '@xyflow/react/dist/style.css';
 
 interface ProcessStepData extends Record<string, unknown> {
   name: string;
-  type: 'input' | 'process' | 'output';
+  type: 'output'; // 제품 노드만 사용하므로 output으로 단순화
   description: string;
   parameters: Record<string, any>;
   status: 'active' | 'inactive' | 'error';
@@ -71,22 +68,7 @@ interface ProcessFlow {
 
 // nodeTypes는 함수 내부에서 정의됩니다
 
-// ============================================================================
-// 🎯 NodeWrapper를 사용하는 커스텀 노드 컴포넌트
-// ============================================================================
 
-const WrappedNode: React.FC<any> = ({ data, ...props }) => {
-  return (
-    <NodeWrapper
-      top={data.wrapperTop}
-      left={data.wrapperLeft}
-      width={data.wrapperWidth}
-      height={data.wrapperHeight}
-    >
-      <ProductNode data={data} {...props} />
-    </NodeWrapper>
-  );
-};
 
 // ============================================================================
 // 🎯 커스텀 엣지 타입 정의
@@ -145,10 +127,7 @@ const edgeTypes: EdgeTypes = {
 export default function ProcessManager() {
   const [flows, setFlows] = useState<ProcessFlow[]>([]);
   const [selectedFlow, setSelectedFlow] = useState<ProcessFlow | null>(null);
-  const [showProcessModal, setShowProcessModal] = useState(false);
-  const [editingNode, setEditingNode] = useState<Node<ProcessStepData> | null>(
-    null
-  );
+
   const [isConnecting, setIsConnecting] = useState(false);
   const [connectionStart, setConnectionStart] = useState<string | null>(null);
 
@@ -160,11 +139,7 @@ export default function ProcessManager() {
   const [showProductDetailModal, setShowProductDetailModal] = useState(false);
   const [selectedProductNode, setSelectedProductNode] = useState<any>(null);
 
-  // 그룹 관련 상태
-  const [selectedNodes, setSelectedNodes] = useState<string[]>([]);
-  const [showGroupModal, setShowGroupModal] = useState(false);
-  const [groupName, setGroupName] = useState('');
-  const [groupType, setGroupType] = useState<'product' | 'process'>('product');
+
 
   // 소스스트림 관련 상태
   const [showStreamModal, setShowStreamModal] = useState(false);
@@ -177,14 +152,7 @@ export default function ProcessManager() {
     description: ''
   });
 
-  // NodeWrapper 관련 상태
-  const [showWrapperModal, setShowWrapperModal] = useState(false);
-  const [wrapperSettings, setWrapperSettings] = useState({
-    top: 100,
-    left: 200,
-    width: 150,
-    height: 80
-  });
+
 
   // React Flow 상태 관리
   const [nodes, setNodes, onNodesChange] = useNodesState<any>([]);
@@ -442,43 +410,7 @@ export default function ProcessManager() {
     setSelectedProduct(null);
   }, [addNodes]);
 
-  // NodeWrapper를 사용하는 노드 추가 함수
-  const addWrappedNode = useCallback(() => {
-    const wrappedNode: Node<any> = {
-      id: `wrapped-${Date.now()}`,
-      type: 'wrapped',
-      position: { x: 0, y: 0 }, // NodeWrapper가 위치를 제어하므로 (0,0)으로 설정
-      data: {
-        label: 'NodeWrapper 테스트',
-        description: 'NodeWrapper로 감싸진 노드',
-        variant: 'primary',
-        productData: {
-          name: '테스트 제품',
-          production_qty: 100,
-          export_qty: 50
-        },
-        // NodeWrapper 설정
-        wrapperTop: wrapperSettings.top,
-        wrapperLeft: wrapperSettings.left,
-        wrapperWidth: wrapperSettings.width,
-        wrapperHeight: wrapperSettings.height,
-        name: 'NodeWrapper 테스트',
-        type: 'output',
-        parameters: {
-          test_param: 'NodeWrapper 기능 테스트'
-        },
-        status: 'active',
-      },
-    };
 
-    addNodes(wrappedNode);
-    console.log('NodeWrapper 노드 추가됨:', wrappedNode);
-  }, [addNodes, wrapperSettings]);
-
-  // NodeWrapper 설정 모달 열기
-  const openWrapperModal = useCallback(() => {
-    setShowWrapperModal(true);
-  }, []);
 
   const handleProductNodeClick = useCallback((node: Node<ProcessStepData>) => {
     // 단일 클릭은 선택만 처리 (상세페이지 열지 않음)
@@ -496,218 +428,25 @@ export default function ProcessManager() {
   // nodeTypes 정의 (아토믹 디자인 패턴 적용)
   const nodeTypes: NodeTypes = {
     custom: (props: any) => <ProductNode {...props} onClick={handleProductNodeClick} onDoubleClick={handleProductNodeDoubleClick} />,
-    group: (props: any) => <GroupNode {...props} />,
-    wrapped: (props: any) => <WrappedNode {...props} onClick={handleProductNodeClick} onDoubleClick={handleProductNodeDoubleClick} />,
   };
 
 
 
-  // ============================================================================
-  // 🎯 노드 편집
-  // ============================================================================
 
-  const editNode = useCallback((node: Node<ProcessStepData>) => {
-    setEditingNode(node);
-    setShowProcessModal(true);
-  }, []);
 
   // ============================================================================
-  // 🎯 노드 저장
-  // ============================================================================
-
-  const saveNode = useCallback(
-    (updatedData: ProcessStepData) => {
-      if (!editingNode) return;
-
-      const updatedNodes = nodes.map((node: Node<ProcessStepData>) =>
-        node.id === editingNode.id ? { ...node, data: updatedData } : node
-      );
-
-      setNodes(updatedNodes);
-      setShowProcessModal(false);
-      setEditingNode(null);
-    },
-    [editingNode, nodes, setNodes]
-  );
-
-  // ============================================================================
-  // 🎯 그룹 관리
+  // 🎯 노드 선택 관리
   // ============================================================================
 
   const onNodeSelectionChange = useCallback((params: any) => {
-    const selectedNodeIds = params.nodes.map((node: any) => node.id);
-    setSelectedNodes(selectedNodeIds);
-    
-    // 그룹 노드가 선택되면 포함된 노드들도 선택 상태로 표시
-    const groupNodes = params.nodes.filter((node: any) => node.type === 'group');
-    if (groupNodes.length > 0) {
-      const allGroupNodeIds = groupNodes.flatMap((groupNode: any) => 
-        groupNode.data.nodes || []
-      );
-      
-      // 그룹에 포함된 노드들을 시각적으로 강조
-      setNodes(prevNodes => 
-        prevNodes.map(node => ({
-          ...node,
-          selected: selectedNodeIds.includes(node.id) || allGroupNodeIds.includes(node.id)
-        }))
-      );
-    }
-  }, [setNodes]);
+    // 노드 선택 상태 관리 (그룹 기능 제거)
+    console.log('선택된 노드:', params.nodes);
+  }, []);
 
-  const createGroupFromSelectedNodes = useCallback(() => {
-    if (selectedNodes.length < 2) {
-      alert('그룹을 만들려면 2개 이상의 노드를 선택해주세요.');
-      return;
-    }
-    setShowGroupModal(true);
-  }, [selectedNodes]);
-
-  const handleCreateGroup = useCallback(() => {
-    if (!groupName.trim()) {
-      alert('그룹 이름을 입력해주세요.');
-      return;
-    }
-
-    // 선택된 노드들의 위치를 기반으로 그룹 위치 계산
-    const selectedNodeObjects = nodes.filter(node => selectedNodes.includes(node.id));
-    if (selectedNodeObjects.length === 0) return;
-
-    const minX = Math.min(...selectedNodeObjects.map(n => n.position.x));
-    const minY = Math.min(...selectedNodeObjects.map(n => n.position.y));
-    const maxX = Math.max(...selectedNodeObjects.map(n => n.position.x));
-    const maxY = Math.max(...selectedNodeObjects.map(n => n.position.y));
-
-    const groupNode: Node<any> = {
-      id: `group-${Date.now()}`,
-      type: 'group',
-      position: { x: minX - 50, y: minY - 50 },
-      data: {
-        label: groupName,
-        type: groupType,
-        nodes: selectedNodes,
-        isCollapsed: false,
-        boundaryType: groupType === 'product' ? 'output' : 'internal',
-        cbamData: {
-          carbonIntensity: 0,
-          materialFlow: 0,
-          energyConsumption: 0
-        }
-      },
-      style: {
-        width: maxX - minX + 200,
-        height: maxY - minY + 200,
-      }
-    };
-
-    addNodes(groupNode);
-    
-    // 그룹 생성 후 시각적 피드백
-    setTimeout(() => {
-      // 그룹 노드를 선택 상태로 만들기
-      setNodes(prevNodes => 
-        prevNodes.map(node => ({
-          ...node,
-          selected: node.id === groupNode.id
-        }))
-      );
-    }, 100);
-    
-    setShowGroupModal(false);
-    setGroupName('');
-    setSelectedNodes([]);
-  }, [groupName, groupType, selectedNodes, nodes, addNodes, setNodes]);
-
-  // 그룹 크기 자동 조정 함수
-  const updateGroupSize = useCallback((groupId: string) => {
-    setNodes(prevNodes => {
-      const groupNode = prevNodes.find(node => node.id === groupId);
-      if (!groupNode || groupNode.type !== 'group' || !groupNode.data.nodes) return prevNodes;
-
-      const groupNodes = prevNodes.filter(node => 
-        groupNode.data.nodes.includes(node.id) && node.type !== 'group'
-      );
-      
-      if (groupNodes.length === 0) return prevNodes;
-
-      const minX = Math.min(...groupNodes.map(n => n.position.x));
-      const minY = Math.min(...groupNodes.map(n => n.position.y));
-      const maxX = Math.max(...groupNodes.map(n => n.position.x));
-      const maxY = Math.max(...groupNodes.map(n => n.position.y));
-
-      return prevNodes.map(node => {
-        if (node.id === groupId) {
-          return {
-            ...node,
-            position: { x: minX - 50, y: minY - 50 },
-            style: {
-              ...node.style,
-              width: maxX - minX + 200,
-              height: maxY - minY + 200,
-            }
-          };
-        }
-        return node;
-      });
-    });
-  }, [setNodes]);
-
-  const removeNodeFromGroup = useCallback((groupId: string, nodeId: string) => {
-    setNodes(prevNodes => 
-      prevNodes.map(node => {
-        if (node.id === groupId && node.data.nodes) {
-          return {
-            ...node,
-            data: {
-              ...node.data,
-              nodes: node.data.nodes.filter((id: string) => id !== nodeId)
-            }
-          };
-        }
-        return node;
-      })
-    );
-  }, [setNodes]);
-
-  const addNodeToGroup = useCallback((groupId: string, nodeId: string) => {
-    setNodes(prevNodes => 
-      prevNodes.map(node => {
-        if (node.id === groupId && node.data.nodes) {
-          return {
-            ...node,
-            data: {
-              ...node.data,
-              nodes: [...node.data.nodes, nodeId]
-            }
-          };
-        }
-        return node;
-      })
-    );
-  }, [setNodes]);
-
-  // 노드 변경 시 그룹 크기 자동 조정
+  // 노드 변경 처리
   const handleNodesChange = useCallback((changes: any) => {
-    // 기존 노드 변경 처리
     onNodesChange(changes);
-    
-    // 그룹 크기 자동 조정
-    changes.forEach((change: any) => {
-      if (change.type === 'position' && change.dragging === false) {
-        // 노드가 드래그를 끝냈을 때
-        const movedNode = nodes.find(node => node.id === change.id);
-        if (movedNode) {
-          // 이 노드가 속한 그룹들을 찾아서 크기 조정
-          nodes.forEach(node => {
-            if (node.type === 'group' && node.data.nodes && 
-                node.data.nodes.includes(change.id)) {
-              updateGroupSize(node.id);
-            }
-          });
-        }
-      }
-    });
-  }, [nodes, updateGroupSize, onNodesChange]);
+  }, [onNodesChange]);
 
   // ============================================================================
   // 🎯 연결 관리
@@ -723,33 +462,28 @@ export default function ProcessManager() {
           const sourceNode = nodes.find(node => node.id === params.source);
           const targetNode = nodes.find(node => node.id === params.target);
           
-          // 그룹 간 연결인지 확인
-          const isGroupToGroup = sourceNode?.type === 'group' && targetNode?.type === 'group';
+                     // 노드 간 연결 확인
+           const isNodeToNode = sourceNode && targetNode;
           
-          // 엣지 타입 결정
-          const edgeType = isGroupToGroup ? 'sourceStream' : 'custom';
+                     // 엣지 타입 결정 (모든 연결을 custom으로 처리)
+           const edgeType = 'custom';
+           
+           // 연결 데이터 생성
+           const connectionData = {
+             label: '연결',
+             processType: 'standard',
+             description: `${sourceNode?.data?.label || '노드'} → ${targetNode?.data?.label || '노드'}`
+           };
           
-          // 소스스트림 데이터 생성
-          const streamData = isGroupToGroup ? {
-            streamType: 'material' as const,
-            flowRate: 100,
-            unit: 't/h',
-            carbonIntensity: 2.5,
-            description: `${sourceNode?.data?.label || '그룹'} → ${targetNode?.data?.label || '그룹'}`
-          } : undefined;
-          
-          // 로컬 상태에 즉시 추가 (사용자 경험 향상)
-          const newEdge: Edge = {
-            id: `e${params.source}-${params.target}`,
-            source: params.source,
-            target: params.target,
-            type: edgeType,
-            markerEnd: { type: MarkerType.ArrowClosed },
-            data: streamData || {
-              label: '연결',
-              processType: 'standard'
-            }
-          };
+                     // 로컬 상태에 즉시 추가 (사용자 경험 향상)
+           const newEdge: Edge = {
+             id: `e${params.source}-${params.target}`,
+             source: params.source,
+             target: params.target,
+             type: edgeType,
+             markerEnd: { type: MarkerType.ArrowClosed },
+             data: connectionData
+           };
           
           addEdges(newEdge);
           
@@ -911,28 +645,14 @@ export default function ProcessManager() {
                  제품 노드
                </Button>
 
-               <Button
-                 onClick={openWrapperModal}
-                 className='flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700'
-               >
-                 <Eye className='h-4 w-4' />
-                 NodeWrapper 테스트
-               </Button>
 
-               {selectedNodes.length >= 2 && (
-                 <Button
-                   onClick={createGroupFromSelectedNodes}
-                   className='flex items-center gap-2 bg-orange-600 hover:bg-orange-700'
-                 >
-                   <Settings className='h-4 w-4' />
-                   그룹 생성 ({selectedNodes.length}개 선택)
-                 </Button>
-               )}
+
+               
             </div>
           </div>
 
           {/* React Flow 캔버스 */}
-          <div className='h-[600px] border-2 border-gray-200 rounded-lg overflow-hidden'>
+          <div className='h-[1000px] border-2 border-gray-200 rounded-lg overflow-hidden'>
                          <ReactFlow
                nodes={nodes}
                edges={edges}
@@ -976,14 +696,10 @@ export default function ProcessManager() {
                 position='top-left'
                 className='bg-white/90 backdrop-blur-sm rounded-lg p-3 shadow-lg'
               >
-                <div className='flex items-center gap-2 text-sm text-gray-600'>
-                  <div className='w-3 h-3 bg-blue-500 rounded-full'></div>
-                  <span>입력</span>
-                  <div className='w-3 h-3 bg-green-500 rounded-full ml-2'></div>
-                  <span>처리</span>
-                  <div className='w-3 h-3 bg-purple-500 rounded-full ml-2'></div>
-                  <span>출력</span>
-                </div>
+                                   <div className='flex items-center gap-2 text-sm text-gray-600'>
+                     <div className='w-3 h-3 bg-purple-500 rounded-full'></div>
+                     <span>제품 노드</span>
+                   </div>
               </Panel>
 
               {/* 우측 패널 */}
@@ -1012,43 +728,23 @@ export default function ProcessManager() {
               노드 상세 정보
             </h3>
             <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
-              {nodes.map((node: Node<ProcessStepData>) => (
-                <div
-                  key={node.id}
-                  className={`p-4 rounded-lg border-2 ${
-                    node.data.type === 'input'
-                      ? 'border-blue-200 bg-blue-50'
-                      : node.data.type === 'process'
-                        ? 'border-green-200 bg-green-50'
-                        : 'border-purple-200 bg-purple-50'
-                  }`}
-                >
-                  <div className='flex items-center justify-between mb-3'>
-                    <span
-                      className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        node.data.type === 'input'
-                          ? 'bg-blue-100 text-blue-800'
-                          : node.data.type === 'process'
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-purple-100 text-purple-800'
-                      }`}
-                    >
-                      {node.data.type}
-                    </span>
-                    <div className='flex gap-2'>
-                      <button
-                        onClick={() => editNode(node)}
-                        className='p-1 hover:bg-white/50 rounded'
-                      >
-                        <Edit className='h-3 w-3' />
-                      </button>
-                      <button
-                        onClick={() => deleteElements({ nodes: [node] })}
-                        className='p-1 hover:bg-red-100 rounded text-red-600'
-                      >
-                        <Trash2 className='h-3 w-3' />
-                      </button>
-                    </div>
+                             {nodes.map((node: Node<ProcessStepData>) => (
+                 <div
+                   key={node.id}
+                   className='p-4 rounded-lg border-2 border-purple-200 bg-purple-50'
+                 >
+                   <div className='flex items-center justify-between mb-3'>
+                     <span className='px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800'>
+                       제품
+                     </span>
+                                         <div className='flex gap-2'>
+                       <button
+                         onClick={() => deleteElements({ nodes: [node] })}
+                         className='p-1 hover:bg-red-100 rounded text-red-600'
+                       >
+                         <Trash2 className='h-3 w-3' />
+                       </button>
+                     </div>
                   </div>
                   <h4 className='font-semibold text-gray-900 mb-2'>
                     {node.data.name}
@@ -1101,16 +797,7 @@ export default function ProcessManager() {
         </div>
       </div>
 
-      {/* 프로세스 단계 편집 모달 */}
-      <ProcessStepModal
-        isOpen={showProcessModal}
-        onClose={() => {
-          setShowProcessModal(false);
-          setEditingNode(null);
-        }}
-        node={editingNode}
-        onSave={saveNode}
-      />
+      
 
       {/* 제품 선택 모달 */}
       {showProductModal && (
@@ -1158,82 +845,7 @@ export default function ProcessManager() {
         </div>
       )}
 
-             {/* 그룹 생성 모달 */}
-       {showGroupModal && (
-         <div className='fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50'>
-           <div className='bg-white rounded-lg p-6 w-full max-w-md'>
-             <div className='flex items-center justify-between mb-4'>
-               <h2 className='text-xl font-semibold text-gray-900'>그룹 생성</h2>
-               <button
-                 onClick={() => setShowGroupModal(false)}
-                 className='text-gray-400 hover:text-gray-600'
-               >
-                 ✕
-               </button>
-             </div>
              
-             <div className='space-y-4'>
-               <div>
-                 <label className='block text-sm font-medium text-gray-700 mb-2'>
-                   그룹 이름
-                 </label>
-                 <input
-                   type='text'
-                   value={groupName}
-                   onChange={(e) => setGroupName(e.target.value)}
-                   className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
-                   placeholder='그룹 이름을 입력하세요'
-                 />
-               </div>
-               
-               <div>
-                 <label className='block text-sm font-medium text-gray-700 mb-2'>
-                   그룹 타입
-                 </label>
-                 <select
-                   value={groupType}
-                   onChange={(e) => setGroupType(e.target.value as 'product' | 'process')}
-                   className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
-                 >
-                   <option value='product'>제품 그룹</option>
-                   <option value='process'>공정 그룹</option>
-                 </select>
-               </div>
-               
-               <div>
-                 <label className='block text-sm font-medium text-gray-700 mb-2'>
-                   선택된 노드 ({selectedNodes.length}개)
-                 </label>
-                 <div className='max-h-32 overflow-y-auto border border-gray-200 rounded-md p-2'>
-                   {selectedNodes.map((nodeId) => {
-                     const node = nodes.find(n => n.id === nodeId);
-                     return (
-                       <div key={nodeId} className='text-sm text-gray-600 py-1'>
-                         • {node?.data?.name || nodeId}
-                       </div>
-                     );
-                   })}
-                 </div>
-               </div>
-               
-               <div className='flex gap-3 pt-4'>
-                 <button
-                   onClick={() => setShowGroupModal(false)}
-                   className='flex-1 px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50'
-                 >
-                   취소
-                 </button>
-                 <button
-                   onClick={handleCreateGroup}
-                   className='flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700'
-                 >
-                   그룹 생성
-                 </button>
-               </div>
-             </div>
-           </div>
-         </div>
-       )}
 
                {/* 제품 상세 정보 모달 */}
         {showProductDetailModal && selectedProductNode && (
@@ -1431,108 +1043,7 @@ export default function ProcessManager() {
           </div>
         )}
 
-        {/* NodeWrapper 설정 모달 */}
-        {showWrapperModal && (
-          <div className='fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50'>
-            <div className='bg-white rounded-lg p-6 w-full max-w-md'>
-              <div className='flex items-center justify-between mb-4'>
-                <h2 className='text-xl font-semibold text-gray-900'>NodeWrapper 설정</h2>
-                <button
-                  onClick={() => setShowWrapperModal(false)}
-                  className='text-gray-400 hover:text-gray-600'
-                >
-                  ✕
-                </button>
-              </div>
-              
-              <div className='space-y-4'>
-                <div className='grid grid-cols-2 gap-4'>
-                  <div>
-                    <label className='block text-sm font-medium text-gray-700 mb-2'>
-                      Top (위치)
-                    </label>
-                    <input
-                      type='number'
-                      value={wrapperSettings.top}
-                      onChange={(e) => setWrapperSettings(prev => ({ ...prev, top: Number(e.target.value) }))}
-                      className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
-                      placeholder='100'
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className='block text-sm font-medium text-gray-700 mb-2'>
-                      Left (위치)
-                    </label>
-                    <input
-                      type='number'
-                      value={wrapperSettings.left}
-                      onChange={(e) => setWrapperSettings(prev => ({ ...prev, left: Number(e.target.value) }))}
-                      className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
-                      placeholder='200'
-                    />
-                  </div>
-                </div>
-                
-                <div className='grid grid-cols-2 gap-4'>
-                  <div>
-                    <label className='block text-sm font-medium text-gray-700 mb-2'>
-                      Width (너비)
-                    </label>
-                    <input
-                      type='number'
-                      value={wrapperSettings.width}
-                      onChange={(e) => setWrapperSettings(prev => ({ ...prev, width: Number(e.target.value) }))}
-                      className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
-                      placeholder='150'
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className='block text-sm font-medium text-gray-700 mb-2'>
-                      Height (높이)
-                    </label>
-                    <input
-                      type='number'
-                      value={wrapperSettings.height}
-                      onChange={(e) => setWrapperSettings(prev => ({ ...prev, height: Number(e.target.value) }))}
-                      className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
-                      placeholder='80'
-                    />
-                  </div>
-                </div>
 
-                <div className='bg-blue-50 p-3 rounded-lg'>
-                  <h3 className='font-medium text-blue-900 mb-2'>NodeWrapper 기능 설명</h3>
-                  <div className='text-sm text-blue-800 space-y-1'>
-                    <div>• <strong>Top/Left:</strong> 노드의 절대 위치 지정</div>
-                    <div>• <strong>Width/Height:</strong> 노드의 크기 제어</div>
-                    <div>• <strong>Z-Index:</strong> 다른 요소들 위에 표시</div>
-                    <div>• <strong>절대 위치:</strong> ReactFlow 캔버스와 독립적인 배치</div>
-                  </div>
-                </div>
-                
-                <div className='flex gap-3 pt-4'>
-                  <button
-                    onClick={() => setShowWrapperModal(false)}
-                    className='flex-1 px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50'
-                  >
-                    취소
-                  </button>
-                  <button
-                    onClick={() => {
-                      addWrappedNode();
-                      setShowWrapperModal(false);
-                    }}
-                    className='flex-1 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700'
-                  >
-                    NodeWrapper 노드 추가
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
     </div>
   );
 }

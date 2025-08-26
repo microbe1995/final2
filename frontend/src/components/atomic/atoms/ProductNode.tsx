@@ -2,6 +2,7 @@
 
 import React, { memo } from 'react';
 import { Handle, Position } from '@xyflow/react';
+import { renderFourDirectionHandles } from './HandleStyles';
 
 interface ProductNodeProps {
   data: {
@@ -62,9 +63,6 @@ function ProductNode({
         ? data.showHandles
         : true;
 
-  // 🎯 4방향 모든 핸들 위치 (자유로운 연결을 위해)
-  const allPositions = [Position.Left, Position.Right, Position.Top, Position.Bottom];
-
   // 🎨 동적 스타일 생성
   const nodeClasses = `
     ${variantStyles[finalVariant as keyof typeof variantStyles]} 
@@ -72,26 +70,6 @@ function ProductNode({
     border-2 rounded-lg shadow-md relative hover:shadow-lg transition-all duration-200
     hover:scale-105 cursor-pointer
   `.trim();
-
-  // 🎯 핸들 스타일 (variant에 따라 색상 변경)
-  const getHandleStyle = (type: 'source' | 'target') => {
-    const baseStyle = '!w-4 !h-4 !border-2 !border-white transition-all duration-200 cursor-crosshair hover:!scale-110 hover:!shadow-lg hover:!ring-4 hover:!ring-opacity-50 pointer-events-auto';
-
-    switch (finalVariant) {
-      case 'primary':
-        return `${baseStyle} !bg-blue-600 hover:!bg-blue-700 hover:!ring-blue-300`;
-      case 'success':
-        return `${baseStyle} !bg-green-600 hover:!bg-green-700 hover:!ring-green-300`;
-      case 'warning':
-        return `${baseStyle} !bg-yellow-600 hover:!bg-yellow-700 hover:!ring-yellow-300`;
-      case 'danger':
-        return `${baseStyle} !bg-red-600 hover:!bg-red-700 hover:!ring-red-300`;
-      case 'product':
-        return `${baseStyle} !bg-purple-600 hover:!bg-purple-700 hover:!ring-purple-300`;
-      default:
-        return `${baseStyle} !bg-gray-600 hover:!bg-gray-700 hover:!ring-gray-300`;
-    }
-  };
 
   // 🎯 이벤트 핸들러
   const handleClick = () => {
@@ -109,32 +87,12 @@ function ProductNode({
       onDoubleClick={handleDoubleClick}
       style={{ cursor: data.productData ? 'pointer' : 'default' }}
     >
-      {/* 🎯 4방향 모든 핸들 렌더링 (자유로운 연결을 위해) */}
-      {finalShowHandles &&
-        allPositions.map((position: Position, index: number) => (
-          <React.Fragment key={`handles-${position}`}>
-            {/* Target 핸들 (입력) */}
-            <Handle
-              type='target'
-              position={position}
-              isConnectable={isConnectable}
-              className={getHandleStyle('target')}
-              style={{ filter: 'drop-shadow(0 0 8px rgba(59, 130, 246, 0.3))' }}
-              onMouseDown={(e) => e.stopPropagation()}
-              onClick={(e) => e.stopPropagation()}
-            />
-            {/* Source 핸들 (출력) */}
-            <Handle
-              type='source'
-              position={position}
-              isConnectable={isConnectable}
-              className={getHandleStyle('source')}
-              style={{ filter: 'drop-shadow(0 0 8px rgba(34, 197, 94, 0.3))' }}
-              onMouseDown={(e) => e.stopPropagation()}
-              onClick={(e) => e.stopPropagation()}
-            />
-          </React.Fragment>
-        ))}
+      {/* 🎯 4방향 모든 핸들 렌더링 (공통 스타일 사용) */}
+      {finalShowHandles && renderFourDirectionHandles(
+        isConnectable,
+        (e) => e.stopPropagation(),
+        (e) => e.stopPropagation()
+      )}
 
       {/* 🎯 노드 내용 */}
       <div className='text-center'>
