@@ -4,7 +4,7 @@ import React, { useMemo } from 'react';
 import { BaseEdge, EdgeLabelRenderer, getBezierPath } from '@xyflow/react';
 import { EdgeProps } from '@xyflow/react';
 
-interface SourceStreamData extends Record<string, unknown> {
+interface SourceStreamData {
   streamType: 'material' | 'energy' | 'carbon' | 'waste';
   flowRate: number;
   unit: string;
@@ -12,7 +12,7 @@ interface SourceStreamData extends Record<string, unknown> {
   description?: string;
 }
 
-const SourceStreamEdge: React.FC<EdgeProps<SourceStreamData>> = ({
+const SourceStreamEdge: React.FC<EdgeProps<any>> = ({
   id,
   sourceX,
   sourceY,
@@ -23,7 +23,7 @@ const SourceStreamEdge: React.FC<EdgeProps<SourceStreamData>> = ({
   data,
   selected,
   style,
-}: EdgeProps<SourceStreamData>) => {
+}) => {
   const [edgePath, labelX, labelY] = useMemo(() => {
     return getBezierPath({
       sourceX,

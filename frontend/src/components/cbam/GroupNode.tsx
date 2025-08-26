@@ -17,7 +17,7 @@ interface GroupNodeData extends Record<string, unknown> {
   };
 }
 
-const GroupNode: React.FC<NodeProps<GroupNodeData>> = ({ data, selected }) => {
+const GroupNode: React.FC<NodeProps<any>> = ({ data, selected }) => {
   const [isCollapsed, setIsCollapsed] = useState(data.isCollapsed);
 
   const getGroupStyle = () => {
@@ -115,14 +115,14 @@ const GroupNode: React.FC<NodeProps<GroupNodeData>> = ({ data, selected }) => {
           <div className="bg-white/30 rounded p-2">
             <div className="font-medium text-xs mb-1">포함된 노드</div>
             <div className="text-xs text-gray-600">
-              {data.nodes.length > 0 ? (
-                data.nodes.slice(0, 3).map((nodeId, index) => (
-                  <div key={index} className="flex items-center gap-1">
-                    <div className="w-2 h-2 bg-gray-400 rounded-full" />
-                    {nodeId}
-                  </div>
-                ))
-              ) : (
+                             {data.nodes.length > 0 ? (
+                 data.nodes.slice(0, 3).map((nodeId: any, index: number) => (
+                   <div key={index} className="flex items-center gap-1">
+                     <div className="w-2 h-2 bg-gray-400 rounded-full" />
+                     {nodeId}
+                   </div>
+                 ))
+               ) : (
                 <div className="text-gray-500">노드가 없습니다</div>
               )}
               {data.nodes.length > 3 && (
