@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 
 import ProductNode from '@/components/atomic/atoms/ProductNode';
-import GroupNode from '@/components/atomic/atoms/GroupNode';
+// import GroupNode from '@/components/atomic/atoms/GroupNode'; // ✅ 제거: 내장 group 사용
 import axiosClient from '@/lib/axiosClient';
 import {
   ReactFlow,
@@ -30,66 +30,73 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
-// ==============================
-// Edge 타입 정의
-// ==============================
+/* ============================================================================
+   커스텀 Edge
+   - markerEnd는 defaultEdgeOptions에서만 설정(중복 방지)
+============================================================================ */
 const CustomEdge = ({ id, sourceX, sourceY, targetX, targetY, selected }: any) => {
   const [edgePath] = React.useMemo(() => {
-    const centerX = (sourceX + targetX) / 2;
-    const path = `M ${sourceX} ${sourceY} Q ${centerX} ${sourceY} ${targetX} ${targetY}`;
-    return [path];
+    const cx = (sourceX + targetX) / 2;
+    return [`M ${sourceX} ${sourceY} Q ${cx} ${sourceY} ${targetX} ${targetY}`];
   }, [sourceX, sourceY, targetX, targetY]);
 
   return (
-    <>
-      {/* ✅ markerEnd 속성 제거 (중복 방지) */}
-      <path id={id} className="react-flow__edge-path" d={edgePath} stroke={selected ? '#3b82f6' : '#6b7280'} strokeWidth={selected ? 3 : 2} fill="none" />
-    </>
+    <path
+      id={id}
+      className="react-flow__edge-path"
+      d={edgePath}
+      stroke={selected ? '#3b82f6' : '#6b7280'}
+      strokeWidth={selected ? 3 : 2}
+      fill="none"
+    />
   );
 };
 
 const edgeTypes: EdgeTypes = { custom: CustomEdge };
 
-// ==============================
-// 내부 컴포넌트 (ReactFlowProvider 내부에서 사용)
-// ==============================
+/* ============================================================================
+   내부 컴포넌트
+============================================================================ */
 function ProcessManagerInner() {
-  const [nodes, setNodes, onNodesChange] = useNodesState<any>([]);
-  const [edges, setEdges, onEdgesChange] = useEdgesState<any>([]);
-  const { addNodes, addEdges, deleteElements } = useReactFlow();
+  // 상태 훅
+  const [nodes, , onNodesChange] = useNodesState<any>([]);
+  const [edges, , onEdgesChange] = useEdgesState<any>([]);
+  const { addNodes, addEdges } = useReactFlow();
 
-  // 더미 제품 데이터
+  // 제품 목록 모달 상태
   const [products, setProducts] = useState<any[]>([]);
   const [showProductModal, setShowProductModal] = useState(false);
 
+  // 제품 불러오기
   const fetchProducts = useCallback(async () => {
     try {
-      const response = await axiosClient.get('/api/v1/boundary/product');
-      setProducts(response.data.products || []);
-    } catch (error) {
-      // ✅ API 실패 시 더미 데이터라도 넣어주기
+      const res = await axiosClient.get('/api/v1/boundary/product');
+      setProducts(res.data.products || []);
+    } catch {
       setProducts([
         { product_id: 'dummy-1', name: '테스트 제품 1', cn_code: '7208.51.00', production_qty: 1000, sales_qty: 800, export_qty: 200, inventory_qty: 150, defect_rate: 0.05, period_start: '2024-01-01', period_end: '2024-12-31' },
         { product_id: 'dummy-2', name: '테스트 제품 2', cn_code: '7208.52.00', production_qty: 2000, sales_qty: 1800, export_qty: 400, inventory_qty: 300, defect_rate: 0.03, period_start: '2024-01-01', period_end: '2024-12-31' },
-        { product_id: 'dummy-3', name: '테스트 제품 3', cn_code: '7208.53.00', production_qty: 1500, sales_qty: 1200, export_qty: 300, inventory_qty: 200, defect_rate: 0.07, period_start: '2024-01-01', period_end: '2024-12-31' }
+        { product_id: 'dummy-3', name: '테스트 제품 3', cn_code: '7208.53.00', production_qty: 1500, sales_qty: 1200, export_qty: 300, inventory_qty: 200, defect_rate: 0.07, period_start: '2024-01-01', period_end: '2024-12-31' },
       ]);
     }
   }, []);
 
+  // 제품 노드 추가(모달 열기)
   const addProductNode = useCallback(async () => {
     await fetchProducts();
     setShowProductModal(true);
   }, [fetchProducts]);
 
+  // 제품 선택 → 노드 추가
   const handleProductSelect = useCallback((product: any) => {
     const newNode: Node<any> = {
-      id: `product-${Date.now()}`,
+      id: `product-${Date.now()}-${Math.random().toString(36).slice(2)}`,
       type: 'custom',
       position: { x: Math.random() * 400 + 100, y: Math.random() * 300 + 100 },
-      data: { 
-        label: product.name, 
-        description: `제품: ${product.name}`, 
-        variant: 'product', 
+      data: {
+        label: product.name,
+        description: `제품: ${product.name}`,
+        variant: 'product',
         productData: product,
         name: product.name,
         type: 'output',
@@ -105,36 +112,34 @@ function ProcessManagerInner() {
           period_end: product.period_end,
         },
         status: 'active',
-      }
+      },
     };
     addNodes(newNode);
     setShowProductModal(false);
   }, [addNodes]);
 
+  // 그룹 노드 추가(내장 group 타입 사용)
   const addGroupNode = useCallback(() => {
-    // ✅ 커스텀 GroupNode 사용
-    const newGroup: Node<any> = {
-      id: `group-${Date.now()}`,
-      type: 'group', // ✅ 커스텀 GroupNode 타입 사용
+    const id = `group-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    addNodes({
+      id,
+      type: 'group', // ✅ 내장 타입. 커스텀 컴포넌트 매핑 금지
       position: { x: Math.random() * 400 + 100, y: Math.random() * 300 + 100 },
-      data: { 
-        label: `그룹 ${Date.now()}`, 
-        description: '새로운 그룹',
+      data: { label: `그룹 ${id}`, description: '산정경계' },
+      style: {
+        width: 420,
+        height: 320,
+        border: '2px solid #a78bfa',
+        borderRadius: 12,
+        background: '#0b1220', // 다크 배경
+        pointerEvents: 'auto',
       },
-      style: { 
-        width: 400, 
-        height: 300,
-        pointerEvents: 'auto' // ✅ pointerEvents 설정
-      }
-    };
-    addNodes(newGroup);
+      className: 'shadow-sm',
+    });
   }, [addNodes]);
 
-  // ✅ nodeTypes에 group 매핑 추가
-  const nodeTypes: NodeTypes = {
-    custom: ProductNode,
-    group: GroupNode
-  };
+  // ✅ 커스텀 노드 매핑(제품만)
+  const nodeTypes: NodeTypes = { custom: ProductNode };
 
   return (
     <div className="w-full h-full flex flex-col">
@@ -144,56 +149,52 @@ function ProcessManagerInner() {
         <p className="text-gray-300">CBAM 관련 프로세스 플로우를 생성하고 관리합니다.</p>
       </div>
 
-      {/* 버튼 영역 */}
+      {/* 버튼 */}
       <div className="bg-gray-800 p-4 flex gap-2">
-        <Button 
-          onClick={addProductNode}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
-        >
-          <Plus className="h-4 w-4"/> 제품 노드
+        <Button onClick={addProductNode} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2">
+          <Plus className="h-4 w-4" /> 제품 노드
         </Button>
-        <Button 
-          onClick={addGroupNode}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
-        >
-          <Plus className="h-4 w-4"/> 그룹 노드
+        <Button onClick={addGroupNode} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2">
+          <Plus className="h-4 w-4" /> 그룹 노드
         </Button>
       </div>
 
       {/* ReactFlow 캔버스 */}
-      <div className="flex-1 bg-gray-100">
+      <div className="flex-1">
         <ReactFlow
           nodes={nodes}
           edges={edges}
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
-          onConnect={(params: Connection) => {
-            // ✅ params.sourceHandle과 params.targetHandle을 edge에 포함
+          onConnect={(params: Connection) =>
             addEdges({
-              id: `${params.source}-${params.target}-${params.sourceHandle}-${params.targetHandle}`,
+              id: `e-${Date.now()}-${Math.random().toString(36).slice(2)}`,
               source: params.source!,
               target: params.target!,
-              sourceHandle: params.sourceHandle, // ✅ sourceHandle 포함
-              targetHandle: params.targetHandle, // ✅ targetHandle 포함
+              sourceHandle: params.sourceHandle ?? undefined,
+              targetHandle: params.targetHandle ?? undefined,
               type: 'custom',
-              markerEnd: { type: MarkerType.ArrowClosed }
-            });
-          }}
+            })
+          }
           nodeTypes={nodeTypes}
           edgeTypes={edgeTypes}
           connectionMode={ConnectionMode.Loose}
+          defaultEdgeOptions={{ type: 'custom', markerEnd: { type: MarkerType.ArrowClosed } }}
           deleteKeyCode="Delete"
-          className="bg-gray-50"
+          className="bg-gray-900" // ✅ 다크 캔버스
           fitView
-          // ✅ defaultEdgeOptions 설정
-          defaultEdgeOptions={{ 
-            type: 'custom', 
-            markerEnd: { type: MarkerType.ArrowClosed } 
-          }}
         >
-          <Background />
-          <Controls />
-          <MiniMap />
+          <Background color="#334155" gap={24} size={1} />
+          <Controls className="!bg-gray-800 !border !border-gray-700 !text-gray-200 !rounded-md" position="bottom-left" />
+          <MiniMap
+            className="!border !border-gray-700 !rounded-md"
+            style={{ backgroundColor: '#0b1220' }}
+            maskColor="rgba(17,24,39,0.6)"
+            nodeColor={() => '#a78bfa'}
+            nodeStrokeColor={() => '#e5e7eb'}
+            pannable
+            zoomable
+          />
         </ReactFlow>
       </div>
 
@@ -203,18 +204,13 @@ function ProcessManagerInner() {
           <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full mx-4">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold">제품 선택</h3>
-              <button 
-                onClick={() => setShowProductModal(false)}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                ✕
-              </button>
+              <button onClick={() => setShowProductModal(false)} className="text-gray-400 hover:text-gray-600">✕</button>
             </div>
             <div className="space-y-2">
-              {products.map(p => (
-                <div 
-                  key={p.product_id} 
-                  className="p-3 border rounded-lg cursor-pointer hover:bg-blue-50 hover:border-blue-300 transition-colors" 
+              {products.map((p) => (
+                <div
+                  key={p.product_id}
+                  className="p-3 border rounded-lg cursor-pointer hover:bg-blue-50 hover:border-blue-300 transition-colors"
                   onClick={() => handleProductSelect(p)}
                 >
                   <div className="font-medium">{p.name}</div>
@@ -230,9 +226,9 @@ function ProcessManagerInner() {
   );
 }
 
-// ==============================
-// 메인 컴포넌트 (ReactFlowProvider로 감싸기)
-// ==============================
+/* ============================================================================
+   메인 컴포넌트
+============================================================================ */
 export default function ProcessManager() {
   return (
     <div className="w-full h-screen">
