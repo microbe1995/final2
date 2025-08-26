@@ -35,6 +35,28 @@ const SourceStreamEdge: React.FC<EdgeProps<any>> = ({
     });
   }, [sourceX, sourceY, sourcePosition, targetX, targetY, targetPosition]);
 
+  const getStreamColor = () => {
+    switch (data?.streamType) {
+      case 'material':
+        return '#10b981'; // 초록색
+      case 'energy':
+        return '#f59e0b'; // 주황색
+      case 'carbon':
+        return '#ef4444'; // 빨간색
+      case 'waste':
+        return '#8b5cf6'; // 보라색
+      default:
+        return '#6b7280'; // 회색
+    }
+  };
+
+
+
+  const handleDoubleClick = () => {
+    // 엣지 더블클릭 시 편집 모달 열기 (부모 컴포넌트에서 처리)
+    console.log('소스스트림 엣지 더블클릭:', id, data);
+  };
+
   const getEdgeColor = () => {
     if (!data) return selected ? '#3b82f6' : '#6b7280';
     

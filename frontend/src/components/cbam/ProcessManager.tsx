@@ -273,6 +273,17 @@ export default function ProcessManager() {
   const [groupName, setGroupName] = useState('');
   const [groupType, setGroupType] = useState<'product' | 'process'>('product');
 
+  // 소스스트림 관련 상태
+  const [showStreamModal, setShowStreamModal] = useState(false);
+  const [editingEdge, setEditingEdge] = useState<Edge | null>(null);
+  const [streamData, setStreamData] = useState({
+    streamType: 'material' as 'material' | 'energy' | 'carbon' | 'waste',
+    flowRate: 100,
+    unit: 't/h',
+    carbonIntensity: 2.5,
+    description: ''
+  });
+
   // React Flow 상태 관리
   const [nodes, setNodes, onNodesChange] = useNodesState<any>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<any>([]);
@@ -628,6 +639,40 @@ export default function ProcessManager() {
     setSelectedNodes([]);
   }, [groupName, groupType, selectedNodes, nodes, addNodes]);
 
+  // 그룹 크기 자동 조정 함수
+  const updateGroupSize = useCallback((groupId: string) => {
+    setNodes(prevNodes => {
+      const groupNode = prevNodes.find(node => node.id === groupId);
+      if (!groupNode || groupNode.type !== 'group' || !groupNode.data.nodes) return prevNodes;
+
+      const groupNodes = prevNodes.filter(node => 
+        groupNode.data.nodes.includes(node.id) && node.type !== 'group'
+      );
+      
+      if (groupNodes.length === 0) return prevNodes;
+
+      const minX = Math.min(...groupNodes.map(n => n.position.x));
+      const minY = Math.min(...groupNodes.map(n => n.position.y));
+      const maxX = Math.max(...groupNodes.map(n => n.position.x));
+      const maxY = Math.max(...groupNodes.map(n => n.position.y));
+
+      return prevNodes.map(node => {
+        if (node.id === groupId) {
+          return {
+            ...node,
+            position: { x: minX - 50, y: minY - 50 },
+            style: {
+              ...node.style,
+              width: maxX - minX + 200,
+              height: maxY - minY + 200,
+            }
+          };
+        }
+        return node;
+      });
+    });
+  }, [setNodes]);
+
   const removeNodeFromGroup = useCallback((groupId: string, nodeId: string) => {
     setNodes(prevNodes => 
       prevNodes.map(node => {
@@ -662,6 +707,29 @@ export default function ProcessManager() {
     );
   }, [setNodes]);
 
+  // 노드 변경 시 그룹 크기 자동 조정
+  const handleNodesChange = useCallback((changes: any) => {
+    // 기존 노드 변경 처리
+    onNodesChange(changes);
+    
+    // 그룹 크기 자동 조정
+    changes.forEach((change: any) => {
+      if (change.type === 'position' && change.dragging === false) {
+        // 노드가 드래그를 끝냈을 때
+        const movedNode = nodes.find(node => node.id === change.id);
+        if (movedNode) {
+          // 이 노드가 속한 그룹들을 찾아서 크기 조정
+          nodes.forEach(node => {
+            if (node.type === 'group' && node.data.nodes && 
+                node.data.nodes.includes(change.id)) {
+              updateGroupSize(node.id);
+            }
+          });
+        }
+      }
+    });
+  }, [nodes, updateGroupSize, onNodesChange]);
+
   // ============================================================================
   // 🎯 연결 관리
   // ============================================================================
@@ -672,14 +740,33 @@ export default function ProcessManager() {
         try {
           console.log('🔗 연결 시도:', params);
           
+          // 소스와 타겟 노드 확인
+          const sourceNode = nodes.find(node => node.id === params.source);
+          const targetNode = nodes.find(node => node.id === params.target);
+          
+          // 그룹 간 연결인지 확인
+          const isGroupToGroup = sourceNode?.type === 'group' && targetNode?.type === 'group';
+          
+          // 엣지 타입 결정
+          const edgeType = isGroupToGroup ? 'sourceStream' : 'custom';
+          
+          // 소스스트림 데이터 생성
+          const streamData = isGroupToGroup ? {
+            streamType: 'material' as const,
+            flowRate: 100,
+            unit: 't/h',
+            carbonIntensity: 2.5,
+            description: `${sourceNode?.data?.label || '그룹'} → ${targetNode?.data?.label || '그룹'}`
+          } : undefined;
+          
           // 로컬 상태에 즉시 추가 (사용자 경험 향상)
           const newEdge: Edge = {
             id: `e${params.source}-${params.target}`,
             source: params.source,
             target: params.target,
-            type: 'custom',
+            type: edgeType,
             markerEnd: { type: MarkerType.ArrowClosed },
-            data: {
+            data: streamData || {
               label: '연결',
               processType: 'standard'
             }
@@ -690,18 +777,20 @@ export default function ProcessManager() {
           // 백엔드 API 호출 (선택적)
           if (selectedFlow) {
             try {
-                             const response = await fetch(`/api/v1/boundary/flow/${selectedFlow.id}/connect`, {
-                 method: 'POST',
-                 headers: {
-                   'Content-Type': 'application/json',
-                 },
-                 body: JSON.stringify({
-                   source: params.source,
-                   target: params.target,
-                   sourceHandle: params.sourceHandle,
-                   targetHandle: params.targetHandle
-                 })
-               });
+              const response = await fetch(`/api/v1/boundary/flow/${selectedFlow.id}/connect`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  source: params.source,
+                  target: params.target,
+                  sourceHandle: params.sourceHandle,
+                  targetHandle: params.targetHandle,
+                  edgeType: edgeType,
+                  streamData: streamData
+                })
+              });
               
               if (response.ok) {
                 const result = await response.json();
@@ -720,7 +809,7 @@ export default function ProcessManager() {
         }
       }
     },
-    [addEdges, selectedFlow]
+    [addEdges, selectedFlow, nodes]
   );
 
   const onConnectStart = useCallback((event: any, params: any) => {
@@ -838,7 +927,7 @@ export default function ProcessManager() {
                          <ReactFlow
                nodes={nodes}
                edges={edges}
-               onNodesChange={onNodesChange}
+               onNodesChange={handleNodesChange}
                onEdgesChange={onEdgesChange}
                onConnect={onConnect}
                onConnectStart={onConnectStart}

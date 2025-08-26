@@ -159,8 +159,7 @@ const GroupNode: React.FC<NodeProps<any>> = ({ data, selected, id }) => {
           {/* 포함된 노드 목록 */}
           <div className="bg-white/30 rounded p-2">
             <div className="font-medium text-xs mb-1">포함된 노드</div>
-            <div className="text-xs text-gray-600">
-              {data.nodes && Array.isArray(data.nodes) && data.nodes.length > 0 ? (
+            <div className="text-xs text-gray-600">h             {data.nodes && Array.isArray(data.nodes) && data.nodes.length > 0 ? (
                 data.nodes.slice(0, 3).map((nodeId: any, index: number) => (
                   <div key={index} className="flex items-center justify-between">
                     <div className="flex items-center gap-1">
