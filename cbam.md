@@ -293,30 +293,111 @@ export default function ProcessManager() {
     </div>
   );
 }
-리포의 @xyflow/react v12 기반 플로우 화면을 수정하라.
-목표
 
-group 노드는 내장 타입을 사용한다(커스텀 매핑 제거).
+'use client';
 
-제품 노드는 4방향 핸들 연결이 모두 동작하도록 onConnect에 sourceHandle/targetHandle을 반영한다.
+import React from 'react';
+import { Handle, Position } from '@xyflow/react';
 
-엣지 id 충돌이 없도록 고유 id를 생성한다.
+type HandleType = 'source' | 'target';
 
-다크 테마와 어울리도록 캔버스/Background/Controls/MiniMap 색상을 설정한다.
-작업
+const color = {
+  bg: '!bg-green-600',
+  hoverBg: 'hover:!bg-green-700',
+  ring: 'hover:!ring-green-300',
+  shadow: 'drop-shadow(0 0 8px rgba(34,197,94,.3))',
+};
 
-ProcessManager.tsx에서 GroupNode import와 nodeTypes의 group 매핑을 삭제하고, group 노드 생성은 type: 'group'으로 유지한다.
+const baseCls =
+  '!w-4 !h-4 !border-2 !border-white transition-all duration-200 ' +
+  'cursor-crosshair hover:!scale-110 hover:!shadow-lg hover:!ring-4 ' +
+  'hover:!ring-opacity-50 pointer-events-auto';
 
-onConnect에서 params.sourceHandle/targetHandle을 신규 엣지에 포함한다. defaultEdgeOptions로 markerEnd를 설정하고 CustomEdge의 path에는 markerEnd를 지정하지 않는다.
+const cls = `${baseCls} ${color.bg} ${color.hoverBg} ${color.ring}`;
+const styleBase: React.CSSProperties = { filter: color.shadow, zIndex: 10 };
 
-ReactFlow의 className을 bg-gray-900로 지정하고, <Background variant="dots" color="#334155" gap={24} size={1}/>로 설정한다. Controls/MiniMap은 다크 톤 클래스를 적용한다.
+/**
+ * 각 방향마다 source/target 두 개를 배치.
+ * - Left/Right: 위아래로 살짝 분리
+ * - Top/Bottom: 좌우로 살짝 분리
+ */
+export const renderFourDirectionHandles = (isConnectable = true) => {
+  const gap = 10; // px 분리 간격
 
-ProductNode.tsx에서 4개 Handle에 id(left/right/top/bottom)를 부여하고 isConnectable을 true로 둔다. wrapper에 pointerEvents: 'auto'를 준다.
-검증
+  const pairs: Array<{
+    position: Position;
+    items: Array<{ type: HandleType; idSuffix: string; style: React.CSSProperties }>;
+  }> = [
+    {
+      position: Position.Left,
+      items: [
+        { type: 'target', idSuffix: 'target', style: { top: `calc(50% - ${gap}px)`, left: -8 } },
+        { type: 'source', idSuffix: 'source', style: { top: `calc(50% + ${gap}px)`, left: -8 } },
+      ],
+    },
+    {
+      position: Position.Right,
+      items: [
+        { type: 'target', idSuffix: 'target', style: { top: `calc(50% - ${gap}px)`, right: -8 } },
+        { type: 'source', idSuffix: 'source', style: { top: `calc(50% + ${gap}px)`, right: -8 } },
+      ],
+    },
+    {
+      position: Position.Top,
+      items: [
+        { type: 'target', idSuffix: 'target', style: { top: -8, left: `calc(50% - ${gap}px)` } },
+        { type: 'source', idSuffix: 'source', style: { top: -8, left: `calc(50% + ${gap}px)` } },
+      ],
+    },
+    {
+      position: Position.Bottom,
+      items: [
+        { type: 'target', idSuffix: 'target', style: { bottom: -8, left: `calc(50% - ${gap}px)` } },
+        { type: 'source', idSuffix: 'source', style: { bottom: -8, left: `calc(50% + ${gap}px)` } },
+      ],
+    },
+  ];
 
-그룹 노드 클릭/리사이즈 시 예외 없음.
+  return pairs.flatMap(({ position, items }) =>
+    items.map(({ type, idSuffix, style }) => {
+      const id = `${position}-${idSuffix}`; // 예: "top-source"
+      return (
+        <Handle
+          key={id}
+          id={id}
+          type={type}
+          position={position}
+          isConnectable={isConnectable}
+          className={cls}
+          style={{ ...styleBase, ...style }}
+        />
+      );
+    })
+  );
+};
 
-제품 노드의 4개 핸들로 엣지 연결이 모두 가능하고, 서로 다른 핸들 조합으로 복수 엣지가 유지된다.
+/* 그룹 노드 등에서 쓸 기본 핸들 스타일 */
+export const handleStyle = {
+  background: '#3b82f6',
+  width: 12,
+  height: 12,
+  border: '2px solid white',
+  borderRadius: '50%',
+};
+프로젝트의 HandleStyles.tsx 파일을 수정해줘.
+목표:
+- 각 방향(좌/우/상/하)에 source와 target 핸들을 모두 배치할 수 있어야 한다.
+- 두 핸들이 같은 좌표에 겹치지 않도록 몇 px씩 어긋나게 배치한다.
+- 모든 방향에서 드래그 시작과 드롭이 가능해야 하며, source → target 연결이 정상적으로 동작해야 한다.
+작업:
+1. renderFourDirectionHandles 함수에서 각 Position(Left, Right, Top, Bottom)에 대해 source/target 두 개씩 렌더링한다.
+2. Left/Right는 세로 방향으로 10px 간격, Top/Bottom은 가로 방향으로 10px 간격을 둔다.
+3. 각 핸들에는 `${position}-${type}` 형태의 고유 id를 부여한다. (예: top-source, left-target)
+4. 스타일에는 zIndex: 10을 줘서 노드 위에서 항상 클릭 가능하게 한다.
+5. 기존 handleColorMap, colorStyles는 제거하고, 위 코드처럼 통합된 green 스타일을 사용한다.
+검증:
+- 제품 노드의 위/아래/좌/우 모든 방향에서 엣지가 생성되고 서로 연결 가능해야 한다.
+- source→source, target→target 연결은 무시된다(React Flow 기본 동작).
 
-캔버스·미니맵·컨트롤이 다크 테마와 조화된다.
-위 프롬프트를 참고해서 현재 잇는 문제들을 해결해줘 
+
+위 프롬프트와 코드들을 참고하라

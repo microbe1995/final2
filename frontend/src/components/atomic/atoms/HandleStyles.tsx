@@ -3,102 +3,84 @@
 import React from 'react';
 import { Handle, Position } from '@xyflow/react';
 
-// 🎯 핸들 타입 정의
-export type HandleType = 'source' | 'target';
+type HandleType = 'source' | 'target';
 
-// 🎯 핸들 위치별 색상 매핑
-export const handleColorMap = {
-  source: {
-    [Position.Left]: 'blue',
-    [Position.Right]: 'green', 
-    [Position.Top]: 'purple',
-    [Position.Bottom]: 'orange'
-  },
-  target: {
-    [Position.Left]: 'blue',
-    [Position.Right]: 'green',
-    [Position.Top]: 'purple', 
-    [Position.Bottom]: 'orange'
-  }
+const color = {
+  bg: '!bg-green-600',
+  hoverBg: 'hover:!bg-green-700',
+  ring: 'hover:!ring-green-300',
+  shadow: 'drop-shadow(0 0 8px rgba(34,197,94,.3))',
 };
 
-// 🎯 색상별 스타일 매핑
-export const colorStyles = {
-  blue: {
-    bg: '!bg-blue-600',
-    hoverBg: 'hover:!bg-blue-700',
-    ring: 'hover:!ring-blue-300',
-    shadow: 'drop-shadow(0 0 8px rgba(59, 130, 246, 0.3))'
-  },
-  green: {
-    bg: '!bg-green-600',
-    hoverBg: 'hover:!bg-green-700', 
-    ring: 'hover:!ring-green-300',
-    shadow: 'drop-shadow(0 0 8px rgba(34, 197, 94, 0.3))'
-  },
-  purple: {
-    bg: '!bg-purple-600',
-    hoverBg: 'hover:!bg-purple-700',
-    ring: 'hover:!ring-purple-300', 
-    shadow: 'drop-shadow(0 0 8px rgba(147, 51, 234, 0.3))'
-  },
-  orange: {
-    bg: '!bg-orange-600',
-    hoverBg: 'hover:!bg-orange-700',
-    ring: 'hover:!ring-orange-300',
-    shadow: 'drop-shadow(0 0 8px rgba(249, 115, 22, 0.3))'
-  }
+const baseCls =
+  '!w-4 !h-4 !border-2 !border-white transition-all duration-200 ' +
+  'cursor-crosshair hover:!scale-110 hover:!shadow-lg hover:!ring-4 ' +
+  'hover:!ring-opacity-50 pointer-events-auto';
+
+const cls = `${baseCls} ${color.bg} ${color.hoverBg} ${color.ring}`;
+const styleBase: React.CSSProperties = { filter: color.shadow, zIndex: 10 };
+
+/**
+ * 각 방향마다 source/target 두 개를 배치.
+ * - Left/Right: 위아래로 살짝 분리
+ * - Top/Bottom: 좌우로 살짝 분리
+ */
+export const renderFourDirectionHandles = (isConnectable = true) => {
+  const gap = 10; // px 분리 간격
+
+  const pairs: Array<{
+    position: Position;
+    items: Array<{ type: HandleType; idSuffix: string; style: React.CSSProperties }>;
+  }> = [
+    {
+      position: Position.Left,
+      items: [
+        { type: 'target', idSuffix: 'target', style: { top: `calc(50% - ${gap}px)`, left: -8 } },
+        { type: 'source', idSuffix: 'source', style: { top: `calc(50% + ${gap}px)`, left: -8 } },
+      ],
+    },
+    {
+      position: Position.Right,
+      items: [
+        { type: 'target', idSuffix: 'target', style: { top: `calc(50% - ${gap}px)`, right: -8 } },
+        { type: 'source', idSuffix: 'source', style: { top: `calc(50% + ${gap}px)`, right: -8 } },
+      ],
+    },
+    {
+      position: Position.Top,
+      items: [
+        { type: 'target', idSuffix: 'target', style: { top: -8, left: `calc(50% - ${gap}px)` } },
+        { type: 'source', idSuffix: 'source', style: { top: -8, left: `calc(50% + ${gap}px)` } },
+      ],
+    },
+    {
+      position: Position.Bottom,
+      items: [
+        { type: 'target', idSuffix: 'target', style: { bottom: -8, left: `calc(50% - ${gap}px)` } },
+        { type: 'source', idSuffix: 'source', style: { bottom: -8, left: `calc(50% + ${gap}px)` } },
+      ],
+    },
+  ];
+
+  return pairs.flatMap(({ position, items }) =>
+    items.map(({ type, idSuffix, style }) => {
+      const id = `${position}-${idSuffix}`; // 예: "top-source"
+      return (
+        <Handle
+          key={id}
+          id={id}
+          type={type}
+          position={position}
+          isConnectable={isConnectable}
+          className={cls}
+          style={{ ...styleBase, ...style }}
+        />
+      );
+    })
+  );
 };
 
-// 🎯 공통 핸들 스타일 생성 함수
-export const getHandleStyle = (type: HandleType, position: Position) => {
-  const baseStyle = '!w-4 !h-4 !border-2 !border-white transition-all duration-200 cursor-crosshair hover:!scale-110 hover:!shadow-lg hover:!ring-4 hover:!ring-opacity-50 pointer-events-auto';
-  
-  const color = handleColorMap[type][position];
-  const colorStyle = colorStyles[color as keyof typeof colorStyles];
-  
-  return `${baseStyle} ${colorStyle.bg} ${colorStyle.hoverBg} ${colorStyle.ring}`;
-};
-
-// 🎯 핸들 스타일 객체 생성 함수
-export const getHandleStyleObject = (type: HandleType, position: Position) => {
-  const color = handleColorMap[type][position];
-  const colorStyle = colorStyles[color as keyof typeof colorStyles];
-  
-  return {
-    filter: colorStyle.shadow
-  };
-};
-
-// 🎯 4방향 핸들 렌더링 함수
-export const renderFourDirectionHandles = (
-  isConnectable: boolean = true,
-) => {
-  const positions = [Position.Left, Position.Right, Position.Top, Position.Bottom];
-  
-  return positions.map((position) => (
-    <React.Fragment key={`handles-${position}`}>
-      <Handle
-        type='target'
-        position={position}
-        id={`${position}-target`}
-        isConnectable={isConnectable}
-        className={getHandleStyle('target', position)}
-        style={getHandleStyleObject('target', position)}
-      />
-      <Handle
-        type='source'
-        position={position}
-        id={`${position}-source`}
-        isConnectable={isConnectable}
-        className={getHandleStyle('source', position)}
-        style={getHandleStyleObject('source', position)}
-      />
-    </React.Fragment>
-  ));
-};
-
-// 🎯 기본 핸들 스타일 (GroupNode용)
+/* 그룹 노드 등에서 쓸 기본 핸들 스타일 */
 export const handleStyle = {
   background: '#3b82f6',
   width: 12,

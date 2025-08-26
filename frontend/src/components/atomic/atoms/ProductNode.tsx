@@ -2,6 +2,7 @@
 
 import React, { memo } from 'react';
 import { Handle, Position } from '@xyflow/react';
+import { renderFourDirectionHandles } from './HandleStyles';
 
 interface ProductNodeProps {
   data: {
@@ -82,50 +83,8 @@ function ProductNode({
         pointerEvents: 'auto' // ✅ pointerEvents 문제 해결
       }}
     >
-      {/* 🎯 4방향 핸들 - cbam.md 지시사항에 따라 수정 */}
-      {finalShowHandles && (
-        <>
-          {/* 왼쪽 핸들 - target */}
-          <Handle
-            type="target"
-            position={Position.Left}
-            id="left" // ✅ 고유 id 부여
-            isConnectable={isConnectable}
-            className="!w-4 !h-4 !bg-green-600 !border-2 !border-white hover:!bg-green-700 hover:!scale-110 transition-all duration-200 cursor-crosshair"
-            style={{ filter: 'drop-shadow(0 0 8px rgba(34, 197, 94, 0.3))' }}
-          />
-
-          {/* 오른쪽 핸들 - source */}
-          <Handle
-            type="source"
-            position={Position.Right}
-            id="right" // ✅ 고유 id 부여
-            isConnectable={isConnectable}
-            className="!w-4 !h-4 !bg-green-600 !border-2 !border-white hover:!bg-green-700 hover:!scale-110 transition-all duration-200 cursor-crosshair"
-            style={{ filter: 'drop-shadow(0 0 8px rgba(34, 197, 94, 0.3))' }}
-          />
-
-          {/* 위쪽 핸들 - target */}
-          <Handle
-            type="target"
-            position={Position.Top}
-            id="top" // ✅ 고유 id 부여
-            isConnectable={isConnectable}
-            className="!w-4 !h-4 !bg-green-600 !border-2 !border-white hover:!bg-green-700 hover:!scale-110 transition-all duration-200 cursor-crosshair"
-            style={{ filter: 'drop-shadow(0 0 8px rgba(34, 197, 94, 0.3))' }}
-          />
-
-          {/* 아래쪽 핸들 - source */}
-          <Handle
-            type="source"
-            position={Position.Bottom}
-            id="bottom" // ✅ 고유 id 부여
-            isConnectable={isConnectable}
-            className="!w-4 !h-4 !bg-green-600 !border-2 !border-white hover:!bg-green-700 hover:!scale-110 transition-all duration-200 cursor-crosshair"
-            style={{ filter: 'drop-shadow(0 0 8px rgba(34, 197, 94, 0.3))' }}
-          />
-        </>
-      )}
+      {/* 🎯 4방향 핸들 - HandleStyles.tsx 함수 사용 */}
+      {finalShowHandles && renderFourDirectionHandles(isConnectable)}
 
       {/* 노드 내용 */}
       <div className='text-center'>
