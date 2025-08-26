@@ -97,3 +97,12 @@ export const renderFourDirectionHandles = (
     </React.Fragment>
   ));
 };
+
+// 🎯 기본 핸들 스타일 (GroupNode용)
+export const handleStyle = {
+  background: '#3b82f6',
+  width: 12,
+  height: 12,
+  border: '2px solid white',
+  borderRadius: '50%',
+};

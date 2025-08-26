@@ -469,7 +469,7 @@ export default function ProcessManager() {
   // nodeTypes 정의 (아토믹 디자인 패턴 적용)
   const nodeTypes: NodeTypes = {
     custom: (props: any) => <ProductNode {...props} onClick={handleProductNodeClick} onDoubleClick={handleProductNodeDoubleClick} />,
-    group: (props: any) => <GroupNode {...props} />,
+    group: GroupNode,
   };
 
 
