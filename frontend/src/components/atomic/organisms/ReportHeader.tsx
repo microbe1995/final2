@@ -1,5 +1,5 @@
 import React from 'react';
-import { Button } from '@/components/ui/Button';
+import Button from '@/components/atomic/atoms/Button';
 import { Download } from 'lucide-react';
 
 interface ReportHeaderProps {

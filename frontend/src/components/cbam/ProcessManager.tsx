@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 
 import ProductNode from '@/components/atomic/atoms/ProductNode';
+import GroupNode from '@/components/atomic/atoms/GroupNode';
 import axiosClient from '@/lib/axiosClient';
 import {
   ReactFlow,
@@ -111,10 +112,10 @@ function ProcessManagerInner() {
   }, [addNodes]);
 
   const addGroupNode = useCallback(() => {
-    // ✅ group 노드는 내장 타입 사용, style로만 테두리/배경 지정
+    // ✅ 커스텀 GroupNode 사용
     const newGroup: Node<any> = {
       id: `group-${Date.now()}`,
-      type: 'group', // ✅ 내장 타입 사용
+      type: 'group', // ✅ 커스텀 GroupNode 타입 사용
       position: { x: Math.random() * 400 + 100, y: Math.random() * 300 + 100 },
       data: { 
         label: `그룹 ${Date.now()}`, 
@@ -123,18 +124,16 @@ function ProcessManagerInner() {
       style: { 
         width: 400, 
         height: 300,
-        border: '2px dashed #3b82f6',
-        background: 'rgba(59, 130, 246, 0.1)',
-        borderRadius: '8px',
         pointerEvents: 'auto' // ✅ pointerEvents 설정
       }
     };
     addNodes(newGroup);
   }, [addNodes]);
 
-  // ✅ nodeTypes에서 group 매핑 제거, custom만 남김
+  // ✅ nodeTypes에 group 매핑 추가
   const nodeTypes: NodeTypes = {
-    custom: ProductNode
+    custom: ProductNode,
+    group: GroupNode
   };
 
   return (

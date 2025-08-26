@@ -14,8 +14,8 @@ import {
 import axios from 'axios';
 import * as XLSX from 'xlsx';
 import CommonShell from '@/components/common/CommonShell';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
+import Button from '@/components/atomic/atoms/Button';
+import Input from '@/components/atomic/atoms/Input';
 
 interface UploadResponse {
   message: string;

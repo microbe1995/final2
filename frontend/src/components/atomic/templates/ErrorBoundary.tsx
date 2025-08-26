@@ -1,7 +1,7 @@
 'use client';
 
 import React, { Component, ErrorInfo, ReactNode } from 'react';
-import { Button } from '@/components/ui/Button';
+import Button from '@/components/atomic/atoms/Button';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
 
 interface Props {

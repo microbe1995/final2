@@ -1,6 +1,6 @@
 'use client';
 import React, { useState, useRef, useEffect } from 'react';
-import { Button } from '@/components/ui/Button';
+import Button from '@/components/atomic/atoms/Button';
 import { MapPin, X, Search, FileText } from 'lucide-react';
 
 // Daum Postcode 타입 정의

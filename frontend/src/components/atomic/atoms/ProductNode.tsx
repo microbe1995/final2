@@ -91,8 +91,8 @@ function ProductNode({
             position={Position.Left}
             id="left" // ✅ 고유 id 부여
             isConnectable={isConnectable}
-            className="!w-4 !h-4 !bg-blue-600 !border-2 !border-white hover:!bg-blue-700 hover:!scale-110 transition-all duration-200 cursor-crosshair"
-            style={{ filter: 'drop-shadow(0 0 8px rgba(59, 130, 246, 0.3))' }}
+            className="!w-4 !h-4 !bg-green-600 !border-2 !border-white hover:!bg-green-700 hover:!scale-110 transition-all duration-200 cursor-crosshair"
+            style={{ filter: 'drop-shadow(0 0 8px rgba(34, 197, 94, 0.3))' }}
           />
 
           {/* 오른쪽 핸들 - source */}
@@ -111,8 +111,8 @@ function ProductNode({
             position={Position.Top}
             id="top" // ✅ 고유 id 부여
             isConnectable={isConnectable}
-            className="!w-4 !h-4 !bg-blue-600 !border-2 !border-white hover:!bg-blue-700 hover:!scale-110 transition-all duration-200 cursor-crosshair"
-            style={{ filter: 'drop-shadow(0 0 8px rgba(59, 130, 246, 0.3))' }}
+            className="!w-4 !h-4 !bg-green-600 !border-2 !border-white hover:!bg-green-700 hover:!scale-110 transition-all duration-200 cursor-crosshair"
+            style={{ filter: 'drop-shadow(0 0 8px rgba(34, 197, 94, 0.3))' }}
           />
 
           {/* 아래쪽 핸들 - source */}

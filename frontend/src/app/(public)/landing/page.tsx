@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
+import Button from '@/components/atomic/atoms/Button';
+import Input from '@/components/atomic/atoms/Input';
 
 export default function LandingPage() {
   const router = useRouter();

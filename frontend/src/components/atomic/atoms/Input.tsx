@@ -7,15 +7,28 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   helperText?: string;
   leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;
+  variant?: 'default' | 'simple';
 }
 
 const Input = forwardRef<HTMLInputElement, InputProps>(
   (
-    { label, error, helperText, leftIcon, rightIcon, className, id, ...props },
+    { label, error, helperText, leftIcon, rightIcon, className, id, variant = 'default', ...props },
     ref
   ) => {
     const inputId = id || `input-${Math.random().toString(36).substr(2, 9)}`;
 
+    // 단순한 variant (ui/Input 스타일)
+    if (variant === 'simple') {
+      return (
+        <input 
+          ref={ref}
+          className={cn('stitch-input', className)}
+          {...props}
+        />
+      );
+    }
+
+    // 기본 variant (기존 atomic/atoms/Input 스타일)
     return (
       <div className='w-full'>
         {label && (

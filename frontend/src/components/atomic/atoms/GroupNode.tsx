@@ -2,9 +2,6 @@
 
 import React, { useMemo } from 'react';
 import { Handle, NodeProps, Position } from '@xyflow/react';
-import { NodeResizer } from '@reactflow/node-resizer';
-import '@reactflow/node-resizer/dist/style.css';
-import { handleStyle } from './HandleStyles';
 
 type Callbacks = {
   openSubflow: (groupNodeId: string) => void;
@@ -38,6 +35,7 @@ function GroupNode({ id, data, selected, dragging, width, height }: NodeProps) {
       'repeating-linear-gradient(135deg, rgba(59,130,246,0.06) 0 12px, rgba(59,130,246,0.04) 12px 24px)', // 옅은 스트라이프
     boxShadow: selected ? '0 0 0 4px rgba(37,99,235,0.15)' : '0 2px 8px rgba(0,0,0,0.06)',
     overflow: 'hidden',
+    resize: 'both', // ✅ 리사이징 활성화
   };
 
   const headerStyle: React.CSSProperties = {
@@ -64,26 +62,17 @@ function GroupNode({ id, data, selected, dragging, width, height }: NodeProps) {
     color: '#6b7280',
   };
 
+  // ✅ 모든 핸들을 초록색으로 통일
+  const handleStyle = {
+    background: '#10b981',
+    width: 12,
+    height: 12,
+    border: '2px solid white',
+    borderRadius: '50%',
+  };
+
   return (
     <div style={boundaryStyle}>
-      {/* 리사이저: 노드가 선택되었을 때만 표시. 최소/최대 크기 제한 가능 */}
-      <NodeResizer
-        isVisible={selected}
-        minWidth={220}
-        minHeight={120}
-        handleStyle={{
-          width: 10,
-          height: 10,
-          borderRadius: 2,
-          border: '1px solid #fff',
-          background: '#111827',
-        }}
-        lineStyle={{
-          stroke: '#2563eb',
-          strokeWidth: 1.5,
-        }}
-      />
-
       {/* 헤더 */}
       <div className="nodrag" style={headerStyle}>
         <div>
@@ -115,9 +104,11 @@ function GroupNode({ id, data, selected, dragging, width, height }: NodeProps) {
         하위 공정(서브 플로우)을 정의하려면 &apos;열기&apos;를 눌러 편집하세요.
       </div>
 
-      {/* 입출력 핸들 */}
-      <Handle id="in" type="target" position={Position.Left} style={handleStyle} />
-      <Handle id="out" type="source" position={Position.Right} style={{ ...handleStyle, background: '#10b981' }} />
+      {/* ✅ 4방향 모든 핸들 추가 (모두 초록색) */}
+      <Handle id="left" type="target" position={Position.Left} style={handleStyle} />
+      <Handle id="right" type="source" position={Position.Right} style={handleStyle} />
+      <Handle id="top" type="target" position={Position.Top} style={handleStyle} />
+      <Handle id="bottom" type="source" position={Position.Bottom} style={handleStyle} />
     </div>
   );
 }
