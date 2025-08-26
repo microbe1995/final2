@@ -36,7 +36,7 @@ export default function UserRegisterPage() {
     }
     
     // 개인 사용자 회원가입 로직 구현
-    console.log('개인 사용자 회원가입 데이터:', formData);
+
     
     // 회원가입 성공 후 로그인 페이지로 이동
     router.push('/login');

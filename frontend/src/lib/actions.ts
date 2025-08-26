@@ -21,7 +21,7 @@ async function apiCall<T = any>(
   try {
     // Mock implementation - will be replaced with actual API calls
     await new Promise(resolve => setTimeout(resolve, 1000));
-    console.log(`[API] ${method} ${API_BASE_URL}${endpoint}`, data);
+
 
     // TODO: Replace with actual fetch call to microservice
     /*
@@ -57,12 +57,10 @@ async function apiCall<T = any>(
 
 // Project Management Service Actions
 export async function createProject(projectData: Partial<ProjectMeta>) {
-  console.log('[ACTION] Creating new project:', projectData);
   return await apiCall('/projects', 'POST', projectData);
 }
 
 export async function getProject(projectId: string) {
-  console.log('[ACTION] Fetching project:', projectId);
   return await apiCall(`/projects/${projectId}`, 'GET');
 }
 
@@ -70,7 +68,6 @@ export async function updateProject(
   projectId: string,
   projectData: Partial<ProjectMeta>
 ) {
-  console.log('[ACTION] Updating project:', projectId, projectData);
   return await apiCall(`/projects/${projectId}`, 'PUT', projectData);
 }
 
@@ -79,7 +76,6 @@ export async function saveScope(
   projectId: string,
   formData: ProjectMeta & AnalysisScope
 ) {
-  console.log('[ACTION] Saving scope for project:', projectId, formData);
 
   // Split data for different microservices
   const projectMeta = {
@@ -128,17 +124,14 @@ export async function saveScope(
 
 // LCI Service Actions
 export async function saveLci(projectId: string, items: LciItem[]) {
-  console.log('[ACTION] Saving LCI items for project:', projectId, items);
   return await apiCall(`/projects/${projectId}/lci`, 'PUT', { items });
 }
 
 export async function getLciData(projectId: string) {
-  console.log('[ACTION] Fetching LCI data for project:', projectId);
   return await apiCall(`/projects/${projectId}/lci`, 'GET');
 }
 
 export async function validateLciData(projectId: string) {
-  console.log('[ACTION] Validating LCI data for project:', projectId);
   return await apiCall(`/projects/${projectId}/lci/validate`, 'POST');
 }
 
@@ -147,7 +140,6 @@ export async function startLciaRun(
   projectId: string,
   config: { method: string; categories: string[] }
 ) {
-  console.log('[ACTION] Starting LCIA run for project:', projectId, config);
 
   const result = await apiCall(`/projects/${projectId}/lcia/run`, 'POST', {
     methodSet: config.method,
@@ -167,7 +159,6 @@ export async function startLciaRun(
 }
 
 export async function getLciaResults(projectId: string, runId?: string) {
-  console.log('[ACTION] Fetching LCIA results for project:', projectId, runId);
   const endpoint = runId
     ? `/projects/${projectId}/lcia/results/${runId}`
     : `/projects/${projectId}/lcia/results/latest`;
@@ -175,7 +166,6 @@ export async function getLciaResults(projectId: string, runId?: string) {
 }
 
 export async function getLciaHistory(projectId: string) {
-  console.log('[ACTION] Fetching LCIA run history for project:', projectId);
   return await apiCall(`/projects/${projectId}/lcia/history`, 'GET');
 }
 
@@ -192,7 +182,6 @@ export async function requestReport(
     }
   | ApiResponse<any>
 > {
-  console.log('[ACTION] Generating report for project:', projectId, format);
 
   const result = await apiCall(
     `/projects/${projectId}/report/generate`,
@@ -218,17 +207,11 @@ export async function requestReport(
 }
 
 export async function getReportStatus(reportId: string) {
-  console.log('[ACTION] Checking report status:', reportId);
   return await apiCall(`/reports/${reportId}/status`, 'GET');
 }
 
 // File Upload Service Actions
 export async function uploadProcessDiagram(projectId: string, file: File) {
-  console.log(
-    '[ACTION] Uploading process diagram for project:',
-    projectId,
-    file.name
-  );
 
   // TODO: Implement actual file upload to file service
   const formData = new FormData();
@@ -246,11 +229,9 @@ export async function uploadProcessDiagram(projectId: string, file: File) {
 
 // Data Quality Service Actions
 export async function validateDataQuality(projectId: string) {
-  console.log('[ACTION] Validating data quality for project:', projectId);
   return await apiCall(`/projects/${projectId}/quality/validate`, 'POST');
 }
 
 export async function getDataQualityReport(projectId: string) {
-  console.log('[ACTION] Getting data quality report for project:', projectId);
   return await apiCall(`/projects/${projectId}/quality/report`, 'GET');
 }

@@ -150,7 +150,7 @@ export default function RegisterPage() {
       });
       
       const result = await response.json();
-      console.log('Username check response:', result); // 디버깅용
+  
       setUsernameAvailable(result.data?.available);
     } catch (error) {
       setUsernameAvailable(null);
@@ -171,7 +171,7 @@ export default function RegisterPage() {
       });
       
       const result = await response.json();
-      console.log('Company ID existence check response:', result); // 디버깅용
+  
       setCompanyIdAvailable(result.data?.available);
     } catch (error) {
       setCompanyIdAvailable(null);

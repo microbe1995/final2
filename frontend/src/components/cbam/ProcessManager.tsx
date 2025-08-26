@@ -404,7 +404,6 @@ export default function ProcessManager() {
 
   const handleProductNodeClick = useCallback((node: Node<ProcessStepData>) => {
     // 단일 클릭은 선택만 처리 (상세페이지 열지 않음)
-    console.log('노드 클릭:', node.data.name);
   }, []);
 
   const handleProductNodeDoubleClick = useCallback((node: Node<ProcessStepData>) => {
@@ -430,7 +429,6 @@ export default function ProcessManager() {
 
   const onNodeSelectionChange = useCallback((params: any) => {
     // 노드 선택 상태 관리 (그룹 기능 제거)
-    console.log('선택된 노드:', params.nodes);
   }, []);
 
   // 노드 변경 처리
@@ -444,9 +442,8 @@ export default function ProcessManager() {
 
   const onConnect = useCallback(
     async (params: Connection) => {
-      if (params.source && params.target) {
-        try {
-          console.log('🔗 연결 시도:', params);
+             if (params.source && params.target) {
+         try {
           
           // 소스와 타겟 노드 확인
           const sourceNode = nodes.find(node => node.id === params.source);
@@ -495,19 +492,17 @@ export default function ProcessManager() {
                 })
               });
               
-              if (response.ok) {
-                const result = await response.json();
-                console.log('✅ 백엔드 연결 성공:', result);
-              } else {
+                             if (response.ok) {
+                 const result = await response.json();
+               } else {
                 console.warn('⚠️ 백엔드 연결 실패, 로컬 상태만 유지');
               }
             } catch (apiError) {
               console.warn('⚠️ 백엔드 API 호출 실패, 로컬 상태만 유지:', apiError);
             }
-          }
-          
-          console.log('✅ 연결 완료:', newEdge.id);
-        } catch (error) {
+                     }
+           
+         } catch (error) {
           console.error('❌ 연결 실패:', error);
         }
       }
