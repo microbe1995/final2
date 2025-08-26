@@ -80,6 +80,15 @@ function ProductNode({
     if (onDoubleClick) onDoubleClick({ data, selected });
   };
 
+  // 🎯 핸들 이벤트 핸들러
+  const handleMouseDown = (e: React.MouseEvent) => {
+    e.stopPropagation();
+  };
+
+  const handleClickEvent = (e: React.MouseEvent) => {
+    e.stopPropagation();
+  };
+
   return (
     <div 
       className={`${nodeClasses} ${selected ? 'border-2 border-opacity-100 shadow-lg' : ''}`}
@@ -88,10 +97,88 @@ function ProductNode({
       style={{ cursor: data.productData ? 'pointer' : 'default' }}
     >
       {/* 🎯 4방향 모든 핸들 렌더링 (공통 스타일 사용) */}
-      {finalShowHandles && renderFourDirectionHandles(
-        isConnectable,
-        (e) => e.stopPropagation(),
-        (e) => e.stopPropagation()
+      {finalShowHandles && (
+        <>
+          {/* 왼쪽 핸들들 */}
+          <Handle
+            type="target"
+            position={Position.Left}
+            isConnectable={isConnectable}
+            className="!w-4 !h-4 !bg-blue-600 !border-2 !border-white hover:!bg-blue-700 hover:!scale-110 transition-all duration-200 cursor-crosshair"
+            style={{ filter: 'drop-shadow(0 0 8px rgba(59, 130, 246, 0.3))' }}
+            onMouseDown={handleMouseDown}
+            onClick={handleClickEvent}
+          />
+          <Handle
+            type="source"
+            position={Position.Left}
+            isConnectable={isConnectable}
+            className="!w-4 !h-4 !bg-green-600 !border-2 !border-white hover:!bg-green-700 hover:!scale-110 transition-all duration-200 cursor-crosshair"
+            style={{ filter: 'drop-shadow(0 0 8px rgba(34, 197, 94, 0.3))' }}
+            onMouseDown={handleMouseDown}
+            onClick={handleClickEvent}
+          />
+
+          {/* 오른쪽 핸들들 */}
+          <Handle
+            type="target"
+            position={Position.Right}
+            isConnectable={isConnectable}
+            className="!w-4 !h-4 !bg-blue-600 !border-2 !border-white hover:!bg-blue-700 hover:!scale-110 transition-all duration-200 cursor-crosshair"
+            style={{ filter: 'drop-shadow(0 0 8px rgba(59, 130, 246, 0.3))' }}
+            onMouseDown={handleMouseDown}
+            onClick={handleClickEvent}
+          />
+          <Handle
+            type="source"
+            position={Position.Right}
+            isConnectable={isConnectable}
+            className="!w-4 !h-4 !bg-green-600 !border-2 !border-white hover:!bg-green-700 hover:!scale-110 transition-all duration-200 cursor-crosshair"
+            style={{ filter: 'drop-shadow(0 0 8px rgba(34, 197, 94, 0.3))' }}
+            onMouseDown={handleMouseDown}
+            onClick={handleClickEvent}
+          />
+
+          {/* 위쪽 핸들들 */}
+          <Handle
+            type="target"
+            position={Position.Top}
+            isConnectable={isConnectable}
+            className="!w-4 !h-4 !bg-blue-600 !border-2 !border-white hover:!bg-blue-700 hover:!scale-110 transition-all duration-200 cursor-crosshair"
+            style={{ filter: 'drop-shadow(0 0 8px rgba(59, 130, 246, 0.3))' }}
+            onMouseDown={handleMouseDown}
+            onClick={handleClickEvent}
+          />
+          <Handle
+            type="source"
+            position={Position.Top}
+            isConnectable={isConnectable}
+            className="!w-4 !h-4 !bg-green-600 !border-2 !border-white hover:!bg-green-700 hover:!scale-110 transition-all duration-200 cursor-crosshair"
+            style={{ filter: 'drop-shadow(0 0 8px rgba(34, 197, 94, 0.3))' }}
+            onMouseDown={handleMouseDown}
+            onClick={handleClickEvent}
+          />
+
+          {/* 아래쪽 핸들들 */}
+          <Handle
+            type="target"
+            position={Position.Bottom}
+            isConnectable={isConnectable}
+            className="!w-4 !h-4 !bg-blue-600 !border-2 !border-white hover:!bg-blue-700 hover:!scale-110 transition-all duration-200 cursor-crosshair"
+            style={{ filter: 'drop-shadow(0 0 8px rgba(59, 130, 246, 0.3))' }}
+            onMouseDown={handleMouseDown}
+            onClick={handleClickEvent}
+          />
+          <Handle
+            type="source"
+            position={Position.Bottom}
+            isConnectable={isConnectable}
+            className="!w-4 !h-4 !bg-green-600 !border-2 !border-white hover:!bg-green-700 hover:!scale-110 transition-all duration-200 cursor-crosshair"
+            style={{ filter: 'drop-shadow(0 0 8px rgba(34, 197, 94, 0.3))' }}
+            onMouseDown={handleMouseDown}
+            onClick={handleClickEvent}
+          />
+        </>
       )}
 
       {/* 🎯 노드 내용 */}

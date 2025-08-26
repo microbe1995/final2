@@ -16,6 +16,7 @@ import {
 
 
 import ProductNode from '@/components/atomic/atoms/ProductNode';
+import GroupNode from '@/components/atomic/atoms/GroupNode';
 import axiosClient from '@/lib/axiosClient';
 import {
   ReactFlow,
@@ -397,7 +398,61 @@ export default function ProcessManager() {
     setSelectedProduct(null);
   }, [addNodes]);
 
+  // ============================================================================
+  // 🎯 그룹 노드 관련 함수들
+  // ============================================================================
 
+  const addGroupNode = useCallback(() => {
+    const newGroupNode: Node<any> = {
+      id: `group-${Date.now()}`,
+      type: 'group',
+      position: { x: Math.random() * 400 + 100, y: Math.random() * 300 + 100 },
+      data: {
+        label: `그룹 ${Date.now()}`,
+        description: '새로운 그룹',
+        width: 400,
+        height: 300,
+      },
+      style: {
+        width: 400,
+        height: 300,
+      },
+    };
+
+    addNodes(newGroupNode);
+  }, [addNodes]);
+
+  const addProductToGroup = useCallback((groupId: string, product: any) => {
+    const newProductNode: Node<any> = {
+      id: `product-${Date.now()}`,
+      type: 'custom',
+      position: { x: 50, y: 50 }, // 그룹 내부 상대 위치
+      data: {
+        label: product.name,
+        description: `제품: ${product.name}`,
+        variant: 'product',
+        productData: product,
+        name: product.name,
+        type: 'output',
+        parameters: {
+          product_id: product.product_id,
+          cn_code: product.cn_code,
+          production_qty: product.production_qty,
+          sales_qty: product.sales_qty,
+          export_qty: product.export_qty,
+          inventory_qty: product.inventory_qty,
+          defect_rate: product.defect_rate,
+          period_start: product.period_start,
+          period_end: product.period_end,
+        },
+        status: 'active',
+      },
+      parentId: groupId, // 🎯 Sub Flows: 부모 노드 지정
+      extent: 'parent', // 🎯 Sub Flows: 자식 노드가 부모 밖으로 나가지 못하도록 제한
+    };
+
+    addNodes(newProductNode);
+  }, [addNodes]);
 
   const handleProductNodeClick = useCallback((node: Node<ProcessStepData>) => {
     // 단일 클릭은 선택만 처리 (상세페이지 열지 않음)
@@ -414,6 +469,7 @@ export default function ProcessManager() {
   // nodeTypes 정의 (아토믹 디자인 패턴 적용)
   const nodeTypes: NodeTypes = {
     custom: (props: any) => <ProductNode {...props} onClick={handleProductNodeClick} onDoubleClick={handleProductNodeDoubleClick} />,
+    group: (props: any) => <GroupNode {...props} />,
   };
 
 
@@ -636,6 +692,7 @@ export default function ProcessManager() {
                panOnScroll={false}
                preventScrolling={true}
                className='bg-gray-50'
+               defaultEdgeOptions={{ zIndex: 1 }} // 🎯 Sub Flows: 엣지가 노드 위에 렌더링되도록 설정
              >
               <Background gap={12} size={1} />
               <Controls />
@@ -657,10 +714,21 @@ export default function ProcessManager() {
                 position='top-left'
                 className='bg-white/90 backdrop-blur-sm rounded-lg p-3 shadow-lg'
               >
-                                   <div className='flex items-center gap-2 text-sm text-gray-600'>
-                     <div className='w-3 h-3 bg-purple-500 rounded-full'></div>
-                     <span>제품 노드</span>
-                   </div>
+                <div className='flex flex-col gap-3'>
+                  <div className='flex items-center gap-2 text-sm text-gray-600'>
+                    <div className='w-3 h-3 bg-purple-500 rounded-full'></div>
+                    <span>제품 노드</span>
+                  </div>
+                  
+                  {/* 🎯 그룹 노드 버튼 */}
+                  <button
+                    onClick={addGroupNode}
+                    className='flex items-center gap-2 px-3 py-2 bg-blue-100 hover:bg-blue-200 text-blue-800 rounded-lg text-sm font-medium transition-colors'
+                  >
+                    <Plus className='h-4 w-4' />
+                    그룹 노드 추가
+                  </button>
+                </div>
               </Panel>
 
               {/* 우측 패널 */}
@@ -673,6 +741,12 @@ export default function ProcessManager() {
                   <div>🔗 파란색 핸들: 입력, 초록색 핸들: 출력</div>
                   <div>🔄 연결선을 드래그하여 재연결</div>
                   <div>🗑️ Delete 키로 선택된 요소 삭제</div>
+                  <div className='mt-2 pt-2 border-t border-gray-200'>
+                    <div className='font-medium text-blue-600'>📁 Sub Flows 기능:</div>
+                    <div>• 그룹 노드 추가 버튼으로 그룹 생성</div>
+                    <div>• 제품 노드를 그룹 내부에 배치 가능</div>
+                    <div>• 그룹 간 연결 및 그룹-외부 연결 지원</div>
+                  </div>
                   {isConnecting && (
                     <div className='text-blue-600 font-medium mt-2'>
                       🔗 연결 중... {connectionStart && `(${connectionStart})`}
