@@ -355,7 +355,46 @@ export default function ProcessManager() {
       const response = await axiosClient.get('/api/v1/boundary/product');
       setProducts(response.data.products || []);
     } catch (error) {
-      setProducts([]);
+      // ✅ fetch 실패 시 더미 데이터 추가하여 테스트 가능하게 만듦
+      const dummyProducts = [
+        {
+          product_id: 'dummy-001',
+          name: '테스트 제품 1',
+          cn_code: '7208.51.00',
+          production_qty: 1000,
+          sales_qty: 800,
+          export_qty: 200,
+          inventory_qty: 150,
+          defect_rate: 0.05,
+          period_start: '2024-01-01',
+          period_end: '2024-12-31'
+        },
+        {
+          product_id: 'dummy-002',
+          name: '테스트 제품 2',
+          cn_code: '7208.52.00',
+          production_qty: 2000,
+          sales_qty: 1800,
+          export_qty: 400,
+          inventory_qty: 300,
+          defect_rate: 0.03,
+          period_start: '2024-01-01',
+          period_end: '2024-12-31'
+        },
+        {
+          product_id: 'dummy-003',
+          name: '테스트 제품 3',
+          cn_code: '7208.53.00',
+          production_qty: 1500,
+          sales_qty: 1200,
+          export_qty: 300,
+          inventory_qty: 200,
+          defect_rate: 0.07,
+          period_start: '2024-01-01',
+          period_end: '2024-12-31'
+        }
+      ];
+      setProducts(dummyProducts);
     } finally {
       setIsLoadingProducts(false);
     }
@@ -674,7 +713,7 @@ export default function ProcessManager() {
 
                      {/* React Flow 캔버스 */}
            <div className='h-[1000px] border-2 border-gray-200 rounded-lg overflow-hidden'>
-             {/* ✅ Provider 추가 */}
+             {/* ✅ Provider는 ReactFlow 바깥에 있어야 함 */}
              <ReactFlowProvider>
                <ReactFlow
                  nodes={nodes}

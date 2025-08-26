@@ -64,4 +64,53 @@ import {
 </div>
 
 
+
+너는 @xyflow/react (React Flow v11) 환경에서 zustand provider 문제를 해결하는 전문가야.
+
+내 코드(ProcessManager.tsx)에서 발생하는 문제:
+1. 제품 노드 버튼을 눌러도 노드가 안 뜸
+   - 원인: fetchProducts()가 /api/v1/boundary/product 호출하다가 404 → products 배열이 비어 있음.
+   - 따라서 모달에 "등록된 제품이 없습니다"만 뜨고 실제로 handleProductSelect가 실행되지 않아 노드가 추가되지 않음.
+
+2. 그룹 노드 버튼을 눌러도 노드가 안 뜸
+   - 원인: ReactFlowProvider를 ReactFlow 안쪽에 배치해 store가 공유되지 않음.
+   - zustand provider는 ReactFlow 바깥에 있어야 addNodes 같은 훅이 제대로 반영됨.
+
+해결해야 할 작업:
+- ReactFlowProvider를 ReactFlow 바깥으로 옮겨라.
+- fetchProducts 실패 시에도 더미 데이터를 넣어주어 테스트 가능하게 만들어라.
+
+<div className='h-[1000px] border-2 border-gray-200 rounded-lg overflow-hidden'>
+  {/* ✅ Provider는 ReactFlow 바깥에 있어야 함 */}
+  <ReactFlowProvider>
+    <ReactFlow
+      nodes={nodes}
+      edges={edges}
+      onNodesChange={handleNodesChange}
+      onEdgesChange={onEdgesChange}
+      onConnect={onConnect}
+      onConnectStart={onConnectStart}
+      onConnectEnd={onConnectEnd}
+      onSelectionChange={onNodeSelectionChange}
+      nodeTypes={nodeTypes}
+      edgeTypes={edgeTypes}
+      connectionMode={ConnectionMode.Loose}
+      deleteKeyCode='Delete'
+      multiSelectionKeyCode='Shift'
+      panOnDrag={[1, 2]}
+      zoomOnScroll={true}
+      zoomOnPinch={true}
+      panOnScroll={false}
+      preventScrolling={true}
+      className='bg-gray-50'
+      defaultEdgeOptions={{ zIndex: 1 }}
+    >
+      <Background gap={12} size={1} />
+      <Controls />
+      <MiniMap ... />
+      <Panel ... />
+    </ReactFlow>
+  </ReactFlowProvider>
+</div>
+
 위 코드와 프롬프트를 참고해서 수정해줘
