@@ -206,5 +206,4 @@ function ProductNode({
   );
 }
 
-export { ProductNode };
 export default memo(ProductNode);

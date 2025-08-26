@@ -12,7 +12,7 @@ type Callbacks = {
   getSubflowCount: (groupNodeId: string) => { nodes: number; edges: number } | null;
 };
 
-export function GroupNode({ id, data, selected, dragging, width, height }: NodeProps) {
+function GroupNode({ id, data, selected, dragging, width, height }: NodeProps) {
   const cbs: Callbacks | undefined = data?.__callbacks as Callbacks | undefined;
   const sub = useMemo(() => cbs?.getSubflowCount?.(id) ?? null, [cbs, id]);
   
