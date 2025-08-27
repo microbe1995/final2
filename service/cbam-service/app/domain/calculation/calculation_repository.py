@@ -18,9 +18,14 @@ class CalculationRepository:
         self.database_url = os.getenv('DATABASE_URL')
         if not self.database_url:
             logger.warning("DATABASE_URL 환경변수가 설정되지 않았습니다. 데이터베이스 기능이 제한됩니다.")
+            # 데이터베이스 URL이 없어도 서비스는 계속 실행
             return
         
-        self._initialize_database()
+        try:
+            self._initialize_database()
+        except Exception as e:
+            logger.error(f"데이터베이스 초기화 실패: {e}")
+            # 초기화 실패해도 서비스는 계속 실행
     
     def _initialize_database(self):
         """데이터베이스 초기화"""
