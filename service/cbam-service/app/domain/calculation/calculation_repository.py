@@ -143,7 +143,13 @@ class CalculationRepository:
                 conn.commit()
                 
                 if result:
-                    return dict(result)
+                    product_dict = dict(result)
+                    # datetime.date 객체를 문자열로 변환
+                    if 'prostart_period' in product_dict and product_dict['prostart_period']:
+                        product_dict['prostart_period'] = product_dict['prostart_period'].isoformat()
+                    if 'proend_period' in product_dict and product_dict['proend_period']:
+                        product_dict['proend_period'] = product_dict['proend_period'].isoformat()
+                    return product_dict
                 else:
                     raise Exception("제품 생성에 실패했습니다.")
                     
@@ -168,7 +174,17 @@ class CalculationRepository:
                 """)
                 
                 results = cursor.fetchall()
-                return [dict(row) for row in results]
+                products = []
+                for row in results:
+                    product_dict = dict(row)
+                    # datetime.date 객체를 문자열로 변환
+                    if 'prostart_period' in product_dict and product_dict['prostart_period']:
+                        product_dict['prostart_period'] = product_dict['prostart_period'].isoformat()
+                    if 'proend_period' in product_dict and product_dict['proend_period']:
+                        product_dict['proend_period'] = product_dict['proend_period'].isoformat()
+                    products.append(product_dict)
+                
+                return products
                 
         except Exception as e:
             raise e
@@ -190,7 +206,15 @@ class CalculationRepository:
                 """, (product_id,))
                 
                 result = cursor.fetchone()
-                return dict(result) if result else None
+                if result:
+                    product_dict = dict(result)
+                    # datetime.date 객체를 문자열로 변환
+                    if 'prostart_period' in product_dict and product_dict['prostart_period']:
+                        product_dict['prostart_period'] = product_dict['prostart_period'].isoformat()
+                    if 'proend_period' in product_dict and product_dict['proend_period']:
+                        product_dict['proend_period'] = product_dict['proend_period'].isoformat()
+                    return product_dict
+                return None
                 
         except Exception as e:
             raise e
@@ -219,7 +243,15 @@ class CalculationRepository:
                 result = cursor.fetchone()
                 conn.commit()
                 
-                return dict(result) if result else None
+                if result:
+                    product_dict = dict(result)
+                    # datetime.date 객체를 문자열로 변환
+                    if 'prostart_period' in product_dict and product_dict['prostart_period']:
+                        product_dict['prostart_period'] = product_dict['prostart_period'].isoformat()
+                    if 'proend_period' in product_dict and product_dict['proend_period']:
+                        product_dict['proend_period'] = product_dict['proend_period'].isoformat()
+                    return product_dict
+                return None
                 
         except Exception as e:
             conn.rollback()
