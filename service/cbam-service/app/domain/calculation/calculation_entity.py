@@ -63,6 +63,7 @@ class Product(Base):
     
     # 관계 설정
     install = relationship("Install", back_populates="products")
+    processes = relationship("Process", back_populates="product")
     
     def to_dict(self) -> Dict[str, Any]:
         """엔티티를 딕셔너리로 변환"""
@@ -113,17 +114,65 @@ class Process(Base):
     __tablename__ = "process"
     
     id = Column(Integer, primary_key=True, index=True)
+    product_id = Column(Integer, ForeignKey("product.id"), nullable=False, index=True)  # 제품 ID
     process_name = Column(Text, nullable=False, index=True)  # 프로세스명
-    process_type = Column(Text, nullable=False)  # 프로세스 타입
+    start_period = Column(Date, nullable=False)  # 시작일
+    end_period = Column(Date, nullable=False)  # 종료일
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # 관계 설정
+    product = relationship("Product", back_populates="processes")
+    process_inputs = relationship("ProcessInput", back_populates="process")
     
     def to_dict(self) -> Dict[str, Any]:
         """엔티티를 딕셔너리로 변환"""
         return {
             "id": self.id,
+            "product_id": self.product_id,
             "process_name": self.process_name,
-            "process_type": self.process_type,
+            "start_period": self.start_period.isoformat() if self.start_period else None,
+            "end_period": self.end_period.isoformat() if self.end_period else None,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None
+        }
+
+# ============================================================================
+# 📥 ProcessInput 엔티티 (프로세스 입력)
+# ============================================================================
+
+class ProcessInput(Base):
+    """프로세스 입력 엔티티"""
+    
+    __tablename__ = "process_input"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    process_id = Column(Integer, ForeignKey("process.id"), nullable=False, index=True)  # 프로세스 ID
+    input_type = Column(Text, nullable=False)  # 입력 타입 (material, fuel, electricity)
+    input_name = Column(Text, nullable=False)  # 입력명
+    amount = Column(Numeric(15, 6), nullable=False, default=0)  # 수량
+    factor = Column(Numeric(15, 6))  # 배출계수
+    oxy_factor = Column(Numeric(15, 6))  # 산화계수
+    direm_emission = Column(Numeric(15, 6))  # 직접배출량
+    indirem_emission = Column(Numeric(15, 6))  # 간접배출량
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # 관계 설정
+    process = relationship("Process", back_populates="process_inputs")
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """엔티티를 딕셔너리로 변환"""
+        return {
+            "id": self.id,
+            "process_id": self.process_id,
+            "input_type": self.input_type,
+            "input_name": self.input_name,
+            "amount": float(self.amount) if self.amount else 0.0,
+            "factor": float(self.factor) if self.factor else None,
+            "oxy_factor": float(self.oxy_factor) if self.oxy_factor else None,
+            "direm_emission": float(self.direm_emission) if self.direm_emission else None,
+            "indirem_emission": float(self.indirem_emission) if self.indirem_emission else None,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None
         }

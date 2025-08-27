@@ -82,6 +82,11 @@ export default function InstallPage() {
     router.push(`/cbam/calculation?install_id=${installId}`);
   };
 
+  // 제품 관리 페이지로 이동
+  const handleProductManagement = () => {
+    router.push('/cbam/calculation');
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -129,22 +134,22 @@ export default function InstallPage() {
   };
 
   // 사업장 삭제
-  const handleDeleteInstall = async (installId: number, installName: string) => {
-    if (!confirm(`정말로 "${installName}" 사업장을 삭제하시겠습니까?`)) {
+  const handleDeleteInstall = async (id: number, name: string) => {
+    if (!confirm(`"${name}" 사업장을 삭제하시겠습니까?\n\n⚠️ 주의: 이 사업장과 연결된 모든 제품, 프로세스, 입력 데이터가 함께 삭제됩니다.`)) {
       return;
     }
 
     try {
       setLoading(true);
-      await axiosClient.delete(apiEndpoints.cbam.install.delete(installId));
+      await axiosClient.delete(apiEndpoints.cbam.install.delete(id));
+      console.log('✅ 사업장 삭제 성공');
       
       setToast({
-        message: `"${installName}" 사업장이 성공적으로 삭제되었습니다.`,
+        message: `"${name}" 사업장이 성공적으로 삭제되었습니다.`,
         type: 'success'
       });
 
-      // 사업장 목록 새로고침
-      await fetchInstalls();
+      fetchInstalls();
     } catch (error: any) {
       console.error('❌ 사업장 삭제 실패:', error);
       setToast({
@@ -289,6 +294,20 @@ export default function InstallPage() {
               <p className="text-gray-400 text-sm mt-1">위에서 사업장을 등록해보세요.</p>
             </div>
           )}
+        </div>
+
+        {/* 전체 제품 관리 버튼 */}
+        <div className="mt-6 bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10">
+          <h3 className="text-lg font-semibold text-white mb-4">📦 전체 제품 관리</h3>
+          <p className="text-gray-300 mb-4">
+            모든 사업장의 제품을 한 번에 관리할 수 있습니다.
+          </p>
+          <button
+            onClick={handleProductManagement}
+            className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition-colors duration-200"
+          >
+            📦 전체 제품 관리 페이지로 이동
+          </button>
         </div>
 
         {/* 디버그 정보 */}

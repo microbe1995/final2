@@ -45,6 +45,7 @@ export default function ProductPage() {
     product_sell: 0,
     product_eusell: 0
   });
+  const [installs, setInstalls] = useState<any[]>([]); // 사업장 목록 상태
 
   // 제품 목록 조회
   const fetchProducts = async () => {
@@ -64,9 +65,27 @@ export default function ProductPage() {
     }
   };
 
+  // 사업장 목록 조회
+  const fetchInstalls = async () => {
+    try {
+      const response = await axiosClient.get(apiEndpoints.cbam.install.list);
+      setInstalls(response.data);
+      console.log('📋 사업장 목록:', response.data);
+    } catch (error: any) {
+      console.error('❌ 사업장 목록 조회 실패:', error);
+    }
+  };
+
   useEffect(() => {
     fetchProducts();
+    fetchInstalls();
   }, []);
+
+  // 사업장명 조회 헬퍼 함수
+  const getInstallName = (installId: number) => {
+    const install = installs.find((i: any) => i.id === installId);
+    return install ? install.name : `사업장 ID: ${installId}`;
+  };
 
   const handleInputChange = (field: keyof ProductForm, value: string | number) => {
     setProductForm(prev => ({
@@ -467,6 +486,14 @@ export default function ProductPage() {
                       {product.product_category}
                     </span>
                   </div>
+                  
+                  {/* 사업장 정보 */}
+                  <div className="mb-3">
+                    <div className="text-sm text-gray-300">
+                      🏭 {getInstallName(product.install_id)}
+                    </div>
+                  </div>
+
                   <div className="space-y-1 mb-3">
                     <p className="text-gray-300 text-sm">수량: {product.product_amount.toLocaleString()}</p>
                     <p className="text-gray-300 text-sm">기간: {product.prostart_period} ~ {product.proend_period}</p>

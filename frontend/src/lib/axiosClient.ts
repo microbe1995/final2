@@ -200,6 +200,20 @@ export const apiEndpoints = {
         get: (id: number) => `/api/v1/boundary/process/${id}`,
         update: (id: number) => `/api/v1/boundary/process/${id}`,
         delete: (id: number) => `/api/v1/boundary/process/${id}`
+    },
+    // 프로세스 입력 관리
+    processInput: {
+        create: '/api/v1/boundary/process-input',
+        list: '/api/v1/boundary/process-input',
+        get: (id: number) => `/api/v1/boundary/process-input/${id}`,
+        getByProcess: (processId: number) => `/api/v1/boundary/process-input/process/${processId}`,
+        update: (id: number) => `/api/v1/boundary/process-input/${id}`,
+        delete: (id: number) => `/api/v1/boundary/process-input/${id}`
+    },
+    // 배출량 계산
+    emission: {
+        calculateProcess: (processId: number) => `/api/v1/boundary/emission/process/${processId}`,
+        calculateProduct: (productId: number) => `/api/v1/boundary/emission/product/${productId}`
     }
   },
 

@@ -10,7 +10,7 @@ import CommonShell from '@/components/common/CommonShell';
 
 export default function CBAMPage() {
   const [activeTab, setActiveTab] = useState<
-    'overview' | 'install' | 'calculation' | 'flow' | 'reports' | 'settings'
+    'overview' | 'install' | 'flow' | 'processInput' | 'reports' | 'settings'
   >('overview');
 
   const renderOverview = () => (
@@ -178,6 +178,41 @@ export default function CBAMPage() {
     </div>
   );
 
+  const renderProcessInput = () => (
+    <div className='space-y-6'>
+      <div className='stitch-card p-6'>
+        <h3 className='stitch-h1 text-lg font-semibold mb-4'>
+          CBAM 프로세스 입력 관리
+        </h3>
+        <p className='stitch-caption text-white/60'>
+          CBAM 프로세스별 입력 데이터를 관리하고 배출량을 계산합니다.
+        </p>
+        <div className='mt-6'>
+          <Link 
+            href='/cbam/process-input'
+            className='inline-flex items-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors'
+          >
+            📥 프로세스 입력 관리 페이지로 이동
+          </Link>
+        </div>
+        <div className='mt-4 grid grid-cols-1 md:grid-cols-2 gap-4'>
+          <div className='p-4 bg-white/5 rounded-lg'>
+            <h4 className='font-semibold text-white mb-2'>입력 데이터 등록</h4>
+            <p className='text-white/60 text-sm'>
+              프로세스별 원료, 연료, 전력 입력 데이터 등록
+            </p>
+          </div>
+          <div className='p-4 bg-white/5 rounded-lg'>
+            <h4 className='font-semibold text-white mb-2'>배출량 계산</h4>
+            <p className='text-white/60 text-sm'>
+              입력 데이터 기반 직접/간접 배출량 자동 계산
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <CommonShell>
       <div className='space-y-6'>
@@ -212,16 +247,6 @@ export default function CBAMPage() {
             사업장 관리
           </button>
           <button
-            onClick={() => setActiveTab('calculation')}
-            className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-              activeTab === 'calculation'
-                ? 'bg-primary text-white'
-                : 'text-white/60 hover:text-white hover:bg-white/5'
-            }`}
-          >
-            제품 관리
-          </button>
-          <button
             onClick={() => setActiveTab('flow')}
             className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
               activeTab === 'flow'
@@ -230,6 +255,16 @@ export default function CBAMPage() {
             }`}
           >
             프로세스 관리
+          </button>
+          <button
+            onClick={() => setActiveTab('processInput')}
+            className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+              activeTab === 'processInput'
+                ? 'bg-primary text-white'
+                : 'text-white/60 hover:text-white hover:bg-white/5'
+            }`}
+          >
+            입력 관리
           </button>
           <button
             onClick={() => setActiveTab('reports')}
@@ -256,8 +291,8 @@ export default function CBAMPage() {
         {/* 탭 콘텐츠 */}
         {activeTab === 'overview' && renderOverview()}
         {activeTab === 'install' && renderInstall()}
-        {activeTab === 'calculation' && renderCalculation()}
         {activeTab === 'flow' && renderFlow()}
+        {activeTab === 'processInput' && renderProcessInput()}
         {activeTab === 'reports' && renderReports()}
         {activeTab === 'settings' && renderSettings()}
       </div>

@@ -8,7 +8,7 @@ from loguru import logger
 import time
 
 from .calculation_service import CalculationService
-from .calculation_schema import ProductCreateRequest, ProductResponse, ProductUpdateRequest, ProcessCreateRequest, ProcessResponse, ProcessUpdateRequest, ProductNameResponse, InstallCreateRequest, InstallResponse, InstallUpdateRequest, InstallNameResponse
+from .calculation_schema import ProductCreateRequest, ProductResponse, ProductUpdateRequest, ProcessCreateRequest, ProcessResponse, ProcessUpdateRequest, ProductNameResponse, InstallCreateRequest, InstallResponse, InstallUpdateRequest, InstallNameResponse, ProcessInputResponse, ProcessInputCreateRequest, ProcessInputUpdateRequest, EmissionCalculationResponse, ProductEmissionResponse
 
 router = APIRouter(prefix="", tags=["Product"])
 
@@ -272,6 +272,125 @@ async def delete_process(process_id: int):
     except Exception as e:
         logger.error(f"❌ 프로세스 삭제 실패: {str(e)}")
         raise HTTPException(status_code=500, detail=f"프로세스 삭제 중 오류가 발생했습니다: {str(e)}")
+
+# ============================================================================
+# 📥 ProcessInput 관련 엔드포인트
+# ============================================================================
+
+@router.get("/process-input", response_model=List[ProcessInputResponse])
+async def get_process_inputs():
+    """프로세스 입력 목록 조회"""
+    try:
+        logger.info("📋 프로세스 입력 목록 조회 요청")
+        process_inputs = await calculation_service.get_process_inputs()
+        logger.info(f"✅ 프로세스 입력 목록 조회 성공: {len(process_inputs)}개")
+        return process_inputs
+    except Exception as e:
+        logger.error(f"❌ 프로세스 입력 목록 조회 실패: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"프로세스 입력 목록 조회 중 오류가 발생했습니다: {str(e)}")
+
+@router.get("/process-input/process/{process_id}", response_model=List[ProcessInputResponse])
+async def get_process_inputs_by_process(process_id: int):
+    """특정 프로세스의 입력 목록 조회"""
+    try:
+        logger.info(f"📋 프로세스 입력 조회 요청: 프로세스 ID {process_id}")
+        process_inputs = await calculation_service.get_process_inputs_by_process(process_id)
+        logger.info(f"✅ 프로세스 입력 조회 성공: {len(process_inputs)}개")
+        return process_inputs
+    except Exception as e:
+        logger.error(f"❌ 프로세스 입력 조회 실패: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"프로세스 입력 조회 중 오류가 발생했습니다: {str(e)}")
+
+@router.get("/process-input/{process_input_id}", response_model=ProcessInputResponse)
+async def get_process_input(process_input_id: int):
+    """특정 프로세스 입력 조회"""
+    try:
+        logger.info(f"📋 프로세스 입력 조회 요청: ID {process_input_id}")
+        process_input = await calculation_service.get_process_input(process_input_id)
+        if not process_input:
+            raise HTTPException(status_code=404, detail="프로세스 입력을 찾을 수 없습니다")
+        
+        logger.info(f"✅ 프로세스 입력 조회 성공: ID {process_input_id}")
+        return process_input
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"❌ 프로세스 입력 조회 실패: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"프로세스 입력 조회 중 오류가 발생했습니다: {str(e)}")
+
+@router.post("/process-input", response_model=ProcessInputResponse)
+async def create_process_input(request: ProcessInputCreateRequest):
+    """프로세스 입력 생성"""
+    try:
+        logger.info(f"📥 프로세스 입력 생성 요청: {request.input_name}")
+        result = await calculation_service.create_process_input(request)
+        logger.info(f"✅ 프로세스 입력 생성 성공: ID {result.id}")
+        return result
+    except Exception as e:
+        logger.error(f"❌ 프로세스 입력 생성 실패: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"프로세스 입력 생성 중 오류가 발생했습니다: {str(e)}")
+
+@router.put("/process-input/{process_input_id}", response_model=ProcessInputResponse)
+async def update_process_input(process_input_id: int, request: ProcessInputUpdateRequest):
+    """프로세스 입력 수정"""
+    try:
+        logger.info(f"📝 프로세스 입력 수정 요청: ID {process_input_id}")
+        result = await calculation_service.update_process_input(process_input_id, request)
+        if not result:
+            raise HTTPException(status_code=404, detail="프로세스 입력을 찾을 수 없습니다")
+        
+        logger.info(f"✅ 프로세스 입력 수정 성공: ID {process_input_id}")
+        return result
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"❌ 프로세스 입력 수정 실패: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"프로세스 입력 수정 중 오류가 발생했습니다: {str(e)}")
+
+@router.delete("/process-input/{process_input_id}")
+async def delete_process_input(process_input_id: int):
+    """프로세스 입력 삭제"""
+    try:
+        logger.info(f"🗑️ 프로세스 입력 삭제 요청: ID {process_input_id}")
+        success = await calculation_service.delete_process_input(process_input_id)
+        if not success:
+            raise HTTPException(status_code=404, detail="프로세스 입력을 찾을 수 없습니다")
+        
+        logger.info(f"✅ 프로세스 입력 삭제 성공: ID {process_input_id}")
+        return {"message": "프로세스 입력이 성공적으로 삭제되었습니다"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"❌ 프로세스 입력 삭제 실패: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"프로세스 입력 삭제 중 오류가 발생했습니다: {str(e)}")
+
+# ============================================================================
+# 🧮 배출량 계산 관련 엔드포인트
+# ============================================================================
+
+@router.post("/emission/process/{process_id}", response_model=EmissionCalculationResponse)
+async def calculate_process_emission(process_id: int):
+    """프로세스별 배출량 계산"""
+    try:
+        logger.info(f"🧮 프로세스 배출량 계산 요청: 프로세스 ID {process_id}")
+        result = await calculation_service.calculate_process_emission(process_id)
+        logger.info(f"✅ 프로세스 배출량 계산 성공: 프로세스 ID {process_id}")
+        return result
+    except Exception as e:
+        logger.error(f"❌ 프로세스 배출량 계산 실패: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"프로세스 배출량 계산 중 오류가 발생했습니다: {str(e)}")
+
+@router.post("/emission/product/{product_id}", response_model=ProductEmissionResponse)
+async def calculate_product_emission(product_id: int):
+    """제품별 배출량 계산"""
+    try:
+        logger.info(f"🧮 제품 배출량 계산 요청: 제품 ID {product_id}")
+        result = await calculation_service.calculate_product_emission(product_id)
+        logger.info(f"✅ 제품 배출량 계산 성공: 제품 ID {product_id}")
+        return result
+    except Exception as e:
+        logger.error(f"❌ 제품 배출량 계산 실패: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"제품 배출량 계산 중 오류가 발생했습니다: {str(e)}")
 
 # ============================================================================
 # 📦 Router Export
