@@ -52,9 +52,26 @@ export default function ProductPage() {
     setLoading(true);
 
     try {
-      console.log('📤 제품 생성 요청 데이터:', productForm);
+      // 데이터 검증
+      if (!productForm.install_id || productForm.install_id <= 0) {
+        setToast({
+          message: '사업장 ID는 1 이상이어야 합니다.',
+          type: 'error'
+        });
+        setLoading(false);
+        return;
+      }
+
+      // 날짜 형식 변환
+      const requestData = {
+        ...productForm,
+        prostart_period: new Date(productForm.prostart_period),
+        proend_period: new Date(productForm.proend_period)
+      };
+
+      console.log('📤 제품 생성 요청 데이터:', requestData);
       
-      const response = await axiosClient.post('/api/v1/boundary/product', productForm);
+      const response = await axiosClient.post('/api/v1/boundary/product', requestData);
       
       console.log('✅ 제품 생성 성공:', response.data);
       

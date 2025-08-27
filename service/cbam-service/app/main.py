@@ -116,28 +116,21 @@ def initialize_database():
             conn.execute(text("SELECT 1"))
             logger.info("✅ 데이터베이스 연결 성공")
             
-            # 제품 테이블 생성
+            # 제품 테이블 존재 확인 (실제 스키마는 별도로 생성됨)
             conn.execute(text("""
-                CREATE TABLE IF NOT EXISTS product (
-                    product_id SERIAL PRIMARY KEY,
-                    name VARCHAR(255) NOT NULL,
-                    cn_code VARCHAR(50),
-                    period_start DATE,
-                    period_end DATE,
-                    production_qty DECIMAL(10,2) DEFAULT 0,
-                    sales_qty DECIMAL(10,2) DEFAULT 0,
-                    export_qty DECIMAL(10,2) DEFAULT 0,
-                    inventory_qty DECIMAL(10,2) DEFAULT 0,
-                    defect_rate DECIMAL(5,4) DEFAULT 0,
-                    node_id VARCHAR(255),
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                )
+                SELECT EXISTS (
+                    SELECT FROM information_schema.tables 
+                    WHERE table_name = 'product'
+                );
             """))
-            logger.info("✅ product 테이블 생성 완료")
             
-            # 인덱스 생성
-            conn.execute(text("CREATE INDEX IF NOT EXISTS idx_product_name ON product(name)"))
-            logger.info("✅ 인덱스 생성 완료")
+            table_exists = conn.fetchone()[0]
+            if table_exists:
+                logger.info("✅ product 테이블이 이미 존재합니다")
+            else:
+                logger.warning("⚠️ product 테이블이 존재하지 않습니다. 수동으로 생성해주세요.")
+            
+            logger.info("✅ 데이터베이스 연결 확인 완료")
             
             conn.commit()
             logger.info("✅ 데이터베이스 마이그레이션 완료")
