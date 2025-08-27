@@ -3,8 +3,11 @@
 # ============================================================================
 
 from pydantic import BaseModel, Field
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, ForwardRef
 from datetime import date, datetime
+
+# ForwardRef 정의
+ProcessResponse = ForwardRef('ProcessResponse')
 
 # ============================================================================
 # 🏭 Install 관련 스키마
@@ -73,7 +76,10 @@ class ProductResponse(BaseModel):
     created_at: Optional[datetime] = Field(None, description="생성일")
     updated_at: Optional[datetime] = Field(None, description="수정일")
     # 다대다 관계를 위한 공정 정보
-    processes: Optional[List[ProcessResponse]] = Field(None, description="연결된 공정들")
+    processes: Optional[List['ProcessResponse']] = Field(None, description="연결된 공정들")
+
+# ForwardRef 업데이트
+ProductResponse.model_rebuild()
 
 class ProductUpdateRequest(BaseModel):
     """제품 수정 요청"""
@@ -126,7 +132,10 @@ class ProcessResponse(BaseModel):
     created_at: Optional[datetime] = Field(None, description="생성일")
     updated_at: Optional[datetime] = Field(None, description="수정일")
     # 다대다 관계를 위한 제품 정보
-    products: Optional[List[ProductResponse]] = Field(None, description="연결된 제품들")
+    products: Optional[List['ProductResponse']] = Field(None, description="연결된 제품들")
+
+# ForwardRef 업데이트
+ProcessResponse.model_rebuild()
 
 class ProcessUpdateRequest(BaseModel):
     """프로세스 수정 요청"""
