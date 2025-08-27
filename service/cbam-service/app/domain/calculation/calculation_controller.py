@@ -64,7 +64,7 @@ async def get_install(install_id: int):
 async def create_install(request: InstallCreateRequest):
     """사업장 생성"""
     try:
-        logger.info(f"🏭 사업장 생성 요청: {request.name}")
+        logger.info(f"🏭 사업장 생성 요청: {request.install_name}")
         result = await calculation_service.create_install(request)
         logger.info(f"✅ 사업장 생성 성공: ID {result.id}")
         return result

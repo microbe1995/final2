@@ -25,7 +25,8 @@ class CalculationService:
         """사업장 생성"""
         try:
             install_data = {
-                "name": request.name
+                "install_name": request.install_name,
+                "reporting_year": request.reporting_year
             }
             
             saved_install = await self.calc_repository.create_install(install_data)
@@ -71,8 +72,10 @@ class CalculationService:
         try:
             # None이 아닌 필드만 업데이트 데이터에 포함
             update_data = {}
-            if request.name is not None:
-                update_data["name"] = request.name
+            if request.install_name is not None:
+                update_data["install_name"] = request.install_name
+            if request.reporting_year is not None:
+                update_data["reporting_year"] = request.reporting_year
             
             if not update_data:
                 raise Exception("업데이트할 데이터가 없습니다.")
