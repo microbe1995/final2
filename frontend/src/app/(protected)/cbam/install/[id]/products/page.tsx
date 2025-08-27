@@ -215,6 +215,7 @@ export default function InstallProductsPage() {
 
       // 목록 새로고침
       fetchProcesses();
+      console.log('🔄 공정 목록 새로고침 완료');
     } catch (error: any) {
       console.error('❌ 프로세스 생성 실패:', error);
       console.error('❌ 에러 응답 데이터:', error.response?.data);
@@ -388,6 +389,7 @@ export default function InstallProductsPage() {
                   const productProcesses = processes.filter((process: any) => 
                     process.products && process.products.some((p: any) => p.id === product.id)
                   );
+                  console.log(`🔍 제품 ${product.product_name} (ID: ${product.id})의 공정들:`, productProcesses);
                   const isShowingProcessForm = showProcessFormForProduct === product.id;
                   
                   return (

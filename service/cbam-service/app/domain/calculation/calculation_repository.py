@@ -675,7 +675,7 @@ class CalculationRepository:
             conn.close()
     
     async def _get_processes_db(self) -> List[Dict[str, Any]]:
-        """데이터베이스에서 프로세스 목록 조회"""
+        """데이터베이스에서 프로세스 목록 조회 (다대다 관계)"""
         import psycopg2
         
         conn = psycopg2.connect(self.database_url)
@@ -683,22 +683,49 @@ class CalculationRepository:
         
         try:
             with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                # 모든 공정 조회
                 cursor.execute("""
-                    SELECT * FROM process ORDER BY id
+                    SELECT id, process_name, start_period, end_period, created_at, updated_at
+                    FROM process
+                    ORDER BY id
                 """)
                 
-                results = cursor.fetchall()
-                processes = []
-                for row in results:
-                    process_dict = dict(row)
+                processes = cursor.fetchall()
+                result = []
+                
+                for process in processes:
+                    process_dict = dict(process)
+                    
+                    # 해당 공정과 연결된 제품들 조회
+                    cursor.execute("""
+                        SELECT p.id, p.install_id, p.product_name, p.product_category, 
+                               p.prostart_period, p.proend_period, p.product_amount,
+                               p.product_cncode, p.goods_name, p.aggrgoods_name,
+                               p.product_sell, p.product_eusell, p.created_at, p.updated_at
+                        FROM product p
+                        JOIN product_process pp ON p.id = pp.product_id
+                        WHERE pp.process_id = %s
+                    """, (process_dict['id'],))
+                    
+                    products = cursor.fetchall()
+                    process_dict['products'] = [dict(product) for product in products]
+                    
                     # datetime.date 객체를 문자열로 변환
                     if 'start_period' in process_dict and process_dict['start_period']:
                         process_dict['start_period'] = process_dict['start_period'].isoformat()
                     if 'end_period' in process_dict and process_dict['end_period']:
                         process_dict['end_period'] = process_dict['end_period'].isoformat()
-                    processes.append(process_dict)
+                    
+                    # 제품들의 날짜도 변환
+                    for product in process_dict['products']:
+                        if 'prostart_period' in product and product['prostart_period']:
+                            product['prostart_period'] = product['prostart_period'].isoformat()
+                        if 'proend_period' in product and product['proend_period']:
+                            product['proend_period'] = product['proend_period'].isoformat()
+                    
+                    result.append(process_dict)
                 
-                return processes
+                return result
                 
         except Exception as e:
             raise e
