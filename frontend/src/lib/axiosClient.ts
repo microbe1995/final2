@@ -183,6 +183,7 @@ export const apiEndpoints = {
     install: {
       create: '/api/v1/boundary/install',
       list: '/api/v1/boundary/install',
+      names: '/api/v1/boundary/install/names',
       get: (id: number) => `/api/v1/boundary/install/${id}`,
       update: (id: number) => `/api/v1/boundary/install/${id}`,
       delete: (id: number) => `/api/v1/boundary/install/${id}`
@@ -190,6 +191,7 @@ export const apiEndpoints = {
     product: {
       create: '/api/v1/boundary/product',
       list: '/api/v1/boundary/product',
+      names: '/api/v1/boundary/product/names',
       get: (id: number) => `/api/v1/boundary/product/${id}`,
       update: (id: number) => `/api/v1/boundary/product/${id}`,
       delete: (id: number) => `/api/v1/boundary/product/${id}`

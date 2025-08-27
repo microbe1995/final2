@@ -36,7 +36,7 @@ install, product, process, process_input, edge 등 실제 테이블 생성
 
 각 process_input에서:
 
-amount × 배출계수 × 산화계수 → 직접배출량
+input_amount × 배출계수 × 산화계수 → 직접배출량
 
 공정별 전체 배출량 합산
 
@@ -57,7 +57,6 @@ amount × 배출계수 × 산화계수 → 직접배출량
 
 product_category_enum: '단순제품', '복합제품'
 input_type_enum: 'material', 'fuel', 'electricity'
-node_type_enum: 'process', 'product'
 edge_kind_enum: 'consume', 'produce', 'continue'
 🔗 테이블 관계
 install ← product (1:N)

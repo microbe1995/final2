@@ -1,3 +1,5 @@
+이 파일은 backend 및 db 의 사항을 종합하고 커서에게 명령을 내리기 위한 파일임
+
 커서야, product라는 테이블을 만들어줘.
 다음 컬럼들이 필요해:
 
@@ -32,11 +34,14 @@ create table product (
 
 id: 사업장 ID, 기본키(PK), int
 
-name: 사업장 이름, not null, text
+install_name: 사업장 이름, not null, text
+
+reporting_year: 보고기간 (년도), not null, int
 
 create table install (
     id serial primary key,
-    name text not null
+    install_name text not null,
+    reporting_year int not null default extract(year from current_date)
 );
 
 
@@ -96,8 +101,8 @@ process_input 테이블을 만들어줘. 다음 조건을 반영해:
 - id는 기본키(PK)
 - process_id는 process 테이블의 id를 참조하는 외래키(FK)
 - input_type은 ENUM처럼 'material', 'fuel', 'electricity'만 허용되도록 정의하고 NOT NULL
-- input_name, amount는 NOT NULL
-- factor, oxy_factor, direm_emission, indirem_emission은 현재는 자동계산 예정이라 nullable float로 선언 (generated 아님)
+- input_name, input_amount는 NOT NULL
+- factor, oxy_factor, direm, indirem은 현재는 자동계산 예정이라 nullable float로 선언 (generated 아님)
 
 
 -- 1. ENUM 타입 정의 (한 번만 실행)
@@ -109,35 +114,31 @@ CREATE TABLE process_input (
     process_id         INT NOT NULL REFERENCES process(id),
     input_type         input_type_enum NOT NULL,
     input_name         TEXT NOT NULL,
-    amount             FLOAT NOT NULL,
+    input_amount       FLOAT NOT NULL,
     factor             FLOAT,  -- 나중에 트리거나 뷰로 자동 계산 (nullable)
     oxy_factor         FLOAT,  -- 나중에 트리거나 뷰로 자동 계산 (nullable)
-    direm_emission     FLOAT,  -- 나중에 material, fuel용 자동계산
-    indirem_emission   FLOAT   -- 나중에 electricity용 자동계산
+    direm              FLOAT,  -- 나중에 material, fuel용 자동계산
+    indirem            FLOAT   -- 나중에 electricity용 자동계산
 );
 
 
 edge 테이블을 만들어줘. 다음 조건을 반영해:
 
 - id는 기본키(PK)
-- source_node_type과 target_node_type은 'process' 또는 'product'만 허용되는 enum
-- source_node_id와 target_node_id는 각각 process 또는 product 테이블의 id를 참조하는 외래키인데, 실제 FK 제약은 둘 중 하나만 참조하므로 코드에서는 제약 없이 int로 선언
-- kind는 enum('consume', 'produce', 'continue')로 선언
+- source_id와 target_id는 각각 process 또는 product 테이블의 id를 참조하는 외래키인데, 실제 FK 제약은 둘 중 하나만 참조하므로 코드에서는 제약 없이 int로 선언
+- edge_kind는 enum('consume', 'produce', 'continue')로 선언
 - qty는 optional float로 선언
 
 
 -- 1. ENUM 타입 정의 (한 번만 실행)
-CREATE TYPE node_type_enum AS ENUM ('process', 'product');
 CREATE TYPE edge_kind_enum AS ENUM ('consume', 'produce', 'continue');
 
 -- 2. edge 테이블 생성
 CREATE TABLE edge (
     id                 SERIAL PRIMARY KEY,
-    source_node_type   node_type_enum NOT NULL,
-    source_node_id     INT NOT NULL,
-    target_node_type   node_type_enum NOT NULL,
-    target_node_id     INT NOT NULL,
-    kind               edge_kind_enum NOT NULL,
+    source_id          INT NOT NULL,
+    target_id          INT NOT NULL,
+    edge_kind          edge_kind_enum NOT NULL,
     qty                FLOAT
 );
 
@@ -149,7 +150,7 @@ CREATE TABLE edge (
 
 사업장 단위로 생산하는 제품(Product) 목록을 먼저 등록
 
-각 제품별로 생산에 필요한 **공정(Operation/Process)**을 미리 연결해둠
+각 제품별로 생산에 필요한 **공정(Process)**을 미리 연결해둠
 
 산정경계나 노드 추가 단계
 
@@ -163,4 +164,4 @@ CREATE TABLE edge (
 
 각 사업장별로 생산 체계가 다르더라도, 미리 설정된 틀 안에서만 노드/엣지를 추가하게 되어 혼란이 줄어듦
 
-즉, 지금 구상하신 로직은 **“사업장별 제품·공정 마스터를 정의해두고, 실제 노드 생성 시 해당 마스터에만 종속되도록 제한한다”**라는 구조
+즉, 지금 구상하신 로직은 **"사업장별 제품·공정 마스터를 정의해두고, 실제 노드 생성 시 해당 마스터에만 종속되도록 제한한다"**라는 구조
