@@ -24,7 +24,7 @@ from app.domain.node.node_controller import node_router
 from app.domain.flow.flow_controller import flow_router
 from app.domain.edge.edge_controller import edge_router
 from app.domain.handle.handle_controller import handle_router
-from app.domain.Viewport.Viewport_controller import viewport_router
+# from app.domain.Viewport.Viewport_controller import viewport_router
 
 # CBAM 도메인 라우터들
 from app.domain.calculation.calculation_controller import router as calculation_router
@@ -202,7 +202,7 @@ app.include_router(node_router, prefix="/api")
 app.include_router(flow_router, prefix="/api")
 app.include_router(edge_router, prefix="/api")
 app.include_router(handle_router, prefix="/api")
-app.include_router(viewport_router, prefix="/api")
+# app.include_router(viewport_router, prefix="/api")
 
 # CBAM 도메인 라우터들 등록
 app.include_router(calculation_router, prefix="/api")

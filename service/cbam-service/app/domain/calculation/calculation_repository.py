@@ -17,12 +17,17 @@ class CalculationRepository:
     def __init__(self):
         self.database_url = os.getenv('DATABASE_URL')
         if not self.database_url:
-            raise Exception("DATABASE_URL 환경변수가 설정되지 않았습니다.")
+            logger.warning("DATABASE_URL 환경변수가 설정되지 않았습니다. 데이터베이스 기능이 제한됩니다.")
+            return
         
         self._initialize_database()
     
     def _initialize_database(self):
         """데이터베이스 초기화"""
+        if not self.database_url:
+            logger.warning("DATABASE_URL이 없어 데이터베이스 초기화를 건너뜁니다.")
+            return
+            
         try:
             import psycopg2
             from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
@@ -37,7 +42,8 @@ class CalculationRepository:
             
         except Exception as e:
             logger.error(f"❌ 데이터베이스 연결 실패: {str(e)}")
-            raise
+            # 연결 실패해도 서비스는 계속 실행
+            logger.warning("데이터베이스 연결 실패로 인해 일부 기능이 제한됩니다.")
     
     def _create_tables(self):
         """필요한 테이블들을 생성합니다"""
@@ -73,6 +79,8 @@ class CalculationRepository:
     
     async def create_product(self, product_data: Dict[str, Any]) -> Dict[str, Any]:
         """제품 생성"""
+        if not self.database_url:
+            raise Exception("데이터베이스가 연결되지 않았습니다.")
         try:
             return await self._create_product_db(product_data)
         except Exception as e:
@@ -81,6 +89,8 @@ class CalculationRepository:
     
     async def get_products(self) -> List[Dict[str, Any]]:
         """제품 목록 조회"""
+        if not self.database_url:
+            raise Exception("데이터베이스가 연결되지 않았습니다.")
         try:
             return await self._get_products_db()
         except Exception as e:
@@ -89,6 +99,8 @@ class CalculationRepository:
     
     async def get_product(self, product_id: int) -> Optional[Dict[str, Any]]:
         """특정 제품 조회"""
+        if not self.database_url:
+            raise Exception("데이터베이스가 연결되지 않았습니다.")
         try:
             return await self._get_product_db(product_id)
         except Exception as e:
@@ -97,6 +109,8 @@ class CalculationRepository:
     
     async def update_product(self, product_id: int, update_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """제품 수정"""
+        if not self.database_url:
+            raise Exception("데이터베이스가 연결되지 않았습니다.")
         try:
             return await self._update_product_db(product_id, update_data)
         except Exception as e:

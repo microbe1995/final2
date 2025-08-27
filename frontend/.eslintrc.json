@@ -2,5 +2,11 @@
   "extends": ["next/core-web-vitals"],
   "rules": {
     "no-console": "warn"
+  },
+  "parserOptions": {
+    "requireConfigFile": false,
+    "babelOptions": {
+      "presets": ["next/babel"]
+    }
   }
 }
