@@ -90,11 +90,6 @@ export default function InstallPage() {
     router.push(`/cbam/install/${installId}/products`);
   };
 
-  // 제품 관리 페이지로 이동
-  const handleProductManagement = () => {
-    router.push('/cbam/calculation');
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -321,30 +316,6 @@ export default function InstallPage() {
               <p className="text-gray-400 text-sm mt-1">위에서 사업장을 등록해보세요.</p>
             </div>
           )}
-        </div>
-
-        {/* 전체 제품 관리 버튼 */}
-        <div className="mt-6 bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10">
-          <h3 className="text-lg font-semibold text-white mb-4">📦 전체 제품 관리</h3>
-          <p className="text-gray-300 mb-4">
-            모든 사업장의 제품을 한 번에 관리할 수 있습니다.
-          </p>
-          <button
-            onClick={handleProductManagement}
-            className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition-colors duration-200"
-          >
-            📦 전체 제품 관리 페이지로 이동
-          </button>
-        </div>
-
-        {/* 디버그 정보 */}
-        <div className="mt-8 bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10">
-          <h3 className="text-lg font-semibold text-white mb-4">🔍 디버그 정보</h3>
-          <div className="bg-black/20 p-4 rounded-lg">
-            <pre className="text-sm text-gray-300 overflow-auto">
-              {JSON.stringify(installForm, null, 2)}
-            </pre>
-          </div>
         </div>
       </div>
     </div>
