@@ -127,10 +127,16 @@ function ProcessNode({
         {/* 공정 정보 미리보기 */}
         {data.processData && finalVariant === 'process' && (
           <div className='text-xs opacity-60 mt-2'>
-            {data.product_name && (
+            {data.product_names && (
               <div className='flex justify-between'>
                 <span>사용 제품:</span>
-                <span className='font-medium'>{data.product_name}</span>
+                <span className='font-medium'>{data.product_names}</span>
+              </div>
+            )}
+            {data.is_many_to_many && (
+              <div className='flex justify-between text-blue-400'>
+                <span>관계:</span>
+                <span className='font-medium'>다대다</span>
               </div>
             )}
             {isExternalProcess && (
@@ -147,12 +153,7 @@ function ProcessNode({
               <span>종료일:</span>
               <span className='font-medium'>{data.processData.end_period || 'N/A'}</span>
             </div>
-            {data.processData.product_id && (
-              <div className='flex justify-between'>
-                <span>제품ID:</span>
-                <span className='font-medium'>{data.processData.product_id}</span>
-              </div>
-            )}
+            {/* product_id는 다대다 관계에서 더 이상 사용되지 않음 */}
           </div>
         )}
       </div>

@@ -384,7 +384,10 @@ export default function InstallProductsPage() {
             ) : (
               <div className="space-y-6">
                 {products.map((product) => {
-                  const productProcesses = processes.filter(process => process.product_id === product.id);
+                  // 다대다 관계에 맞게 제품과 연결된 공정들 필터링
+                  const productProcesses = processes.filter((process: any) => 
+                    process.products && process.products.some((p: any) => p.id === product.id)
+                  );
                   const isShowingProcessForm = showProcessFormForProduct === product.id;
                   
                   return (

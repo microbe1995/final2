@@ -6,7 +6,7 @@ import logging
 from typing import List, Dict, Any, Optional
 from datetime import datetime
 from app.domain.calculation.calculation_repository import CalculationRepository
-from app.domain.calculation.calculation_schema import ProductCreateRequest, ProductResponse, ProductUpdateRequest, ProcessCreateRequest, ProcessResponse, ProcessUpdateRequest, ProductNameResponse, InstallCreateRequest, InstallResponse, InstallUpdateRequest, InstallNameResponse, ProcessInputCreateRequest, ProcessInputResponse, ProcessInputUpdateRequest
+from app.domain.calculation.calculation_schema import ProductCreateRequest, ProductResponse, ProductUpdateRequest, ProcessCreateRequest, ProcessResponse, ProcessUpdateRequest, ProductNameResponse, InstallCreateRequest, InstallResponse, InstallUpdateRequest, InstallNameResponse, ProcessInputCreateRequest, ProcessInputResponse, ProcessInputUpdateRequest, ProductProcessCreateRequest, ProductProcessResponse
 
 logger = logging.getLogger(__name__)
 
@@ -209,20 +209,20 @@ class CalculationService:
     # ============================================================================
     
     async def create_process(self, request: ProcessCreateRequest) -> ProcessResponse:
-        """프로세스 생성"""
+        """공정 생성 (다대다 관계)"""
         try:
             process_data = {
-                "product_id": request.product_id,
                 "process_name": request.process_name,
                 "start_period": request.start_period,
-                "end_period": request.end_period
+                "end_period": request.end_period,
+                "product_ids": getattr(request, 'product_ids', [])  # 다대다 관계를 위한 제품 ID 목록
             }
             
             saved_process = await self.calc_repository.create_process(process_data)
             if saved_process:
                 return ProcessResponse(**saved_process)
             else:
-                raise Exception("프로세스 저장에 실패했습니다.")
+                raise Exception("공정 저장에 실패했습니다.")
         except Exception as e:
             logger.error(f"Error creating process: {e}")
             raise e
@@ -281,9 +281,39 @@ class CalculationService:
             logger.error(f"Error deleting process {process_id}: {e}")
             raise e
 
-# ============================================================================
-# 📥 ProcessInput 관련 메서드
-# ============================================================================
+    # ============================================================================
+    # 🔗 ProductProcess 관련 메서드 (다대다 관계)
+    # ============================================================================
+    
+    async def create_product_process(self, request: ProductProcessCreateRequest) -> ProductProcessResponse:
+        """제품-공정 관계 생성"""
+        try:
+            product_process_data = {
+                "product_id": request.product_id,
+                "process_id": request.process_id
+            }
+            
+            saved_product_process = await self.calc_repository.create_product_process(product_process_data)
+            if saved_product_process:
+                return ProductProcessResponse(**saved_product_process)
+            else:
+                raise Exception("제품-공정 관계 저장에 실패했습니다.")
+        except Exception as e:
+            logger.error(f"Error creating product-process relationship: {e}")
+            raise e
+    
+    async def delete_product_process(self, product_id: int, process_id: int) -> bool:
+        """제품-공정 관계 삭제"""
+        try:
+            success = await self.calc_repository.delete_product_process(product_id, process_id)
+            return success
+        except Exception as e:
+            logger.error(f"Error deleting product-process relationship: {e}")
+            raise e
+
+    # ============================================================================
+    # 📥 ProcessInput 관련 메서드
+    # ============================================================================
 
     async def create_process_input(self, request: ProcessInputCreateRequest) -> ProcessInputResponse:
         """프로세스 입력 생성"""

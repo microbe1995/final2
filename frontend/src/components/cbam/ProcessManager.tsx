@@ -121,14 +121,14 @@ function ProcessManagerInner() {
   const fetchProcessesByInstall = useCallback(async (installId: number) => {
     try {
       const response = await axiosClient.get(apiEndpoints.cbam.process.list);
-      // 선택된 사업장의 제품에 속한 공정만 필터링
+      // 선택된 사업장의 제품에 속한 모든 공정을 가져옴 (다대다 관계)
       const installProducts = products.filter((product: any) => product.install_id === installId);
       const productIds = installProducts.map((product: any) => product.id);
-      const filteredProcesses = response.data.filter((process: any) => productIds.includes(process.product_id));
-      setProcesses(filteredProcesses);
-      console.log('🔍 선택된 사업장의 제품들:', installProducts);
-      console.log('🔍 제품 ID들:', productIds);
-      console.log('🔍 필터링된 공정들:', filteredProcesses);
+      const installProcesses = response.data.filter((process: any) => 
+        process.products && process.products.some((p: any) => productIds.includes(p.id))
+      );
+      setProcesses(installProcesses);
+      console.log('🔍 사업장의 공정들:', installProcesses);
     } catch (error) {
       console.error('공정 목록 조회 실패:', error);
       setProcesses([]);
@@ -139,10 +139,12 @@ function ProcessManagerInner() {
   const fetchAllProcessesByInstall = useCallback(async (installId: number) => {
     try {
       const response = await axiosClient.get(apiEndpoints.cbam.process.list);
-      // 선택된 사업장의 제품에 속한 모든 공정을 가져옴
+      // 선택된 사업장의 제품에 속한 모든 공정을 가져옴 (다대다 관계)
       const installProducts = products.filter((product: any) => product.install_id === installId);
       const productIds = installProducts.map((product: any) => product.id);
-      const allProcesses = response.data.filter((process: any) => productIds.includes(process.product_id));
+      const allProcesses = response.data.filter((process: any) => 
+        process.products && process.products.some((p: any) => productIds.includes(p.id))
+      );
       setAllProcesses(allProcesses);
       console.log('🔍 사업장의 모든 공정들:', allProcesses);
     } catch (error) {
@@ -155,10 +157,12 @@ function ProcessManagerInner() {
   const fetchAllCrossInstallProcesses = useCallback(async () => {
     try {
       const response = await axiosClient.get(apiEndpoints.cbam.process.list);
-      // 현재 사업장의 제품과 관련된 모든 공정을 가져옴 (다른 사업장 포함)
+      // 현재 사업장의 제품과 관련된 모든 공정을 가져옴 (다른 사업장 포함, 다대다 관계)
       const currentInstallProducts = products.filter((product: any) => product.install_id === selectedInstall?.id);
       const productIds = currentInstallProducts.map((product: any) => product.id);
-      const allCrossProcesses = response.data.filter((process: any) => productIds.includes(process.product_id));
+      const allCrossProcesses = response.data.filter((process: any) => 
+        process.products && process.products.some((p: any) => productIds.includes(p.id))
+      );
       setCrossInstallProcesses(allCrossProcesses);
       console.log('🔍 크로스 사업장 공정들:', allCrossProcesses);
     } catch (error) {
@@ -167,15 +171,16 @@ function ProcessManagerInner() {
     }
   }, [products, selectedInstall]);
 
-  // 선택된 제품의 공정 목록 불러오기
+  // 선택된 제품의 공정 목록 불러오기 (다대다 관계)
   const fetchProcessesByProduct = useCallback(async (productId: number) => {
     try {
       const response = await axiosClient.get(apiEndpoints.cbam.process.list);
-      // 선택된 제품에 속한 공정만 필터링
-      const filteredProcesses = response.data.filter((process: any) => process.product_id === productId);
-      setProcesses(filteredProcesses);
-      console.log('🔍 선택된 제품 ID:', productId);
-      console.log('🔍 제품별 필터링된 공정들:', filteredProcesses);
+      // 해당 제품과 연결된 모든 공정을 가져옴 (다대다 관계)
+      const productProcesses = response.data.filter((process: any) => 
+        process.products && process.products.some((p: any) => p.id === productId)
+      );
+      setProcesses(productProcesses);
+      console.log('🔍 제품의 공정들:', productProcesses);
     } catch (error) {
       console.error('제품별 공정 목록 조회 실패:', error);
       setProcesses([]);
@@ -299,12 +304,15 @@ function ProcessManagerInner() {
 
   // 공정 선택 → 노드 추가
   const handleProcessSelect = useCallback((process: any) => {
-    // 해당 공정이 사용되는 모든 제품 정보 찾기
-    const relatedProducts = products.filter((product: any) => product.id === process.product_id);
+    // 해당 공정이 사용되는 모든 제품 정보 찾기 (다대다 관계)
+    const relatedProducts = products.filter((product: any) => 
+      process.products && process.products.some((p: any) => p.id === product.id)
+    );
     const productNames = relatedProducts.map((product: any) => product.product_name).join(', ');
     
-    // 외부 사업장의 공정인지 확인
-    const isExternalProcess = process.install_id !== selectedInstall?.id;
+    // 외부 사업장의 공정인지 확인 (공정이 속한 사업장 중 하나라도 현재 사업장이 아니면 외부)
+    const isExternalProcess = process.products && 
+      process.products.some((p: any) => p.install_id !== selectedInstall?.id);
     
     const newNode: Node<any> = {
       id: `process-${Date.now()}-${Math.random().toString(36).slice(2)}`,
@@ -315,12 +323,12 @@ function ProcessManagerInner() {
         description: `공정: ${process.process_name}`,
         variant: 'process',
         processData: process,
-        product_id: process.product_id, // 제품 ID 추가
-        product_name: productNames || '알 수 없음', // 사용되는 모든 제품명 추가
-        install_id: process.install_id, // 공정이 속한 사업장 ID
+        product_names: productNames || '알 수 없음', // 사용되는 모든 제품명
+        install_id: selectedInstall?.id, // 현재 캔버스 사업장 ID
         current_install_id: selectedInstall?.id, // 현재 캔버스 사업장 ID
         is_readonly: isExternalProcess, // 외부 사업장 공정이면 읽기 전용
         related_products: relatedProducts, // 관련된 모든 제품 정보
+        is_many_to_many: true, // 다대다 관계 표시
       },
     };
 
@@ -588,18 +596,25 @@ function ProcessManagerInner() {
             <div className="space-y-2 max-h-96 overflow-y-auto">
               {(() => {
                 const displayProcesses = processFilterMode === 'product' 
-                  ? allProcesses.filter((process: any) => process.product_id === selectedProduct?.id)
+                  ? allProcesses.filter((process: any) => 
+                      process.products && process.products.some((p: any) => p.id === selectedProduct?.id)
+                    )
                   : allProcesses;
                 
                 return displayProcesses.length > 0 ? (
                   displayProcesses.map((process: any) => {
-                    // 해당 공정이 사용되는 모든 제품 정보 찾기
-                    const relatedProducts = products.filter((product: any) => product.id === process.product_id);
+                    // 해당 공정이 사용되는 모든 제품 정보 찾기 (다대다 관계)
+                    const relatedProducts = products.filter((product: any) => 
+                      process.products && process.products.some((p: any) => p.id === product.id)
+                    );
                     const productNames = relatedProducts.map((product: any) => product.product_name).join(', ');
                     
-                    // 외부 사업장의 공정인지 확인
-                    const isExternalProcess = process.install_id !== selectedInstall?.id;
-                    const processInstall = installs.find((install: any) => install.id === process.install_id);
+                    // 외부 사업장의 공정인지 확인 (공정이 속한 사업장 중 하나라도 현재 사업장이 아니면 외부)
+                    const isExternalProcess = process.products && 
+                      process.products.some((p: any) => p.install_id !== selectedInstall?.id);
+                    const processInstall = installs.find((install: any) => 
+                      process.products && process.products.some((p: any) => p.install_id === install.id)
+                    );
                     
                     return (
                       <div

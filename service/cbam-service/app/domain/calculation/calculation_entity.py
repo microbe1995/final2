@@ -65,7 +65,13 @@ class Product(Base):
     
     # 관계 설정
     install = relationship("Install", back_populates="products")
-    processes = relationship("Process", back_populates="product")
+    product_processes = relationship("ProductProcess", back_populates="product")
+    
+    # 다대다 관계를 위한 편의 메서드
+    @property
+    def processes(self):
+        """이 제품과 연결된 모든 공정들"""
+        return [pp.process for pp in self.product_processes]
     
     def to_dict(self) -> Dict[str, Any]:
         """엔티티를 딕셔너리로 변환"""
@@ -116,7 +122,6 @@ class Process(Base):
     __tablename__ = "process"
     
     id = Column(Integer, primary_key=True, index=True)
-    product_id = Column(Integer, ForeignKey("product.id"), nullable=False, index=True)  # 제품 ID
     process_name = Column(Text, nullable=False, index=True)  # 프로세스명
     start_period = Column(Date, nullable=False)  # 시작일
     end_period = Column(Date, nullable=False)  # 종료일
@@ -124,14 +129,19 @@ class Process(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # 관계 설정
-    product = relationship("Product", back_populates="processes")
+    product_processes = relationship("ProductProcess", back_populates="process")
     process_inputs = relationship("ProcessInput", back_populates="process")
+    
+    # 다대다 관계를 위한 편의 메서드
+    @property
+    def products(self):
+        """이 공정과 연결된 모든 제품들"""
+        return [pp.product for pp in self.product_processes]
     
     def to_dict(self) -> Dict[str, Any]:
         """엔티티를 딕셔너리로 변환"""
         return {
             "id": self.id,
-            "product_id": self.product_id,
             "process_name": self.process_name,
             "start_period": self.start_period.isoformat() if self.start_period else None,
             "end_period": self.end_period.isoformat() if self.end_period else None,
@@ -202,6 +212,35 @@ class Edge(Base):
             "source_id": self.source_id,
             "target_id": self.target_id,
             "edge_kind": self.edge_kind,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None
+        }
+
+# ============================================================================
+# 🔗 ProductProcess 엔티티 (제품-공정 중간 테이블)
+# ============================================================================
+
+class ProductProcess(Base):
+    """제품-공정 중간 테이블 엔티티 (다대다 관계 해소)"""
+    
+    __tablename__ = "product_process"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    product_id = Column(Integer, ForeignKey("product.id"), nullable=False, index=True)  # 제품 ID
+    process_id = Column(Integer, ForeignKey("process.id"), nullable=False, index=True)  # 공정 ID
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # 관계 설정
+    product = relationship("Product", back_populates="product_processes")
+    process = relationship("Process", back_populates="product_processes")
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """엔티티를 딕셔너리로 변환"""
+        return {
+            "id": self.id,
+            "product_id": self.product_id,
+            "process_id": self.process_id,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None
         }

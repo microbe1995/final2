@@ -70,6 +70,10 @@ class ProductResponse(BaseModel):
     aggrgoods_name: Optional[str] = Field(None, description="품목군명")
     product_sell: Optional[float] = Field(None, description="제품 판매량")
     product_eusell: Optional[float] = Field(None, description="제품 EU 판매량")
+    created_at: Optional[datetime] = Field(None, description="생성일")
+    updated_at: Optional[datetime] = Field(None, description="수정일")
+    # 다대다 관계를 위한 공정 정보
+    processes: Optional[List[ProcessResponse]] = Field(None, description="연결된 공정들")
 
 class ProductUpdateRequest(BaseModel):
     """제품 수정 요청"""
@@ -86,25 +90,43 @@ class ProductUpdateRequest(BaseModel):
     product_eusell: Optional[float] = Field(None, description="제품 EU 판매량")
 
 # ============================================================================
+# 🔗 ProductProcess 관련 스키마
+# ============================================================================
+
+class ProductProcessCreateRequest(BaseModel):
+    """제품-공정 관계 생성 요청"""
+    product_id: int = Field(..., description="제품 ID")
+    process_id: int = Field(..., description="공정 ID")
+
+class ProductProcessResponse(BaseModel):
+    """제품-공정 관계 응답"""
+    id: int = Field(..., description="관계 ID")
+    product_id: int = Field(..., description="제품 ID")
+    process_id: int = Field(..., description="공정 ID")
+    created_at: Optional[datetime] = Field(None, description="생성일")
+    updated_at: Optional[datetime] = Field(None, description="수정일")
+
+# ============================================================================
 # 🔄 Process 관련 스키마
 # ============================================================================
 
 class ProcessCreateRequest(BaseModel):
     """프로세스 생성 요청"""
-    product_id: int = Field(..., description="제품 ID")
     process_name: str = Field(..., description="공정명")
     start_period: Optional[date] = Field(None, description="시작일")
     end_period: Optional[date] = Field(None, description="종료일")
+    product_ids: Optional[List[int]] = Field([], description="연결할 제품 ID 목록 (다대다 관계)")
 
 class ProcessResponse(BaseModel):
     """프로세스 응답"""
-    id: int = Field(..., description="프로세스 ID")
-    product_id: int = Field(..., description="제품 ID")
+    id: int = Field(..., description="공정 ID")
     process_name: str = Field(..., description="공정명")
-    start_period: Optional[date] = Field(None, description="시작일")
-    end_period: Optional[date] = Field(None, description="종료일")
+    start_period: Optional[str] = Field(None, description="시작일")
+    end_period: Optional[str] = Field(None, description="종료일")
     created_at: Optional[datetime] = Field(None, description="생성일")
     updated_at: Optional[datetime] = Field(None, description="수정일")
+    # 다대다 관계를 위한 제품 정보
+    products: Optional[List[ProductResponse]] = Field(None, description="연결된 제품들")
 
 class ProcessUpdateRequest(BaseModel):
     """프로세스 수정 요청"""

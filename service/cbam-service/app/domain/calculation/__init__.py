@@ -1,5 +1,5 @@
 # ============================================================================
-# 🧮 Calculation Domain Package
+# 📦 Calculation Domain - CBAM 계산 도메인
 # ============================================================================
 
 """
@@ -17,23 +17,74 @@ CBAM 계산 도메인 패키지
 - 계산 통계
 """
 
-from .calculation_entity import Install, Product, Process, Edge
-from .calculation_schema import (
-    ProductCreateRequest, ProductResponse, ProductUpdateRequest,
-    ProcessCreateRequest, ProcessResponse, ProcessUpdateRequest
+from .calculation_entity import (
+    Install,
+    Product,
+    Process,
+    ProcessInput,
+    ProductProcess,  # 새로운 중간 테이블 엔티티
 )
-from .calculation_service import CalculationService
+
+from .calculation_schema import (
+    # Install 관련 스키마
+    InstallCreateRequest,
+    InstallResponse,
+    InstallUpdateRequest,
+    InstallNameResponse,
+    
+    # Product 관련 스키마
+    ProductCreateRequest,
+    ProductResponse,
+    ProductUpdateRequest,
+    ProductNameResponse,
+    
+    # Process 관련 스키마
+    ProcessCreateRequest,
+    ProcessResponse,
+    ProcessUpdateRequest,
+    
+    # ProductProcess 관련 스키마
+    ProductProcessCreateRequest,
+    ProductProcessResponse,
+    
+    # ProcessInput 관련 스키마
+    ProcessInputCreateRequest,
+    ProcessInputResponse,
+    ProcessInputUpdateRequest,
+)
+
 from .calculation_repository import CalculationRepository
-from .calculation_controller import router as calculation_router
+from .calculation_service import CalculationService
+from .calculation_controller import calculation_router
 
 __all__ = [
-    # Entities
-    "Install", "Product", "Process", "Edge",
-    # Schemas
-    "ProductCreateRequest", "ProductResponse", "ProductUpdateRequest",
-    "ProcessCreateRequest", "ProcessResponse", "ProcessUpdateRequest",
-    # Services
-    "CalculationService", "CalculationRepository",
-    # Router
-    "calculation_router"
+    # 엔티티
+    "Install",
+    "Product", 
+    "Process",
+    "ProcessInput",
+    "ProductProcess",
+    
+    # 스키마
+    "InstallCreateRequest",
+    "InstallResponse", 
+    "InstallUpdateRequest",
+    "InstallNameResponse",
+    "ProductCreateRequest",
+    "ProductResponse",
+    "ProductUpdateRequest", 
+    "ProductNameResponse",
+    "ProcessCreateRequest",
+    "ProcessResponse",
+    "ProcessUpdateRequest",
+    "ProductProcessCreateRequest",
+    "ProductProcessResponse",
+    "ProcessInputCreateRequest",
+    "ProcessInputResponse",
+    "ProcessInputUpdateRequest",
+    
+    # 서비스 및 컨트롤러
+    "CalculationRepository",
+    "CalculationService", 
+    "calculation_router",
 ]
