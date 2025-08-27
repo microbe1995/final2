@@ -196,6 +196,9 @@ export default function InstallProductsPage() {
         product_id: productId
       };
 
+      console.log('🔍 전송할 공정 데이터:', processData);
+      console.log('🔍 API 엔드포인트:', apiEndpoints.cbam.process.create);
+
       const response = await axiosClient.post(apiEndpoints.cbam.process.create, processData);
       console.log('✅ 프로세스 생성 성공:', response.data);
       
@@ -214,6 +217,8 @@ export default function InstallProductsPage() {
       fetchProcesses();
     } catch (error: any) {
       console.error('❌ 프로세스 생성 실패:', error);
+      console.error('❌ 에러 응답 데이터:', error.response?.data);
+      console.error('❌ 에러 상태 코드:', error.response?.status);
       setToast({
         message: `프로세스 생성에 실패했습니다: ${error.response?.data?.detail || error.message}`,
         type: 'error'

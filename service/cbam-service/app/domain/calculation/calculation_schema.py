@@ -101,8 +101,8 @@ class ProcessResponse(BaseModel):
     id: int = Field(..., description="프로세스 ID")
     product_id: int = Field(..., description="제품 ID")
     process_name: str = Field(..., description="공정명")
-    start_period: date = Field(..., description="시작일")
-    end_period: date = Field(..., description="종료일")
+    start_period: Optional[date] = Field(None, description="시작일")
+    end_period: Optional[date] = Field(None, description="종료일")
     created_at: Optional[datetime] = Field(None, description="생성일")
     updated_at: Optional[datetime] = Field(None, description="수정일")
 
