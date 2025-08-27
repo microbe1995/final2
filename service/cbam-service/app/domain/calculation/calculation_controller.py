@@ -8,7 +8,7 @@ from loguru import logger
 import time
 
 from .calculation_service import CalculationService
-from .calculation_schema import ProductCreateRequest, ProductResponse, ProductUpdateRequest, ProcessCreateRequest, ProcessResponse, ProcessUpdateRequest
+from .calculation_schema import ProductCreateRequest, ProductResponse, ProductUpdateRequest, ProcessCreateRequest, ProcessResponse, ProcessUpdateRequest, ProductNameResponse
 
 router = APIRouter(prefix="", tags=["Product"])
 
@@ -30,6 +30,18 @@ async def get_products():
     except Exception as e:
         logger.error(f"❌ 제품 목록 조회 실패: {str(e)}")
         raise HTTPException(status_code=500, detail=f"제품 목록 조회 중 오류가 발생했습니다: {str(e)}")
+
+@router.get("/product/names", response_model=List[ProductNameResponse])
+async def get_product_names():
+    """제품명 목록 조회 (드롭다운용)"""
+    try:
+        logger.info("📋 제품명 목록 조회 요청")
+        product_names = await calculation_service.get_product_names()
+        logger.info(f"✅ 제품명 목록 조회 성공: {len(product_names)}개")
+        return product_names
+    except Exception as e:
+        logger.error(f"❌ 제품명 목록 조회 실패: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"제품명 목록 조회 중 오류가 발생했습니다: {str(e)}")
 
 @router.get("/product/{product_id}", response_model=ProductResponse)
 async def get_product(product_id: int):

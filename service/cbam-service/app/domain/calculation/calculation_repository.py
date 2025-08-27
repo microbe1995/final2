@@ -102,6 +102,16 @@ class CalculationRepository:
             logger.error(f"❌ 제품 목록 조회 실패: {str(e)}")
             raise
     
+    async def get_product_names(self) -> List[Dict[str, Any]]:
+        """제품명 목록 조회 (드롭다운용)"""
+        if not self.database_url:
+            raise Exception("데이터베이스가 연결되지 않았습니다.")
+        try:
+            return await self._get_product_names_db()
+        except Exception as e:
+            logger.error(f"❌ 제품명 목록 조회 실패: {str(e)}")
+            raise
+    
     async def get_product(self, product_id: int) -> Optional[Dict[str, Any]]:
         """특정 제품 조회"""
         if not self.database_url:
@@ -413,6 +423,32 @@ class CalculationRepository:
                     products.append(product_dict)
                 
                 return products
+                
+        except Exception as e:
+            raise e
+        finally:
+            conn.close()
+    
+    async def _get_product_names_db(self) -> List[Dict[str, Any]]:
+        """데이터베이스에서 제품명 목록 조회 (드롭다운용)"""
+        import psycopg2
+        from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
+        
+        conn = psycopg2.connect(self.database_url)
+        conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+        
+        try:
+            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                cursor.execute("""
+                    SELECT id, product_name FROM product ORDER BY product_name
+                """)
+                
+                results = cursor.fetchall()
+                product_names = []
+                for row in results:
+                    product_names.append(dict(row))
+                
+                return product_names
                 
         except Exception as e:
             raise e

@@ -10,6 +10,11 @@ from datetime import date
 # 📦 Product 관련 스키마
 # ============================================================================
 
+class ProductNameResponse(BaseModel):
+    """제품명 응답 (드롭다운용)"""
+    id: int = Field(..., description="제품 ID")
+    product_name: str = Field(..., description="제품명")
+
 class ProductCreateRequest(BaseModel):
     """제품 생성 요청"""
     install_id: int = Field(..., description="사업장 ID")

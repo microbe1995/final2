@@ -6,7 +6,7 @@ import logging
 from typing import List, Dict, Any, Optional
 from datetime import datetime
 from app.domain.calculation.calculation_repository import CalculationRepository
-from app.domain.calculation.calculation_schema import ProductCreateRequest, ProductResponse, ProductUpdateRequest
+from app.domain.calculation.calculation_schema import ProductCreateRequest, ProductResponse, ProductUpdateRequest, ProcessCreateRequest, ProcessResponse, ProcessUpdateRequest, ProductNameResponse
 
 logger = logging.getLogger(__name__)
 
@@ -54,6 +54,15 @@ class CalculationService:
             return [ProductResponse(**product) for product in products]
         except Exception as e:
             logger.error(f"Error getting products: {e}")
+            raise e
+    
+    async def get_product_names(self) -> List[ProductNameResponse]:
+        """제품명 목록 조회 (드롭다운용)"""
+        try:
+            product_names = await self.calc_repository.get_product_names()
+            return [ProductNameResponse(**product) for product in product_names]
+        except Exception as e:
+            logger.error(f"Error getting product names: {e}")
             raise e
     
     async def get_product(self, product_id: int) -> Optional[ProductResponse]:

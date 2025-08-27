@@ -30,6 +30,8 @@ export default function ProductPage() {
   const [products, setProducts] = useState<any[]>([]);
   const [isLoadingProducts, setIsLoadingProducts] = useState(true);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
+  const [sortBy, setSortBy] = useState<'name' | 'category' | 'amount' | 'date'>('name');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [productForm, setProductForm] = useState<ProductForm>({
     install_id: 1, // 기본값으로 1 설정
     product_name: '',
@@ -45,24 +47,24 @@ export default function ProductPage() {
   });
 
   // 제품 목록 조회
-  useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        setIsLoadingProducts(true);
-        const response = await axiosClient.get(apiEndpoints.cbam.product.list);
-        setProducts(response.data);
-        console.log('📋 제품 목록:', response.data);
-      } catch (error: any) {
-        console.error('❌ 제품 목록 조회 실패:', error);
-        setToast({
-          message: `제품 목록을 불러오는데 실패했습니다: ${error.response?.data?.detail || error.message}`,
-          type: 'error'
-        });
-      } finally {
-        setIsLoadingProducts(false);
-      }
-    };
+  const fetchProducts = async () => {
+    try {
+      setIsLoadingProducts(true);
+      const response = await axiosClient.get(apiEndpoints.cbam.product.list);
+      setProducts(response.data);
+      console.log('📋 제품 목록:', response.data);
+    } catch (error: any) {
+      console.error('❌ 제품 목록 조회 실패:', error);
+      setToast({
+        message: `제품 목록을 불러오는데 실패했습니다: ${error.response?.data?.detail || error.message}`,
+        type: 'error'
+      });
+    } finally {
+      setIsLoadingProducts(false);
+    }
+  };
 
+  useEffect(() => {
     fetchProducts();
   }, []);
 
@@ -76,6 +78,34 @@ export default function ProductPage() {
   // 제품 클릭 시 프로세스 관리 페이지로 이동
   const handleProductClick = (productId: number) => {
     router.push(`/cbam/process?product_id=${productId}`);
+  };
+
+  // 제품 삭제
+  const handleDeleteProduct = async (productId: number, productName: string) => {
+    if (!confirm(`정말로 "${productName}" 제품을 삭제하시겠습니까?`)) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await axiosClient.delete(apiEndpoints.cbam.product.delete(productId));
+      
+      setToast({
+        message: `"${productName}" 제품이 성공적으로 삭제되었습니다.`,
+        type: 'success'
+      });
+
+      // 제품 목록 새로고침
+      await fetchProducts();
+    } catch (error: any) {
+      console.error('❌ 제품 삭제 실패:', error);
+      setToast({
+        message: `제품 삭제에 실패했습니다: ${error.response?.data?.detail || error.message}`,
+        type: 'error'
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -126,6 +156,9 @@ export default function ProductPage() {
         product_eusell: 0
       });
 
+      // 제품 목록 새로고침
+      await fetchProducts();
+
     } catch (error: any) {
       console.error('❌ 제품 생성 실패:', error);
       
@@ -137,6 +170,36 @@ export default function ProductPage() {
       setLoading(false);
     }
   };
+
+  // 제품 정렬
+  const sortedProducts = [...products].sort((a, b) => {
+    let aValue, bValue;
+    
+    switch (sortBy) {
+      case 'name':
+        aValue = a.product_name.toLowerCase();
+        bValue = b.product_name.toLowerCase();
+        break;
+      case 'category':
+        aValue = a.product_category;
+        bValue = b.product_category;
+        break;
+      case 'amount':
+        aValue = parseFloat(a.product_amount) || 0;
+        bValue = parseFloat(b.product_amount) || 0;
+        break;
+      case 'date':
+        aValue = new Date(a.prostart_period);
+        bValue = new Date(b.prostart_period);
+        break;
+      default:
+        return 0;
+    }
+    
+    if (aValue < bValue) return sortOrder === 'asc' ? -1 : 1;
+    if (aValue > bValue) return sortOrder === 'asc' ? 1 : -1;
+    return 0;
+  });
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 p-6">
@@ -336,20 +399,50 @@ export default function ProductPage() {
 
         {/* 제품 목록 */}
         <div className="mt-8 bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10">
-          <h3 className="text-lg font-semibold text-white mb-4">📋 등록된 제품 목록</h3>
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-semibold text-white">📋 등록된 제품 목록 ({products.length}개)</h3>
+            <div className="flex gap-2">
+              {/* 정렬 옵션 */}
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as 'name' | 'category' | 'amount' | 'date')}
+                className="px-3 py-2 bg-white/10 border border-white/20 rounded-md text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="name">이름순</option>
+                <option value="category">카테고리순</option>
+                <option value="amount">수량순</option>
+                <option value="date">날짜순</option>
+              </select>
+              <button
+                onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+                className="px-3 py-2 bg-white/10 border border-white/20 rounded-md text-white text-sm hover:bg-white/20 transition-colors duration-200"
+              >
+                {sortOrder === 'asc' ? '↑' : '↓'}
+              </button>
+              <button
+                onClick={fetchProducts}
+                disabled={isLoadingProducts}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-md transition-colors duration-200 disabled:opacity-50 flex items-center gap-2"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                새로고침
+              </button>
+            </div>
+          </div>
           
           {isLoadingProducts ? (
             <div className="text-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-400 mx-auto"></div>
               <p className="text-gray-300 mt-2">제품 목록을 불러오는 중...</p>
             </div>
-          ) : products.length > 0 ? (
+          ) : sortedProducts.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {products.map((product) => (
+              {sortedProducts.map((product) => (
                 <div
                   key={product.id}
-                  onClick={() => handleProductClick(product.id)}
-                  className="bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-white/20 cursor-pointer hover:bg-white/20 transition-all duration-200 hover:scale-105"
+                  className="bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-white/20 hover:bg-white/20 transition-all duration-200"
                 >
                   <div className="flex justify-between items-start mb-2">
                     <h4 className="text-white font-semibold text-lg">{product.product_name}</h4>
@@ -361,10 +454,39 @@ export default function ProductPage() {
                       {product.product_category}
                     </span>
                   </div>
-                  <p className="text-gray-300 text-sm mb-2">수량: {product.product_amount}</p>
-                  <p className="text-gray-300 text-sm mb-2">기간: {product.prostart_period} ~ {product.proend_period}</p>
-                  <div className="mt-3 pt-3 border-t border-white/10">
-                    <p className="text-blue-300 text-sm font-medium">클릭하여 프로세스 관리 →</p>
+                  <div className="space-y-1 mb-3">
+                    <p className="text-gray-300 text-sm">수량: {product.product_amount.toLocaleString()}</p>
+                    <p className="text-gray-300 text-sm">기간: {product.prostart_period} ~ {product.proend_period}</p>
+                    {product.product_cncode && (
+                      <p className="text-gray-300 text-sm">CN 코드: {product.product_cncode}</p>
+                    )}
+                    {product.goods_name && (
+                      <p className="text-gray-300 text-sm">상품명: {product.goods_name}</p>
+                    )}
+                    {product.aggrgoods_name && (
+                      <p className="text-gray-300 text-sm">집계상품명: {product.aggrgoods_name}</p>
+                    )}
+                    {product.product_sell > 0 && (
+                      <p className="text-gray-300 text-sm">판매량: {product.product_sell.toLocaleString()}</p>
+                    )}
+                    {product.product_eusell > 0 && (
+                      <p className="text-gray-300 text-sm">EU 판매량: {product.product_eusell.toLocaleString()}</p>
+                    )}
+                  </div>
+                  <div className="mt-3 pt-3 border-t border-white/10 flex gap-2">
+                    <button
+                      onClick={() => handleProductClick(product.id)}
+                      className="flex-1 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-md transition-colors duration-200"
+                    >
+                      프로세스 관리
+                    </button>
+                    <button
+                      onClick={() => handleDeleteProduct(product.id, product.product_name)}
+                      disabled={loading}
+                      className="px-3 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-md transition-colors duration-200 disabled:opacity-50"
+                    >
+                      삭제
+                    </button>
                   </div>
                 </div>
               ))}

@@ -20,20 +20,48 @@ interface Product {
   proend_period: string;
 }
 
+interface ProductName {
+  id: number;
+  product_name: string;
+}
+
 export default function ProcessPage() {
   const router = useRouter();
   const [productId, setProductId] = useState<string | null>(null);
   
   const [processForm, setProcessForm] = useState<ProcessForm>({
-    product_id: 1,
+    product_id: 0,
     process_name: '',
     start_period: '',
     end_period: ''
   });
   
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [productNames, setProductNames] = useState<ProductName[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingProducts, setIsLoadingProducts] = useState(false);
   const [message, setMessage] = useState('');
+
+  // 제품명 목록 조회
+  useEffect(() => {
+    const fetchProductNames = async () => {
+      setIsLoadingProducts(true);
+      try {
+        console.log('🔍 제품명 목록 조회 시작');
+        const response = await axiosClient.get(apiEndpoints.cbam.product.names);
+        console.log('📋 제품명 목록 응답:', response);
+        setProductNames(response.data);
+        console.log('📋 제품명 목록 데이터:', response.data);
+      } catch (error: any) {
+        console.error('❌ 제품명 목록 조회 실패:', error);
+        setMessage(`제품명 목록을 불러오는데 실패했습니다: ${error.response?.data?.detail || error.message}`);
+      } finally {
+        setIsLoadingProducts(false);
+      }
+    };
+
+    fetchProductNames();
+  }, []);
 
   // URL에서 product_id 파라미터 읽어오기
   useEffect(() => {
@@ -53,15 +81,13 @@ export default function ProcessPage() {
   // 선택된 제품 정보 조회
   useEffect(() => {
     const fetchSelectedProduct = async () => {
-      if (!productId) {
-        setMessage('제품 ID가 없습니다. 제품 목록에서 제품을 선택해주세요.');
-        router.push('/cbam/calculation');
+      if (!processForm.product_id) {
         return;
       }
 
       try {
-        console.log('🔍 선택된 제품 조회 시작:', productId);
-        const response = await axiosClient.get(apiEndpoints.cbam.product.get(parseInt(productId)));
+        console.log('🔍 선택된 제품 조회 시작:', processForm.product_id);
+        const response = await axiosClient.get(apiEndpoints.cbam.product.get(processForm.product_id));
         console.log('📋 선택된 제품 응답:', response);
         setSelectedProduct(response.data);
         console.log('📋 선택된 제품 데이터:', response.data);
@@ -70,20 +96,13 @@ export default function ProcessPage() {
         console.error('❌ 에러 상세:', error.response?.data);
         console.error('❌ 에러 상태:', error.response?.status);
         setMessage(`제품 정보를 불러오는데 실패했습니다: ${error.response?.data?.detail || error.message}`);
-        
-        // 제품을 찾을 수 없으면 제품 목록으로 리다이렉트
-        if (error.response?.status === 404) {
-          setTimeout(() => {
-            router.push('/cbam/calculation');
-          }, 2000);
-        }
       }
     };
 
-    if (productId) {
+    if (processForm.product_id) {
       fetchSelectedProduct();
     }
-  }, [productId, router]);
+  }, [processForm.product_id]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -92,6 +111,10 @@ export default function ProcessPage() {
 
     try {
       // 데이터 검증
+      if (!processForm.product_id) {
+        setMessage('제품을 선택해주세요.');
+        return;
+      }
       if (!processForm.process_name.trim()) {
         setMessage('프로세스명을 입력해주세요.');
         return;
@@ -102,10 +125,6 @@ export default function ProcessPage() {
       }
       if (!processForm.end_period) {
         setMessage('종료일을 입력해주세요.');
-        return;
-      }
-      if (processForm.product_id <= 0) {
-        setMessage('유효한 제품을 선택해주세요.');
         return;
       }
 
@@ -123,11 +142,12 @@ export default function ProcessPage() {
       
       // 폼 초기화
       setProcessForm({
-        product_id: parseInt(productId || '1'),
+        product_id: 0,
         process_name: '',
         start_period: '',
         end_period: ''
       });
+      setSelectedProduct(null);
       
     } catch (error: any) {
       console.error('❌ 프로세스 생성 실패:', error);
@@ -168,12 +188,38 @@ export default function ProcessPage() {
             <h2 className="text-xl font-semibold text-gray-900 mb-6">새 프로세스 생성</h2>
             
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* 선택된 제품 정보 */}
+              {/* 제품 선택 */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  선택된 제품
+                <label htmlFor="product_id" className="block text-sm font-medium text-gray-700 mb-2">
+                  제품 선택 *
                 </label>
-                {selectedProduct ? (
+                <select
+                  id="product_id"
+                  name="product_id"
+                  value={processForm.product_id}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  required
+                >
+                  <option value="">제품을 선택해주세요</option>
+                  {isLoadingProducts ? (
+                    <option disabled>제품 목록을 불러오는 중...</option>
+                  ) : (
+                    productNames.map((product) => (
+                      <option key={product.id} value={product.id}>
+                        {product.product_name}
+                      </option>
+                    ))
+                  )}
+                </select>
+              </div>
+
+              {/* 선택된 제품 정보 */}
+              {selectedProduct && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    선택된 제품 정보
+                  </label>
                   <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
                     <div className="flex justify-between items-start">
                       <div>
@@ -190,15 +236,11 @@ export default function ProcessPage() {
                       </span>
                     </div>
                   </div>
-                ) : (
-                  <div className="bg-gray-50 border border-gray-200 rounded-md p-4">
-                    <p className="text-gray-500">제품 정보를 불러오는 중...</p>
-                  </div>
-                )}
-                <p className="mt-1 text-sm text-gray-500">
-                  이 제품에 대한 프로세스를 관리합니다.
-                </p>
-              </div>
+                  <p className="mt-1 text-sm text-gray-500">
+                    이 제품에 대한 프로세스를 관리합니다.
+                  </p>
+                </div>
+              )}
 
               {/* 프로세스명 */}
               <div>
@@ -253,9 +295,9 @@ export default function ProcessPage() {
               <div className="flex justify-end">
                 <button
                   type="submit"
-                  disabled={isLoading}
+                  disabled={isLoading || !processForm.product_id}
                   className={`px-6 py-2 rounded-md text-white font-medium ${
-                    isLoading
+                    isLoading || !processForm.product_id
                       ? 'bg-gray-400 cursor-not-allowed'
                       : 'bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2'
                   }`}
