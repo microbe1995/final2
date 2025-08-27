@@ -29,6 +29,7 @@ const variantStyles = {
   warning: 'bg-yellow-50 border-yellow-600 text-yellow-900',
   danger: 'bg-red-50 border-red-600 text-red-900',
   process: 'bg-orange-50 border-orange-300 text-orange-800',
+  readonly: 'bg-gray-100 border-gray-400 text-gray-600', // 읽기 전용 공정용 스타일
 };
 
 const sizeStyles = {
@@ -58,18 +59,40 @@ function ProcessNode({
         ? data.showHandles
         : true;
 
+  // 읽기 전용 공정인지 확인
+  const isReadOnly = data.is_readonly || false;
+  const isExternalProcess = data.install_id !== data.current_install_id;
+  
+  // 외부 사업장의 공정이면 읽기 전용으로 설정
+  const effectiveVariant = isExternalProcess ? 'readonly' : finalVariant;
+
   const nodeClasses = `
-    ${variantStyles[finalVariant as keyof typeof variantStyles]} 
+    ${variantStyles[effectiveVariant as keyof typeof variantStyles]} 
     ${sizeStyles[finalSize as keyof typeof sizeStyles]}
     border-2 rounded-lg shadow-md relative hover:shadow-lg transition-all duration-200
-    hover:scale-105 cursor-pointer
+    ${isReadOnly || isExternalProcess ? 'opacity-75' : 'hover:scale-105'}
   `.trim();
 
   const handleClick = () => {
+    // 읽기 전용이거나 외부 사업장 공정이면 클릭 이벤트 무시
+    if (isReadOnly || isExternalProcess) {
+      return;
+    }
+    
+    // data에 onClick 함수가 있으면 먼저 실행
+    if (data.onClick) {
+      data.onClick();
+    }
+    // 그 다음 일반적인 onClick 핸들러 실행
     if (onClick) onClick({ data, selected });
   };
 
   const handleDoubleClick = () => {
+    // 읽기 전용이거나 외부 사업장 공정이면 더블클릭 이벤트 무시
+    if (isReadOnly || isExternalProcess) {
+      return;
+    }
+    
     if (onDoubleClick) onDoubleClick({ data, selected });
   };
 
@@ -106,8 +129,14 @@ function ProcessNode({
           <div className='text-xs opacity-60 mt-2'>
             {data.product_name && (
               <div className='flex justify-between'>
-                <span>제품:</span>
+                <span>사용 제품:</span>
                 <span className='font-medium'>{data.product_name}</span>
+              </div>
+            )}
+            {isExternalProcess && (
+              <div className='flex justify-between text-gray-500'>
+                <span>외부 사업장:</span>
+                <span className='font-medium'>이동 가능, 편집 불가</span>
               </div>
             )}
             <div className='flex justify-between'>
