@@ -49,7 +49,7 @@ export default function CBAMPage() {
     <div className='space-y-6'>
       <div className='stitch-card p-6'>
         <h3 className='stitch-h1 text-lg font-semibold mb-4'>
-          CBAM 산정경계설정
+          CBAM 시설군 설정
         </h3>
         <p className='stitch-caption text-white/60'>
           CBAM 배출량 산정을 위한 경계를 설정하고 노드를 생성합니다.
@@ -59,7 +59,7 @@ export default function CBAMPage() {
             href='/cbam/process-manager'
             className='inline-flex items-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors'
           >
-            🔄 산정경계 설정 페이지로 이동
+            🔄 시설군 설정 페이지로 이동
           </Link>
         </div>
         <div className='mt-4 grid grid-cols-1 md:grid-cols-2 gap-4'>
@@ -84,7 +84,7 @@ export default function CBAMPage() {
     <div className='space-y-6'>
       <div className='stitch-card p-6'>
         <h3 className='stitch-h1 text-lg font-semibold mb-4'>
-          CBAM 기준정보 관리
+          사업장 관리
         </h3>
         <p className='stitch-caption text-white/60'>
           사업장별 제품 및 프로세스 기준정보를 설정하고 관리합니다.
@@ -94,7 +94,7 @@ export default function CBAMPage() {
             href='/cbam/install'
             className='inline-flex items-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors'
           >
-            🏭 기준정보 관리 페이지로 이동
+            🏭 사업장 관리 페이지로 이동
           </Link>
         </div>
         <div className='mt-4 grid grid-cols-1 md:grid-cols-3 gap-4'>
