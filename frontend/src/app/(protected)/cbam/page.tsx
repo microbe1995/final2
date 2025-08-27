@@ -13,7 +13,7 @@ import axiosClient from '@/lib/axiosClient';
 
 export default function CBAMPage() {
   const [activeTab, setActiveTab] = useState<
-    'overview' | 'flow' | 'calculation' | 'reports' | 'settings'
+    'overview' | 'calculation' | 'flow' | 'reports' | 'settings'
   >('overview');
 
   const renderOverview = () => (
@@ -68,7 +68,7 @@ export default function CBAMPage() {
     <div className='space-y-6'>
       <div className='stitch-card p-6'>
         <h3 className='stitch-h1 text-lg font-semibold mb-4'>
-          CBAM 계산 관리
+          CBAM 사업장 관리
         </h3>
         <p className='stitch-caption text-white/60'>
           CBAM 배출량 계산 및 비용 산출을 관리합니다.
@@ -78,8 +78,22 @@ export default function CBAMPage() {
             href='/cbam/calculation'
             className='inline-flex items-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors'
           >
-            🧮 계산 페이지로 이동
+            🏭 사업장 관리 페이지로 이동
           </Link>
+        </div>
+        <div className='mt-4 grid grid-cols-1 md:grid-cols-2 gap-4'>
+          <div className='p-4 bg-white/5 rounded-lg'>
+            <h4 className='font-semibold text-white mb-2'>제품 관리</h4>
+            <p className='text-white/60 text-sm'>
+              CBAM 적용 대상 제품 정보 등록 및 관리
+            </p>
+          </div>
+          <div className='p-4 bg-white/5 rounded-lg'>
+            <h4 className='font-semibold text-white mb-2'>프로세스 관리</h4>
+            <p className='text-white/60 text-sm'>
+              제품별 생산 프로세스 및 배출량 관리
+            </p>
+          </div>
         </div>
       </div>
     </div>
@@ -139,6 +153,16 @@ export default function CBAMPage() {
             개요
           </button>
           <button
+            onClick={() => setActiveTab('calculation')}
+            className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+              activeTab === 'calculation'
+                ? 'bg-primary text-white'
+                : 'text-white/60 hover:text-white hover:bg-white/5'
+            }`}
+          >
+            사업장 관리
+          </button>
+          <button
             onClick={() => setActiveTab('flow')}
             className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
               activeTab === 'flow'
@@ -147,16 +171,6 @@ export default function CBAMPage() {
             }`}
           >
             프로세스 관리
-          </button>
-          <button
-            onClick={() => setActiveTab('calculation')}
-            className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-              activeTab === 'calculation'
-                ? 'bg-primary text-white'
-                : 'text-white/60 hover:text-white hover:bg-white/5'
-            }`}
-          >
-            계산 관리
           </button>
           <button
             onClick={() => setActiveTab('reports')}
@@ -182,8 +196,8 @@ export default function CBAMPage() {
 
         {/* 탭 콘텐츠 */}
         {activeTab === 'overview' && renderOverview()}
-        {activeTab === 'flow' && renderFlow()}
         {activeTab === 'calculation' && renderCalculation()}
+        {activeTab === 'flow' && renderFlow()}
         {activeTab === 'reports' && renderReports()}
         {activeTab === 'settings' && renderSettings()}
       </div>

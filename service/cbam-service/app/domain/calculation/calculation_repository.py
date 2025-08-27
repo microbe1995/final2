@@ -27,6 +27,21 @@ class CalculationRepository:
             logger.error(f"데이터베이스 초기화 실패: {e}")
             # 초기화 실패해도 서비스는 계속 실행
     
+    def _check_database_connection(self) -> bool:
+        """데이터베이스 연결 상태 확인"""
+        if not self.database_url:
+            logger.error("DATABASE_URL이 설정되지 않았습니다.")
+            return False
+            
+        try:
+            import psycopg2
+            conn = psycopg2.connect(self.database_url)
+            conn.close()
+            return True
+        except Exception as e:
+            logger.error(f"데이터베이스 연결 실패: {e}")
+            return False
+
     def _initialize_database(self):
         """데이터베이스 초기화"""
         if not self.database_url:
@@ -134,6 +149,12 @@ class CalculationRepository:
     
     async def delete_product(self, product_id: int) -> bool:
         """제품 삭제"""
+        if not self.database_url:
+            raise Exception("데이터베이스가 연결되지 않았습니다.")
+        
+        if not self._check_database_connection():
+            raise Exception("데이터베이스 연결에 실패했습니다.")
+            
         try:
             return await self._delete_product_db(product_id)
         except Exception as e:
@@ -533,15 +554,40 @@ class CalculationRepository:
         
         try:
             with conn.cursor() as cursor:
+                # 먼저 해당 제품이 존재하는지 확인
+                cursor.execute("""
+                    SELECT id, product_name FROM product WHERE id = %s
+                """, (product_id,))
+                
+                product = cursor.fetchone()
+                if not product:
+                    logger.warning(f"⚠️ 제품 ID {product_id}를 찾을 수 없습니다.")
+                    return False
+                
+                logger.info(f"🗑️ 제품 삭제 시작: ID {product_id}, 이름: {product[1]}")
+                
+                # 먼저 해당 제품과 연결된 프로세스들을 삭제
+                cursor.execute("""
+                    DELETE FROM process WHERE product_id = %s
+                """, (product_id,))
+                
+                deleted_processes = cursor.rowcount
+                logger.info(f"🗑️ 연결된 프로세스 {deleted_processes}개 삭제 완료")
+                
+                # 그 다음 제품 삭제
                 cursor.execute("""
                     DELETE FROM product WHERE id = %s
                 """, (product_id,))
                 
+                deleted_products = cursor.rowcount
+                logger.info(f"🗑️ 제품 {deleted_products}개 삭제 완료")
+                
                 conn.commit()
-                return cursor.rowcount > 0
+                return deleted_products > 0
                 
         except Exception as e:
             conn.rollback()
+            logger.error(f"❌ 제품 삭제 중 오류 발생: {str(e)}")
             raise e
         finally:
             conn.close()

@@ -82,13 +82,16 @@ export default function ProductPage() {
 
   // 제품 삭제
   const handleDeleteProduct = async (productId: number, productName: string) => {
-    if (!confirm(`정말로 "${productName}" 제품을 삭제하시겠습니까?`)) {
+    if (!confirm(`정말로 "${productName}" 제품을 삭제하시겠습니까?\n\n이 제품과 연결된 모든 프로세스도 함께 삭제됩니다.`)) {
       return;
     }
 
     try {
       setLoading(true);
-      await axiosClient.delete(apiEndpoints.cbam.product.delete(productId));
+      console.log('🗑️ 제품 삭제 요청:', productId);
+      
+      const response = await axiosClient.delete(apiEndpoints.cbam.product.delete(productId));
+      console.log('✅ 제품 삭제 응답:', response);
       
       setToast({
         message: `"${productName}" 제품이 성공적으로 삭제되었습니다.`,
@@ -99,8 +102,18 @@ export default function ProductPage() {
       await fetchProducts();
     } catch (error: any) {
       console.error('❌ 제품 삭제 실패:', error);
+      console.error('❌ 에러 상세:', error.response?.data);
+      console.error('❌ 에러 상태:', error.response?.status);
+      
+      let errorMessage = '제품 삭제에 실패했습니다.';
+      if (error.response?.data?.detail) {
+        errorMessage += ` ${error.response.data.detail}`;
+      } else if (error.message) {
+        errorMessage += ` ${error.message}`;
+      }
+      
       setToast({
-        message: `제품 삭제에 실패했습니다: ${error.response?.data?.detail || error.message}`,
+        message: errorMessage,
         type: 'error'
       });
     } finally {
