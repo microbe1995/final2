@@ -84,7 +84,7 @@ def add_reporting_year_column():
                 for sample in samples:
                     print(f"ID: {sample[0]}, 이름: {sample[1]}, 보고년도: {sample[2]}")
                 print("=" * 60)
-            
+    
     except Exception as e:
         print(f"❌ 오류 발생: {str(e)}")
         raise e
