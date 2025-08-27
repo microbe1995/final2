@@ -409,9 +409,9 @@ class CalculationRepository:
             with conn.cursor(cursor_factory=RealDictCursor) as cursor:
                 cursor.execute("""
                     INSERT INTO install (
-                        name
+                        install_name, reporting_year
                     ) VALUES (
-                        %(name)s
+                        %(install_name)s, %(reporting_year)s
                     ) RETURNING *
                 """, install_data)
                 

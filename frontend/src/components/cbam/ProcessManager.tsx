@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 
 import ProductNode from '@/components/atomic/atoms/ProductNode';
+import ProcessNode from '@/components/atomic/atoms/ProcessNode';
 // import GroupNode from '@/components/atomic/atoms/GroupNode'; // ✅ 제거: 내장 group 사용
 import axiosClient, { apiEndpoints } from '@/lib/axiosClient';
 import {
@@ -187,7 +188,7 @@ function ProcessManagerInner() {
   const handleProcessSelect = useCallback((process: any) => {
     const newNode: Node<any> = {
       id: `process-${Date.now()}-${Math.random().toString(36).slice(2)}`,
-      type: 'custom',
+      type: 'process',
       position: { x: Math.random() * 400 + 100, y: Math.random() * 300 + 100 },
       data: {
         label: process.process_name,
@@ -214,7 +215,7 @@ function ProcessManagerInner() {
     addNodes(newNode);
   }, [addNodes]);
 
-  const nodeTypes: NodeTypes = { custom: ProductNode };
+  const nodeTypes: NodeTypes = { custom: ProductNode, process: ProcessNode };
 
   return (
     <div className="w-full h-full flex flex-col">
