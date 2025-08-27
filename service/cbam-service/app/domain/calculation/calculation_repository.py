@@ -1276,24 +1276,46 @@ class CalculationRepository:
 
         try:
             with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                # 1. 공정 정보 조회
                 cursor.execute("""
-                    SELECT p.id, p.product_name, p.product_category, p.prostart_period, p.proend_period, p.product_amount,
-                           p.product_cncode, p.goods_name, p.aggrgoods_name, p.product_sell, p.product_eusell
+                    SELECT id, process_name, start_period, end_period, created_at, updated_at
+                    FROM process WHERE id = %s
+                """, (process_id,))
+                
+                process_result = cursor.fetchone()
+                if not process_result:
+                    raise Exception("공정을 찾을 수 없습니다.")
+                
+                process_dict = dict(process_result)
+                
+                # datetime.date 객체를 문자열로 변환
+                if 'start_period' in process_dict and process_dict['start_period']:
+                    process_dict['start_period'] = process_dict['start_period'].isoformat()
+                if 'end_period' in process_dict and process_dict['end_period']:
+                    process_dict['end_period'] = process_dict['end_period'].isoformat()
+                
+                # 2. 관련된 제품들 조회
+                cursor.execute("""
+                    SELECT p.id, p.install_id, p.product_name, p.product_category, 
+                           p.prostart_period, p.proend_period, p.product_amount,
+                           p.product_cncode, p.goods_name, p.aggrgoods_name,
+                           p.product_sell, p.product_eusell, p.created_at, p.updated_at
                     FROM product p
                     JOIN product_process pp ON p.id = pp.product_id
                     WHERE pp.process_id = %s
                 """, (process_id,))
                 
                 products = cursor.fetchall()
-                process_dict = {}
-                for row in products:
-                    product_dict = dict(row)
+                process_dict['products'] = []
+                
+                for product in products:
+                    product_dict = dict(product)
                     # datetime.date 객체를 문자열로 변환
                     if 'prostart_period' in product_dict and product_dict['prostart_period']:
                         product_dict['prostart_period'] = product_dict['prostart_period'].isoformat()
                     if 'proend_period' in product_dict and product_dict['proend_period']:
                         product_dict['proend_period'] = product_dict['proend_period'].isoformat()
-                    process_dict['products'] = products # 제품 목록을 포함하여 반환
+                    process_dict['products'].append(product_dict)
                 
                 return process_dict
                 
