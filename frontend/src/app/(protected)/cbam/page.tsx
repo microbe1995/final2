@@ -10,7 +10,7 @@ import CommonShell from '@/components/common/CommonShell';
 
 export default function CBAMPage() {
   const [activeTab, setActiveTab] = useState<
-    'overview' | 'install' | 'flow' | 'processInput' | 'reports' | 'settings'
+    'overview' | 'install' | 'flow' | 'reports' | 'settings'
   >('overview');
 
   const renderOverview = () => (
@@ -43,69 +43,36 @@ export default function CBAMPage() {
     </div>
   );
 
+
+
   const renderFlow = () => (
     <div className='space-y-6'>
       <div className='stitch-card p-6'>
         <h3 className='stitch-h1 text-lg font-semibold mb-4'>
-          CBAM 프로세스 관리
+          CBAM 공정 관리
         </h3>
         <p className='stitch-caption text-white/60'>
-          CBAM 관련 프로세스를 생성하고 관리합니다.
+          CBAM 관련 공정을 생성하고 관리합니다.
         </p>
         <div className='mt-6'>
           <Link 
             href='/cbam/process'
             className='inline-flex items-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors'
           >
-            🔄 프로세스 생성 페이지로 이동
+            🔄 공정 생성 페이지로 이동
           </Link>
         </div>
         <div className='mt-4 grid grid-cols-1 md:grid-cols-2 gap-4'>
           <div className='p-4 bg-white/5 rounded-lg'>
-            <h4 className='font-semibold text-white mb-2'>프로세스 생성</h4>
+            <h4 className='font-semibold text-white mb-2'>공정 생성</h4>
             <p className='text-white/60 text-sm'>
-              제품별 생산 프로세스 정보 등록
+              제품별 생산 공정 정보 등록
             </p>
           </div>
           <div className='p-4 bg-white/5 rounded-lg'>
             <h4 className='font-semibold text-white mb-2'>기간 관리</h4>
             <p className='text-white/60 text-sm'>
-              프로세스 시작일 및 종료일 관리
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-
-  const renderCalculation = () => (
-    <div className='space-y-6'>
-      <div className='stitch-card p-6'>
-        <h3 className='stitch-h1 text-lg font-semibold mb-4'>
-          CBAM 제품 관리
-        </h3>
-        <p className='stitch-caption text-white/60'>
-          CBAM 적용 대상 제품 정보를 생성하고 관리합니다.
-        </p>
-        <div className='mt-6'>
-          <Link 
-            href='/cbam/calculation'
-            className='inline-flex items-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors'
-          >
-            📦 제품 관리 페이지로 이동
-          </Link>
-        </div>
-        <div className='mt-4 grid grid-cols-1 md:grid-cols-2 gap-4'>
-          <div className='p-4 bg-white/5 rounded-lg'>
-            <h4 className='font-semibold text-white mb-2'>제품 등록</h4>
-            <p className='text-white/60 text-sm'>
-              CBAM 적용 대상 제품 정보 등록 및 관리
-            </p>
-          </div>
-          <div className='p-4 bg-white/5 rounded-lg'>
-            <h4 className='font-semibold text-white mb-2'>프로세스 관리</h4>
-            <p className='text-white/60 text-sm'>
-              제품별 생산 프로세스 및 배출량 관리
+              공정 시작일 및 종료일 관리
             </p>
           </div>
         </div>
@@ -117,20 +84,20 @@ export default function CBAMPage() {
     <div className='space-y-6'>
       <div className='stitch-card p-6'>
         <h3 className='stitch-h1 text-lg font-semibold mb-4'>
-          CBAM 사업장 관리
+          CBAM 기준정보 관리
         </h3>
         <p className='stitch-caption text-white/60'>
-          CBAM 적용 대상 사업장 정보를 생성하고 관리합니다.
+          사업장별 제품 및 프로세스 기준정보를 설정하고 관리합니다.
         </p>
         <div className='mt-6'>
           <Link 
             href='/cbam/install'
             className='inline-flex items-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors'
           >
-            🏭 사업장 관리 페이지로 이동
+            🏭 기준정보 관리 페이지로 이동
           </Link>
         </div>
-        <div className='mt-4 grid grid-cols-1 md:grid-cols-2 gap-4'>
+        <div className='mt-4 grid grid-cols-1 md:grid-cols-3 gap-4'>
           <div className='p-4 bg-white/5 rounded-lg'>
             <h4 className='font-semibold text-white mb-2'>사업장 등록</h4>
             <p className='text-white/60 text-sm'>
@@ -138,11 +105,17 @@ export default function CBAMPage() {
             </p>
           </div>
           <div className='p-4 bg-white/5 rounded-lg'>
-            <h4 className='font-semibold text-white mb-2'>제품 연결</h4>
+            <h4 className='font-semibold text-white mb-2'>제품 관리</h4>
             <p className='text-white/60 text-sm'>
-              사업장별 제품 정보 연결 및 관리
+              사업장별 제품 정보 등록 및 관리
             </p>
           </div>
+                     <div className='p-4 bg-white/5 rounded-lg'>
+             <h4 className='font-semibold text-white mb-2'>공정 관리</h4>
+             <p className='text-white/60 text-sm'>
+               제품별 생산 공정 정보 등록 및 관리
+             </p>
+           </div>
         </div>
       </div>
     </div>
@@ -178,40 +151,7 @@ export default function CBAMPage() {
     </div>
   );
 
-  const renderProcessInput = () => (
-    <div className='space-y-6'>
-      <div className='stitch-card p-6'>
-        <h3 className='stitch-h1 text-lg font-semibold mb-4'>
-          CBAM 프로세스 입력 관리
-        </h3>
-        <p className='stitch-caption text-white/60'>
-          CBAM 프로세스별 입력 데이터를 관리하고 배출량을 계산합니다.
-        </p>
-                    <div className='mt-6'>
-              <Link
-                href='/cbam/process/process-input'
-                className='inline-flex items-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors'
-              >
-                📥 프로세스 입력 관리 페이지로 이동
-              </Link>
-            </div>
-        <div className='mt-4 grid grid-cols-1 md:grid-cols-2 gap-4'>
-          <div className='p-4 bg-white/5 rounded-lg'>
-            <h4 className='font-semibold text-white mb-2'>입력 데이터 등록</h4>
-            <p className='text-white/60 text-sm'>
-              프로세스별 원료, 연료, 전력 입력 데이터 등록
-            </p>
-          </div>
-          <div className='p-4 bg-white/5 rounded-lg'>
-            <h4 className='font-semibold text-white mb-2'>배출량 계산</h4>
-            <p className='text-white/60 text-sm'>
-              입력 데이터 기반 직접/간접 배출량 자동 계산
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+
 
   return (
     <CommonShell>
@@ -236,36 +176,26 @@ export default function CBAMPage() {
           >
             개요
           </button>
-          <button
-            onClick={() => setActiveTab('install')}
-            className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-              activeTab === 'install'
-                ? 'bg-primary text-white'
-                : 'text-white/60 hover:text-white hover:bg-white/5'
-            }`}
-          >
-            사업장 관리
-          </button>
-          <button
-            onClick={() => setActiveTab('flow')}
-            className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-              activeTab === 'flow'
-                ? 'bg-primary text-white'
-                : 'text-white/60 hover:text-white hover:bg-white/5'
-            }`}
-          >
-            프로세스 관리
-          </button>
-          <button
-            onClick={() => setActiveTab('processInput')}
-            className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-              activeTab === 'processInput'
-                ? 'bg-primary text-white'
-                : 'text-white/60 hover:text-white hover:bg-white/5'
-            }`}
-          >
-            입력 관리
-          </button>
+                                 <button
+              onClick={() => setActiveTab('install')}
+              className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                activeTab === 'install'
+                  ? 'bg-primary text-white'
+                  : 'text-white/60 hover:text-white hover:bg-white/5'
+              }`}
+            >
+              기준정보 관리
+            </button>
+                       <button
+              onClick={() => setActiveTab('flow')}
+              className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                activeTab === 'flow'
+                  ? 'bg-primary text-white'
+                  : 'text-white/60 hover:text-white hover:bg-white/5'
+              }`}
+            >
+              공정 관리
+            </button>
           <button
             onClick={() => setActiveTab('reports')}
             className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
@@ -288,13 +218,12 @@ export default function CBAMPage() {
           </button>
         </div>
 
-        {/* 탭 콘텐츠 */}
-        {activeTab === 'overview' && renderOverview()}
-        {activeTab === 'install' && renderInstall()}
-        {activeTab === 'flow' && renderFlow()}
-        {activeTab === 'processInput' && renderProcessInput()}
-        {activeTab === 'reports' && renderReports()}
-        {activeTab === 'settings' && renderSettings()}
+                 {/* 탭 콘텐츠 */}
+         {activeTab === 'overview' && renderOverview()}
+         {activeTab === 'install' && renderInstall()}
+         {activeTab === 'flow' && renderFlow()}
+         {activeTab === 'reports' && renderReports()}
+         {activeTab === 'settings' && renderSettings()}
       </div>
     </CommonShell>
   );
