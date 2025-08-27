@@ -21,7 +21,7 @@ class Install(Base):
     __tablename__ = "install"
     
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(Text, nullable=False, index=True)  # 사업장명
+    install_name = Column(Text, nullable=False, index=True)  # 사업장명
     reporting_year = Column(Integer, nullable=False, default=datetime.now().year)  # 보고기간 (년도)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -33,7 +33,7 @@ class Install(Base):
         """엔티티를 딕셔너리로 변환"""
         return {
             "id": self.id,
-            "name": self.name,
+            "install_name": self.install_name,
             "reporting_year": self.reporting_year,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None
@@ -152,11 +152,11 @@ class ProcessInput(Base):
     process_id = Column(Integer, ForeignKey("process.id"), nullable=False, index=True)  # 프로세스 ID
     input_type = Column(Text, nullable=False)  # 입력 타입 (material, fuel, electricity)
     input_name = Column(Text, nullable=False)  # 입력명
-    amount = Column(Numeric(15, 6), nullable=False, default=0)  # 수량
+    input_amount = Column(Numeric(15, 6), nullable=False, default=0)  # 수량
     factor = Column(Numeric(15, 6))  # 배출계수
     oxy_factor = Column(Numeric(15, 6))  # 산화계수
-    direm_emission = Column(Numeric(15, 6))  # 직접배출량
-    indirem_emission = Column(Numeric(15, 6))  # 간접배출량
+    direm = Column(Numeric(15, 6))  # 직접배출량
+    indirem = Column(Numeric(15, 6))  # 간접배출량
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
@@ -170,11 +170,11 @@ class ProcessInput(Base):
             "process_id": self.process_id,
             "input_type": self.input_type,
             "input_name": self.input_name,
-            "amount": float(self.amount) if self.amount else 0.0,
+            "input_amount": float(self.input_amount) if self.input_amount else 0.0,
             "factor": float(self.factor) if self.factor else None,
             "oxy_factor": float(self.oxy_factor) if self.oxy_factor else None,
-            "direm_emission": float(self.direm_emission) if self.direm_emission else None,
-            "indirem_emission": float(self.indirem_emission) if self.indirem_emission else None,
+            "direm": float(self.direm) if self.direm else None,
+            "indirem": float(self.indirem) if self.indirem else None,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None
         }

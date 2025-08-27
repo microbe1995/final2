@@ -10,11 +10,11 @@ interface ProcessInput {
   process_id: number;
   input_type: string;
   input_name: string;
-  amount: number;
+  input_amount: number;
   factor?: number;
   oxy_factor?: number;
-  direm_emission?: number;
-  indirem_emission?: number;
+  direm?: number;
+  indirem?: number;
   created_at?: string;
   updated_at?: string;
 }
@@ -29,7 +29,7 @@ interface ProcessInputForm {
   process_id: number;
   input_type: string;
   input_name: string;
-  amount: number;
+  input_amount: number;
   factor: number;
   oxy_factor: number;
 }
@@ -43,7 +43,7 @@ export default function ProcessInputPage() {
   const [processes, setProcesses] = useState<Process[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
-  const [sortBy, setSortBy] = useState<'input_name' | 'input_type' | 'amount' | 'process_id'>('input_name');
+  const [sortBy, setSortBy] = useState<'input_name' | 'input_type' | 'input_amount' | 'process_id'>('input_name');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [selectedProcessId, setSelectedProcessId] = useState<number>(processIdFromUrl ? parseInt(processIdFromUrl) : 0);
 
@@ -51,7 +51,7 @@ export default function ProcessInputPage() {
     process_id: 0,
     input_type: 'material',
     input_name: '',
-    amount: 0,
+    input_amount: 0,
     factor: 0,
     oxy_factor: 1.0
   });
@@ -111,7 +111,7 @@ export default function ProcessInputPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!processInputForm.process_id || !processInputForm.input_name || processInputForm.amount <= 0) {
+    if (!processInputForm.process_id || !processInputForm.input_name || processInputForm.input_amount <= 0) {
       setToast({
         message: '필수 필드를 모두 입력해주세요.',
         type: 'error'
@@ -133,7 +133,7 @@ export default function ProcessInputPage() {
         process_id: 0,
         input_type: 'material',
         input_name: '',
-        amount: 0,
+        input_amount: 0,
         factor: 0,
         oxy_factor: 1.0
       });
@@ -175,7 +175,7 @@ export default function ProcessInputPage() {
 
   const handleCalculateEmission = async (processId: number) => {
     try {
-      const response = await axiosClient.post(apiEndpoints.cbam.emission.calculateProcess(processId));
+      const response = await axiosClient.post(apiEndpoints.calculation.process, { process_id: processId });
       console.log('✅ 배출량 계산 성공:', response.data);
       
       setToast({
@@ -206,9 +206,9 @@ export default function ProcessInputPage() {
         aValue = a.input_type;
         bValue = b.input_type;
         break;
-      case 'amount':
-        aValue = parseFloat(a.amount.toString()) || 0;
-        bValue = parseFloat(b.amount.toString()) || 0;
+      case 'input_amount':
+        aValue = parseFloat(a.input_amount.toString()) || 0;
+        bValue = parseFloat(b.input_amount.toString()) || 0;
         break;
       case 'process_id':
         aValue = a.process_id;
@@ -303,8 +303,8 @@ export default function ProcessInputPage() {
               <input
                 type="number"
                 step="0.01"
-                value={processInputForm.amount}
-                onChange={(e) => handleInputChange('amount', parseFloat(e.target.value))}
+                value={processInputForm.input_amount}
+                onChange={(e) => handleInputChange('input_amount', parseFloat(e.target.value))}
                 className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="0.00"
                 required
@@ -375,7 +375,7 @@ export default function ProcessInputPage() {
                 >
                   <option value="input_name">입력명순</option>
                   <option value="input_type">타입순</option>
-                  <option value="amount">수량순</option>
+                  <option value="input_amount">수량순</option>
                   <option value="process_id">프로세스순</option>
                 </select>
               </div>
@@ -433,11 +433,11 @@ export default function ProcessInputPage() {
                   </div>
 
                   <div className="space-y-1 mb-3">
-                    <p className="text-gray-300 text-sm">수량: {processInput.amount.toLocaleString()}</p>
+                    <p className="text-gray-300 text-sm">수량: {processInput.input_amount.toLocaleString()}</p>
                     {processInput.factor && <p className="text-gray-300 text-sm">배출계수: {processInput.factor}</p>}
                     {processInput.oxy_factor && <p className="text-gray-300 text-sm">산화계수: {processInput.oxy_factor}</p>}
-                    {processInput.direm_emission && <p className="text-green-300 text-sm">직접배출: {processInput.direm_emission.toFixed(2)}</p>}
-                    {processInput.indirem_emission && <p className="text-blue-300 text-sm">간접배출: {processInput.indirem_emission.toFixed(2)}</p>}
+                    {processInput.direm && <p className="text-green-300 text-sm">직접배출: {processInput.direm.toFixed(2)}</p>}
+                    {processInput.indirem && <p className="text-blue-300 text-sm">간접배출: {processInput.indirem.toFixed(2)}</p>}
                   </div>
 
                   <div className="flex gap-2">
@@ -474,7 +474,7 @@ export default function ProcessInputPage() {
             </div>
             <div className="p-4 bg-white/10 rounded-lg">
               <div className="text-2xl font-bold text-purple-400">
-                {processInputs.filter(pi => pi.direm_emission || pi.indirem_emission).length}
+                {processInputs.filter(pi => pi.direm || pi.indirem).length}
               </div>
               <div className="text-sm text-gray-300">배출량 계산 완료</div>
             </div>

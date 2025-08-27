@@ -51,8 +51,8 @@ class ProductCreateRequest(BaseModel):
     proend_period: date = Field(..., description="기간 종료일")
     product_amount: float = Field(..., description="제품 수량")
     product_cncode: Optional[str] = Field(None, description="제품 CN 코드")
-    goods_name: Optional[str] = Field(None, description="상품명")
-    aggrgoods_name: Optional[str] = Field(None, description="집계 상품명")
+    goods_name: Optional[str] = Field(None, description="품목명")
+    aggrgoods_name: Optional[str] = Field(None, description="품목군명")
     product_sell: Optional[float] = Field(None, description="제품 판매량")
     product_eusell: Optional[float] = Field(None, description="제품 EU 판매량")
 
@@ -66,8 +66,8 @@ class ProductResponse(BaseModel):
     proend_period: str = Field(..., description="기간 종료일")
     product_amount: float = Field(..., description="제품 수량")
     product_cncode: Optional[str] = Field(None, description="제품 CN 코드")
-    goods_name: Optional[str] = Field(None, description="상품명")
-    aggrgoods_name: Optional[str] = Field(None, description="집계 상품명")
+    goods_name: Optional[str] = Field(None, description="품목명")
+    aggrgoods_name: Optional[str] = Field(None, description="품목군명")
     product_sell: Optional[float] = Field(None, description="제품 판매량")
     product_eusell: Optional[float] = Field(None, description="제품 EU 판매량")
 
@@ -80,8 +80,8 @@ class ProductUpdateRequest(BaseModel):
     proend_period: Optional[str] = Field(None, description="기간 종료일")
     product_amount: Optional[float] = Field(None, description="제품 수량")
     product_cncode: Optional[str] = Field(None, description="제품 CN 코드")
-    goods_name: Optional[str] = Field(None, description="상품명")
-    aggrgoods_name: Optional[str] = Field(None, description="집계 상품명")
+    goods_name: Optional[str] = Field(None, description="품목명")
+    aggrgoods_name: Optional[str] = Field(None, description="품목군명")
     product_sell: Optional[float] = Field(None, description="제품 판매량")
     product_eusell: Optional[float] = Field(None, description="제품 EU 판매량")
 
@@ -92,7 +92,7 @@ class ProductUpdateRequest(BaseModel):
 class ProcessCreateRequest(BaseModel):
     """프로세스 생성 요청"""
     product_id: int = Field(..., description="제품 ID")
-    process_name: str = Field(..., description="프로세스명")
+    process_name: str = Field(..., description="공정명")
     start_period: date = Field(..., description="시작일")
     end_period: date = Field(..., description="종료일")
 
@@ -100,7 +100,7 @@ class ProcessResponse(BaseModel):
     """프로세스 응답"""
     id: int = Field(..., description="프로세스 ID")
     product_id: int = Field(..., description="제품 ID")
-    process_name: str = Field(..., description="프로세스명")
+    process_name: str = Field(..., description="공정명")
     start_period: date = Field(..., description="시작일")
     end_period: date = Field(..., description="종료일")
     created_at: Optional[datetime] = Field(None, description="생성일")
@@ -108,7 +108,7 @@ class ProcessResponse(BaseModel):
 
 class ProcessUpdateRequest(BaseModel):
     """프로세스 수정 요청"""
-    process_name: Optional[str] = Field(None, description="프로세스명")
+    process_name: Optional[str] = Field(None, description="공정명")
     start_period: Optional[date] = Field(None, description="시작일")
     end_period: Optional[date] = Field(None, description="종료일")
 
@@ -120,7 +120,7 @@ class ProcessInputCreateRequest(BaseModel):
     """프로세스 입력 생성 요청"""
     process_id: int = Field(..., description="프로세스 ID")
     input_type: str = Field(..., description="입력 타입 (material, fuel, electricity)")
-    input_name: str = Field(..., description="입력명")
+    input_name: str = Field(..., description="투입물명")
     amount: float = Field(..., description="수량")
     factor: Optional[float] = Field(None, description="배출계수")
     oxy_factor: Optional[float] = Field(None, description="산화계수")
@@ -130,20 +130,20 @@ class ProcessInputResponse(BaseModel):
     id: int = Field(..., description="프로세스 입력 ID")
     process_id: int = Field(..., description="프로세스 ID")
     input_type: str = Field(..., description="입력 타입")
-    input_name: str = Field(..., description="입력명")
-    amount: float = Field(..., description="수량")
+    input_name: str = Field(..., description="투입물명")
+    input_amount: float = Field(..., description="투입물량")
     factor: Optional[float] = Field(None, description="배출계수")
     oxy_factor: Optional[float] = Field(None, description="산화계수")
-    direm_emission: Optional[float] = Field(None, description="직접배출량")
-    indirem_emission: Optional[float] = Field(None, description="간접배출량")
+    direm: Optional[float] = Field(None, description="직접배출량")
+    indirem: Optional[float] = Field(None, description="간접배출량")
     created_at: Optional[datetime] = Field(None, description="생성일")
     updated_at: Optional[datetime] = Field(None, description="수정일")
 
 class ProcessInputUpdateRequest(BaseModel):
-    """프로세스 입력 수정 요청"""
+    """공정 입력 수정 요청"""
     input_type: Optional[str] = Field(None, description="입력 타입")
     input_name: Optional[str] = Field(None, description="입력명")
-    amount: Optional[float] = Field(None, description="수량")
+    input_amount: Optional[float] = Field(None, description="투입물량")
     factor: Optional[float] = Field(None, description="배출계수")
     oxy_factor: Optional[float] = Field(None, description="산화계수")
 
@@ -153,21 +153,21 @@ class ProcessInputUpdateRequest(BaseModel):
 
 class EmissionCalculationRequest(BaseModel):
     """배출량 계산 요청"""
-    process_id: int = Field(..., description="프로세스 ID")
+    process_id: int = Field(..., description="공정 ID")
 
 class EmissionCalculationResponse(BaseModel):
     """배출량 계산 응답"""
-    process_id: int = Field(..., description="프로세스 ID")
-    total_direct_emission: float = Field(..., description="총 직접배출량")
-    total_indirect_emission: float = Field(..., description="총 간접배출량")
-    total_emission: float = Field(..., description="총 배출량")
+    process_id: int = Field(..., description="공정 ID")
+    total_direm: float = Field(..., description="총 직접배출량")
+    total_indirem: float = Field(..., description="총 간접배출량")
+    total_em: float = Field(..., description="총 배출량")
     calculation_details: List[Dict[str, Any]] = Field(..., description="계산 상세")
 
 class ProductEmissionResponse(BaseModel):
     """제품별 배출량 응답"""
     product_id: int = Field(..., description="제품 ID")
     product_name: str = Field(..., description="제품명")
-    total_emission: float = Field(..., description="총 배출량")
-    direct_emission: float = Field(..., description="직접배출량")
-    indirect_emission: float = Field(..., description="간접배출량")
+    total_em: float = Field(..., description="총 배출량")
+    direm: float = Field(..., description="직접배출량")
+    indirem: float = Field(..., description="간접배출량")
     processes: List[Dict[str, Any]] = Field(..., description="관련 프로세스")

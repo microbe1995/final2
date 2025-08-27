@@ -180,6 +180,34 @@ export const apiEndpoints = {
     reports: '/api/cbam/reports',
     calculations: '/api/cbam/calculations',
     templates: '/api/cbam/templates',
+    install: {
+      create: '/api/v1/boundary/install',
+      list: '/api/v1/boundary/install',
+      get: (id: number) => `/api/v1/boundary/install/${id}`,
+      update: (id: number) => `/api/v1/boundary/install/${id}`,
+      delete: (id: number) => `/api/v1/boundary/install/${id}`
+    },
+    product: {
+      create: '/api/v1/boundary/product',
+      list: '/api/v1/boundary/product',
+      get: (id: number) => `/api/v1/boundary/product/${id}`,
+      update: (id: number) => `/api/v1/boundary/product/${id}`,
+      delete: (id: number) => `/api/v1/boundary/product/${id}`
+    },
+    process: {
+      create: '/api/v1/boundary/process',
+      list: '/api/v1/boundary/process',
+      get: (id: number) => `/api/v1/boundary/process/${id}`,
+      update: (id: number) => `/api/v1/boundary/process/${id}`,
+      delete: (id: number) => `/api/v1/boundary/process/${id}`
+    },
+    processInput: {
+      create: '/api/v1/boundary/process-input',
+      list: '/api/v1/boundary/process-input',
+      get: (id: number) => `/api/v1/boundary/process-input/${id}`,
+      update: (id: number) => `/api/v1/boundary/process-input/${id}`,
+      delete: (id: number) => `/api/v1/boundary/process-input/${id}`
+    }
   },
   // Calculation Service (Gateway를 통해 boundary 서비스로)
   calculation: {

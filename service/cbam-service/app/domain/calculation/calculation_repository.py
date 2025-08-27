@@ -468,7 +468,7 @@ class CalculationRepository:
         try:
             with conn.cursor(cursor_factory=RealDictCursor) as cursor:
                 cursor.execute("""
-                    SELECT id, name FROM install ORDER BY name
+                    SELECT id, install_name FROM install ORDER BY install_name
                 """)
                 
                 results = cursor.fetchall()
