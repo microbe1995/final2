@@ -12,7 +12,7 @@ import { useRouter } from 'next/navigation';
 
 interface Install {
   id: number;
-  name: string;
+  install_name: string;
   reporting_year: number;
 }
 
@@ -143,8 +143,8 @@ export default function InstallPage() {
   };
 
   // 사업장 삭제
-  const handleDeleteInstall = async (id: number, name: string) => {
-    if (!confirm(`"${name}" 사업장을 삭제하시겠습니까?\n\n⚠️ 주의: 이 사업장과 연결된 모든 제품, 프로세스, 입력 데이터가 함께 삭제됩니다.`)) {
+  const handleDeleteInstall = async (id: number, install_name: string) => {
+    if (!confirm(`"${install_name}" 사업장을 삭제하시겠습니까?\n\n⚠️ 주의: 이 사업장과 연결된 모든 제품, 프로세스, 입력 데이터가 함께 삭제됩니다.`)) {
       return;
     }
 
@@ -154,7 +154,7 @@ export default function InstallPage() {
       console.log('✅ 사업장 삭제 성공');
       
       setToast({
-        message: `"${name}" 사업장이 성공적으로 삭제되었습니다.`,
+        message: `"${install_name}" 사업장이 성공적으로 삭제되었습니다.`,
         type: 'success'
       });
 

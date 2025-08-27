@@ -7,7 +7,7 @@ import { apiEndpoints } from '@/lib/axiosClient';
 
 interface Install {
   id: number;
-  name: string;
+  install_name: string;
 }
 
 interface Product {
@@ -317,7 +317,7 @@ export default function InstallProductsPage() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold text-white mb-2">
-                🏭 {install?.name} - 제품/공정 관리
+                🏭 {install?.install_name} - 제품/공정 관리
               </h1>
               <p className="text-gray-300">
                 CBAM 기준정보 설정: 생산 제품 및 공정 관리
