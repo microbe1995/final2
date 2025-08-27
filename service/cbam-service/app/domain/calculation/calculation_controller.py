@@ -272,3 +272,10 @@ async def delete_process(process_id: int):
     except Exception as e:
         logger.error(f"❌ 프로세스 삭제 실패: {str(e)}")
         raise HTTPException(status_code=500, detail=f"프로세스 삭제 중 오류가 발생했습니다: {str(e)}")
+
+# ============================================================================
+# 📦 Router Export
+# ============================================================================
+
+# calculation_router를 다른 모듈에서 import할 수 있도록 export
+__all__ = ["router"]

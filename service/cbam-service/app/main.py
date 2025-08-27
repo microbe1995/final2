@@ -15,7 +15,7 @@ from sqlalchemy import create_engine, text
 from dotenv import load_dotenv
 
 # CBAM 도메인 라우터
-from app.domain.calculation.calculation_controller import calculation_router
+from app.domain.calculation.calculation_controller import router as calculation_router
 
 # ReactFlow 기반 라우터들 (현재 CBAM 기능에서는 사용하지 않음)
 # from app.domain.node.node_controller import node_router
