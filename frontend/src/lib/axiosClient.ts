@@ -149,10 +149,7 @@ axiosClient.interceptors.response.use(
 export const apiEndpoints = {
   // Gateway 엔드포인트
   gateway: {
-    health: '/health',
-    status: '/status',
-    routing: '/routing',
-    architecture: '/architecture',
+    templates: '/api/cbam/templates',
   },
   // Auth Service (Gateway를 통해)
   auth: {
@@ -193,14 +190,17 @@ export const apiEndpoints = {
     stats: '/api/v1/boundary/calc/stats',
     history: '/api/v1/boundary/calc/history',
     
-    // 새로운 테이블 API 엔드포인트들
+    // 새로운 테이블 API 엔드포인트들 (단수형으로 통일)
     boundary: {
         create: '/api/v1/boundary/boundary',
         list: '/api/v1/boundary/boundary'
     },
     product: {
         create: '/api/v1/boundary/product',
-        list: '/api/v1/boundary/product'
+        list: '/api/v1/boundary/product',
+        get: (id: number) => `/api/v1/boundary/product/${id}`,
+        update: (id: number) => `/api/v1/boundary/product/${id}`,
+        delete: (id: number) => `/api/v1/boundary/product/${id}`
     },
     operation: {
         create: '/api/v1/boundary/operation',

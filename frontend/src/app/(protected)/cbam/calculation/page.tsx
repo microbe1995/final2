@@ -10,30 +10,34 @@ import axiosClient from '@/lib/axiosClient';
 // ============================================================================
 
 interface ProductForm {
-  name: string;
-  cn_code: string;
-  period_start: string;
-  period_end: string;
-  production_qty: number;
-  sales_qty: number;
-  export_qty: number;
-  inventory_qty: number;
-  defect_rate: number;
+  install_id: number;
+  product_name: string;
+  product_category: '단순제품' | '복합제품';
+  prostart_period: string;
+  proend_period: string;
+  product_amount: number;
+  product_cncode: string;
+  goods_name: string;
+  aggrgoods_name: string;
+  product_sell: number;
+  product_eusell: number;
 }
 
 export default function ProductPage() {
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
   const [productForm, setProductForm] = useState<ProductForm>({
-    name: '',
-    cn_code: '',
-    period_start: '',
-    period_end: '',
-    production_qty: 0,
-    sales_qty: 0,
-    export_qty: 0,
-    inventory_qty: 0,
-    defect_rate: 0
+    install_id: 1, // 기본값으로 1 설정
+    product_name: '',
+    product_category: '단순제품',
+    prostart_period: '',
+    proend_period: '',
+    product_amount: 0,
+    product_cncode: '',
+    goods_name: '',
+    aggrgoods_name: '',
+    product_sell: 0,
+    product_eusell: 0
   });
 
   const handleInputChange = (field: keyof ProductForm, value: string | number) => {
@@ -48,7 +52,11 @@ export default function ProductPage() {
     setLoading(true);
 
     try {
+      console.log('📤 제품 생성 요청 데이터:', productForm);
+      
       const response = await axiosClient.post('/api/v1/boundary/product', productForm);
+      
+      console.log('✅ 제품 생성 성공:', response.data);
       
       setToast({
         message: '제품이 성공적으로 생성되었습니다!',
@@ -57,21 +65,24 @@ export default function ProductPage() {
 
       // 폼 초기화
       setProductForm({
-        name: '',
-        cn_code: '',
-        period_start: '',
-        period_end: '',
-        production_qty: 0,
-        sales_qty: 0,
-        export_qty: 0,
-        inventory_qty: 0,
-        defect_rate: 0
+        install_id: 1,
+        product_name: '',
+        product_category: '단순제품',
+        prostart_period: '',
+        proend_period: '',
+        product_amount: 0,
+        product_cncode: '',
+        goods_name: '',
+        aggrgoods_name: '',
+        product_sell: 0,
+        product_eusell: 0
       });
 
-    } catch (error) {
-
+    } catch (error: any) {
+      console.error('❌ 제품 생성 실패:', error);
+      
       setToast({
-        message: '제품 생성에 실패했습니다.',
+        message: `제품 생성에 실패했습니다: ${error.response?.data?.detail || error.message}`,
         type: 'error'
       });
     } finally {
@@ -81,7 +92,7 @@ export default function ProductPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 p-6">
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-white mb-2">📦 제품 관리</h1>
@@ -90,6 +101,17 @@ export default function ProductPage() {
           </p>
         </div>
 
+        {/* Toast 메시지 */}
+        {toast && (
+          <div className={`mb-6 p-4 rounded-lg ${
+            toast.type === 'success' ? 'bg-green-500/20 border border-green-500/50 text-green-300' :
+            toast.type === 'error' ? 'bg-red-500/20 border border-red-500/50 text-red-300' :
+            'bg-blue-500/20 border border-blue-500/50 text-blue-300'
+          }`}>
+            {toast.message}
+          </div>
+        )}
+
         {/* 제품 생성 폼 */}
         <div className="bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10">
           <h2 className="text-2xl font-semibold text-white mb-6 flex items-center gap-2">
@@ -97,7 +119,21 @@ export default function ProductPage() {
           </h2>
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {/* 사업장 ID */}
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  사업장 ID *
+                </label>
+                <Input
+                  type="number"
+                  placeholder="1"
+                  value={productForm.install_id}
+                  onChange={(e) => handleInputChange('install_id', parseInt(e.target.value) || 1)}
+                  required
+                />
+              </div>
+
               {/* 제품명 */}
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
@@ -106,34 +142,37 @@ export default function ProductPage() {
                 <Input
                   type="text"
                   placeholder="예: 철강 제품"
-                  value={productForm.name}
-                  onChange={(e) => handleInputChange('name', e.target.value)}
+                  value={productForm.product_name}
+                  onChange={(e) => handleInputChange('product_name', e.target.value)}
                   required
                 />
               </div>
 
-              {/* CN 코드 */}
+              {/* 제품 카테고리 */}
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
-                  CN 코드
+                  제품 카테고리 *
                 </label>
-                <Input
-                  type="text"
-                  placeholder="예: 7208"
-                  value={productForm.cn_code}
-                  onChange={(e) => handleInputChange('cn_code', e.target.value)}
-                />
+                <select
+                  value={productForm.product_category}
+                  onChange={(e) => handleInputChange('product_category', e.target.value as '단순제품' | '복합제품')}
+                  className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  required
+                >
+                  <option value="단순제품">단순제품</option>
+                  <option value="복합제품">복합제품</option>
+                </select>
               </div>
 
               {/* 시작일 */}
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
-                  시작일 *
+                  기간 시작일 *
                 </label>
                 <Input
                   type="date"
-                  value={productForm.period_start}
-                  onChange={(e) => handleInputChange('period_start', e.target.value)}
+                  value={productForm.prostart_period}
+                  onChange={(e) => handleInputChange('prostart_period', e.target.value)}
                   required
                 />
               </div>
@@ -141,89 +180,105 @@ export default function ProductPage() {
               {/* 종료일 */}
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
-                  종료일 *
+                  기간 종료일 *
                 </label>
                 <Input
                   type="date"
-                  value={productForm.period_end}
-                  onChange={(e) => handleInputChange('period_end', e.target.value)}
+                  value={productForm.proend_period}
+                  onChange={(e) => handleInputChange('proend_period', e.target.value)}
                   required
                 />
               </div>
 
-              {/* 생산량 */}
+              {/* 제품 수량 */}
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
-                  생산량 (톤)
+                  제품 수량 *
                 </label>
                 <Input
                   type="number"
-                  placeholder="0"
-                  value={productForm.production_qty}
-                  onChange={(e) => handleInputChange('production_qty', parseFloat(e.target.value) || 0)}
-                />
-              </div>
-
-              {/* 외부판매량 */}
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  외부판매량 (톤)
-                </label>
-                <Input
-                  type="number"
-                  placeholder="0"
-                  value={productForm.sales_qty}
-                  onChange={(e) => handleInputChange('sales_qty', parseFloat(e.target.value) || 0)}
-                />
-              </div>
-
-              {/* 수출량 */}
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  수출량 (톤)
-                </label>
-                <Input
-                  type="number"
-                  placeholder="0"
-                  value={productForm.export_qty}
-                  onChange={(e) => handleInputChange('export_qty', parseFloat(e.target.value) || 0)}
-                />
-              </div>
-
-              {/* 재고량 */}
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  재고량 (톤)
-                </label>
-                <Input
-                  type="number"
-                  placeholder="0"
-                  value={productForm.inventory_qty}
-                  onChange={(e) => handleInputChange('inventory_qty', parseFloat(e.target.value) || 0)}
-                />
-              </div>
-
-              {/* 불량률 */}
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  불량률 (%)
-                </label>
-                <Input
-                  type="number"
-                  placeholder="0"
                   step="0.01"
-                  value={productForm.defect_rate}
-                  onChange={(e) => handleInputChange('defect_rate', parseFloat(e.target.value) || 0)}
+                  placeholder="0.00"
+                  value={productForm.product_amount}
+                  onChange={(e) => handleInputChange('product_amount', parseFloat(e.target.value) || 0)}
+                  required
+                />
+              </div>
+
+              {/* 제품 CN 코드 */}
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  제품 CN 코드
+                </label>
+                <Input
+                  type="text"
+                  placeholder="예: 7208"
+                  value={productForm.product_cncode}
+                  onChange={(e) => handleInputChange('product_cncode', e.target.value)}
+                />
+              </div>
+
+              {/* 상품명 */}
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  상품명
+                </label>
+                <Input
+                  type="text"
+                  placeholder="상품명을 입력하세요"
+                  value={productForm.goods_name}
+                  onChange={(e) => handleInputChange('goods_name', e.target.value)}
+                />
+              </div>
+
+              {/* 집계 상품명 */}
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  집계 상품명
+                </label>
+                <Input
+                  type="text"
+                  placeholder="집계 상품명을 입력하세요"
+                  value={productForm.aggrgoods_name}
+                  onChange={(e) => handleInputChange('aggrgoods_name', e.target.value)}
+                />
+              </div>
+
+              {/* 제품 판매량 */}
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  제품 판매량
+                </label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  placeholder="0.00"
+                  value={productForm.product_sell}
+                  onChange={(e) => handleInputChange('product_sell', parseFloat(e.target.value) || 0)}
+                />
+              </div>
+
+              {/* 제품 EU 판매량 */}
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  제품 EU 판매량
+                </label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  placeholder="0.00"
+                  value={productForm.product_eusell}
+                  onChange={(e) => handleInputChange('product_eusell', parseFloat(e.target.value) || 0)}
                 />
               </div>
             </div>
 
             {/* 제출 버튼 */}
-            <div className="flex justify-end">
+            <div className="flex justify-end pt-6">
               <Button
                 type="submit"
-                loading={loading}
-                className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                disabled={loading}
+                className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors duration-200 disabled:opacity-50"
               >
                 {loading ? '생성 중...' : '제품 생성'}
               </Button>
@@ -231,23 +286,15 @@ export default function ProductPage() {
           </form>
         </div>
 
-        {/* Toast */}
-        {toast && (
-          <div className={`fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 ${
-            toast.type === 'success' ? 'bg-green-600' :
-            toast.type === 'error' ? 'bg-red-600' : 'bg-blue-600'
-          } text-white`}>
-            <div className="flex items-center justify-between">
-              <span>{toast.message}</span>
-              <button
-                onClick={() => setToast(null)}
-                className="ml-2 text-white hover:text-gray-200"
-              >
-                ✕
-              </button>
-            </div>
+        {/* 디버그 정보 */}
+        <div className="mt-8 bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10">
+          <h3 className="text-lg font-semibold text-white mb-4">🔍 디버그 정보</h3>
+          <div className="bg-black/20 p-4 rounded-lg">
+            <pre className="text-sm text-gray-300 overflow-auto">
+              {JSON.stringify(productForm, null, 2)}
+            </pre>
           </div>
-        )}
+        </div>
       </div>
     </div>
   );

@@ -1,73 +1,71 @@
 # ============================================================================
-# 🧮 Calculation Repository - Product 데이터 접근
+# 📦 Calculation Repository - Product 데이터 접근
 # ============================================================================
 
 import logging
-from typing import Optional, List, Dict, Any
+from typing import List, Dict, Any, Optional
 from datetime import datetime
-from sqlalchemy import text
-from app.common.database_base import create_database_engine, get_db_session
+import psycopg2
+from psycopg2.extras import RealDictCursor
+import os
 
 logger = logging.getLogger(__name__)
 
 class CalculationRepository:
     """Product 데이터 접근 클래스"""
     
-    def __init__(self, use_database: bool = True):
-        self.use_database = use_database
-        self._memory_products: Dict[int, Dict[str, Any]] = {}
+    def __init__(self):
+        self.database_url = os.getenv('DATABASE_URL')
+        if not self.database_url:
+            raise Exception("DATABASE_URL 환경변수가 설정되지 않았습니다.")
         
-        if self.use_database:
-            logger.info("✅ PostgreSQL Product 저장소 사용")
-            self._initialize_database()
-        else:
-            logger.info("✅ 메모리 Product 저장소 사용")
-            self._initialize_memory_data()
+        self._initialize_database()
     
     def _initialize_database(self):
         """데이터베이스 초기화"""
         try:
-            self.engine = create_database_engine()
+            import psycopg2
+            from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
+            
+            # 데이터베이스 연결 테스트
+            conn = psycopg2.connect(self.database_url)
+            conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+            conn.close()
+            
+            logger.info("✅ 데이터베이스 연결 성공")
             self._create_tables()
-            logger.info("✅ Product 저장소 데이터베이스 엔진 초기화 완료")
+            
         except Exception as e:
-            logger.error(f"❌ 데이터베이스 초기화 실패: {str(e)}")
-            logger.info("메모리 저장소로 폴백")
-            self.use_database = False
-            self._initialize_memory_data()
+            logger.error(f"❌ 데이터베이스 연결 실패: {str(e)}")
+            raise
     
     def _create_tables(self):
         """필요한 테이블들을 생성합니다"""
         try:
-            with self.engine.connect() as conn:
-                # 제품 테이블 생성
-                conn.execute(text("""
-                    CREATE TABLE IF NOT EXISTS product (
-                        product_id SERIAL PRIMARY KEY,
-                        name VARCHAR(255) NOT NULL,
-                        cn_code VARCHAR(50),
-                        period_start DATE,
-                        period_end DATE,
-                        production_qty DECIMAL(10,2) DEFAULT 0,
-                        sales_qty DECIMAL(10,2) DEFAULT 0,
-                        export_qty DECIMAL(10,2) DEFAULT 0,
-                        inventory_qty DECIMAL(10,2) DEFAULT 0,
-                        defect_rate DECIMAL(5,4) DEFAULT 0,
-                        node_id VARCHAR(255),
-                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                    )
-                """))
+            import psycopg2
+            from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
+            
+            conn = psycopg2.connect(self.database_url)
+            conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+            
+            with conn.cursor() as cursor:
+                # product 테이블이 이미 존재하는지 확인
+                cursor.execute("""
+                    SELECT EXISTS (
+                        SELECT FROM information_schema.tables 
+                        WHERE table_name = 'product'
+                    );
+                """)
+                
+                if not cursor.fetchone()[0]:
+                    logger.info("⚠️ product 테이블이 존재하지 않습니다. 수동으로 생성해주세요.")
                 
                 conn.commit()
-                logger.info("✅ 데이터베이스 테이블 생성 완료")
+                logger.info("✅ 데이터베이스 테이블 확인 완료")
                 
         except Exception as e:
             logger.error(f"❌ 테이블 생성 실패: {str(e)}")
             raise
-    
-    def _initialize_memory_data(self):
-        """메모리 데이터 초기화"""
-        logger.info("✅ 메모리 Product 저장소 초기화 완료")
     
     # ============================================================================
     # 📦 Product 관련 메서드
@@ -76,10 +74,7 @@ class CalculationRepository:
     async def create_product(self, product_data: Dict[str, Any]) -> Dict[str, Any]:
         """제품 생성"""
         try:
-            if self.use_database:
-                return await self._create_product_db(product_data)
-            else:
-                return self._create_product_memory(product_data)
+            return await self._create_product_db(product_data)
         except Exception as e:
             logger.error(f"❌ 제품 생성 실패: {str(e)}")
             raise
@@ -87,192 +82,170 @@ class CalculationRepository:
     async def get_products(self) -> List[Dict[str, Any]]:
         """제품 목록 조회"""
         try:
-            if self.use_database:
-                return await self._get_products_db()
-            else:
-                return self._get_products_memory()
+            return await self._get_products_db()
         except Exception as e:
             logger.error(f"❌ 제품 목록 조회 실패: {str(e)}")
-            return []
-    
-    async def _create_product_db(self, product_data: Dict[str, Any]) -> Dict[str, Any]:
-        """PostgreSQL에 제품 저장"""
-        try:
-            with self.engine.connect() as conn:
-                # 날짜 검증 및 정리
-                cleaned_data = self._clean_product_data(product_data)
-                
-                # 먼저 테이블 구조 확인
-                result = conn.execute(text("""
-                    SELECT column_name 
-                    FROM information_schema.columns 
-                    WHERE table_name = 'product'
-                """))
-                columns = [row[0] for row in result.fetchall()]
-                
-                # created_at 컬럼이 있는지 확인
-                has_created_at = 'created_at' in columns
-                
-                if has_created_at:
-                    query = text("""
-                        INSERT INTO product (name, cn_code, period_start, period_end, production_qty, sales_qty, export_qty, inventory_qty, defect_rate, node_id)
-                        VALUES (:name, :cn_code, :period_start, :period_end, :production_qty, :sales_qty, :export_qty, :inventory_qty, :defect_rate, :node_id)
-                        RETURNING product_id, name, cn_code, period_start, period_end, production_qty, sales_qty, export_qty, inventory_qty, defect_rate, node_id, created_at
-                    """)
-                else:
-                    query = text("""
-                        INSERT INTO product (name, cn_code, period_start, period_end, production_qty, sales_qty, export_qty, inventory_qty, defect_rate, node_id)
-                        VALUES (:name, :cn_code, :period_start, :period_end, :production_qty, :sales_qty, :export_qty, :inventory_qty, :defect_rate, :node_id)
-                        RETURNING product_id, name, cn_code, period_start, period_end, production_qty, sales_qty, export_qty, inventory_qty, defect_rate, node_id
-                    """)
-                
-                result = conn.execute(query, cleaned_data)
-                row = result.fetchone()
-                conn.commit()
-                
-                if row:
-                    response_data = {
-                        "product_id": row[0],
-                        "name": row[1],
-                        "cn_code": row[2],
-                        "period_start": row[3].isoformat() if row[3] else None,
-                        "period_end": row[4].isoformat() if row[4] else None,
-                        "production_qty": float(row[5]) if row[5] else 0,
-                        "sales_qty": float(row[6]) if row[6] else 0,
-                        "export_qty": float(row[7]) if row[7] else 0,
-                        "inventory_qty": float(row[8]) if row[8] else 0,
-                        "defect_rate": float(row[9]) if row[9] else 0,
-                        "node_id": row[10],
-                    }
-                    
-                    # created_at 컬럼이 있으면 추가
-                    if has_created_at and len(row) > 11:
-                        response_data["created_at"] = row[11].isoformat() if row[11] else None
-                    else:
-                        response_data["created_at"] = datetime.utcnow().isoformat()
-                    
-                    return response_data
-                return None
-        except Exception as e:
-            logger.error(f"❌ PostgreSQL 제품 저장 실패: {str(e)}")
             raise
     
-    def _clean_product_data(self, product_data: Dict[str, Any]) -> Dict[str, Any]:
-        """제품 데이터 정리 및 검증"""
-        cleaned_data = product_data.copy()
-        
-        # 날짜 검증 및 정리
+    async def get_product(self, product_id: int) -> Optional[Dict[str, Any]]:
+        """특정 제품 조회"""
         try:
-            # period_start 검증
-            if cleaned_data.get('period_start'):
-                start_date = str(cleaned_data['period_start'])
-                # 잘못된 날짜 형식 수정 (예: 200003-03-04 → 2000-03-04)
-                if len(start_date) > 10:
-                    start_date = start_date[:10]
-                if start_date.count('-') == 2:
-                    parts = start_date.split('-')
-                    if len(parts[0]) > 4:  # 연도가 4자리보다 큰 경우
-                        parts[0] = parts[0][:4]
-                    cleaned_data['period_start'] = '-'.join(parts)
-            
-            # period_end 검증
-            if cleaned_data.get('period_end'):
-                end_date = str(cleaned_data['period_end'])
-                # 잘못된 날짜 형식 수정
-                if len(end_date) > 10:
-                    end_date = end_date[:10]
-                if end_date.count('-') == 2:
-                    parts = end_date.split('-')
-                    if len(parts[0]) > 4:  # 연도가 4자리보다 큰 경우
-                        parts[0] = parts[0][:4]
-                    cleaned_data['period_end'] = '-'.join(parts)
-            
-            # 숫자 필드 검증
-            numeric_fields = ['production_qty', 'sales_qty', 'export_qty', 'inventory_qty', 'defect_rate']
-            for field in numeric_fields:
-                if field in cleaned_data and cleaned_data[field] is not None:
-                    try:
-                        cleaned_data[field] = float(cleaned_data[field])
-                    except (ValueError, TypeError):
-                        cleaned_data[field] = 0.0
-            
-            logger.info(f"✅ 제품 데이터 정리 완료: {cleaned_data}")
-            
+            return await self._get_product_db(product_id)
         except Exception as e:
-            logger.warning(f"⚠️ 제품 데이터 정리 중 경고: {str(e)}")
+            logger.error(f"❌ 제품 조회 실패: {str(e)}")
+            raise
+    
+    async def update_product(self, product_id: int, update_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        """제품 수정"""
+        try:
+            return await self._update_product_db(product_id, update_data)
+        except Exception as e:
+            logger.error(f"❌ 제품 수정 실패: {str(e)}")
+            raise
+    
+    async def delete_product(self, product_id: int) -> bool:
+        """제품 삭제"""
+        try:
+            return await self._delete_product_db(product_id)
+        except Exception as e:
+            logger.error(f"❌ 제품 삭제 실패: {str(e)}")
+            raise
+    
+    # ============================================================================
+    # 🗄️ Database 메서드들
+    # ============================================================================
+    
+    async def _create_product_db(self, product_data: Dict[str, Any]) -> Dict[str, Any]:
+        """데이터베이스에 제품 생성"""
+        import psycopg2
+        from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
         
-        return cleaned_data
+        conn = psycopg2.connect(self.database_url)
+        conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+        
+        try:
+            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                cursor.execute("""
+                    INSERT INTO product (
+                        install_id, product_name, product_category, 
+                        prostart_period, proend_period, product_amount,
+                        product_cncode, goods_name, aggrgoods_name,
+                        product_sell, product_eusell
+                    ) VALUES (
+                        %(install_id)s, %(product_name)s, %(product_category)s,
+                        %(prostart_period)s, %(proend_period)s, %(product_amount)s,
+                        %(product_cncode)s, %(goods_name)s, %(aggrgoods_name)s,
+                        %(product_sell)s, %(product_eusell)s
+                    ) RETURNING *
+                """, product_data)
+                
+                result = cursor.fetchone()
+                conn.commit()
+                
+                if result:
+                    return dict(result)
+                else:
+                    raise Exception("제품 생성에 실패했습니다.")
+                    
+        except Exception as e:
+            conn.rollback()
+            raise e
+        finally:
+            conn.close()
     
     async def _get_products_db(self) -> List[Dict[str, Any]]:
-        """PostgreSQL에서 제품 목록 조회"""
+        """데이터베이스에서 제품 목록 조회"""
+        import psycopg2
+        from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
+        
+        conn = psycopg2.connect(self.database_url)
+        conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+        
         try:
-            with self.engine.connect() as conn:
-                # 먼저 테이블 구조 확인
-                result = conn.execute(text("""
-                    SELECT column_name 
-                    FROM information_schema.columns 
-                    WHERE table_name = 'product'
-                """))
-                columns = [row[0] for row in result.fetchall()]
+            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                cursor.execute("""
+                    SELECT * FROM product ORDER BY id
+                """)
                 
-                # created_at 컬럼이 있는지 확인
-                has_created_at = 'created_at' in columns
+                results = cursor.fetchall()
+                return [dict(row) for row in results]
                 
-                if has_created_at:
-                    query = text("""
-                        SELECT product_id, name, cn_code, period_start, period_end, production_qty, sales_qty, export_qty, inventory_qty, defect_rate, node_id, created_at
-                        FROM product
-                        ORDER BY created_at DESC
-                    """)
-                else:
-                    query = text("""
-                        SELECT product_id, name, cn_code, period_start, period_end, production_qty, sales_qty, export_qty, inventory_qty, defect_rate, node_id
-                        FROM product
-                        ORDER BY product_id DESC
-                    """)
-                
-                result = conn.execute(query)
-                products = []
-                
-                for row in result:
-                    product_data = {
-                        "product_id": row[0],
-                        "name": row[1],
-                        "cn_code": row[2],
-                        "period_start": row[3].isoformat() if row[3] else None,
-                        "period_end": row[4].isoformat() if row[4] else None,
-                        "production_qty": float(row[5]) if row[5] else 0,
-                        "sales_qty": float(row[6]) if row[6] else 0,
-                        "export_qty": float(row[7]) if row[7] else 0,
-                        "inventory_qty": float(row[8]) if row[8] else 0,
-                        "defect_rate": float(row[9]) if row[9] else 0,
-                        "node_id": row[10],
-                    }
-                    
-                    # created_at 컬럼이 있으면 추가
-                    if has_created_at and len(row) > 11:
-                        product_data["created_at"] = row[11].isoformat() if row[11] else None
-                    else:
-                        product_data["created_at"] = datetime.utcnow().isoformat()
-                    
-                    products.append(product_data)
-                
-                return products
         except Exception as e:
-            logger.error(f"❌ PostgreSQL 제품 목록 조회 실패: {str(e)}")
-            return []
+            raise e
+        finally:
+            conn.close()
     
-    def _create_product_memory(self, product_data: Dict[str, Any]) -> Dict[str, Any]:
-        """메모리에 제품 저장"""
-        product_id = len(self._memory_products) + 1
-        product = {
-            **product_data,
-            "product_id": product_id,
-            "created_at": datetime.utcnow().isoformat()
-        }
-        self._memory_products[product_id] = product
-        return product
+    async def _get_product_db(self, product_id: int) -> Optional[Dict[str, Any]]:
+        """데이터베이스에서 특정 제품 조회"""
+        import psycopg2
+        from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
+        
+        conn = psycopg2.connect(self.database_url)
+        conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+        
+        try:
+            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                cursor.execute("""
+                    SELECT * FROM product WHERE id = %s
+                """, (product_id,))
+                
+                result = cursor.fetchone()
+                return dict(result) if result else None
+                
+        except Exception as e:
+            raise e
+        finally:
+            conn.close()
     
-    def _get_products_memory(self) -> List[Dict[str, Any]]:
-        """메모리에서 제품 목록 조회"""
-        return list(self._memory_products.values())
+    async def _update_product_db(self, product_id: int, update_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        """데이터베이스에서 제품 수정"""
+        import psycopg2
+        from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
+        
+        conn = psycopg2.connect(self.database_url)
+        conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+        
+        try:
+            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                # 동적으로 SET 절 생성
+                set_clause = ", ".join([f"{key} = %s" for key in update_data.keys()])
+                values = list(update_data.values()) + [product_id]
+                
+                cursor.execute(f"""
+                    UPDATE product SET {set_clause} 
+                    WHERE id = %s RETURNING *
+                """, values)
+                
+                result = cursor.fetchone()
+                conn.commit()
+                
+                return dict(result) if result else None
+                
+        except Exception as e:
+            conn.rollback()
+            raise e
+        finally:
+            conn.close()
+    
+    async def _delete_product_db(self, product_id: int) -> bool:
+        """데이터베이스에서 제품 삭제"""
+        import psycopg2
+        from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
+        
+        conn = psycopg2.connect(self.database_url)
+        conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+        
+        try:
+            with conn.cursor() as cursor:
+                cursor.execute("""
+                    DELETE FROM product WHERE id = %s
+                """, (product_id,))
+                
+                conn.commit()
+                return cursor.rowcount > 0
+                
+        except Exception as e:
+            conn.rollback()
+            raise e
+        finally:
+            conn.close()
