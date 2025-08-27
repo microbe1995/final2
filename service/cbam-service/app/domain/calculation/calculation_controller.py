@@ -1,14 +1,24 @@
 # ============================================================================
-# 🎮 Calculation Controller - Product API 엔드포인트
+# 🎯 Calculation Controller - Product API 엔드포인트
 # ============================================================================
 
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException
+import logging
 from typing import List
-from loguru import logger
 import time
 
 from .calculation_service import CalculationService
-from .calculation_schema import ProductCreateRequest, ProductResponse, ProductUpdateRequest, ProcessCreateRequest, ProcessResponse, ProcessUpdateRequest, ProductNameResponse, InstallCreateRequest, InstallResponse, InstallUpdateRequest, InstallNameResponse, ProcessInputResponse, ProcessInputCreateRequest, ProcessInputUpdateRequest, EmissionCalculationResponse, ProductEmissionResponse, ProductProcessResponse, ProductProcessCreateRequest
+from .calculation_schema import (
+    ProductCreateRequest, ProductResponse, ProductUpdateRequest, 
+    ProcessCreateRequest, ProcessResponse, ProcessUpdateRequest,
+    ProductNameResponse, InstallCreateRequest, InstallResponse, 
+    InstallUpdateRequest, InstallNameResponse, ProcessInputResponse, 
+    ProcessInputCreateRequest, ProcessInputUpdateRequest, 
+    EmissionCalculationResponse, ProductEmissionResponse,
+    ProductProcessResponse, ProductProcessCreateRequest
+)
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="", tags=["Product"])
 
@@ -429,4 +439,5 @@ async def calculate_product_emission(product_id: int):
 # ============================================================================
 
 # calculation_router를 다른 모듈에서 import할 수 있도록 export
-__all__ = ["router"]
+calculation_router = router
+__all__ = ["router", "calculation_router"]

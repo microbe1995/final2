@@ -3,11 +3,11 @@
 # ============================================================================
 
 from pydantic import BaseModel, Field
-from typing import Optional, List, Dict, Any, ForwardRef
+from typing import Optional, List, Dict, Any, TYPE_CHECKING
 from datetime import date, datetime
 
-# ForwardRef 정의
-ProcessResponse = ForwardRef('ProcessResponse')
+if TYPE_CHECKING:
+    from .calculation_schema import ProcessResponse, ProductResponse
 
 # ============================================================================
 # 🏭 Install 관련 스키마
@@ -76,10 +76,7 @@ class ProductResponse(BaseModel):
     created_at: Optional[datetime] = Field(None, description="생성일")
     updated_at: Optional[datetime] = Field(None, description="수정일")
     # 다대다 관계를 위한 공정 정보
-    processes: Optional[List['ProcessResponse']] = Field(None, description="연결된 공정들")
-
-# ForwardRef 업데이트
-ProductResponse.model_rebuild()
+    processes: Optional[List[Dict[str, Any]]] = Field(None, description="연결된 공정들")
 
 class ProductUpdateRequest(BaseModel):
     """제품 수정 요청"""
@@ -131,11 +128,8 @@ class ProcessResponse(BaseModel):
     end_period: Optional[str] = Field(None, description="종료일")
     created_at: Optional[datetime] = Field(None, description="생성일")
     updated_at: Optional[datetime] = Field(None, description="수정일")
-    # 다대다 관계를 위한 제품 정보
-    products: Optional[List['ProductResponse']] = Field(None, description="연결된 제품들")
-
-# ForwardRef 업데이트
-ProcessResponse.model_rebuild()
+    # 다대다 관계를 위한 제품 정보 (순환 참조 방지를 위해 Dict 사용)
+    products: Optional[List[Dict[str, Any]]] = Field(None, description="연결된 제품들")
 
 class ProcessUpdateRequest(BaseModel):
     """프로세스 수정 요청"""
