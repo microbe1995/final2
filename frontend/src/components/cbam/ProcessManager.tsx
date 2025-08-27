@@ -110,6 +110,9 @@ function ProcessManagerInner() {
       const productIds = installProducts.map((product: any) => product.id);
       const filteredProcesses = response.data.filter((process: any) => productIds.includes(process.product_id));
       setProcesses(filteredProcesses);
+      console.log('🔍 선택된 사업장의 제품들:', installProducts);
+      console.log('🔍 제품 ID들:', productIds);
+      console.log('🔍 필터링된 공정들:', filteredProcesses);
     } catch (error) {
       console.error('공정 목록 조회 실패:', error);
       setProcesses([]);
@@ -125,7 +128,11 @@ function ProcessManagerInner() {
 
   useEffect(() => {
     if (selectedInstall && products.length > 0) {
-      fetchProcessesByInstall(selectedInstall.id);
+      // products가 업데이트된 후에 공정 목록을 가져옴
+      const timer = setTimeout(() => {
+        fetchProcessesByInstall(selectedInstall.id);
+      }, 100);
+      return () => clearTimeout(timer);
     }
   }, [selectedInstall, products, fetchProcessesByInstall]);
 
@@ -177,15 +184,19 @@ function ProcessManagerInner() {
         description: `제품: ${product.product_name}`,
         variant: 'product',
         productData: product,
+        install_id: selectedInstall?.id, // 사업장 ID 추가
       },
     };
 
     addNodes(newNode);
     setShowProductModal(false);
-  }, [addNodes]);
+  }, [addNodes, selectedInstall]);
 
   // 공정 선택 → 노드 추가
   const handleProcessSelect = useCallback((process: any) => {
+    // 해당 공정이 속한 제품 정보 찾기
+    const relatedProduct = products.find((product: any) => product.id === process.product_id);
+    
     const newNode: Node<any> = {
       id: `process-${Date.now()}-${Math.random().toString(36).slice(2)}`,
       type: 'process',
@@ -195,12 +206,15 @@ function ProcessManagerInner() {
         description: `공정: ${process.process_name}`,
         variant: 'process',
         processData: process,
+        product_id: process.product_id, // 제품 ID 추가
+        product_name: relatedProduct?.product_name || '알 수 없음', // 제품명 추가
+        install_id: selectedInstall?.id, // 사업장 ID 추가
       },
     };
 
     addNodes(newNode);
     setShowProcessModal(false);
-  }, [addNodes]);
+  }, [addNodes, products, selectedInstall]);
 
   // 그룹 노드 추가
   const addGroupNode = useCallback(() => {
@@ -362,17 +376,24 @@ function ProcessManagerInner() {
             </div>
             <div className="space-y-2">
               {processes.length > 0 ? (
-                processes.map((process) => (
-                  <div
-                    key={process.id}
-                    className="p-3 border border-gray-600 rounded-lg cursor-pointer hover:bg-gray-700 hover:border-purple-400 transition-colors"
-                    onClick={() => handleProcessSelect(process)}
-                  >
-                    <div className="font-medium text-white">{process.process_name}</div>
-                    <div className="text-sm text-gray-300">시작일: {process.start_period}</div>
-                    <div className="text-sm text-gray-300">종료일: {process.end_period}</div>
-                  </div>
-                ))
+                processes.map((process) => {
+                  // 해당 공정이 속한 제품 정보 찾기
+                  const relatedProduct = products.find((product: any) => product.id === process.product_id);
+                  return (
+                    <div
+                      key={process.id}
+                      className="p-3 border border-gray-600 rounded-lg cursor-pointer hover:bg-gray-700 hover:border-purple-400 transition-colors"
+                      onClick={() => handleProcessSelect(process)}
+                    >
+                      <div className="font-medium text-white">{process.process_name}</div>
+                      {relatedProduct && (
+                        <div className="text-sm text-gray-300">제품: {relatedProduct.product_name}</div>
+                      )}
+                      <div className="text-sm text-gray-300">시작일: {process.start_period || 'N/A'}</div>
+                      <div className="text-sm text-gray-300">종료일: {process.end_period || 'N/A'}</div>
+                    </div>
+                  );
+                })
               ) : (
                 <div className="text-center py-4 text-gray-400">
                   선택된 사업장에 등록된 공정이 없습니다.

@@ -104,6 +104,12 @@ function ProcessNode({
         {/* 공정 정보 미리보기 */}
         {data.processData && finalVariant === 'process' && (
           <div className='text-xs opacity-60 mt-2'>
+            {data.product_name && (
+              <div className='flex justify-between'>
+                <span>제품:</span>
+                <span className='font-medium'>{data.product_name}</span>
+              </div>
+            )}
             <div className='flex justify-between'>
               <span>시작일:</span>
               <span className='font-medium'>{data.processData.start_period || 'N/A'}</span>
