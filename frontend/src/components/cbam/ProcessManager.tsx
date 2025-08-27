@@ -76,6 +76,10 @@ function ProcessManagerInner() {
   // 공정 목록 모달 상태
   const [processes, setProcesses] = useState<any[]>([]);
   const [showProcessModal, setShowProcessModal] = useState(false);
+  
+  // 제품별 공정 선택을 위한 상태
+  const [selectedProduct, setSelectedProduct] = useState<any>(null);
+  const [showProcessModalForProduct, setShowProcessModalForProduct] = useState(false);
 
   // 사업장 목록 불러오기
   const fetchInstalls = useCallback(async () => {
@@ -118,6 +122,21 @@ function ProcessManagerInner() {
       setProcesses([]);
     }
   }, [products]);
+
+  // 선택된 제품의 공정 목록 불러오기
+  const fetchProcessesByProduct = useCallback(async (productId: number) => {
+    try {
+      const response = await axiosClient.get(apiEndpoints.cbam.process.list);
+      // 선택된 제품에 속한 공정만 필터링
+      const filteredProcesses = response.data.filter((process: any) => process.product_id === productId);
+      setProcesses(filteredProcesses);
+      console.log('🔍 선택된 제품 ID:', productId);
+      console.log('🔍 제품별 필터링된 공정들:', filteredProcesses);
+    } catch (error) {
+      console.error('제품별 공정 목록 조회 실패:', error);
+      setProcesses([]);
+    }
+  }, []);
 
   // 사업장 선택 시 제품과 공정 목록 업데이트
   useEffect(() => {
@@ -173,6 +192,20 @@ function ProcessManagerInner() {
     setShowProcessModal(true);
   }, [selectedInstall]);
 
+  // 제품 노드 클릭 시 해당 제품의 공정 선택 모달 열기
+  const handleProductNodeClick = useCallback((productData: any) => {
+    setSelectedProduct(productData);
+    fetchProcessesByProduct(productData.id);
+    setShowProcessModalForProduct(true);
+  }, [fetchProcessesByProduct]);
+
+  // 제품별 공정 선택 모달 열기
+  const openProcessModalForProduct = useCallback((product: any) => {
+    setSelectedProduct(product);
+    fetchProcessesByProduct(product.id);
+    setShowProcessModalForProduct(true);
+  }, [fetchProcessesByProduct]);
+
   // 제품 선택 → 노드 추가
   const handleProductSelect = useCallback((product: any) => {
     const newNode: Node<any> = {
@@ -185,12 +218,13 @@ function ProcessManagerInner() {
         variant: 'product',
         productData: product,
         install_id: selectedInstall?.id, // 사업장 ID 추가
+        onClick: () => handleProductNodeClick(product), // 제품 노드 클릭 핸들러 추가
       },
     };
 
     addNodes(newNode);
     setShowProductModal(false);
-  }, [addNodes, selectedInstall]);
+  }, [addNodes, selectedInstall, handleProductNodeClick]);
 
   // 공정 선택 → 노드 추가
   const handleProcessSelect = useCallback((process: any) => {
@@ -214,6 +248,7 @@ function ProcessManagerInner() {
 
     addNodes(newNode);
     setShowProcessModal(false);
+    setShowProcessModalForProduct(false); // 제품별 공정 모달도 닫기
   }, [addNodes, products, selectedInstall]);
 
   // 그룹 노드 추가
@@ -397,6 +432,39 @@ function ProcessManagerInner() {
               ) : (
                 <div className="text-center py-4 text-gray-400">
                   선택된 사업장에 등록된 공정이 없습니다.
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 제품별 공정 선택 모달 */}
+      {showProcessModalForProduct && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black/60 z-50">
+          <div className="bg-gray-800 p-6 rounded-lg shadow-lg max-w-md w-full mx-4 border border-gray-700">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold text-white">
+                공정 선택 - {selectedProduct?.product_name}
+              </h3>
+              <button onClick={() => setShowProcessModalForProduct(false)} className="text-gray-400 hover:text-gray-200">✕</button>
+            </div>
+            <div className="space-y-2">
+              {processes.length > 0 ? (
+                processes.map((process) => (
+                  <div
+                    key={process.id}
+                    className="p-3 border border-gray-600 rounded-lg cursor-pointer hover:bg-gray-700 hover:border-purple-400 transition-colors"
+                    onClick={() => handleProcessSelect(process)}
+                  >
+                    <div className="font-medium text-white">{process.process_name}</div>
+                    <div className="text-sm text-gray-300">시작일: {process.start_period || 'N/A'}</div>
+                    <div className="text-sm text-gray-300">종료일: {process.end_period || 'N/A'}</div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-4 text-gray-400">
+                  {selectedProduct?.product_name}에 등록된 공정이 없습니다.
                 </div>
               )}
             </div>

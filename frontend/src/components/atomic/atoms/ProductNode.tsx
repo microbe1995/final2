@@ -66,6 +66,11 @@ function ProductNode({
   `.trim();
 
   const handleClick = () => {
+    // data에 onClick 함수가 있으면 먼저 실행
+    if (data.onClick) {
+      data.onClick();
+    }
+    // 그 다음 일반적인 onClick 핸들러 실행
     if (onClick) onClick({ data, selected });
   };
 
