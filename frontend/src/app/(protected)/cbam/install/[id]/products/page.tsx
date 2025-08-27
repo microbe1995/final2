@@ -192,8 +192,8 @@ export default function InstallProductsPage() {
 
     try {
       const processData = {
-        ...processForm,
-        product_id: productId
+        process_name: processForm.process_name,
+        product_ids: [productId]  // 다대다 관계를 위해 배열로 전송
       };
 
       console.log('🔍 전송할 공정 데이터:', processData);
