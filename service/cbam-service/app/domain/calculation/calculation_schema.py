@@ -52,3 +52,29 @@ class ProductUpdateRequest(BaseModel):
     aggrgoods_name: Optional[str] = Field(None, description="집계 상품명")
     product_sell: Optional[float] = Field(None, description="제품 판매량")
     product_eusell: Optional[float] = Field(None, description="제품 EU 판매량")
+
+# ============================================================================
+# 🔄 Process 관련 스키마
+# ============================================================================
+
+class ProcessCreateRequest(BaseModel):
+    """프로세스 생성 요청"""
+    product_id: int = Field(..., description="제품 ID")
+    process_name: str = Field(..., description="프로세스명")
+    start_period: date = Field(..., description="시작일")
+    end_period: date = Field(..., description="종료일")
+
+class ProcessResponse(BaseModel):
+    """프로세스 응답"""
+    id: int = Field(..., description="프로세스 ID")
+    product_id: int = Field(..., description="제품 ID")
+    process_name: str = Field(..., description="프로세스명")
+    start_period: str = Field(..., description="시작일")
+    end_period: str = Field(..., description="종료일")
+
+class ProcessUpdateRequest(BaseModel):
+    """프로세스 수정 요청"""
+    product_id: Optional[int] = Field(None, description="제품 ID")
+    process_name: Optional[str] = Field(None, description="프로세스명")
+    start_period: Optional[str] = Field(None, description="시작일")
+    end_period: Optional[str] = Field(None, description="종료일")

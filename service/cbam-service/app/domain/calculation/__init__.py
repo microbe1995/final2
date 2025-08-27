@@ -19,7 +19,8 @@ CBAM 계산 도메인 패키지
 
 from .calculation_entity import Install, Product, Process, Edge
 from .calculation_schema import (
-    ProductCreateRequest, ProductResponse, ProductUpdateRequest
+    ProductCreateRequest, ProductResponse, ProductUpdateRequest,
+    ProcessCreateRequest, ProcessResponse, ProcessUpdateRequest
 )
 from .calculation_service import CalculationService
 from .calculation_repository import CalculationRepository
@@ -30,6 +31,7 @@ __all__ = [
     "Install", "Product", "Process", "Edge",
     # Schemas
     "ProductCreateRequest", "ProductResponse", "ProductUpdateRequest",
+    "ProcessCreateRequest", "ProcessResponse", "ProcessUpdateRequest",
     # Services
     "CalculationService", "CalculationRepository",
     # Router

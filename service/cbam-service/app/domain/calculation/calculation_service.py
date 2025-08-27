@@ -114,3 +114,80 @@ class CalculationService:
         except Exception as e:
             logger.error(f"Error deleting product {product_id}: {e}")
             raise e
+
+    # ============================================================================
+    # 🔄 Process 관련 메서드
+    # ============================================================================
+    
+    async def create_process(self, request: ProcessCreateRequest) -> ProcessResponse:
+        """프로세스 생성"""
+        try:
+            process_data = {
+                "product_id": request.product_id,
+                "process_name": request.process_name,
+                "start_period": request.start_period,
+                "end_period": request.end_period
+            }
+            
+            saved_process = await self.calc_repository.create_process(process_data)
+            if saved_process:
+                return ProcessResponse(**saved_process)
+            else:
+                raise Exception("프로세스 저장에 실패했습니다.")
+        except Exception as e:
+            logger.error(f"Error creating process: {e}")
+            raise e
+    
+    async def get_processes(self) -> List[ProcessResponse]:
+        """프로세스 목록 조회"""
+        try:
+            processes = await self.calc_repository.get_processes()
+            return [ProcessResponse(**process) for process in processes]
+        except Exception as e:
+            logger.error(f"Error getting processes: {e}")
+            raise e
+    
+    async def get_process(self, process_id: int) -> Optional[ProcessResponse]:
+        """특정 프로세스 조회"""
+        try:
+            process = await self.calc_repository.get_process(process_id)
+            if process:
+                return ProcessResponse(**process)
+            return None
+        except Exception as e:
+            logger.error(f"Error getting process {process_id}: {e}")
+            raise e
+    
+    async def update_process(self, process_id: int, request: ProcessUpdateRequest) -> Optional[ProcessResponse]:
+        """프로세스 수정"""
+        try:
+            # None이 아닌 필드만 업데이트 데이터에 포함
+            update_data = {}
+            if request.product_id is not None:
+                update_data["product_id"] = request.product_id
+            if request.process_name is not None:
+                update_data["process_name"] = request.process_name
+            if request.start_period is not None:
+                update_data["start_period"] = request.start_period
+            if request.end_period is not None:
+                update_data["end_period"] = request.end_period
+            
+            if not update_data:
+                raise Exception("업데이트할 데이터가 없습니다.")
+            
+            updated_process = await self.calc_repository.update_process(process_id, update_data)
+            if updated_process:
+                return ProcessResponse(**updated_process)
+            return None
+        except Exception as e:
+            logger.error(f"Error updating process {process_id}: {e}")
+            raise e
+    
+    async def delete_process(self, process_id: int) -> bool:
+        """프로세스 삭제"""
+        try:
+            success = await self.calc_repository.delete_process(process_id)
+            return success
+        except Exception as e:
+            logger.error(f"Error deleting process {process_id}: {e}")
+            raise e

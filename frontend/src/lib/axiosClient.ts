@@ -169,36 +169,13 @@ export const apiEndpoints = {
     byCode: '/api/v1/countries/code',
     byUnlocode: '/api/v1/countries/unlocode',
   },
-  // LCA Service (Gateway를 통해)
-  lca: {
-    projects: '/api/lci/projects',
-    calculations: '/api/lci/calculations',
-    templates: '/api/lci/templates',
-  },
+
   // CBAM Service (Gateway를 통해)
   cbam: {
     reports: '/api/cbam/reports',
     calculations: '/api/cbam/calculations',
     templates: '/api/cbam/templates',
-  },
-  // Calculation Service (Gateway를 통해 boundary 서비스로)
-  calculation: {
-    fuel: '/api/v1/boundary/calc/fuel/calculate',
-    material: '/api/v1/boundary/calc/material/calculate',
-    precursor: '/api/v1/boundary/calc/precursor/calculate',
-    electricity: '/api/v1/boundary/calc/electricity/calculate',
-    process: '/api/v1/boundary/calc/process/calculate',
-    cbam: '/api/v1/boundary/calc/cbam',
-    precursors: '/api/v1/boundary/calc/precursor/user',
-    precursorsBatch: '/api/v1/boundary/calc/precursor/save-batch',
-    stats: '/api/v1/boundary/calc/stats',
-    history: '/api/v1/boundary/calc/history',
-    
-    // 새로운 테이블 API 엔드포인트들 (단수형으로 통일)
-    boundary: {
-        create: '/api/v1/boundary/boundary',
-        list: '/api/v1/boundary/boundary'
-    },
+    // 제품 관리
     product: {
         create: '/api/v1/boundary/product',
         list: '/api/v1/boundary/product',
@@ -206,40 +183,16 @@ export const apiEndpoints = {
         update: (id: number) => `/api/v1/boundary/product/${id}`,
         delete: (id: number) => `/api/v1/boundary/product/${id}`
     },
-    operation: {
-        create: '/api/v1/boundary/operation',
-        list: '/api/v1/boundary/operation'
-    },
-    node: {
-        create: '/api/v1/boundary/node',
-        list: '/api/v1/boundary/node'
-    },
-    edge: {
-        create: '/api/v1/boundary/edge',
-        list: '/api/v1/boundary/edge'
-    },
-    productionEmission: {
-        create: '/api/v1/boundary/production-emission',
-        list: '/api/v1/boundary/production-emission'
+    // 프로세스 관리
+    process: {
+        create: '/api/v1/boundary/process',
+        list: '/api/v1/boundary/process',
+        get: (id: number) => `/api/v1/boundary/process/${id}`,
+        update: (id: number) => `/api/v1/boundary/process/${id}`,
+        delete: (id: number) => `/api/v1/boundary/process/${id}`
     }
-},
-  // Data Upload (Gateway를 통해)
-  upload: {
-    data: '/api/datagather/upload',
-    validate: '/api/datagather/validate',
   },
-  // Dashboard (Gateway를 통해)
-  dashboard: {
-    overview: '/api/dashboard/overview',
-    stats: '/api/dashboard/stats',
-  },
-  // Settings (Gateway를 통해)
-  settings: {
-    profile: '/api/settings/profile',
-    organization: '/api/settings/organization',
-    users: '/api/settings/users',
-    apiKeys: '/api/settings/api-keys',
-  },
+
 } as const;
 
 // 인증 관련 유틸리티 함수들

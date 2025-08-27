@@ -8,7 +8,7 @@ from loguru import logger
 import time
 
 from .calculation_service import CalculationService
-from .calculation_schema import ProductCreateRequest, ProductResponse, ProductUpdateRequest
+from .calculation_schema import ProductCreateRequest, ProductResponse, ProductUpdateRequest, ProcessCreateRequest, ProcessResponse, ProcessUpdateRequest
 
 router = APIRouter(prefix="", tags=["Product"])
 
@@ -93,3 +93,79 @@ async def delete_product(product_id: int):
     except Exception as e:
         logger.error(f"❌ 제품 삭제 실패: {str(e)}")
         raise HTTPException(status_code=500, detail=f"제품 삭제 중 오류가 발생했습니다: {str(e)}")
+
+# ============================================================================
+# 🔄 Process 관련 엔드포인트
+# ============================================================================
+
+@router.get("/process", response_model=List[ProcessResponse])
+async def get_processes():
+    """프로세스 목록 조회"""
+    try:
+        logger.info("📋 프로세스 목록 조회 요청")
+        processes = await calculation_service.get_processes()
+        logger.info(f"✅ 프로세스 목록 조회 성공: {len(processes)}개")
+        return processes
+    except Exception as e:
+        logger.error(f"❌ 프로세스 목록 조회 실패: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"프로세스 목록 조회 중 오류가 발생했습니다: {str(e)}")
+
+@router.get("/process/{process_id}", response_model=ProcessResponse)
+async def get_process(process_id: int):
+    """특정 프로세스 조회"""
+    try:
+        logger.info(f"📋 프로세스 조회 요청: ID {process_id}")
+        process = await calculation_service.get_process(process_id)
+        if not process:
+            raise HTTPException(status_code=404, detail="프로세스를 찾을 수 없습니다")
+        logger.info(f"✅ 프로세스 조회 성공: ID {process_id}")
+        return process
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"❌ 프로세스 조회 실패: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"프로세스 조회 중 오류가 발생했습니다: {str(e)}")
+
+@router.post("/process", response_model=ProcessResponse)
+async def create_process(request: ProcessCreateRequest):
+    """프로세스 생성"""
+    try:
+        logger.info(f"🔄 프로세스 생성 요청: {request.process_name}")
+        result = await calculation_service.create_process(request)
+        logger.info(f"✅ 프로세스 생성 성공: ID {result.id}")
+        return result
+    except Exception as e:
+        logger.error(f"❌ 프로세스 생성 실패: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"프로세스 생성 중 오류가 발생했습니다: {str(e)}")
+
+@router.put("/process/{process_id}", response_model=ProcessResponse)
+async def update_process(process_id: int, request: ProcessUpdateRequest):
+    """프로세스 수정"""
+    try:
+        logger.info(f"📝 프로세스 수정 요청: ID {process_id}")
+        result = await calculation_service.update_process(process_id, request)
+        if not result:
+            raise HTTPException(status_code=404, detail="프로세스를 찾을 수 없습니다")
+        logger.info(f"✅ 프로세스 수정 성공: ID {process_id}")
+        return result
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"❌ 프로세스 수정 실패: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"프로세스 수정 중 오류가 발생했습니다: {str(e)}")
+
+@router.delete("/process/{process_id}")
+async def delete_process(process_id: int):
+    """프로세스 삭제"""
+    try:
+        logger.info(f"🗑️ 프로세스 삭제 요청: ID {process_id}")
+        success = await calculation_service.delete_process(process_id)
+        if not success:
+            raise HTTPException(status_code=404, detail="프로세스를 찾을 수 없습니다")
+        logger.info(f"✅ 프로세스 삭제 성공: ID {process_id}")
+        return {"message": "프로세스가 성공적으로 삭제되었습니다"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"❌ 프로세스 삭제 실패: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"프로세스 삭제 중 오류가 발생했습니다: {str(e)}")

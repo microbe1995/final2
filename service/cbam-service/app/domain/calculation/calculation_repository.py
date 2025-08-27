@@ -110,6 +110,50 @@ class CalculationRepository:
         except Exception as e:
             logger.error(f"❌ 제품 삭제 실패: {str(e)}")
             raise
+
+    # ============================================================================
+    # 🔄 Process 관련 메서드
+    # ============================================================================
+    
+    async def create_process(self, process_data: Dict[str, Any]) -> Dict[str, Any]:
+        """프로세스 생성"""
+        try:
+            return await self._create_process_db(process_data)
+        except Exception as e:
+            logger.error(f"❌ 프로세스 생성 실패: {str(e)}")
+            raise
+    
+    async def get_processes(self) -> List[Dict[str, Any]]:
+        """프로세스 목록 조회"""
+        try:
+            return await self._get_processes_db()
+        except Exception as e:
+            logger.error(f"❌ 프로세스 목록 조회 실패: {str(e)}")
+            raise
+    
+    async def get_process(self, process_id: int) -> Optional[Dict[str, Any]]:
+        """특정 프로세스 조회"""
+        try:
+            return await self._get_process_db(process_id)
+        except Exception as e:
+            logger.error(f"❌ 프로세스 조회 실패: {str(e)}")
+            raise
+    
+    async def update_process(self, process_id: int, update_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        """프로세스 수정"""
+        try:
+            return await self._update_process_db(process_id, update_data)
+        except Exception as e:
+            logger.error(f"❌ 프로세스 수정 실패: {str(e)}")
+            raise
+    
+    async def delete_process(self, process_id: int) -> bool:
+        """프로세스 삭제"""
+        try:
+            return await self._delete_process_db(process_id)
+        except Exception as e:
+            logger.error(f"❌ 프로세스 삭제 실패: {str(e)}")
+            raise
     
     # ============================================================================
     # 🗄️ Database 메서드들
@@ -153,6 +197,171 @@ class CalculationRepository:
                 else:
                     raise Exception("제품 생성에 실패했습니다.")
                     
+        except Exception as e:
+            conn.rollback()
+            raise e
+        finally:
+            conn.close()
+
+    # ============================================================================
+    # 🔄 Process Database 메서드들
+    # ============================================================================
+    
+    async def _create_process_db(self, process_data: Dict[str, Any]) -> Dict[str, Any]:
+        """데이터베이스에 프로세스 생성"""
+        import psycopg2
+        from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
+        
+        conn = psycopg2.connect(self.database_url)
+        conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+        
+        try:
+            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                cursor.execute("""
+                    INSERT INTO process (
+                        product_id, process_name, start_period, end_period
+                    ) VALUES (
+                        %(product_id)s, %(process_name)s, %(start_period)s, %(end_period)s
+                    ) RETURNING *
+                """, process_data)
+                
+                result = cursor.fetchone()
+                conn.commit()
+                
+                if result:
+                    process_dict = dict(result)
+                    # datetime.date 객체를 문자열로 변환
+                    if 'start_period' in process_dict and process_dict['start_period']:
+                        process_dict['start_period'] = process_dict['start_period'].isoformat()
+                    if 'end_period' in process_dict and process_dict['end_period']:
+                        process_dict['end_period'] = process_dict['end_period'].isoformat()
+                    return process_dict
+                else:
+                    raise Exception("프로세스 생성에 실패했습니다.")
+                    
+        except Exception as e:
+            conn.rollback()
+            raise e
+        finally:
+            conn.close()
+    
+    async def _get_processes_db(self) -> List[Dict[str, Any]]:
+        """데이터베이스에서 프로세스 목록 조회"""
+        import psycopg2
+        from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
+        
+        conn = psycopg2.connect(self.database_url)
+        conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+        
+        try:
+            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                cursor.execute("""
+                    SELECT * FROM process ORDER BY id
+                """)
+                
+                results = cursor.fetchall()
+                processes = []
+                for row in results:
+                    process_dict = dict(row)
+                    # datetime.date 객체를 문자열로 변환
+                    if 'start_period' in process_dict and process_dict['start_period']:
+                        process_dict['start_period'] = process_dict['start_period'].isoformat()
+                    if 'end_period' in process_dict and process_dict['end_period']:
+                        process_dict['end_period'] = process_dict['end_period'].isoformat()
+                    processes.append(process_dict)
+                
+                return processes
+                
+        except Exception as e:
+            raise e
+        finally:
+            conn.close()
+    
+    async def _get_process_db(self, process_id: int) -> Optional[Dict[str, Any]]:
+        """데이터베이스에서 특정 프로세스 조회"""
+        import psycopg2
+        from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
+        
+        conn = psycopg2.connect(self.database_url)
+        conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+        
+        try:
+            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                cursor.execute("""
+                    SELECT * FROM process WHERE id = %s
+                """, (process_id,))
+                
+                result = cursor.fetchone()
+                if result:
+                    process_dict = dict(result)
+                    # datetime.date 객체를 문자열로 변환
+                    if 'start_period' in process_dict and process_dict['start_period']:
+                        process_dict['start_period'] = process_dict['start_period'].isoformat()
+                    if 'end_period' in process_dict and process_dict['end_period']:
+                        process_dict['end_period'] = process_dict['end_period'].isoformat()
+                    return process_dict
+                return None
+                
+        except Exception as e:
+            raise e
+        finally:
+            conn.close()
+    
+    async def _update_process_db(self, process_id: int, update_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        """데이터베이스에서 프로세스 수정"""
+        import psycopg2
+        from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
+        
+        conn = psycopg2.connect(self.database_url)
+        conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+        
+        try:
+            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                # 동적으로 SET 절 생성
+                set_clause = ", ".join([f"{key} = %s" for key in update_data.keys()])
+                values = list(update_data.values()) + [process_id]
+                
+                cursor.execute(f"""
+                    UPDATE process SET {set_clause} 
+                    WHERE id = %s RETURNING *
+                """, values)
+                
+                result = cursor.fetchone()
+                conn.commit()
+                
+                if result:
+                    process_dict = dict(result)
+                    # datetime.date 객체를 문자열로 변환
+                    if 'start_period' in process_dict and process_dict['start_period']:
+                        process_dict['start_period'] = process_dict['start_period'].isoformat()
+                    if 'end_period' in process_dict and process_dict['end_period']:
+                        process_dict['end_period'] = process_dict['end_period'].isoformat()
+                    return process_dict
+                return None
+                
+        except Exception as e:
+            conn.rollback()
+            raise e
+        finally:
+            conn.close()
+    
+    async def _delete_process_db(self, process_id: int) -> bool:
+        """데이터베이스에서 프로세스 삭제"""
+        import psycopg2
+        from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
+        
+        conn = psycopg2.connect(self.database_url)
+        conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+        
+        try:
+            with conn.cursor() as cursor:
+                cursor.execute("""
+                    DELETE FROM process WHERE id = %s
+                """, (process_id,))
+                
+                conn.commit()
+                return cursor.rowcount > 0
+                
         except Exception as e:
             conn.rollback()
             raise e
