@@ -13,7 +13,7 @@ import axiosClient from '@/lib/axiosClient';
 
 export default function CBAMPage() {
   const [activeTab, setActiveTab] = useState<
-    'overview' | 'calculation' | 'flow' | 'reports' | 'settings'
+    'overview' | 'install' | 'calculation' | 'flow' | 'reports' | 'settings'
   >('overview');
 
   const renderOverview = () => (
@@ -99,6 +99,41 @@ export default function CBAMPage() {
     </div>
   );
 
+  const renderInstall = () => (
+    <div className='space-y-6'>
+      <div className='stitch-card p-6'>
+        <h3 className='stitch-h1 text-lg font-semibold mb-4'>
+          CBAM 사업장 관리
+        </h3>
+        <p className='stitch-caption text-white/60'>
+          CBAM 적용 대상 사업장 정보를 생성하고 관리합니다.
+        </p>
+        <div className='mt-6'>
+          <Link 
+            href='/cbam/install'
+            className='inline-flex items-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors'
+          >
+            🏭 사업장 관리 페이지로 이동
+          </Link>
+        </div>
+        <div className='mt-4 grid grid-cols-1 md:grid-cols-2 gap-4'>
+          <div className='p-4 bg-white/5 rounded-lg'>
+            <h4 className='font-semibold text-white mb-2'>사업장 등록</h4>
+            <p className='text-white/60 text-sm'>
+              CBAM 적용 대상 사업장 정보 등록 및 관리
+            </p>
+          </div>
+          <div className='p-4 bg-white/5 rounded-lg'>
+            <h4 className='font-semibold text-white mb-2'>제품 연결</h4>
+            <p className='text-white/60 text-sm'>
+              사업장별 제품 정보 연결 및 관리
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
   const renderReports = () => (
     <div className='space-y-6'>
       <div className='stitch-card p-6'>
@@ -153,6 +188,16 @@ export default function CBAMPage() {
             개요
           </button>
           <button
+            onClick={() => setActiveTab('install')}
+            className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+              activeTab === 'install'
+                ? 'bg-primary text-white'
+                : 'text-white/60 hover:text-white hover:bg-white/5'
+            }`}
+          >
+            사업장 관리
+          </button>
+          <button
             onClick={() => setActiveTab('calculation')}
             className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
               activeTab === 'calculation'
@@ -160,7 +205,7 @@ export default function CBAMPage() {
                 : 'text-white/60 hover:text-white hover:bg-white/5'
             }`}
           >
-            사업장 관리
+            제품 관리
           </button>
           <button
             onClick={() => setActiveTab('flow')}
@@ -196,6 +241,7 @@ export default function CBAMPage() {
 
         {/* 탭 콘텐츠 */}
         {activeTab === 'overview' && renderOverview()}
+        {activeTab === 'install' && renderInstall()}
         {activeTab === 'calculation' && renderCalculation()}
         {activeTab === 'flow' && renderFlow()}
         {activeTab === 'reports' && renderReports()}

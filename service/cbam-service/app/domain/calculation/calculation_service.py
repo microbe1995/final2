@@ -6,7 +6,7 @@ import logging
 from typing import List, Dict, Any, Optional
 from datetime import datetime
 from app.domain.calculation.calculation_repository import CalculationRepository
-from app.domain.calculation.calculation_schema import ProductCreateRequest, ProductResponse, ProductUpdateRequest, ProcessCreateRequest, ProcessResponse, ProcessUpdateRequest, ProductNameResponse
+from app.domain.calculation.calculation_schema import ProductCreateRequest, ProductResponse, ProductUpdateRequest, ProcessCreateRequest, ProcessResponse, ProcessUpdateRequest, ProductNameResponse, InstallCreateRequest, InstallResponse, InstallUpdateRequest, InstallNameResponse
 
 logger = logging.getLogger(__name__)
 
@@ -17,6 +17,83 @@ class CalculationService:
         self.calc_repository = CalculationRepository()
         logger.info("✅ Product 서비스 초기화 완료")
     
+    # ============================================================================
+    # 🏭 Install 관련 메서드
+    # ============================================================================
+    
+    async def create_install(self, request: InstallCreateRequest) -> InstallResponse:
+        """사업장 생성"""
+        try:
+            install_data = {
+                "name": request.name
+            }
+            
+            saved_install = await self.calc_repository.create_install(install_data)
+            if saved_install:
+                return InstallResponse(**saved_install)
+            else:
+                raise Exception("사업장 저장에 실패했습니다.")
+        except Exception as e:
+            logger.error(f"Error creating install: {e}")
+            raise e
+    
+    async def get_installs(self) -> List[InstallResponse]:
+        """사업장 목록 조회"""
+        try:
+            installs = await self.calc_repository.get_installs()
+            return [InstallResponse(**install) for install in installs]
+        except Exception as e:
+            logger.error(f"Error getting installs: {e}")
+            raise e
+    
+    async def get_install_names(self) -> List[InstallNameResponse]:
+        """사업장명 목록 조회 (드롭다운용)"""
+        try:
+            install_names = await self.calc_repository.get_install_names()
+            return [InstallNameResponse(**install) for install in install_names]
+        except Exception as e:
+            logger.error(f"Error getting install names: {e}")
+            raise e
+    
+    async def get_install(self, install_id: int) -> Optional[InstallResponse]:
+        """특정 사업장 조회"""
+        try:
+            install = await self.calc_repository.get_install(install_id)
+            if install:
+                return InstallResponse(**install)
+            return None
+        except Exception as e:
+            logger.error(f"Error getting install {install_id}: {e}")
+            raise e
+    
+    async def update_install(self, install_id: int, request: InstallUpdateRequest) -> Optional[InstallResponse]:
+        """사업장 수정"""
+        try:
+            # None이 아닌 필드만 업데이트 데이터에 포함
+            update_data = {}
+            if request.name is not None:
+                update_data["name"] = request.name
+            
+            if not update_data:
+                raise Exception("업데이트할 데이터가 없습니다.")
+            
+            updated_install = await self.calc_repository.update_install(install_id, update_data)
+            if updated_install:
+                return InstallResponse(**updated_install)
+            return None
+        except Exception as e:
+            logger.error(f"Error updating install {install_id}: {e}")
+            raise e
+    
+    async def delete_install(self, install_id: int) -> bool:
+        """사업장 삭제"""
+        try:
+            success = await self.calc_repository.delete_install(install_id)
+            return success
+        except Exception as e:
+            logger.error(f"Error deleting install {install_id}: {e}")
+            raise e
+
     # ============================================================================
     # 📦 Product 관련 메서드
     # ============================================================================

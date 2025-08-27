@@ -162,6 +162,68 @@ class CalculationRepository:
             raise
 
     # ============================================================================
+    # 🏭 Install 관련 메서드
+    # ============================================================================
+    
+    async def create_install(self, install_data: Dict[str, Any]) -> Dict[str, Any]:
+        """사업장 생성"""
+        if not self.database_url:
+            raise Exception("데이터베이스가 연결되지 않았습니다.")
+        try:
+            return await self._create_install_db(install_data)
+        except Exception as e:
+            logger.error(f"❌ 사업장 생성 실패: {str(e)}")
+            raise
+    
+    async def get_installs(self) -> List[Dict[str, Any]]:
+        """사업장 목록 조회"""
+        if not self.database_url:
+            raise Exception("데이터베이스가 연결되지 않았습니다.")
+        try:
+            return await self._get_installs_db()
+        except Exception as e:
+            logger.error(f"❌ 사업장 목록 조회 실패: {str(e)}")
+            raise
+    
+    async def get_install_names(self) -> List[Dict[str, Any]]:
+        """사업장명 목록 조회 (드롭다운용)"""
+        if not self.database_url:
+            raise Exception("데이터베이스가 연결되지 않았습니다.")
+        try:
+            return await self._get_install_names_db()
+        except Exception as e:
+            logger.error(f"❌ 사업장명 목록 조회 실패: {str(e)}")
+            raise
+    
+    async def get_install(self, install_id: int) -> Optional[Dict[str, Any]]:
+        """특정 사업장 조회"""
+        if not self.database_url:
+            raise Exception("데이터베이스가 연결되지 않았습니다.")
+        try:
+            return await self._get_install_db(install_id)
+        except Exception as e:
+            logger.error(f"❌ 사업장 조회 실패: {str(e)}")
+            raise
+    
+    async def update_install(self, install_id: int, update_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        """사업장 수정"""
+        if not self.database_url:
+            raise Exception("데이터베이스가 연결되지 않았습니다.")
+        try:
+            return await self._update_install_db(install_id, update_data)
+        except Exception as e:
+            logger.error(f"❌ 사업장 수정 실패: {str(e)}")
+            raise
+    
+    async def delete_install(self, install_id: int) -> bool:
+        """사업장 삭제"""
+        try:
+            return await self._delete_install_db(install_id)
+        except Exception as e:
+            logger.error(f"❌ 사업장 삭제 실패: {str(e)}")
+            raise
+
+    # ============================================================================
     # 🔄 Process 관련 메서드
     # ============================================================================
     
@@ -247,6 +309,173 @@ class CalculationRepository:
                 else:
                     raise Exception("제품 생성에 실패했습니다.")
                     
+        except Exception as e:
+            conn.rollback()
+            raise e
+        finally:
+            conn.close()
+
+    async def _create_install_db(self, install_data: Dict[str, Any]) -> Dict[str, Any]:
+        """데이터베이스에 사업장 생성"""
+        import psycopg2
+        from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
+        
+        conn = psycopg2.connect(self.database_url)
+        conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+        
+        try:
+            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                cursor.execute("""
+                    INSERT INTO install (
+                        name
+                    ) VALUES (
+                        %(name)s
+                    ) RETURNING *
+                """, install_data)
+                
+                result = cursor.fetchone()
+                conn.commit()
+                
+                if result:
+                    install_dict = dict(result)
+                    return install_dict
+                else:
+                    raise Exception("사업장 생성에 실패했습니다.")
+                    
+        except Exception as e:
+            conn.rollback()
+            raise e
+        finally:
+            conn.close()
+
+    async def _get_installs_db(self) -> List[Dict[str, Any]]:
+        """데이터베이스에서 사업장 목록 조회"""
+        import psycopg2
+        from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
+        
+        conn = psycopg2.connect(self.database_url)
+        conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+        
+        try:
+            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                cursor.execute("""
+                    SELECT * FROM install ORDER BY id
+                """)
+                
+                results = cursor.fetchall()
+                installs = []
+                for row in results:
+                    install_dict = dict(row)
+                    installs.append(install_dict)
+                
+                return installs
+                
+        except Exception as e:
+            raise e
+        finally:
+            conn.close()
+    
+    async def _get_install_names_db(self) -> List[Dict[str, Any]]:
+        """데이터베이스에서 사업장명 목록 조회 (드롭다운용)"""
+        import psycopg2
+        from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
+        
+        conn = psycopg2.connect(self.database_url)
+        conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+        
+        try:
+            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                cursor.execute("""
+                    SELECT id, name FROM install ORDER BY name
+                """)
+                
+                results = cursor.fetchall()
+                install_names = []
+                for row in results:
+                    install_names.append(dict(row))
+                
+                return install_names
+                
+        except Exception as e:
+            raise e
+        finally:
+            conn.close()
+    
+    async def _get_install_db(self, install_id: int) -> Optional[Dict[str, Any]]:
+        """데이터베이스에서 특정 사업장 조회"""
+        import psycopg2
+        from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
+        
+        conn = psycopg2.connect(self.database_url)
+        conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+        
+        try:
+            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                cursor.execute("""
+                    SELECT * FROM install WHERE id = %s
+                """, (install_id,))
+                
+                result = cursor.fetchone()
+                if result:
+                    install_dict = dict(result)
+                    return install_dict
+                return None
+                
+        except Exception as e:
+            raise e
+        finally:
+            conn.close()
+    
+    async def _update_install_db(self, install_id: int, update_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        """데이터베이스에서 사업장 수정"""
+        import psycopg2
+        from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
+        
+        conn = psycopg2.connect(self.database_url)
+        conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+        
+        try:
+            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                # 동적으로 SET 절 생성
+                set_clause = ", ".join([f"{key} = %s" for key in update_data.keys()])
+                values = list(update_data.values()) + [install_id]
+                
+                cursor.execute(f"""
+                    UPDATE install SET {set_clause} 
+                    WHERE id = %s RETURNING *
+                """, values)
+                
+                result = cursor.fetchone()
+                conn.commit()
+                
+                if result:
+                    install_dict = dict(result)
+                    return install_dict
+                return None
+                
+        except Exception as e:
+            conn.rollback()
+            raise e
+        finally:
+            conn.close()
+    
+    async def _delete_install_db(self, install_id: int) -> bool:
+        """데이터베이스에서 사업장 삭제"""
+        import psycopg2
+        from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
+        
+        conn = psycopg2.connect(self.database_url)
+        conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+        
+        try:
+            with conn.cursor() as cursor:
+                cursor.execute("""
+                    DELETE FROM install WHERE id = %s
+                """, (install_id,))
+                
+                conn.commit()
+                return cursor.rowcount > 0
+                
         except Exception as e:
             conn.rollback()
             raise e

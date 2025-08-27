@@ -175,6 +175,15 @@ export const apiEndpoints = {
     reports: '/api/cbam/reports',
     calculations: '/api/cbam/calculations',
     templates: '/api/cbam/templates',
+    // 사업장 관리
+    install: {
+        create: '/api/v1/boundary/install',
+        list: '/api/v1/boundary/install',
+        names: '/api/v1/boundary/install/names',
+        get: (id: number) => `/api/v1/boundary/install/${id}`,
+        update: (id: number) => `/api/v1/boundary/install/${id}`,
+        delete: (id: number) => `/api/v1/boundary/install/${id}`
+    },
     // 제품 관리
     product: {
         create: '/api/v1/boundary/product',
