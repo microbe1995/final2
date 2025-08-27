@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import axiosClient, { apiEndpoints } from '@/lib/axiosClient';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 interface ProcessForm {
   product_id: number;
@@ -14,35 +15,59 @@ interface Product {
   id: number;
   product_name: string;
   product_category: string;
+  product_amount: number;
+  prostart_period: string;
+  proend_period: string;
 }
 
 export default function ProcessPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const productId = searchParams.get('product_id');
+  
   const [processForm, setProcessForm] = useState<ProcessForm>({
-    product_id: 1,
+    product_id: productId ? parseInt(productId) : 1,
     process_name: '',
     start_period: '',
     end_period: ''
   });
   
-  const [products, setProducts] = useState<Product[]>([]);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState('');
 
-  // 제품 목록 조회
+  // 선택된 제품 정보 조회
   useEffect(() => {
-    const fetchProducts = async () => {
+    const fetchSelectedProduct = async () => {
+      if (!productId) {
+        setMessage('제품 ID가 없습니다. 제품 목록에서 제품을 선택해주세요.');
+        router.push('/cbam/calculation');
+        return;
+      }
+
       try {
-        const response = await axiosClient.get(apiEndpoints.cbam.product.list);
-        setProducts(response.data);
-        console.log('📋 제품 목록:', response.data);
-      } catch (error) {
-        console.error('❌ 제품 목록 조회 실패:', error);
-        setMessage('제품 목록을 불러오는데 실패했습니다.');
+        console.log('🔍 선택된 제품 조회 시작:', productId);
+        const response = await axiosClient.get(apiEndpoints.cbam.product.get(parseInt(productId)));
+        console.log('📋 선택된 제품 응답:', response);
+        setSelectedProduct(response.data);
+        console.log('📋 선택된 제품 데이터:', response.data);
+      } catch (error: any) {
+        console.error('❌ 선택된 제품 조회 실패:', error);
+        console.error('❌ 에러 상세:', error.response?.data);
+        console.error('❌ 에러 상태:', error.response?.status);
+        setMessage(`제품 정보를 불러오는데 실패했습니다: ${error.response?.data?.detail || error.message}`);
+        
+        // 제품을 찾을 수 없으면 제품 목록으로 리다이렉트
+        if (error.response?.status === 404) {
+          setTimeout(() => {
+            router.push('/cbam/calculation');
+          }, 2000);
+        }
       }
     };
 
-    fetchProducts();
-  }, []);
+    fetchSelectedProduct();
+  }, [productId, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -127,27 +152,35 @@ export default function ProcessPage() {
             <h2 className="text-xl font-semibold text-gray-900 mb-6">새 프로세스 생성</h2>
             
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* 제품 선택 */}
+              {/* 선택된 제품 정보 */}
               <div>
-                <label htmlFor="product_id" className="block text-sm font-medium text-gray-700 mb-2">
-                  제품 선택 *
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  선택된 제품
                 </label>
-                <select
-                  id="product_id"
-                  name="product_id"
-                  value={processForm.product_id}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  required
-                >
-                  {products.map(product => (
-                    <option key={product.id} value={product.id}>
-                      {product.product_name} ({product.product_category})
-                    </option>
-                  ))}
-                </select>
+                {selectedProduct ? (
+                  <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h3 className="text-lg font-semibold text-gray-900">{selectedProduct.product_name}</h3>
+                        <p className="text-sm text-gray-600">카테고리: {selectedProduct.product_category}</p>
+                        <p className="text-sm text-gray-600">수량: {selectedProduct.product_amount}</p>
+                      </div>
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        selectedProduct.product_category === '단순제품' 
+                          ? 'bg-green-100 text-green-800' 
+                          : 'bg-blue-100 text-blue-800'
+                      }`}>
+                        {selectedProduct.product_category}
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="bg-gray-50 border border-gray-200 rounded-md p-4">
+                    <p className="text-gray-500">제품 정보를 불러오는 중...</p>
+                  </div>
+                )}
                 <p className="mt-1 text-sm text-gray-500">
-                  프로세스가 속할 제품을 선택하세요.
+                  이 제품에 대한 프로세스를 관리합니다.
                 </p>
               </div>
 
@@ -217,46 +250,21 @@ export default function ProcessPage() {
             </form>
           </div>
 
-          {/* 현재 제품 목록 */}
-          <div className="bg-gray-50 rounded-lg p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-6">현재 제품 목록</h2>
-            {products.length > 0 ? (
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-100">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        ID
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        제품명
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        카테고리
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {products.map(product => (
-                      <tr key={product.id}>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                          {product.id}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {product.product_name}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {product.product_category}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <p className="text-gray-500">등록된 제품이 없습니다.</p>
-            )}
-          </div>
+                     {/* 제품으로 돌아가기 */}
+           <div className="bg-gray-50 rounded-lg p-6">
+             <h2 className="text-xl font-semibold text-gray-900 mb-6">제품 관리</h2>
+             <div className="flex justify-between items-center">
+               <p className="text-gray-600">
+                 다른 제품을 관리하거나 제품 목록으로 돌아가세요.
+               </p>
+               <button
+                 onClick={() => router.push('/cbam/calculation')}
+                 className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md transition-colors duration-200"
+               >
+                 제품 목록으로 돌아가기
+               </button>
+             </div>
+           </div>
         </div>
       </div>
     </div>

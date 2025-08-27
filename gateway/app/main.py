@@ -91,8 +91,12 @@ async def proxy_request(service: str, path: str, request: Request) -> Response:
         normalized_path = path
     elif service == "boundary" or service == "cal-boundary" or service == "cal_boundary":
         # boundary-service는 내부에서 "/api" prefix를 사용하므로 보정
+        # 이미 "api/"로 시작하면 그대로 사용, 아니면 추가
         if normalized_path and not normalized_path.startswith("api/"):
             normalized_path = f"api/{normalized_path}"
+        # 만약 "api/api/"로 시작하면 중복 제거
+        elif normalized_path.startswith("api/api/"):
+            normalized_path = normalized_path[4:]  # "api/" 제거
 
     target_url = f"{base_url.rstrip('/')}/{normalized_path}"
     method = request.method

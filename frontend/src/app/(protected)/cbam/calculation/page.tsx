@@ -3,7 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import Button from '@/components/atomic/atoms/Button';
 import Input from '@/components/atomic/atoms/Input';
-import axiosClient from '@/lib/axiosClient';
+import axiosClient, { apiEndpoints } from '@/lib/axiosClient';
+import { useRouter } from 'next/navigation';
 
 // ============================================================================
 // 📦 제품 관리 페이지
@@ -24,7 +25,10 @@ interface ProductForm {
 }
 
 export default function ProductPage() {
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [products, setProducts] = useState<any[]>([]);
+  const [isLoadingProducts, setIsLoadingProducts] = useState(true);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
   const [productForm, setProductForm] = useState<ProductForm>({
     install_id: 1, // 기본값으로 1 설정
@@ -40,11 +44,38 @@ export default function ProductPage() {
     product_eusell: 0
   });
 
+  // 제품 목록 조회
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        setIsLoadingProducts(true);
+        const response = await axiosClient.get(apiEndpoints.cbam.product.list);
+        setProducts(response.data);
+        console.log('📋 제품 목록:', response.data);
+      } catch (error: any) {
+        console.error('❌ 제품 목록 조회 실패:', error);
+        setToast({
+          message: `제품 목록을 불러오는데 실패했습니다: ${error.response?.data?.detail || error.message}`,
+          type: 'error'
+        });
+      } finally {
+        setIsLoadingProducts(false);
+      }
+    };
+
+    fetchProducts();
+  }, []);
+
   const handleInputChange = (field: keyof ProductForm, value: string | number) => {
     setProductForm(prev => ({
       ...prev,
       [field]: value
     }));
+  };
+
+  // 제품 클릭 시 프로세스 관리 페이지로 이동
+  const handleProductClick = (productId: number) => {
+    router.push(`/cbam/process?product_id=${productId}`);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -301,6 +332,49 @@ export default function ProductPage() {
               </Button>
             </div>
           </form>
+        </div>
+
+        {/* 제품 목록 */}
+        <div className="mt-8 bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10">
+          <h3 className="text-lg font-semibold text-white mb-4">📋 등록된 제품 목록</h3>
+          
+          {isLoadingProducts ? (
+            <div className="text-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-400 mx-auto"></div>
+              <p className="text-gray-300 mt-2">제품 목록을 불러오는 중...</p>
+            </div>
+          ) : products.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {products.map((product) => (
+                <div
+                  key={product.id}
+                  onClick={() => handleProductClick(product.id)}
+                  className="bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-white/20 cursor-pointer hover:bg-white/20 transition-all duration-200 hover:scale-105"
+                >
+                  <div className="flex justify-between items-start mb-2">
+                    <h4 className="text-white font-semibold text-lg">{product.product_name}</h4>
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                      product.product_category === '단순제품' 
+                        ? 'bg-green-500/20 text-green-300' 
+                        : 'bg-blue-500/20 text-blue-300'
+                    }`}>
+                      {product.product_category}
+                    </span>
+                  </div>
+                  <p className="text-gray-300 text-sm mb-2">수량: {product.product_amount}</p>
+                  <p className="text-gray-300 text-sm mb-2">기간: {product.prostart_period} ~ {product.proend_period}</p>
+                  <div className="mt-3 pt-3 border-t border-white/10">
+                    <p className="text-blue-300 text-sm font-medium">클릭하여 프로세스 관리 →</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <p className="text-gray-300">등록된 제품이 없습니다.</p>
+              <p className="text-gray-400 text-sm mt-1">위에서 제품을 등록해보세요.</p>
+            </div>
+          )}
         </div>
 
         {/* 디버그 정보 */}
