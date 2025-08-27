@@ -79,7 +79,7 @@ export default function InstallPage() {
 
   // 사업장 클릭 시 제품 관리 페이지로 이동
   const handleInstallClick = (installId: number) => {
-    router.push(`/cbam/calculation?install_id=${installId}`);
+    router.push(`/cbam/install/${installId}/products`);
   };
 
   // 제품 관리 페이지로 이동

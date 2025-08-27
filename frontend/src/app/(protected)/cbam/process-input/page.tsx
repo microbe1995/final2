@@ -36,13 +36,16 @@ interface ProcessInputForm {
 
 export default function ProcessInputPage() {
   const router = useRouter();
+  const searchParams = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
+  const processIdFromUrl = searchParams.get('process_id');
+  
   const [processInputs, setProcessInputs] = useState<ProcessInput[]>([]);
   const [processes, setProcesses] = useState<Process[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
   const [sortBy, setSortBy] = useState<'input_name' | 'input_type' | 'amount' | 'process_id'>('input_name');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
-  const [selectedProcessId, setSelectedProcessId] = useState<number>(0);
+  const [selectedProcessId, setSelectedProcessId] = useState<number>(processIdFromUrl ? parseInt(processIdFromUrl) : 0);
 
   const [processInputForm, setProcessInputForm] = useState<ProcessInputForm>({
     process_id: 0,
@@ -85,7 +88,12 @@ export default function ProcessInputPage() {
   useEffect(() => {
     fetchProcessInputs();
     fetchProcesses();
-  }, []);
+    
+    // URL에서 process_id가 있으면 해당 프로세스로 설정
+    if (processIdFromUrl) {
+      setSelectedProcessId(parseInt(processIdFromUrl));
+    }
+  }, [processIdFromUrl]);
 
   // 프로세스명 조회 헬퍼 함수
   const getProcessName = (processId: number) => {
