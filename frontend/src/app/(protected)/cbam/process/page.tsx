@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import axiosClient, { apiEndpoints } from '@/lib/axiosClient';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 
 interface ProcessForm {
   product_id: number;
@@ -22,11 +22,10 @@ interface Product {
 
 export default function ProcessPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const productId = searchParams.get('product_id');
+  const [productId, setProductId] = useState<string | null>(null);
   
   const [processForm, setProcessForm] = useState<ProcessForm>({
-    product_id: productId ? parseInt(productId) : 1,
+    product_id: 1,
     process_name: '',
     start_period: '',
     end_period: ''
@@ -35,6 +34,21 @@ export default function ProcessPage() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState('');
+
+  // URL에서 product_id 파라미터 읽어오기
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const id = urlParams.get('product_id');
+      setProductId(id);
+      if (id) {
+        setProcessForm(prev => ({
+          ...prev,
+          product_id: parseInt(id)
+        }));
+      }
+    }
+  }, []);
 
   // 선택된 제품 정보 조회
   useEffect(() => {
@@ -66,7 +80,9 @@ export default function ProcessPage() {
       }
     };
 
-    fetchSelectedProduct();
+    if (productId) {
+      fetchSelectedProduct();
+    }
   }, [productId, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -107,7 +123,7 @@ export default function ProcessPage() {
       
       // 폼 초기화
       setProcessForm({
-        product_id: 1,
+        product_id: parseInt(productId || '1'),
         process_name: '',
         start_period: '',
         end_period: ''
@@ -250,21 +266,21 @@ export default function ProcessPage() {
             </form>
           </div>
 
-                     {/* 제품으로 돌아가기 */}
-           <div className="bg-gray-50 rounded-lg p-6">
-             <h2 className="text-xl font-semibold text-gray-900 mb-6">제품 관리</h2>
-             <div className="flex justify-between items-center">
-               <p className="text-gray-600">
-                 다른 제품을 관리하거나 제품 목록으로 돌아가세요.
-               </p>
-               <button
-                 onClick={() => router.push('/cbam/calculation')}
-                 className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md transition-colors duration-200"
-               >
-                 제품 목록으로 돌아가기
-               </button>
-             </div>
-           </div>
+          {/* 제품으로 돌아가기 */}
+          <div className="bg-gray-50 rounded-lg p-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-6">제품 관리</h2>
+            <div className="flex justify-between items-center">
+              <p className="text-gray-600">
+                다른 제품을 관리하거나 제품 목록으로 돌아가세요.
+              </p>
+              <button
+                onClick={() => router.push('/cbam/calculation')}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md transition-colors duration-200"
+              >
+                제품 목록으로 돌아가기
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
