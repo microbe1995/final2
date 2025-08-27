@@ -7,6 +7,7 @@ from typing import List, Dict, Any, Optional
 from datetime import datetime
 import psycopg2
 from psycopg2.extras import RealDictCursor
+from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 import os
 
 logger = logging.getLogger(__name__)
@@ -50,7 +51,6 @@ class CalculationRepository:
             
         try:
             import psycopg2
-            from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
             
             # 데이터베이스 연결 테스트
             conn = psycopg2.connect(self.database_url)
@@ -69,7 +69,6 @@ class CalculationRepository:
         """필요한 테이블들을 생성합니다"""
         try:
             import psycopg2
-            from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
             
             conn = psycopg2.connect(self.database_url)
             conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
@@ -380,7 +379,6 @@ class CalculationRepository:
     async def _create_product_db(self, product_data: Dict[str, Any]) -> Dict[str, Any]:
         """데이터베이스에 제품 생성"""
         import psycopg2
-        from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
         
         conn = psycopg2.connect(self.database_url)
         conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
@@ -424,7 +422,6 @@ class CalculationRepository:
     async def _create_install_db(self, install_data: Dict[str, Any]) -> Dict[str, Any]:
         """데이터베이스에 사업장 생성"""
         import psycopg2
-        from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
         
         conn = psycopg2.connect(self.database_url)
         conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
@@ -457,7 +454,6 @@ class CalculationRepository:
     async def _get_installs_db(self) -> List[Dict[str, Any]]:
         """데이터베이스에서 사업장 목록 조회"""
         import psycopg2
-        from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
         
         conn = psycopg2.connect(self.database_url)
         conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
@@ -484,7 +480,6 @@ class CalculationRepository:
     async def _get_install_names_db(self) -> List[Dict[str, Any]]:
         """데이터베이스에서 사업장명 목록 조회 (드롭다운용)"""
         import psycopg2
-        from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
         
         conn = psycopg2.connect(self.database_url)
         conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
@@ -510,7 +505,6 @@ class CalculationRepository:
     async def _get_install_db(self, install_id: int) -> Optional[Dict[str, Any]]:
         """데이터베이스에서 특정 사업장 조회"""
         import psycopg2
-        from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
         
         conn = psycopg2.connect(self.database_url)
         conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
@@ -535,7 +529,6 @@ class CalculationRepository:
     async def _update_install_db(self, install_id: int, update_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """데이터베이스에서 사업장 수정"""
         import psycopg2
-        from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
         
         conn = psycopg2.connect(self.database_url)
         conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
@@ -568,7 +561,6 @@ class CalculationRepository:
     async def _delete_install_db(self, install_id: int) -> bool:
         """데이터베이스에서 사업장 삭제 (연결된 제품들도 함께 삭제) - 다대다 관계 지원"""
         import psycopg2
-        from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 
         conn = psycopg2.connect(self.database_url)
         conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
@@ -640,7 +632,6 @@ class CalculationRepository:
     async def _create_process_db(self, process_data: Dict[str, Any]) -> Dict[str, Any]:
         """데이터베이스에 공정 생성 (다대다 관계)"""
         import psycopg2
-        from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
         
         conn = psycopg2.connect(self.database_url)
         conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
@@ -686,7 +677,6 @@ class CalculationRepository:
     async def _get_processes_db(self) -> List[Dict[str, Any]]:
         """데이터베이스에서 프로세스 목록 조회"""
         import psycopg2
-        from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
         
         conn = psycopg2.connect(self.database_url)
         conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
@@ -718,7 +708,6 @@ class CalculationRepository:
     async def _get_process_db(self, process_id: int) -> Optional[Dict[str, Any]]:
         """데이터베이스에서 특정 프로세스 조회"""
         import psycopg2
-        from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
         
         conn = psycopg2.connect(self.database_url)
         conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
@@ -748,7 +737,6 @@ class CalculationRepository:
     async def _update_process_db(self, process_id: int, update_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """데이터베이스에서 프로세스 수정"""
         import psycopg2
-        from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
         
         conn = psycopg2.connect(self.database_url)
         conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
@@ -786,7 +774,6 @@ class CalculationRepository:
     async def _delete_process_db(self, process_id: int) -> bool:
         """데이터베이스에서 프로세스 삭제 (다대다 관계 지원)"""
         import psycopg2
-        from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
         
         conn = psycopg2.connect(self.database_url)
         conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
@@ -834,7 +821,6 @@ class CalculationRepository:
     async def _get_products_db(self) -> List[Dict[str, Any]]:
         """데이터베이스에서 제품 목록 조회"""
         import psycopg2
-        from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
         
         conn = psycopg2.connect(self.database_url)
         conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
@@ -866,7 +852,6 @@ class CalculationRepository:
     async def _get_product_names_db(self) -> List[Dict[str, Any]]:
         """데이터베이스에서 제품명 목록 조회 (드롭다운용)"""
         import psycopg2
-        from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
         
         conn = psycopg2.connect(self.database_url)
         conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
@@ -892,7 +877,6 @@ class CalculationRepository:
     async def _get_product_db(self, product_id: int) -> Optional[Dict[str, Any]]:
         """데이터베이스에서 특정 제품 조회"""
         import psycopg2
-        from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
         
         conn = psycopg2.connect(self.database_url)
         conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
@@ -922,7 +906,6 @@ class CalculationRepository:
     async def _update_product_db(self, product_id: int, update_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """데이터베이스에서 제품 수정"""
         import psycopg2
-        from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
         
         conn = psycopg2.connect(self.database_url)
         conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
@@ -960,7 +943,6 @@ class CalculationRepository:
     async def _delete_product_db(self, product_id: int) -> bool:
         """데이터베이스에서 제품 삭제"""
         import psycopg2
-        from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
         
         conn = psycopg2.connect(self.database_url)
         conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
@@ -1023,7 +1005,6 @@ class CalculationRepository:
     async def _create_process_input_db(self, process_input_data: Dict[str, Any]) -> Dict[str, Any]:
         """데이터베이스에 프로세스 입력 생성"""
         import psycopg2
-        from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
         
         conn = psycopg2.connect(self.database_url)
         conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
@@ -1056,7 +1037,6 @@ class CalculationRepository:
     async def _get_process_inputs_db(self) -> List[Dict[str, Any]]:
         """데이터베이스에서 프로세스 입력 목록 조회"""
         import psycopg2
-        from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
         
         conn = psycopg2.connect(self.database_url)
         conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
@@ -1083,7 +1063,6 @@ class CalculationRepository:
     async def _get_process_inputs_by_process_db(self, process_id: int) -> List[Dict[str, Any]]:
         """데이터베이스에서 특정 프로세스의 입력 목록 조회"""
         import psycopg2
-        from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
         
         conn = psycopg2.connect(self.database_url)
         conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
@@ -1110,7 +1089,6 @@ class CalculationRepository:
     async def _get_process_input_db(self, process_input_id: int) -> Optional[Dict[str, Any]]:
         """데이터베이스에서 특정 프로세스 입력 조회"""
         import psycopg2
-        from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
         
         conn = psycopg2.connect(self.database_url)
         conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
@@ -1135,7 +1113,6 @@ class CalculationRepository:
     async def _update_process_input_db(self, process_input_id: int, update_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """데이터베이스에서 프로세스 입력 수정"""
         import psycopg2
-        from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
         
         conn = psycopg2.connect(self.database_url)
         conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
@@ -1168,7 +1145,6 @@ class CalculationRepository:
     async def _update_process_input_emission_db(self, process_input_id: int, direct_emission: Optional[float] = None, indirect_emission: Optional[float] = None) -> bool:
         """데이터베이스에서 프로세스 입력 배출량 업데이트"""
         import psycopg2
-        from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
         
         conn = psycopg2.connect(self.database_url)
         conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
@@ -1208,7 +1184,6 @@ class CalculationRepository:
     async def _delete_process_input_db(self, process_input_id: int) -> bool:
         """데이터베이스에서 프로세스 입력 삭제"""
         import psycopg2
-        from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
         
         conn = psycopg2.connect(self.database_url)
         conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
@@ -1231,7 +1206,6 @@ class CalculationRepository:
     async def _get_processes_by_product_db(self, product_id: int) -> List[Dict[str, Any]]:
         """데이터베이스에서 특정 제품의 공정 목록 조회 (다대다 관계)"""
         import psycopg2
-        from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
         
         conn = psycopg2.connect(self.database_url)
         conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
@@ -1331,7 +1305,6 @@ class CalculationRepository:
     async def _create_product_process_db(self, product_process_data: Dict[str, Any]) -> Dict[str, Any]:
         """데이터베이스에 제품-공정 관계 생성"""
         import psycopg2
-        from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
         
         conn = psycopg2.connect(self.database_url)
         conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
@@ -1356,7 +1329,6 @@ class CalculationRepository:
     async def _delete_product_process_db(self, product_id: int, process_id: int) -> bool:
         """데이터베이스에서 제품-공정 관계 삭제"""
         import psycopg2
-        from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
         
         conn = psycopg2.connect(self.database_url)
         conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
