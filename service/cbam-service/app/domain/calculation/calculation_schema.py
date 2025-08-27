@@ -93,8 +93,8 @@ class ProcessCreateRequest(BaseModel):
     """프로세스 생성 요청"""
     product_id: int = Field(..., description="제품 ID")
     process_name: str = Field(..., description="공정명")
-    start_period: date = Field(..., description="시작일")
-    end_period: date = Field(..., description="종료일")
+    start_period: Optional[date] = Field(None, description="시작일")
+    end_period: Optional[date] = Field(None, description="종료일")
 
 class ProcessResponse(BaseModel):
     """프로세스 응답"""
