@@ -1,36 +1,38 @@
 # ============================================================================
-# 🚀 Cal_boundary Main Application
+# 📦 Import 모듈들
+# ============================================================================
+
+import time
+import logging
+import os
+import re
+from contextlib import asynccontextmanager
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
+from loguru import logger
+from sqlalchemy import create_engine, text
+from dotenv import load_dotenv
+
+# CBAM 도메인 라우터
+from app.domain.calculation.calculation_controller import calculation_router
+
+# ReactFlow 기반 라우터들 (현재 CBAM 기능에서는 사용하지 않음)
+# from app.domain.node.node_controller import node_router
+# from app.domain.flow.flow_controller import flow_router
+# from app.domain.edge.edge_controller import edge_router
+# from app.domain.handle.handle_controller import handle_router
+# from app.domain.Viewport.Viewport_controller import viewport_router
+
+# ============================================================================
+# 🔧 설정 및 초기화
 # ============================================================================
 
 """
 Cal_boundary 서비스 메인 애플리케이션
 
-ReactFlow 기반 HTTP API를 제공하는 FastAPI 애플리케이션입니다.
+CBAM 관련 HTTP API를 제공하는 FastAPI 애플리케이션입니다.
 """
-
-from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
-from fastapi.middleware.cors import CORSMiddleware
-from contextlib import asynccontextmanager
-from loguru import logger
-import time
-import os
-import re
-from sqlalchemy import create_engine, text
-from dotenv import load_dotenv
-
-# 라우터 임포트 (ReactFlow 기반 라우터들)
-from app.domain.node.node_controller import node_router
-from app.domain.flow.flow_controller import flow_router
-from app.domain.edge.edge_controller import edge_router
-from app.domain.handle.handle_controller import handle_router
-# from app.domain.Viewport.Viewport_controller import viewport_router
-
-# CBAM 도메인 라우터들
-from app.domain.calculation.calculation_controller import router as calculation_router
-# ============================================================================
-# 🔧 애플리케이션 설정
-# ============================================================================
 
 # 환경 변수 로드 (.env는 로컬에서만 사용)
 if not os.getenv("RAILWAY_ENVIRONMENT"):
@@ -197,11 +199,11 @@ async def log_requests(request: Request, call_next):
 # 🎯 라우터 등록
 # ============================================================================
 
-# ReactFlow 기반 라우터들 등록
-app.include_router(node_router, prefix="/api")
-app.include_router(flow_router, prefix="/api")
-app.include_router(edge_router, prefix="/api")
-app.include_router(handle_router, prefix="/api")
+# ReactFlow 기반 라우터들 등록 (현재 CBAM 기능에서는 사용하지 않음)
+# app.include_router(node_router, prefix="/api")
+# app.include_router(flow_router, prefix="/api")
+# app.include_router(edge_router, prefix="/api")
+# app.include_router(handle_router, prefix="/api")
 # app.include_router(viewport_router, prefix="/api")
 
 # CBAM 도메인 라우터들 등록

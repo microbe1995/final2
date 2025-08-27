@@ -30,6 +30,21 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
+// ============================================================================
+// 📋 타입 정의
+// ============================================================================
+
+interface Product {
+  id: number;
+  product_name: string;
+  product_cncode?: string;
+  product_amount: number;
+  product_sell?: number;
+  product_eusell?: number;
+  prostart_period: string;
+  proend_period: string;
+}
+
 /* ============================================================================
    커스텀 Edge
    - markerEnd는 defaultEdgeOptions에서만 설정(중복 방지)
@@ -64,19 +79,22 @@ function ProcessManagerInner() {
   const { addNodes, addEdges } = useReactFlow();
 
   // 제품 목록 모달 상태
-  const [products, setProducts] = useState<any[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [showProductModal, setShowProductModal] = useState(false);
 
   // 제품 불러오기
   const fetchProducts = useCallback(async () => {
     try {
       const res = await axiosClient.get('/api/v1/boundary/product');
-      setProducts(res.data.products || []);
-    } catch {
+      console.log('📋 제품 목록 응답:', res.data);
+      setProducts(res.data || []);
+    } catch (error) {
+      console.error('❌ 제품 목록 조회 실패:', error);
+      // 에러 발생 시 더미 데이터 사용
       setProducts([
-        { product_id: 'dummy-1', name: '테스트 제품 1', cn_code: '7208.51.00', production_qty: 1000, sales_qty: 800, export_qty: 200, inventory_qty: 150, defect_rate: 0.05, period_start: '2024-01-01', period_end: '2024-12-31' },
-        { product_id: 'dummy-2', name: '테스트 제품 2', cn_code: '7208.52.00', production_qty: 2000, sales_qty: 1800, export_qty: 400, inventory_qty: 300, defect_rate: 0.03, period_start: '2024-01-01', period_end: '2024-12-31' },
-        { product_id: 'dummy-3', name: '테스트 제품 3', cn_code: '7208.53.00', production_qty: 1500, sales_qty: 1200, export_qty: 300, inventory_qty: 200, defect_rate: 0.07, period_start: '2024-01-01', period_end: '2024-12-31' },
+        { id: 1, product_name: '테스트 제품 1', product_cncode: '7208.51.00', product_amount: 1000, product_sell: 800, product_eusell: 200, prostart_period: '2024-01-01', proend_period: '2024-12-31' },
+        { id: 2, product_name: '테스트 제품 2', product_cncode: '7208.52.00', product_amount: 2000, product_sell: 1800, product_eusell: 400, prostart_period: '2024-01-01', proend_period: '2024-12-31' },
+        { id: 3, product_name: '테스트 제품 3', product_cncode: '7208.53.00', product_amount: 1500, product_sell: 1200, product_eusell: 300, prostart_period: '2024-01-01', proend_period: '2024-12-31' },
       ]);
     }
   }, []);
@@ -88,28 +106,26 @@ function ProcessManagerInner() {
   }, [fetchProducts]);
 
   // 제품 선택 → 노드 추가
-  const handleProductSelect = useCallback((product: any) => {
+  const handleProductSelect = useCallback((product: Product) => {
     const newNode: Node<any> = {
       id: `product-${Date.now()}-${Math.random().toString(36).slice(2)}`,
       type: 'custom',
       position: { x: Math.random() * 400 + 100, y: Math.random() * 300 + 100 },
       data: {
-        label: product.name,
-        description: `제품: ${product.name}`,
+        label: product.product_name,
+        description: `제품: ${product.product_name}`,
         variant: 'product',
         productData: product,
-        name: product.name,
+        name: product.product_name,
         type: 'output',
         parameters: {
-          product_id: product.product_id,
-          cn_code: product.cn_code,
-          production_qty: product.production_qty,
-          sales_qty: product.sales_qty,
-          export_qty: product.export_qty,
-          inventory_qty: product.inventory_qty,
-          defect_rate: product.defect_rate,
-          period_start: product.period_start,
-          period_end: product.period_end,
+          product_id: product.id,
+          cn_code: product.product_cncode,
+          production_qty: product.product_amount,
+          sales_qty: product.product_sell,
+          export_qty: product.product_eusell,
+          period_start: product.prostart_period,
+          period_end: product.proend_period,
         },
         status: 'active',
       },
@@ -209,13 +225,13 @@ function ProcessManagerInner() {
             <div className="space-y-2">
               {products.map((p) => (
                 <div
-                  key={p.product_id}
+                  key={p.id}
                   className="p-3 border rounded-lg cursor-pointer hover:bg-blue-50 hover:border-blue-300 transition-colors"
                   onClick={() => handleProductSelect(p)}
                 >
-                  <div className="font-medium">{p.name}</div>
-                  <div className="text-sm text-gray-600">CN: {p.cn_code}</div>
-                  <div className="text-sm text-gray-600">생산량: {p.production_qty}</div>
+                  <div className="font-medium">{p.product_name}</div>
+                  <div className="text-sm text-gray-600">CN: {p.product_cncode}</div>
+                  <div className="text-sm text-gray-600">생산량: {p.product_amount}</div>
                 </div>
               ))}
             </div>

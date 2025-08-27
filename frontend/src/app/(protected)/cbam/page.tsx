@@ -3,9 +3,6 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import CommonShell from '@/components/common/CommonShell';
-import ProcessManager from '@/components/cbam/ProcessManager';
-import { ReactFlowProvider } from '@xyflow/react';
-import axiosClient from '@/lib/axiosClient';
 
 // ============================================================================
 // 🎯 CBAM 관리 페이지
@@ -53,12 +50,29 @@ export default function CBAMPage() {
           CBAM 프로세스 관리
         </h3>
         <p className='stitch-caption text-white/60'>
-          CBAM 관련 프로세스 플로우를 생성하고 관리합니다.
+          CBAM 관련 프로세스를 생성하고 관리합니다.
         </p>
         <div className='mt-6'>
-          <ReactFlowProvider>
-            <ProcessManager />
-          </ReactFlowProvider>
+          <Link 
+            href='/cbam/process'
+            className='inline-flex items-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors'
+          >
+            🔄 프로세스 생성 페이지로 이동
+          </Link>
+        </div>
+        <div className='mt-4 grid grid-cols-1 md:grid-cols-2 gap-4'>
+          <div className='p-4 bg-white/5 rounded-lg'>
+            <h4 className='font-semibold text-white mb-2'>프로세스 생성</h4>
+            <p className='text-white/60 text-sm'>
+              제품별 생산 프로세스 정보 등록
+            </p>
+          </div>
+          <div className='p-4 bg-white/5 rounded-lg'>
+            <h4 className='font-semibold text-white mb-2'>기간 관리</h4>
+            <p className='text-white/60 text-sm'>
+              프로세스 시작일 및 종료일 관리
+            </p>
+          </div>
         </div>
       </div>
     </div>
@@ -68,22 +82,22 @@ export default function CBAMPage() {
     <div className='space-y-6'>
       <div className='stitch-card p-6'>
         <h3 className='stitch-h1 text-lg font-semibold mb-4'>
-          CBAM 사업장 관리
+          CBAM 제품 관리
         </h3>
         <p className='stitch-caption text-white/60'>
-          CBAM 배출량 계산 및 비용 산출을 관리합니다.
+          CBAM 적용 대상 제품 정보를 생성하고 관리합니다.
         </p>
         <div className='mt-6'>
           <Link 
             href='/cbam/calculation'
             className='inline-flex items-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors'
           >
-            🏭 사업장 관리 페이지로 이동
+            📦 제품 관리 페이지로 이동
           </Link>
         </div>
         <div className='mt-4 grid grid-cols-1 md:grid-cols-2 gap-4'>
           <div className='p-4 bg-white/5 rounded-lg'>
-            <h4 className='font-semibold text-white mb-2'>제품 관리</h4>
+            <h4 className='font-semibold text-white mb-2'>제품 등록</h4>
             <p className='text-white/60 text-sm'>
               CBAM 적용 대상 제품 정보 등록 및 관리
             </p>
