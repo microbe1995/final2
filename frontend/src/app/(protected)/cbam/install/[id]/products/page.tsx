@@ -574,12 +574,12 @@ export default function InstallProductsPage() {
                         </div>
 
                         <div className="flex gap-2">
-                          <button
-                            onClick={() => router.push(`/cbam/process-input?process_id=${process.id}`)}
-                            className="flex-1 px-3 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-md transition-colors duration-200"
-                          >
-                            입력 데이터
-                          </button>
+                                                     <button
+                             onClick={() => router.push(`/cbam/process/process-input?process_id=${process.id}`)}
+                             className="flex-1 px-3 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-md transition-colors duration-200"
+                           >
+                             입력 데이터
+                           </button>
                           <button
                             onClick={() => handleDeleteProcess(process.id, process.process_name)}
                             className="px-3 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-md transition-colors duration-200"

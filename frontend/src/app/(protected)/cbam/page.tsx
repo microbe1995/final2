@@ -187,14 +187,14 @@ export default function CBAMPage() {
         <p className='stitch-caption text-white/60'>
           CBAM 프로세스별 입력 데이터를 관리하고 배출량을 계산합니다.
         </p>
-        <div className='mt-6'>
-          <Link 
-            href='/cbam/process-input'
-            className='inline-flex items-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors'
-          >
-            📥 프로세스 입력 관리 페이지로 이동
-          </Link>
-        </div>
+                    <div className='mt-6'>
+              <Link
+                href='/cbam/process/process-input'
+                className='inline-flex items-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors'
+              >
+                📥 프로세스 입력 관리 페이지로 이동
+              </Link>
+            </div>
         <div className='mt-4 grid grid-cols-1 md:grid-cols-2 gap-4'>
           <div className='p-4 bg-white/5 rounded-lg'>
             <h4 className='font-semibold text-white mb-2'>입력 데이터 등록</h4>
