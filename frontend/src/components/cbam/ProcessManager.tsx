@@ -68,6 +68,10 @@ function ProcessManagerInner() {
   const [installs, setInstalls] = useState<any[]>([]);
   const [selectedInstall, setSelectedInstall] = useState<any>(null);
   const [showInstallModal, setShowInstallModal] = useState(false);
+  
+  // 다중 사업장 캔버스 관리
+  const [installCanvases, setInstallCanvases] = useState<{[key: number]: {nodes: any[], edges: any[]}}>({});
+  const [activeInstallId, setActiveInstallId] = useState<number | null>(null);
 
   // 제품 목록 모달 상태
   const [products, setProducts] = useState<any[]>([]);
@@ -75,7 +79,6 @@ function ProcessManagerInner() {
 
   // 공정 목록 모달 상태
   const [processes, setProcesses] = useState<any[]>([]);
-  const [showProcessModal, setShowProcessModal] = useState(false);
   
   // 제품별 공정 선택을 위한 상태
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
@@ -160,6 +163,16 @@ function ProcessManagerInner() {
     fetchInstalls();
   }, [fetchInstalls]);
 
+  // 캔버스 상태 변경 시 해당 사업장의 캔버스 데이터 업데이트
+  useEffect(() => {
+    if (activeInstallId) {
+      setInstallCanvases(prev => ({
+        ...prev,
+        [activeInstallId]: { nodes, edges }
+      }));
+    }
+  }, [nodes, edges, activeInstallId]);
+
   // 사업장 선택 모달 열기
   const openInstallModal = useCallback(() => {
     setShowInstallModal(true);
@@ -168,11 +181,22 @@ function ProcessManagerInner() {
   // 사업장 선택
   const handleInstallSelect = useCallback((install: any) => {
     setSelectedInstall(install);
+    setActiveInstallId(install.id);
     setShowInstallModal(false);
-    // 캔버스 초기화
-    onNodesChange([]);
-    onEdgesChange([]);
-  }, [onNodesChange, onEdgesChange]);
+    
+    // 해당 사업장의 캔버스가 없으면 초기화
+    if (!installCanvases[install.id]) {
+      setInstallCanvases(prev => ({
+        ...prev,
+        [install.id]: { nodes: [], edges: [] }
+      }));
+    }
+    
+    // 현재 캔버스 상태를 해당 사업장의 캔버스로 설정
+    const canvasData = installCanvases[install.id] || { nodes: [], edges: [] };
+    onNodesChange(canvasData.nodes);
+    onEdgesChange(canvasData.edges);
+  }, [installCanvases, onNodesChange, onEdgesChange]);
 
   // 제품 노드 추가(모달 열기)
   const addProductNode = useCallback(async () => {
@@ -181,15 +205,6 @@ function ProcessManagerInner() {
       return;
     }
     setShowProductModal(true);
-  }, [selectedInstall]);
-
-  // 공정 노드 추가(모달 열기)
-  const addProcessNode = useCallback(async () => {
-    if (!selectedInstall) {
-      alert('먼저 사업장을 선택해주세요.');
-      return;
-    }
-    setShowProcessModal(true);
   }, [selectedInstall]);
 
   // 제품 노드 클릭 시 해당 제품의 공정 선택 모달 열기
@@ -247,8 +262,7 @@ function ProcessManagerInner() {
     };
 
     addNodes(newNode);
-    setShowProcessModal(false);
-    setShowProcessModalForProduct(false); // 제품별 공정 모달도 닫기
+    setShowProcessModalForProduct(false); // 제품별 공정 모달 닫기
   }, [addNodes, products, selectedInstall]);
 
   // 그룹 노드 추가
@@ -272,26 +286,59 @@ function ProcessManagerInner() {
       <div className="bg-gray-900 text-white p-4">
         <h1 className="text-2xl font-bold">CBAM 산정경계설정</h1>
         <p className="text-gray-300">CBAM 배출량 산정을 위한 경계를 설정하고 노드를 생성합니다.</p>
-        {selectedInstall && (
-          <div className="mt-2 p-2 bg-blue-600/20 border border-blue-500/30 rounded-lg">
-            <p className="text-blue-300 text-sm">
-              🏭 선택된 사업장: <span className="font-semibold">{selectedInstall.install_name}</span>
-              {selectedInstall.reporting_year && ` (${selectedInstall.reporting_year}년)`}
-            </p>
+      </div>
+
+      {/* 사업장 선택 카드 */}
+      <div className="bg-gray-800 p-4">
+        <div className="flex items-center gap-4">
+          {/* 사업장 추가 카드 */}
+          <div 
+            className="w-48 h-24 bg-gray-700 border-2 border-dashed border-gray-500 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-blue-400 hover:bg-gray-600 transition-colors"
+            onClick={openInstallModal}
+          >
+            <div className="text-4xl text-gray-400 mb-1">+</div>
+            <div className="text-sm text-gray-300">사업장 추가</div>
           </div>
-        )}
+          
+          {/* 선택된 사업장 카드들 */}
+          {Object.keys(installCanvases).map((installId) => {
+            const install = installs.find(i => i.id === parseInt(installId));
+            if (!install) return null;
+            
+            const isActive = activeInstallId === parseInt(installId);
+            const canvasData = installCanvases[parseInt(installId)];
+            const nodeCount = canvasData?.nodes?.length || 0;
+            
+            return (
+              <div
+                key={installId}
+                className={`w-48 h-24 rounded-lg flex flex-col justify-center p-3 cursor-pointer transition-all ${
+                  isActive 
+                    ? 'bg-blue-600 border-2 border-blue-400 shadow-lg' 
+                    : 'bg-gray-700 border-2 border-gray-600 hover:border-gray-500'
+                }`}
+                onClick={() => handleInstallSelect(install)}
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <div className="font-semibold text-white text-sm">{install.install_name}</div>
+                  <div className="text-xs text-gray-300">{nodeCount}개 노드</div>
+                </div>
+                <div className="text-xs text-gray-300">
+                  {install.reporting_year && `${install.reporting_year}년`}
+                </div>
+                {isActive && (
+                  <div className="text-xs text-blue-200 mt-1">활성</div>
+                )}
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       {/* 버튼 */}
       <div className="bg-gray-800 p-4 flex gap-2">
-        <Button onClick={openInstallModal} className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center gap-2">
-          <Building className="h-4 w-4" /> 사업장 선택
-        </Button>
         <Button onClick={addProductNode} disabled={!selectedInstall} className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg flex items-center gap-2">
           <Plus className="h-4 w-4" /> 제품 노드
-        </Button>
-        <Button onClick={addProcessNode} disabled={!selectedInstall} className="bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg flex items-center gap-2">
-          <Plus className="h-4 w-4" /> 공정 노드
         </Button>
         <Button onClick={addGroupNode} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2">
           <Plus className="h-4 w-4" /> 그룹 노드
@@ -394,44 +441,6 @@ function ProcessManagerInner() {
               ) : (
                 <div className="text-center py-4 text-gray-400">
                   선택된 사업장에 등록된 제품이 없습니다.
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 공정 선택 모달 */}
-      {showProcessModal && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/60 z-50">
-          <div className="bg-gray-800 p-6 rounded-lg shadow-lg max-w-md w-full mx-4 border border-gray-700">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold text-white">공정 선택</h3>
-              <button onClick={() => setShowProcessModal(false)} className="text-gray-400 hover:text-gray-200">✕</button>
-            </div>
-            <div className="space-y-2">
-              {processes.length > 0 ? (
-                processes.map((process) => {
-                  // 해당 공정이 속한 제품 정보 찾기
-                  const relatedProduct = products.find((product: any) => product.id === process.product_id);
-                  return (
-                    <div
-                      key={process.id}
-                      className="p-3 border border-gray-600 rounded-lg cursor-pointer hover:bg-gray-700 hover:border-purple-400 transition-colors"
-                      onClick={() => handleProcessSelect(process)}
-                    >
-                      <div className="font-medium text-white">{process.process_name}</div>
-                      {relatedProduct && (
-                        <div className="text-sm text-gray-300">제품: {relatedProduct.product_name}</div>
-                      )}
-                      <div className="text-sm text-gray-300">시작일: {process.start_period || 'N/A'}</div>
-                      <div className="text-sm text-gray-300">종료일: {process.end_period || 'N/A'}</div>
-                    </div>
-                  );
-                })
-              ) : (
-                <div className="text-center py-4 text-gray-400">
-                  선택된 사업장에 등록된 공정이 없습니다.
                 </div>
               )}
             </div>
