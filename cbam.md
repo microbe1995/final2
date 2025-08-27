@@ -1,3 +1,6 @@
+postgresql://postgres:eQGfytQNhXYAZxsJYlFhYagpJAgstrni@shortline.proxy.rlwy.net:46071/railway
+현재 위 주소는 railway 상 db 주소임
+
 Next.js(앱 라우터) + TypeScript
 
 @xyflow/react v12 사용

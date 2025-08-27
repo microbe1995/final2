@@ -10,8 +10,15 @@ import { useRouter } from 'next/navigation';
 // 🏭 사업장 관리 페이지
 // ============================================================================
 
+interface Install {
+  id: number;
+  name: string;
+  reporting_year: number;
+}
+
 interface InstallForm {
   name: string;
+  reporting_year: number;
 }
 
 export default function InstallPage() {
@@ -23,7 +30,8 @@ export default function InstallPage() {
   const [sortBy, setSortBy] = useState<'name' | 'id'>('name');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [installForm, setInstallForm] = useState<InstallForm>({
-    name: ''
+    name: '',
+    reporting_year: new Date().getFullYear() // 현재 년도로 기본값 설정
   });
 
   // 사업장 목록 조회
@@ -73,7 +81,7 @@ export default function InstallPage() {
   const handleInputChange = (field: keyof InstallForm, value: string) => {
     setInstallForm(prev => ({
       ...prev,
-      [field]: value
+      [field]: field === 'reporting_year' ? parseInt(value) || new Date().getFullYear() : value
     }));
   };
 
@@ -115,7 +123,8 @@ export default function InstallPage() {
 
       // 폼 초기화
       setInstallForm({
-        name: ''
+        name: '',
+        reporting_year: new Date().getFullYear()
       });
 
       // 사업장 목록 새로고침
@@ -204,6 +213,21 @@ export default function InstallPage() {
                   required
                 />
               </div>
+              {/* 보고기간 */}
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  보고기간 *
+                </label>
+                <Input
+                  type="number"
+                  placeholder="예: 2023"
+                  value={installForm.reporting_year}
+                  onChange={(e) => handleInputChange('reporting_year', e.target.value)}
+                  required
+                  min="2000"
+                  max="2100"
+                />
+              </div>
             </div>
 
             {/* 제출 버튼 */}
@@ -269,6 +293,9 @@ export default function InstallPage() {
                     <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-500/20 text-blue-300">
                       ID: {install.id}
                     </span>
+                  </div>
+                  <div className="space-y-1 mb-3">
+                    <p className="text-gray-300 text-sm">보고기간: {install.reporting_year}년</p>
                   </div>
                   <div className="mt-3 pt-3 border-t border-white/10 flex gap-2">
                     <button
