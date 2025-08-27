@@ -3,6 +3,9 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import CommonShell from '@/components/common/CommonShell';
+import ProcessManager from '@/components/cbam/ProcessManager';
+import { ReactFlowProvider } from '@xyflow/react';
+import axiosClient from '@/lib/axiosClient';
 
 // ============================================================================
 // 🎯 CBAM 관리 페이지
@@ -10,7 +13,7 @@ import CommonShell from '@/components/common/CommonShell';
 
 export default function CBAMPage() {
   const [activeTab, setActiveTab] = useState<
-    'overview' | 'install' | 'flow' | 'reports' | 'settings'
+    'overview' | 'flow' | 'calculation' | 'reports' | 'settings'
   >('overview');
 
   const renderOverview = () => (
@@ -43,79 +46,40 @@ export default function CBAMPage() {
     </div>
   );
 
-
-
   const renderFlow = () => (
     <div className='space-y-6'>
       <div className='stitch-card p-6'>
         <h3 className='stitch-h1 text-lg font-semibold mb-4'>
-          CBAM 시설군 설정
+          CBAM 프로세스 관리
         </h3>
         <p className='stitch-caption text-white/60'>
-          CBAM 배출량 산정을 위한 경계를 설정하고 노드를 생성합니다.
+          CBAM 관련 프로세스 플로우를 생성하고 관리합니다.
         </p>
         <div className='mt-6'>
-          <Link 
-            href='/cbam/process-manager'
-            className='inline-flex items-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors'
-          >
-            🔄 시설군 설정 페이지로 이동
-          </Link>
-        </div>
-        <div className='mt-4 grid grid-cols-1 md:grid-cols-2 gap-4'>
-          <div className='p-4 bg-white/5 rounded-lg'>
-            <h4 className='font-semibold text-white mb-2'>노드 생성</h4>
-            <p className='text-white/60 text-sm'>
-              배출량 산정을 위한 노드 및 엣지 생성
-            </p>
-          </div>
-          <div className='p-4 bg-white/5 rounded-lg'>
-            <h4 className='font-semibold text-white mb-2'>경계 설정</h4>
-            <p className='text-white/60 text-sm'>
-              배출량 산정 경계 및 범위 설정
-            </p>
-          </div>
+          <ReactFlowProvider>
+            <ProcessManager />
+          </ReactFlowProvider>
         </div>
       </div>
     </div>
   );
 
-  const renderInstall = () => (
+  const renderCalculation = () => (
     <div className='space-y-6'>
       <div className='stitch-card p-6'>
         <h3 className='stitch-h1 text-lg font-semibold mb-4'>
-          사업장 관리
+          CBAM 계산 관리
         </h3>
         <p className='stitch-caption text-white/60'>
-          사업장별 제품 및 프로세스 기준정보를 설정하고 관리합니다.
+          CBAM 배출량 계산 및 비용 산출을 관리합니다.
         </p>
         <div className='mt-6'>
           <Link 
-            href='/cbam/install'
+            href='/cbam/calculation'
             className='inline-flex items-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors'
           >
-            🏭 사업장 관리 페이지로 이동
+            🧮 계산 페이지로 이동
           </Link>
-        </div>
-        <div className='mt-4 grid grid-cols-1 md:grid-cols-3 gap-4'>
-          <div className='p-4 bg-white/5 rounded-lg'>
-            <h4 className='font-semibold text-white mb-2'>사업장 등록</h4>
-            <p className='text-white/60 text-sm'>
-              CBAM 적용 대상 사업장 정보 등록 및 관리
-            </p>
-          </div>
-          <div className='p-4 bg-white/5 rounded-lg'>
-            <h4 className='font-semibold text-white mb-2'>제품 관리</h4>
-            <p className='text-white/60 text-sm'>
-              사업장별 제품 정보 등록 및 관리
-            </p>
-          </div>
-                     <div className='p-4 bg-white/5 rounded-lg'>
-             <h4 className='font-semibold text-white mb-2'>산정경계설정</h4>
-             <p className='text-white/60 text-sm'>
-               배출량 산정 경계 및 노드 설정
-             </p>
-           </div>
         </div>
       </div>
     </div>
@@ -151,8 +115,6 @@ export default function CBAMPage() {
     </div>
   );
 
-
-
   return (
     <CommonShell>
       <div className='space-y-6'>
@@ -176,26 +138,26 @@ export default function CBAMPage() {
           >
             개요
           </button>
-                                 <button
-              onClick={() => setActiveTab('install')}
-              className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                activeTab === 'install'
-                  ? 'bg-primary text-white'
-                  : 'text-white/60 hover:text-white hover:bg-white/5'
-              }`}
-            >
-              기준정보 관리
-            </button>
-                       <button
-              onClick={() => setActiveTab('flow')}
-              className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                activeTab === 'flow'
-                  ? 'bg-primary text-white'
-                  : 'text-white/60 hover:text-white hover:bg-white/5'
-              }`}
-            >
-              산정경계설정
-            </button>
+          <button
+            onClick={() => setActiveTab('flow')}
+            className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+              activeTab === 'flow'
+                ? 'bg-primary text-white'
+                : 'text-white/60 hover:text-white hover:bg-white/5'
+            }`}
+          >
+            프로세스 관리
+          </button>
+          <button
+            onClick={() => setActiveTab('calculation')}
+            className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+              activeTab === 'calculation'
+                ? 'bg-primary text-white'
+                : 'text-white/60 hover:text-white hover:bg-white/5'
+            }`}
+          >
+            계산 관리
+          </button>
           <button
             onClick={() => setActiveTab('reports')}
             className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
@@ -218,12 +180,12 @@ export default function CBAMPage() {
           </button>
         </div>
 
-                 {/* 탭 콘텐츠 */}
-         {activeTab === 'overview' && renderOverview()}
-         {activeTab === 'install' && renderInstall()}
-         {activeTab === 'flow' && renderFlow()}
-         {activeTab === 'reports' && renderReports()}
-         {activeTab === 'settings' && renderSettings()}
+        {/* 탭 콘텐츠 */}
+        {activeTab === 'overview' && renderOverview()}
+        {activeTab === 'flow' && renderFlow()}
+        {activeTab === 'calculation' && renderCalculation()}
+        {activeTab === 'reports' && renderReports()}
+        {activeTab === 'settings' && renderSettings()}
       </div>
     </CommonShell>
   );

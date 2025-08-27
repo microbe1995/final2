@@ -1,7 +1,6 @@
 {
   "extends": ["next/core-web-vitals"],
   "rules": {
-    "no-console": "off"
-  },
-  "ignorePatterns": ["next.config.js"]
+    "no-console": "warn"
+  }
 }
