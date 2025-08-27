@@ -56,10 +56,10 @@ export default function CBAMPage() {
         </p>
         <div className='mt-6'>
           <Link 
-            href='/cbam/process'
+            href='/cbam/process-manager'
             className='inline-flex items-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors'
           >
-            🔄 노드 생성 페이지로 이동
+            🔄 산정경계 설정 페이지로 이동
           </Link>
         </div>
         <div className='mt-4 grid grid-cols-1 md:grid-cols-2 gap-4'>

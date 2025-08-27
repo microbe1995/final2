@@ -161,8 +161,8 @@ function ProcessManagerInner() {
     <div className="w-full h-full flex flex-col">
       {/* 헤더 */}
       <div className="bg-gray-900 text-white p-4">
-        <h1 className="text-2xl font-bold">CBAM 프로세스 관리</h1>
-        <p className="text-gray-300">CBAM 관련 프로세스 플로우를 생성하고 관리합니다.</p>
+        <h1 className="text-2xl font-bold">CBAM 산정경계 설정</h1>
+        <p className="text-gray-300">CBAM 배출량 산정을 위한 경계를 설정하고 노드를 생성합니다.</p>
       </div>
 
       {/* 버튼 */}
