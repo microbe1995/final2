@@ -121,7 +121,7 @@
       "headers": [
         {
           "key": "Content-Type",
-          "value": "text/css; charset=utf-8"
+          "value": "text/css"
         },
         {
           "key": "Cache-Control",
@@ -143,7 +143,7 @@
       "headers": [
         {
           "key": "Content-Type",
-          "value": "application/javascript; charset=utf-8"
+          "value": "application/javascript"
         },
         {
           "key": "Cache-Control",
@@ -171,6 +171,11 @@
       "destination": "/sw.js"
     }
   ],
+  "build": {
+    "env": {
+      "NEXT_TELEMETRY_DISABLED": "1"
+    }
+  },
   "functions": {
     "app/**/*.tsx": {
       "maxDuration": 30
