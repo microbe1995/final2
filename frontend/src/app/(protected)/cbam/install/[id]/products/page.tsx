@@ -19,9 +19,11 @@ interface Product {
   prostart_period: string;
   proend_period: string;
   product_amount: number;
-  product_cncode?: string;
+  cncode_total?: string;
   goods_name?: string;
+  goods_engname?: string; // 품목영문명 추가
   aggrgoods_name?: string;
+  aggrgoods_engname?: string; // 품목군영문명 추가
   product_sell: number;
   product_eusell: number;
   created_at?: string;
@@ -45,9 +47,11 @@ interface ProductForm {
   proend_period: string;
   product_amount: number;
   product_hscode: string; // HS 코드 추가
-  product_cncode: string;
+  cncode_total: string;
   goods_name: string;
+  goods_engname: string; // 품목영문명 추가
   aggrgoods_name: string;
+  aggrgoods_engname: string; // 품목군영문명 추가
   product_sell: number;
   product_eusell: number;
 }
@@ -76,9 +80,11 @@ export default function InstallProductsPage() {
     proend_period: '',
     product_amount: 0,
     product_hscode: '', // HS 코드 초기값 추가
-    product_cncode: '',
+    cncode_total: '',
     goods_name: '',
+    goods_engname: '', // 품목영문명 초기값 추가
     aggrgoods_name: '',
+    aggrgoods_engname: '', // 품목군영문명 초기값 추가
     product_sell: 0,
     product_eusell: 0
   });
@@ -177,9 +183,11 @@ export default function InstallProductsPage() {
     setProductForm(prev => ({
       ...prev,
       product_hscode: hsCodeSearchInput, // HS 코드는 내부적으로 저장
-      product_cncode: result.cncode_total, // CN 코드가 입력 필드에 표시됨
+      cncode_total: result.cncode_total, // CN 코드가 입력 필드에 표시됨
       goods_name: result.goods_name || '',
-      aggrgoods_name: result.aggregoods_name || ''
+      goods_engname: result.goods_engname || '', // 품목영문명 저장
+      aggrgoods_name: result.aggregoods_name || '',
+      aggrgoods_engname: result.aggregoods_engname || '' // 품목군영문명 저장
     }));
     setShowHSCodeModal(false);
     setHsCodeSearchInput('');
@@ -218,20 +226,22 @@ export default function InstallProductsPage() {
         type: 'success'
       });
 
-             // 폼 초기화 및 숨기기
-       setProductForm({
-         product_name: '',
-         product_category: '단순제품',
-         prostart_period: '',
-         proend_period: '',
-         product_amount: 0,
-         product_hscode: '', // HS 코드 초기화
-         product_cncode: '', // CN 코드 초기화
-         goods_name: '',
-         aggrgoods_name: '',
-         product_sell: 0,
-         product_eusell: 0
-       });
+                     // 폼 초기화 및 숨기기
+        setProductForm({
+          product_name: '',
+          product_category: '단순제품',
+          prostart_period: '',
+          proend_period: '',
+          product_amount: 0,
+          product_hscode: '', // HS 코드 초기화
+          cncode_total: '', // CN 코드 초기화
+          goods_name: '',
+          goods_engname: '', // 품목영문명 초기화
+          aggrgoods_name: '',
+          aggrgoods_engname: '', // 품목군영문명 초기화
+          product_sell: 0,
+          product_eusell: 0
+        });
       setShowProductForm(false);
 
       // 목록 새로고침
@@ -483,43 +493,49 @@ export default function InstallProductsPage() {
                   </select>
                 </div>
 
-                                 {/* CN 코드 입력 필드 */}
-                 <div>
-                   <label className="block text-sm font-medium text-gray-300 mb-2">CN 코드</label>
-                   <div className="flex gap-2">
-                     <input
-                       type="text"
-                       value={productForm.product_cncode}
-                       onChange={(e) => handleProductInputChange('product_cncode', e.target.value)}
-                       className="flex-1 px-3 py-2 bg-white/10 border border-white/20 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                       placeholder=""
-                       readOnly
-                     />
-                     <button
-                       type="button"
-                       onClick={openHSCodeModal}
-                       className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md transition-colors duration-200"
-                     >
-                       HS CODE 검색
-                     </button>
-                   </div>
-                 </div>
-
-                {/* CN 코드 및 품목 정보 표시 */}
-                {productForm.product_cncode && (
-                  <div className="bg-green-500/10 border border-green-500/20 rounded-md p-3">
-                    <h4 className="text-sm font-medium text-green-300 mb-2">✅ 선택된 CN 코드:</h4>
-                    <div className="space-y-1">
-                      <div className="text-sm text-white">CN 코드: <span className="font-medium">{productForm.product_cncode}</span></div>
-                      {productForm.goods_name && (
-                        <div className="text-xs text-gray-300">품목명: {productForm.goods_name}</div>
-                      )}
-                      {productForm.aggrgoods_name && (
-                        <div className="text-xs text-gray-300">제품 대분류: {productForm.aggrgoods_name}</div>
-                      )}
+                                                   {/* CN 코드 입력 필드 */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">CN 코드</label>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={productForm.cncode_total}
+                        onChange={(e) => handleProductInputChange('cncode_total', e.target.value)}
+                        className="flex-1 px-3 py-2 bg-white/10 border border-white/20 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder=""
+                        readOnly
+                      />
+                      <button
+                        type="button"
+                        onClick={openHSCodeModal}
+                        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md transition-colors duration-200"
+                      >
+                        HS CODE 검색
+                      </button>
                     </div>
                   </div>
-                )}
+
+                  {/* CN 코드 및 품목 정보 표시 */}
+                  {productForm.cncode_total && (
+                    <div className="bg-green-500/10 border border-green-500/20 rounded-md p-3">
+                      <h4 className="text-sm font-medium text-green-300 mb-2">✅ 선택된 CN 코드:</h4>
+                      <div className="space-y-1">
+                        <div className="text-sm text-white">CN 코드: <span className="font-medium">{productForm.cncode_total}</span></div>
+                        {productForm.goods_name && (
+                          <div className="text-xs text-gray-300">품목명: {productForm.goods_name}</div>
+                        )}
+                        {productForm.goods_engname && (
+                          <div className="text-xs text-gray-400">품목영문명: {productForm.goods_engname}</div>
+                        )}
+                        {productForm.aggrgoods_name && (
+                          <div className="text-xs text-gray-300">품목군명: {productForm.aggrgoods_name}</div>
+                        )}
+                        {productForm.aggrgoods_engname && (
+                          <div className="text-xs text-gray-400">품목군영문명: {productForm.aggrgoods_engname}</div>
+                        )}
+                      </div>
+                    </div>
+                  )}
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
@@ -585,17 +601,23 @@ export default function InstallProductsPage() {
                         <p className="text-gray-300 text-sm">기간: {product.prostart_period} ~ {product.proend_period}</p>
                         <p className="text-gray-300 text-sm">수량: {product.product_amount.toLocaleString()}</p>
                         <p className="text-gray-300 text-sm">공정 수: {productProcesses.length}개</p>
-                        {product.product_cncode && (
-                          <div className="mt-2 p-2 bg-blue-500/10 rounded border border-blue-500/20">
-                            <p className="text-blue-300 text-sm">CN 코드: <span className="font-medium">{product.product_cncode}</span></p>
-                            {product.goods_name && (
-                              <p className="text-gray-300 text-xs">품목명: {product.goods_name}</p>
-                            )}
-                            {product.aggrgoods_name && (
-                              <p className="text-gray-300 text-xs">제품 대분류: {product.aggrgoods_name}</p>
-                            )}
-                          </div>
-                        )}
+                                                 {product.cncode_total && (
+                           <div className="mt-2 p-2 bg-blue-500/10 rounded border border-blue-500/20">
+                             <p className="text-blue-300 text-sm">CN 코드: <span className="font-medium">{product.cncode_total}</span></p>
+                             {product.goods_name && (
+                               <p className="text-gray-300 text-xs">품목명: {product.goods_name}</p>
+                             )}
+                             {product.goods_engname && (
+                               <p className="text-gray-400 text-xs">품목영문명: {product.goods_engname}</p>
+                             )}
+                             {product.aggrgoods_name && (
+                               <p className="text-gray-300 text-xs">품목군명: {product.aggrgoods_name}</p>
+                             )}
+                             {product.aggrgoods_engname && (
+                               <p className="text-gray-400 text-xs">품목군영문명: {product.aggrgoods_engname}</p>
+                             )}
+                           </div>
+                         )}
                       </div>
 
                       {/* 공정 목록 */}
