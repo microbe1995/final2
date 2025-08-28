@@ -430,7 +430,7 @@ function ProcessManagerInner() {
 
     setIsCalculatingMatDir(true);
     try {
-      const response = await axiosClient.post('/api/v1/boundary/matdir/calculate', {
+      const response = await axiosClient.post(apiEndpoints.calculation.matdir.calculate, {
         mat_amount: matDirForm.mat_amount,
         mat_factor: matDirForm.mat_factor,
         oxyfactor: matDirForm.oxyfactor
@@ -490,7 +490,7 @@ function ProcessManagerInner() {
         
         console.log(`📤 저장 요청 ${index + 1}:`, requestData);
         
-        return axiosClient.post('/api/v1/boundary/matdir', requestData);
+        return axiosClient.post(apiEndpoints.calculation.matdir.create, requestData);
       });
 
       const responses = await Promise.all(savePromises);

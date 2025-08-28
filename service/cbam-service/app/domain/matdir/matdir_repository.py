@@ -17,14 +17,17 @@ class MatDirRepository:
     """원료직접배출량 데이터 접근 클래스"""
     
     def __init__(self):
-        # Railway PostgreSQL URL 직접 설정
-        self.database_url = "postgresql://postgres:eQGfytQNhXYAZxsJYlFhYagpJAgstrni@shortline.proxy.rlwy.net:46071/railway"
-        logger.info(f"✅ MatDir Repository 초기화: {self.database_url[:50]}...")
+        self.database_url = os.getenv('DATABASE_URL')
+        if not self.database_url:
+            logger.warning("DATABASE_URL 환경변수가 설정되지 않았습니다. 데이터베이스 기능이 제한됩니다.")
+            # 데이터베이스 URL이 없어도 서비스는 계속 실행
+            return
         
         try:
             self._initialize_database()
         except Exception as e:
             logger.error(f"데이터베이스 초기화 실패: {e}")
+            # 초기화 실패해도 서비스는 계속 실행
     
     def _check_database_connection(self) -> bool:
         """데이터베이스 연결 상태 확인"""
@@ -47,21 +50,26 @@ class MatDirRepository:
             return
             
         try:
+            import psycopg2
+            
             # 데이터베이스 연결 테스트
             conn = psycopg2.connect(self.database_url)
             conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
             conn.close()
             
-            logger.info("✅ MatDir 데이터베이스 연결 성공")
+            logger.info("✅ 데이터베이스 연결 성공")
             self._create_matdir_table()
             
         except Exception as e:
-            logger.error(f"❌ MatDir 데이터베이스 연결 실패: {str(e)}")
+            logger.error(f"❌ 데이터베이스 연결 실패: {str(e)}")
+            # 연결 실패해도 서비스는 계속 실행
             logger.warning("데이터베이스 연결 실패로 인해 일부 기능이 제한됩니다.")
     
     def _create_matdir_table(self):
         """matdir 테이블 생성"""
         try:
+            import psycopg2
+            
             conn = psycopg2.connect(self.database_url)
             conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
             
@@ -97,6 +105,7 @@ class MatDirRepository:
                     logger.info("✅ matdir 테이블 확인 완료")
                 
                 conn.commit()
+                logger.info("✅ 데이터베이스 테이블 확인 완료")
                 
         except Exception as e:
             logger.error(f"❌ matdir 테이블 확인/생성 실패: {str(e)}")
@@ -104,9 +113,80 @@ class MatDirRepository:
 
     async def create_matdir(self, matdir_data: Dict[str, Any]) -> Dict[str, Any]:
         """원료직접배출량 데이터 생성"""
-        if not self._check_database_connection():
-            raise Exception("데이터베이스 연결이 불가능합니다.")
-            
+        if not self.database_url:
+            raise Exception("데이터베이스가 연결되지 않았습니다.")
+        try:
+            return await self._create_matdir_db(matdir_data)
+        except Exception as e:
+            logger.error(f"❌ 원료직접배출량 데이터 생성 실패: {str(e)}")
+            raise
+
+    async def get_matdirs(self, skip: int = 0, limit: int = 100) -> List[Dict[str, Any]]:
+        """모든 원료직접배출량 데이터 조회"""
+        if not self.database_url:
+            raise Exception("데이터베이스가 연결되지 않았습니다.")
+        try:
+            return await self._get_matdirs_db(skip, limit)
+        except Exception as e:
+            logger.error(f"❌ 원료직접배출량 데이터 목록 조회 실패: {str(e)}")
+            raise
+
+    async def get_matdirs_by_process(self, process_id: int) -> List[Dict[str, Any]]:
+        """특정 공정의 원료직접배출량 데이터 조회"""
+        if not self.database_url:
+            raise Exception("데이터베이스가 연결되지 않았습니다.")
+        try:
+            return await self._get_matdirs_by_process_db(process_id)
+        except Exception as e:
+            logger.error(f"❌ 공정별 원료직접배출량 데이터 조회 실패: {str(e)}")
+            raise
+
+    async def get_matdir(self, matdir_id: int) -> Optional[Dict[str, Any]]:
+        """특정 원료직접배출량 데이터 조회"""
+        if not self.database_url:
+            raise Exception("데이터베이스가 연결되지 않았습니다.")
+        try:
+            return await self._get_matdir_db(matdir_id)
+        except Exception as e:
+            logger.error(f"❌ 원료직접배출량 데이터 조회 실패: {str(e)}")
+            raise
+
+    async def update_matdir(self, matdir_id: int, matdir_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        """원료직접배출량 데이터 수정"""
+        if not self.database_url:
+            raise Exception("데이터베이스가 연결되지 않았습니다.")
+        try:
+            return await self._update_matdir_db(matdir_id, matdir_data)
+        except Exception as e:
+            logger.error(f"❌ 원료직접배출량 데이터 수정 실패: {str(e)}")
+            raise
+
+    async def delete_matdir(self, matdir_id: int) -> bool:
+        """원료직접배출량 데이터 삭제"""
+        if not self.database_url:
+            raise Exception("데이터베이스가 연결되지 않았습니다.")
+        try:
+            return await self._delete_matdir_db(matdir_id)
+        except Exception as e:
+            logger.error(f"❌ 원료직접배출량 데이터 삭제 실패: {str(e)}")
+            raise
+
+    def calculate_matdir_emission(self, mat_amount: Decimal, mat_factor: Decimal, oxyfactor: Decimal = Decimal('1.0000')) -> Decimal:
+        """원료직접배출량 계산: matdir_em = mat_amount * mat_factor * oxyfactor"""
+        return mat_amount * mat_factor * oxyfactor
+
+    async def get_total_matdir_emission_by_process(self, process_id: int) -> Decimal:
+        """특정 공정의 총 원료직접배출량 계산"""
+        matdirs = await self.get_matdirs_by_process(process_id)
+        total_emission = sum(Decimal(str(matdir['matdir_em'])) for matdir in matdirs if matdir['matdir_em'])
+        return total_emission
+
+    # ============================================================================
+    # 🔧 실제 DB 작업 메서드들
+    # ============================================================================
+
+    async def _create_matdir_db(self, matdir_data: Dict[str, Any]) -> Dict[str, Any]:
+        """원료직접배출량 데이터 생성 (DB 작업)"""
         try:
             conn = psycopg2.connect(self.database_url)
             conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
@@ -136,11 +216,8 @@ class MatDirRepository:
             if 'conn' in locals():
                 conn.close()
 
-    async def get_matdirs(self, skip: int = 0, limit: int = 100) -> List[Dict[str, Any]]:
-        """모든 원료직접배출량 데이터 조회"""
-        if not self._check_database_connection():
-            raise Exception("데이터베이스 연결이 불가능합니다.")
-            
+    async def _get_matdirs_db(self, skip: int = 0, limit: int = 100) -> List[Dict[str, Any]]:
+        """모든 원료직접배출량 데이터 조회 (DB 작업)"""
         try:
             conn = psycopg2.connect(self.database_url)
             conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
@@ -164,11 +241,8 @@ class MatDirRepository:
             if 'conn' in locals():
                 conn.close()
 
-    async def get_matdirs_by_process(self, process_id: int) -> List[Dict[str, Any]]:
-        """특정 공정의 원료직접배출량 데이터 조회"""
-        if not self._check_database_connection():
-            raise Exception("데이터베이스 연결이 불가능합니다.")
-            
+    async def _get_matdirs_by_process_db(self, process_id: int) -> List[Dict[str, Any]]:
+        """특정 공정의 원료직접배출량 데이터 조회 (DB 작업)"""
         try:
             conn = psycopg2.connect(self.database_url)
             conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
@@ -192,11 +266,8 @@ class MatDirRepository:
             if 'conn' in locals():
                 conn.close()
 
-    async def get_matdir(self, matdir_id: int) -> Optional[Dict[str, Any]]:
-        """특정 원료직접배출량 데이터 조회"""
-        if not self._check_database_connection():
-            raise Exception("데이터베이스 연결이 불가능합니다.")
-            
+    async def _get_matdir_db(self, matdir_id: int) -> Optional[Dict[str, Any]]:
+        """특정 원료직접배출량 데이터 조회 (DB 작업)"""
         try:
             conn = psycopg2.connect(self.database_url)
             conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
@@ -215,11 +286,8 @@ class MatDirRepository:
             if 'conn' in locals():
                 conn.close()
 
-    async def update_matdir(self, matdir_id: int, matdir_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-        """원료직접배출량 데이터 수정"""
-        if not self._check_database_connection():
-            raise Exception("데이터베이스 연결이 불가능합니다.")
-            
+    async def _update_matdir_db(self, matdir_id: int, matdir_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        """원료직접배출량 데이터 수정 (DB 작업)"""
         try:
             conn = psycopg2.connect(self.database_url)
             conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
@@ -249,11 +317,8 @@ class MatDirRepository:
             if 'conn' in locals():
                 conn.close()
 
-    async def delete_matdir(self, matdir_id: int) -> bool:
-        """원료직접배출량 데이터 삭제"""
-        if not self._check_database_connection():
-            raise Exception("데이터베이스 연결이 불가능합니다.")
-            
+    async def _delete_matdir_db(self, matdir_id: int) -> bool:
+        """원료직접배출량 데이터 삭제 (DB 작업)"""
         try:
             conn = psycopg2.connect(self.database_url)
             conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
@@ -271,13 +336,3 @@ class MatDirRepository:
         finally:
             if 'conn' in locals():
                 conn.close()
-
-    def calculate_matdir_emission(self, mat_amount: Decimal, mat_factor: Decimal, oxyfactor: Decimal = Decimal('1.0000')) -> Decimal:
-        """원료직접배출량 계산: matdir_em = mat_amount * mat_factor * oxyfactor"""
-        return mat_amount * mat_factor * oxyfactor
-
-    async def get_total_matdir_emission_by_process(self, process_id: int) -> Decimal:
-        """특정 공정의 총 원료직접배출량 계산"""
-        matdirs = await self.get_matdirs_by_process(process_id)
-        total_emission = sum(Decimal(str(matdir['matdir_em'])) for matdir in matdirs if matdir['matdir_em'])
-        return total_emission
