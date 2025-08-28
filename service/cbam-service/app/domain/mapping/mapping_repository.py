@@ -110,17 +110,15 @@ class HSCNMappingRepository:
     # 🔍 HS 코드 조회 기능
     # ============================================================================
     
-    async def lookup_by_hs_code(self, hs_code_10: str) -> List[HSCNMapping]:
-        """10자리 HS 코드로 CN 코드 조회 (앞 6자리 추출)"""
+    async def lookup_by_hs_code(self, hs_code: str) -> List[HSCNMapping]:
+        """HS 코드로 CN 코드 조회"""
         try:
-            # HS 코드 앞 6자리 추출
-            hs_code_6 = hs_code_10[:6]
-            
+            # 입력된 HS 코드를 그대로 사용하여 검색
             mappings = self.db.query(HSCNMapping).filter(
-                HSCNMapping.hscode == hs_code_6
+                HSCNMapping.hscode == hs_code
             ).all()
             
-            logger.info(f"🔍 HS 코드 조회: {hs_code_10} -> {hs_code_6}, 결과: {len(mappings)}개")
+            logger.info(f"🔍 HS 코드 조회: {hs_code}, 결과: {len(mappings)}개")
             return mappings
             
         except SQLAlchemyError as e:

@@ -151,9 +151,8 @@ export default function InstallProductsPage() {
 
     setIsSearching(true);
     try {
-      // 10자리로 패딩하여 검색 (앞 6자리만 사용)
-      const paddedCode = searchTerm.padEnd(10, '0');
-      const results = await lookupByHSCode(paddedCode);
+      // 입력된 HS 코드를 그대로 사용 (패딩하지 않음)
+      const results = await lookupByHSCode(searchTerm);
       setSearchResults(results);
     } catch (error) {
       console.error('HS 코드 검색 실패:', error);
@@ -177,8 +176,8 @@ export default function InstallProductsPage() {
   const handleSelectCNCodeFromModal = (result: HSCNMappingResponse) => {
     setProductForm(prev => ({
       ...prev,
-      product_hscode: hsCodeSearchInput,
-      product_cncode: result.cncode_total,
+      product_hscode: hsCodeSearchInput, // HS 코드는 내부적으로 저장
+      product_cncode: result.cncode_total, // CN 코드가 입력 필드에 표시됨
       goods_name: result.goods_name || '',
       aggrgoods_name: result.aggregoods_name || ''
     }));
@@ -219,20 +218,20 @@ export default function InstallProductsPage() {
         type: 'success'
       });
 
-      // 폼 초기화 및 숨기기
-      setProductForm({
-        product_name: '',
-        product_category: '단순제품',
-        prostart_period: '',
-        proend_period: '',
-        product_amount: 0,
-        product_hscode: '', // HS 코드 초기화 추가
-        product_cncode: '',
-        goods_name: '',
-        aggrgoods_name: '',
-        product_sell: 0,
-        product_eusell: 0
-      });
+             // 폼 초기화 및 숨기기
+       setProductForm({
+         product_name: '',
+         product_category: '단순제품',
+         prostart_period: '',
+         proend_period: '',
+         product_amount: 0,
+         product_hscode: '', // HS 코드 초기화
+         product_cncode: '', // CN 코드 초기화
+         goods_name: '',
+         aggrgoods_name: '',
+         product_sell: 0,
+         product_eusell: 0
+       });
       setShowProductForm(false);
 
       // 목록 새로고침
@@ -484,27 +483,27 @@ export default function InstallProductsPage() {
                   </select>
                 </div>
 
-                {/* HS 코드 입력 필드 */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">HS 코드</label>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={productForm.product_hscode}
-                      onChange={(e) => handleProductInputChange('product_hscode', e.target.value)}
-                      className="flex-1 px-3 py-2 bg-white/10 border border-white/20 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="HS 코드를 입력하세요"
-                      readOnly
-                    />
-                    <button
-                      type="button"
-                      onClick={openHSCodeModal}
-                      className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md transition-colors duration-200"
-                    >
-                      HS CODE 검색
-                    </button>
-                  </div>
-                </div>
+                                 {/* CN 코드 입력 필드 */}
+                 <div>
+                   <label className="block text-sm font-medium text-gray-300 mb-2">CN 코드</label>
+                   <div className="flex gap-2">
+                     <input
+                       type="text"
+                       value={productForm.product_cncode}
+                       onChange={(e) => handleProductInputChange('product_cncode', e.target.value)}
+                       className="flex-1 px-3 py-2 bg-white/10 border border-white/20 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                       placeholder=""
+                       readOnly
+                     />
+                     <button
+                       type="button"
+                       onClick={openHSCodeModal}
+                       className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md transition-colors duration-200"
+                     >
+                       HS CODE 검색
+                     </button>
+                   </div>
+                 </div>
 
                 {/* CN 코드 및 품목 정보 표시 */}
                 {productForm.product_cncode && (

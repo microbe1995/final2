@@ -32,26 +32,26 @@ def get_mapping_service(db: Session = Depends(get_db)) -> HSCNMappingService:
 # 🔍 HS 코드 조회 엔드포인트 (메인 기능)
 # ============================================================================
 
-@router.get("/cncode/lookup/{hs_code_10}", response_model=List[HSCNMappingResponse])
+@router.get("/cncode/lookup/{hs_code}", response_model=List[HSCNMappingResponse])
 async def lookup_cn_code_by_hs_code(
-    hs_code_10: str,
+    hs_code: str,
     mapping_service: HSCNMappingService = Depends(get_mapping_service)
 ):
     """
-    10자리 HS 코드로 CN 코드 조회
+    HS 코드로 CN 코드 조회
     
-    - **hs_code_10**: 10자리 HS 코드 (예: 7208510000)
+    - **hs_code**: HS 코드 (예: 72, 7208, 720851)
     - **응답**: CN 코드 매핑 정보 목록
     """
     try:
-        logger.info(f"🔍 HS 코드 조회 요청: {hs_code_10}")
+        logger.info(f"🔍 HS 코드 조회 요청: {hs_code}")
         
-        result = await mapping_service.lookup_by_hs_code(hs_code_10)
+        result = await mapping_service.lookup_by_hs_code(hs_code)
         
         if not result.success:
             raise HTTPException(status_code=400, detail=result.message)
         
-        logger.info(f"✅ HS 코드 조회 성공: {hs_code_10} -> {result.count}개 결과")
+        logger.info(f"✅ HS 코드 조회 성공: {hs_code} -> {result.count}개 결과")
         return result.data
         
     except HTTPException:
