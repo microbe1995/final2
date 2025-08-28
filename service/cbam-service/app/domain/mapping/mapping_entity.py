@@ -2,8 +2,7 @@
 # 🏗️ Mapping Entity - HS-CN 매핑 데이터베이스 모델
 # ============================================================================
 
-from sqlalchemy import Column, Integer, String, Text, DateTime, Index
-from sqlalchemy.sql import func
+from sqlalchemy import Column, Integer, String, Text, Index
 from sqlalchemy.ext.declarative import declarative_base
 
 Base = declarative_base()
@@ -22,15 +21,10 @@ class HSCNMapping(Base):
     goods_name = Column(Text, nullable=True, comment="상세 품명(한글)")
     goods_engname = Column(Text, nullable=True, comment="상세 품명(영문)")
     
-    # 타임스탬프
-    created_at = Column(DateTime(timezone=True), server_default=func.now(), comment="생성일")
-    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), comment="수정일")
-    
     # 인덱스 정의
     __table_args__ = (
         Index('idx_hs_cn_mapping_hscode', 'hscode'),
         Index('idx_hs_cn_mapping_cncode', 'cncode_total'),
-        Index('idx_hs_cn_mapping_created_at', 'created_at'),
         {'comment': 'HS 코드와 CN 코드 매핑 테이블'}
     )
     
@@ -46,9 +40,7 @@ class HSCNMapping(Base):
             'aggregoods_engname': self.aggregoods_engname,
             'cncode_total': self.cncode_total,
             'goods_name': self.goods_name,
-            'goods_engname': self.goods_engname,
-            'created_at': self.created_at.isoformat() if self.created_at else None,
-            'updated_at': self.updated_at.isoformat() if self.updated_at else None
+            'goods_engname': self.goods_engname
         }
     
     @classmethod

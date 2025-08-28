@@ -185,8 +185,7 @@ class HSCNMappingService:
             return MappingStatsResponse(
                 total_mappings=0,
                 unique_hscodes=0,
-                unique_cncodes=0,
-                last_updated=None
+                unique_cncodes=0
             )
     
     # ============================================================================

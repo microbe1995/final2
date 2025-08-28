@@ -178,14 +178,11 @@ class HSCNMappingRepository:
             unique_hscodes = self.db.query(func.count(func.distinct(HSCNMapping.hscode))).scalar()
             unique_cncodes = self.db.query(func.count(func.distinct(HSCNMapping.cncode_total))).scalar()
             
-            # 마지막 업데이트 시간
-            last_updated = self.db.query(func.max(HSCNMapping.updated_at)).scalar()
-            
             return {
                 'total_mappings': total_mappings or 0,
                 'unique_hscodes': unique_hscodes or 0,
                 'unique_cncodes': unique_cncodes or 0,
-                'last_updated': last_updated
+                'last_updated': None
             }
             
         except SQLAlchemyError as e:
@@ -193,8 +190,7 @@ class HSCNMappingRepository:
             return {
                 'total_mappings': 0,
                 'unique_hscodes': 0,
-                'unique_cncodes': 0,
-                'last_updated': None
+                'unique_cncodes': 0
             }
     
     # ============================================================================

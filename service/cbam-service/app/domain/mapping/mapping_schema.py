@@ -4,7 +4,6 @@
 
 from pydantic import BaseModel, Field
 from typing import Optional, List
-from datetime import datetime
 
 # ============================================================================
 # 🏭 HS-CN 매핑 관련 스키마
@@ -45,8 +44,6 @@ class HSCNMappingFullResponse(BaseModel):
     cncode_total: str = Field(..., description="CN 코드 (8자리)")
     goods_name: Optional[str] = Field(None, description="품목명")
     goods_engname: Optional[str] = Field(None, description="품목영문명")
-    created_at: Optional[datetime] = Field(None, description="생성일")
-    updated_at: Optional[datetime] = Field(None, description="수정일")
 
 # ============================================================================
 # 🔍 조회 관련 스키마
@@ -72,7 +69,6 @@ class MappingStatsResponse(BaseModel):
     total_mappings: int = Field(..., description="전체 매핑 수")
     unique_hscodes: int = Field(..., description="고유 HS 코드 수")
     unique_cncodes: int = Field(..., description="고유 CN 코드 수")
-    last_updated: Optional[datetime] = Field(None, description="마지막 업데이트 시간")
 
 # ============================================================================
 # 📦 Batch 처리 관련 스키마
