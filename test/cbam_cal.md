@@ -10,6 +10,13 @@ cbam 제품당 내재배출량 산정 로직을 구상할꺼야
 3. postgresql://postgres:eQGfytQNhXYAZxsJYlFhYagpJAgstrni@shortline.proxy.rlwy.net:46071/railway
 이건 railway 상 DB 주소야
 
+Calculation 도메인 (정상 작동):
+CalculationRepository는 직접 psycopg2로 PostgreSQL 연결
+환경변수 DATABASE_URL을 직접 사용
+비동기(async/await) 방식
+
+위 방식을 참고해서 프론트에서 입력하면 게이트웨이를 거쳐 서비스 그리고 db 까지 데이터가 흐르고 db 에 저장되도록 해줘
+
 4. 아래와 같이 CBAM 계산에 대한 로직과  각각의 지칭하는 명을 미리 숙지해
 
 4.1 재품고유내재배출량(attr_em) = 직접귀속배출량(attrdir_em) + 간접귀속배출량(attrindir_em) 로 이루어 진다

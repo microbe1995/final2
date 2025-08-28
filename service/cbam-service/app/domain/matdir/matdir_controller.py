@@ -1,7 +1,12 @@
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
+# ============================================================================
+# 🎯 MatDir Controller - 원료직접배출량 API 엔드포인트
+# ============================================================================
+
+from fastapi import APIRouter, HTTPException
+import logging
 from typing import List
-from app.common.database_base import get_database_session
+import time
+
 from .matdir_service import MatDirService
 from .matdir_schema import (
     MatDirCreateRequest, 
@@ -11,158 +16,128 @@ from .matdir_schema import (
     MatDirCalculationResponse
 )
 
-router = APIRouter(prefix="", tags=["원료직접배출량"])
+logger = logging.getLogger(__name__)
 
-def get_matdir_service(db: Session = Depends(get_database_session)) -> MatDirService:
-    return MatDirService(db)
+router = APIRouter(prefix="", tags=["matdir_em"])
 
-@router.post("/matdir", response_model=MatDirResponse, status_code=status.HTTP_201_CREATED)
-async def create_matdir(
-    matdir_data: MatDirCreateRequest,
-    service: MatDirService = Depends(get_matdir_service)
-):
+# 서비스 인스턴스 생성
+matdir_service = MatDirService()
+
+# ============================================================================
+# 📦 MatDir 관련 엔드포인트
+# ============================================================================
+
+@router.post("/matdir", response_model=MatDirResponse, status_code=201)
+async def create_matdir(matdir_data: MatDirCreateRequest):
     """원료직접배출량 데이터 생성"""
     try:
-        import logging
-        logger = logging.getLogger(__name__)
         logger.info(f"📝 원료직접배출량 생성 요청: {matdir_data.dict()}")
-        
-        result = service.create_matdir(matdir_data)
+        result = await matdir_service.create_matdir(matdir_data)
         logger.info(f"✅ 원료직접배출량 생성 성공: ID {result.id}")
         return result
     except Exception as e:
-        import logging
-        logger = logging.getLogger(__name__)
         logger.error(f"❌ 원료직접배출량 생성 실패: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"원료직접배출량 생성 실패: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"원료직접배출량 생성 중 오류가 발생했습니다: {str(e)}")
 
 @router.get("/matdir", response_model=List[MatDirResponse])
-async def get_matdirs(
-    skip: int = 0,
-    limit: int = 100,
-    service: MatDirService = Depends(get_matdir_service)
-):
+async def get_matdirs(skip: int = 0, limit: int = 100):
     """모든 원료직접배출량 데이터 조회"""
     try:
-        return service.get_matdirs(skip, limit)
+        logger.info("📋 원료직접배출량 목록 조회 요청")
+        matdirs = await matdir_service.get_matdirs(skip, limit)
+        logger.info(f"✅ 원료직접배출량 목록 조회 성공: {len(matdirs)}개")
+        return matdirs
     except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"원료직접배출량 조회 실패: {str(e)}"
-        )
+        logger.error(f"❌ 원료직접배출량 목록 조회 실패: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"원료직접배출량 목록 조회 중 오류가 발생했습니다: {str(e)}")
 
 @router.get("/matdir/process/{process_id}", response_model=List[MatDirResponse])
-async def get_matdirs_by_process(
-    process_id: int,
-    service: MatDirService = Depends(get_matdir_service)
-):
+async def get_matdirs_by_process(process_id: int):
     """특정 공정의 원료직접배출량 데이터 조회"""
     try:
-        return service.get_matdirs_by_process(process_id)
+        logger.info(f"📋 공정별 원료직접배출량 조회 요청: Process ID {process_id}")
+        matdirs = await matdir_service.get_matdirs_by_process(process_id)
+        logger.info(f"✅ 공정별 원료직접배출량 조회 성공: {len(matdirs)}개")
+        return matdirs
     except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"공정별 원료직접배출량 조회 실패: {str(e)}"
-        )
+        logger.error(f"❌ 공정별 원료직접배출량 조회 실패: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"공정별 원료직접배출량 조회 중 오류가 발생했습니다: {str(e)}")
 
 @router.get("/matdir/{matdir_id}", response_model=MatDirResponse)
-async def get_matdir(
-    matdir_id: int,
-    service: MatDirService = Depends(get_matdir_service)
-):
+async def get_matdir(matdir_id: int):
     """특정 원료직접배출량 데이터 조회"""
     try:
-        result = service.get_matdir(matdir_id)
-        if not result:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="원료직접배출량 데이터를 찾을 수 없습니다."
-            )
-        return result
+        logger.info(f"📋 원료직접배출량 조회 요청: ID {matdir_id}")
+        matdir = await matdir_service.get_matdir(matdir_id)
+        if not matdir:
+            raise HTTPException(status_code=404, detail="원료직접배출량 데이터를 찾을 수 없습니다")
+        
+        logger.info(f"✅ 원료직접배출량 조회 성공: ID {matdir_id}")
+        return matdir
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"원료직접배출량 조회 실패: {str(e)}"
-        )
+        logger.error(f"❌ 원료직접배출량 조회 실패: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"원료직접배출량 조회 중 오류가 발생했습니다: {str(e)}")
 
 @router.put("/matdir/{matdir_id}", response_model=MatDirResponse)
-async def update_matdir(
-    matdir_id: int,
-    matdir_data: MatDirUpdateRequest,
-    service: MatDirService = Depends(get_matdir_service)
-):
+async def update_matdir(matdir_id: int, matdir_data: MatDirUpdateRequest):
     """원료직접배출량 데이터 수정"""
     try:
-        result = service.update_matdir(matdir_id, matdir_data)
+        logger.info(f"📝 원료직접배출량 수정 요청: ID {matdir_id}")
+        result = await matdir_service.update_matdir(matdir_id, matdir_data)
         if not result:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="원료직접배출량 데이터를 찾을 수 없습니다."
-            )
+            raise HTTPException(status_code=404, detail="원료직접배출량 데이터를 찾을 수 없습니다")
+        
+        logger.info(f"✅ 원료직접배출량 수정 성공: ID {matdir_id}")
         return result
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"원료직접배출량 수정 실패: {str(e)}"
-        )
+        logger.error(f"❌ 원료직접배출량 수정 실패: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"원료직접배출량 수정 중 오류가 발생했습니다: {str(e)}")
 
-@router.delete("/matdir/{matdir_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_matdir(
-    matdir_id: int,
-    service: MatDirService = Depends(get_matdir_service)
-):
+@router.delete("/matdir/{matdir_id}")
+async def delete_matdir(matdir_id: int):
     """원료직접배출량 데이터 삭제"""
     try:
-        success = service.delete_matdir(matdir_id)
+        logger.info(f"🗑️ 원료직접배출량 삭제 요청: ID {matdir_id}")
+        success = await matdir_service.delete_matdir(matdir_id)
         if not success:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="원료직접배출량 데이터를 찾을 수 없습니다."
-            )
+            raise HTTPException(status_code=404, detail="원료직접배출량 데이터를 찾을 수 없습니다")
+        
+        logger.info(f"✅ 원료직접배출량 삭제 성공: ID {matdir_id}")
+        return {"message": "원료직접배출량 데이터가 성공적으로 삭제되었습니다"}
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"원료직접배출량 삭제 실패: {str(e)}"
-        )
+        logger.error(f"❌ 원료직접배출량 삭제 실패: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"원료직접배출량 삭제 중 오류가 발생했습니다: {str(e)}")
+
+# ============================================================================
+# 🧮 계산 관련 엔드포인트
+# ============================================================================
 
 @router.post("/matdir/calculate", response_model=MatDirCalculationResponse)
-async def calculate_matdir_emission(
-    calculation_data: MatDirCalculationRequest,
-    service: MatDirService = Depends(get_matdir_service)
-):
-    """원료직접배출량 계산"""
+async def calculate_matdir_emission(calculation_data: MatDirCalculationRequest):
+    """원료직접배출량 계산 (공식 포함)"""
     try:
-        return service.calculate_matdir_emission_with_formula(calculation_data)
+        logger.info(f"🧮 원료직접배출량 계산 요청: {calculation_data.dict()}")
+        result = matdir_service.calculate_matdir_emission_with_formula(calculation_data)
+        logger.info(f"✅ 원료직접배출량 계산 성공: {result.matdir_em}")
+        return result
     except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"원료직접배출량 계산 실패: {str(e)}"
-        )
+        logger.error(f"❌ 원료직접배출량 계산 실패: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"원료직접배출량 계산 중 오류가 발생했습니다: {str(e)}")
 
 @router.get("/matdir/process/{process_id}/total")
-async def get_total_matdir_emission_by_process(
-    process_id: int,
-    service: MatDirService = Depends(get_matdir_service)
-):
-    """특정 공정의 총 원료직접배출량 조회"""
+async def get_total_matdir_emission_by_process(process_id: int):
+    """특정 공정의 총 원료직접배출량 계산"""
     try:
-        total_emission = service.get_total_matdir_emission_by_process(process_id)
-        return {
-            "process_id": process_id,
-            "total_matdir_emission": float(total_emission),
-            "unit": "tCO2e"
-        }
+        logger.info(f"🧮 공정별 총 원료직접배출량 계산 요청: Process ID {process_id}")
+        total_emission = await matdir_service.get_total_matdir_emission_by_process(process_id)
+        logger.info(f"✅ 공정별 총 원료직접배출량 계산 성공: {total_emission}")
+        return {"process_id": process_id, "total_matdir_emission": float(total_emission)}
     except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"총 원료직접배출량 조회 실패: {str(e)}"
-        )
+        logger.error(f"❌ 공정별 총 원료직접배출량 계산 실패: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"공정별 총 원료직접배출량 계산 중 오류가 발생했습니다: {str(e)}")
