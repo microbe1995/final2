@@ -136,6 +136,7 @@ class Process(Base):
     
     # 관계 설정
     product_processes = relationship("ProductProcess", back_populates="process")
+    matdirs = relationship("MatDir", back_populates="process", cascade="all, delete-orphan")
     
     # 다대다 관계를 위한 편의 메서드
     @property

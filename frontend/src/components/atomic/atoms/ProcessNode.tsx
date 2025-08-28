@@ -156,6 +156,23 @@ function ProcessNode({
             {/* product_id는 다대다 관계에서 더 이상 사용되지 않음 */}
           </div>
         )}
+
+        {/* 원료직접배출량 버튼 */}
+        {data.processData && finalVariant === 'process' && !isExternalProcess && (
+          <div className='mt-2 pt-2 border-t border-gray-300'>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                if (data.onMatDirClick) {
+                  data.onMatDirClick(data.processData);
+                }
+              }}
+              className='w-full px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded transition-colors'
+            >
+              📊 원료직접배출량
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

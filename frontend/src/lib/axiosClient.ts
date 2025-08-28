@@ -267,6 +267,16 @@ export const apiEndpoints = {
     productionEmission: {
         create: '/api/v1/boundary/production-emission',
         list: '/api/v1/boundary/production-emission'
+    },
+    matdir: {
+        create: '/api/v1/boundary/matdir',
+        list: '/api/v1/boundary/matdir',
+        get: (id: number) => `/api/v1/boundary/matdir/${id}`,
+        update: (id: number) => `/api/v1/boundary/matdir/${id}`,
+        delete: (id: number) => `/api/v1/boundary/matdir/${id}`,
+        byProcess: (process_id: number) => `/api/v1/boundary/matdir/process/${process_id}`,
+        calculate: '/api/v1/boundary/matdir/calculate',
+        totalByProcess: (process_id: number) => `/api/v1/boundary/matdir/process/${process_id}/total`
     }
 },
   // Data Upload (Gateway를 통해)

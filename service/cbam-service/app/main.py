@@ -17,13 +17,7 @@ from dotenv import load_dotenv
 # CBAM 도메인 라우터
 from app.domain.calculation.calculation_controller import router as calculation_router
 from app.domain.mapping.mapping_controller import router as mapping_router
-
-# ReactFlow 기반 라우터들 (현재 CBAM 기능에서는 사용하지 않음)
-# from app.domain.node.node_controller import node_router
-# from app.domain.flow.flow_controller import flow_router
-# from app.domain.edge.edge_controller import edge_router
-# from app.domain.handle.handle_controller import handle_router
-# from app.domain.Viewport.Viewport_controller import viewport_router
+from app.domain.matdir.matdir_controller import router as matdir_router
 
 # ============================================================================
 # 🔧 설정 및 초기화
@@ -200,16 +194,10 @@ async def log_requests(request: Request, call_next):
 # 🎯 라우터 등록
 # ============================================================================
 
-# ReactFlow 기반 라우터들 등록 (현재 CBAM 기능에서는 사용하지 않음)
-# app.include_router(node_router, prefix="/api")
-# app.include_router(flow_router, prefix="/api")
-# app.include_router(edge_router, prefix="/api")
-# app.include_router(handle_router, prefix="/api")
-# app.include_router(viewport_router, prefix="/api")
-
 # CBAM 도메인 라우터들 등록
 app.include_router(calculation_router, prefix="/api")
 app.include_router(mapping_router, prefix="/api")
+app.include_router(matdir_router, prefix="/api")
 
 # ============================================================================
 # 🏥 헬스체크 엔드포인트
@@ -224,14 +212,6 @@ async def health_check():
         "version": APP_VERSION,
         "timestamp": time.time()
     }
-
-# ============================================================================
-# 📦 제품 데이터 엔드포인트는 calculation_controller.py에서 관리
-# ============================================================================
-
-# 제품 관련 엔드포인트는 /api/product로 접근 가능
-# calculation_router가 /api prefix로 등록되어 있음
-
 # ============================================================================
 # 🚨 예외 처리 핸들러
 # ============================================================================
