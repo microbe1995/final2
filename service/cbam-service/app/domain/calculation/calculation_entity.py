@@ -136,7 +136,6 @@ class Process(Base):
     
     # 관계 설정
     product_processes = relationship("ProductProcess", back_populates="process")
-    process_inputs = relationship("ProcessInput", back_populates="process")
     
     # 다대다 관계를 위한 편의 메서드
     @property
@@ -155,45 +154,7 @@ class Process(Base):
             "updated_at": self.updated_at.isoformat() if self.updated_at else None
         }
 
-# ============================================================================
-# 📥 ProcessInput 엔티티 (프로세스 입력)
-# ============================================================================
 
-class ProcessInput(Base):
-    """프로세스 입력 엔티티"""
-    
-    __tablename__ = "process_input"
-    
-    id = Column(Integer, primary_key=True, index=True)
-    process_id = Column(Integer, ForeignKey("process.id"), nullable=False, index=True)  # 프로세스 ID
-    input_type = Column(Text, nullable=False)  # 입력 타입 (material, fuel, electricity)
-    input_name = Column(Text, nullable=False)  # 입력명
-    input_amount = Column(Numeric(15, 6), nullable=False, default=0)  # 수량
-    factor = Column(Numeric(15, 6))  # 배출계수
-    oxy_factor = Column(Numeric(15, 6))  # 산화계수
-    direm = Column(Numeric(15, 6))  # 직접배출량
-    indirem = Column(Numeric(15, 6))  # 간접배출량
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
-    # 관계 설정
-    process = relationship("Process", back_populates="process_inputs")
-    
-    def to_dict(self) -> Dict[str, Any]:
-        """엔티티를 딕셔너리로 변환"""
-        return {
-            "id": self.id,
-            "process_id": self.process_id,
-            "input_type": self.input_type,
-            "input_name": self.input_name,
-            "input_amount": float(self.input_amount) if self.input_amount else 0.0,
-            "factor": float(self.factor) if self.factor else None,
-            "oxy_factor": float(self.oxy_factor) if self.oxy_factor else None,
-            "direm": float(self.direm) if self.direm else None,
-            "indirem": float(self.indirem) if self.indirem else None,
-            "created_at": self.created_at.isoformat() if self.created_at else None,
-            "updated_at": self.updated_at.isoformat() if self.updated_at else None
-        }
 
 # ============================================================================
 # 🔗 Edge 엔티티 (엣지)

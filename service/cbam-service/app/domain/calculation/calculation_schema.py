@@ -143,40 +143,7 @@ class ProcessUpdateRequest(BaseModel):
     start_period: Optional[date] = Field(None, description="시작일")
     end_period: Optional[date] = Field(None, description="종료일")
 
-# ============================================================================
-# 📥 ProcessInput 관련 스키마
-# ============================================================================
 
-class ProcessInputCreateRequest(BaseModel):
-    """프로세스 입력 생성 요청"""
-    process_id: int = Field(..., description="프로세스 ID")
-    input_type: str = Field(..., description="입력 타입 (material, fuel, electricity)")
-    input_name: str = Field(..., description="투입물명")
-    amount: float = Field(..., description="수량")
-    factor: Optional[float] = Field(None, description="배출계수")
-    oxy_factor: Optional[float] = Field(None, description="산화계수")
-
-class ProcessInputResponse(BaseModel):
-    """프로세스 입력 응답"""
-    id: int = Field(..., description="프로세스 입력 ID")
-    process_id: int = Field(..., description="프로세스 ID")
-    input_type: str = Field(..., description="입력 타입")
-    input_name: str = Field(..., description="투입물명")
-    input_amount: float = Field(..., description="투입물량")
-    factor: Optional[float] = Field(None, description="배출계수")
-    oxy_factor: Optional[float] = Field(None, description="산화계수")
-    direm: Optional[float] = Field(None, description="직접배출량")
-    indirem: Optional[float] = Field(None, description="간접배출량")
-    created_at: Optional[datetime] = Field(None, description="생성일")
-    updated_at: Optional[datetime] = Field(None, description="수정일")
-
-class ProcessInputUpdateRequest(BaseModel):
-    """공정 입력 수정 요청"""
-    input_type: Optional[str] = Field(None, description="입력 타입")
-    input_name: Optional[str] = Field(None, description="입력명")
-    input_amount: Optional[float] = Field(None, description="투입물량")
-    factor: Optional[float] = Field(None, description="배출계수")
-    oxy_factor: Optional[float] = Field(None, description="산화계수")
 
 # ============================================================================
 # 🧮 배출량 계산 관련 스키마

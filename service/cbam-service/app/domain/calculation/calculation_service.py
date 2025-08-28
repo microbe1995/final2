@@ -318,164 +318,24 @@ class CalculationService:
             logger.error(f"Error deleting product-process relationship: {e}")
             raise e
 
-    # ============================================================================
-    # 📥 ProcessInput 관련 메서드
-    # ============================================================================
 
-    async def create_process_input(self, request: ProcessInputCreateRequest) -> ProcessInputResponse:
-        """프로세스 입력 생성"""
-        try:
-            process_input_data = {
-                "process_id": request.process_id,
-                "input_type": request.input_type,
-                "input_name": request.input_name,
-                "amount": request.amount,
-                "factor": request.factor,
-                "oxy_factor": request.oxy_factor
-            }
-            saved_process_input = await self.calc_repository.create_process_input(process_input_data)
-            if saved_process_input:
-                return ProcessInputResponse(**saved_process_input)
-            else:
-                raise Exception("프로세스 입력 저장에 실패했습니다.")
-        except Exception as e:
-            logger.error(f"Error creating process input: {e}")
-            raise e
-
-    async def get_process_inputs(self) -> List[ProcessInputResponse]:
-        """프로세스 입력 목록 조회"""
-        try:
-            process_inputs = await self.calc_repository.get_process_inputs()
-            return [ProcessInputResponse(**process_input) for process_input in process_inputs]
-        except Exception as e:
-            logger.error(f"Error getting process inputs: {e}")
-            raise e
-
-    async def get_process_inputs_by_process(self, process_id: int) -> List[ProcessInputResponse]:
-        """특정 프로세스의 입력 목록 조회"""
-        try:
-            process_inputs = await self.calc_repository.get_process_inputs_by_process(process_id)
-            return [ProcessInputResponse(**process_input) for process_input in process_inputs]
-        except Exception as e:
-            logger.error(f"Error getting process inputs by process: {e}")
-            raise e
-
-    async def get_process_input(self, process_input_id: int) -> Optional[ProcessInputResponse]:
-        """특정 프로세스 입력 조회"""
-        try:
-            process_input = await self.calc_repository.get_process_input(process_input_id)
-            if process_input:
-                return ProcessInputResponse(**process_input)
-            return None
-        except Exception as e:
-            logger.error(f"Error getting process input {process_input_id}: {e}")
-            raise e
-
-    async def update_process_input(self, process_input_id: int, request: ProcessInputUpdateRequest) -> Optional[ProcessInputResponse]:
-        """프로세스 입력 수정"""
-        try:
-            update_data = {}
-            if request.input_type is not None:
-                update_data["input_type"] = request.input_type
-            if request.input_name is not None:
-                update_data["input_name"] = request.input_name
-            if request.amount is not None:
-                update_data["amount"] = request.amount
-            if request.factor is not None:
-                update_data["factor"] = request.factor
-            if request.oxy_factor is not None:
-                update_data["oxy_factor"] = request.oxy_factor
-            
-            if not update_data:
-                raise Exception("업데이트할 데이터가 없습니다.")
-            
-            updated_process_input = await self.calc_repository.update_process_input(process_input_id, update_data)
-            if updated_process_input:
-                return ProcessInputResponse(**updated_process_input)
-            return None
-        except Exception as e:
-            logger.error(f"Error updating process input {process_input_id}: {e}")
-            raise e
-
-    async def delete_process_input(self, process_input_id: int) -> bool:
-        """프로세스 입력 삭제"""
-        try:
-            success = await self.calc_repository.delete_process_input(process_input_id)
-            return success
-        except Exception as e:
-            logger.error(f"Error deleting process input {process_input_id}: {e}")
-            raise e
 
 # ============================================================================
 # 🧮 배출량 계산 메서드
 # ============================================================================
 
     async def calculate_process_emission(self, process_id: int) -> Dict[str, Any]:
-        """프로세스별 배출량 계산"""
+        """프로세스별 배출량 계산 (process_input 테이블 삭제로 인해 임시 비활성화)"""
         try:
-            # 프로세스 입력 데이터 조회
-            process_inputs = await self.calc_repository.get_process_inputs_by_process(process_id)
-            
-            total_direct_emission = 0.0
-            total_indirect_emission = 0.0
-            calculation_details = []
-            
-            for input_data in process_inputs:
-                amount = input_data.get('amount', 0.0)
-                factor = input_data.get('factor', 0.0)
-                oxy_factor = input_data.get('oxy_factor', 1.0)
-                input_type = input_data.get('input_type', '')
-                
-                # 배출량 계산: amount × factor × oxy_factor
-                if input_type in ['material', 'fuel']:
-                    direct_emission = amount * factor * oxy_factor
-                    total_direct_emission += direct_emission
-                    
-                    calculation_details.append({
-                        'input_id': input_data.get('id'),
-                        'input_name': input_data.get('input_name'),
-                        'input_type': input_type,
-                        'amount': amount,
-                        'factor': factor,
-                        'oxy_factor': oxy_factor,
-                        'direct_emission': direct_emission,
-                        'indirect_emission': 0.0
-                    })
-                    
-                    # DB에 직접배출량 저장
-                    await self.calc_repository.update_process_input_emission(
-                        input_data.get('id'), 
-                        direct_emission=direct_emission
-                    )
-                    
-                elif input_type == 'electricity':
-                    indirect_emission = amount * factor
-                    total_indirect_emission += indirect_emission
-                    
-                    calculation_details.append({
-                        'input_id': input_data.get('id'),
-                        'input_name': input_data.get('input_name'),
-                        'input_type': input_type,
-                        'amount': amount,
-                        'factor': factor,
-                        'direct_emission': 0.0,
-                        'indirect_emission': indirect_emission
-                    })
-                    
-                    # DB에 간접배출량 저장
-                    await self.calc_repository.update_process_input_emission(
-                        input_data.get('id'), 
-                        indirect_emission=indirect_emission
-                    )
-            
-            total_emission = total_direct_emission + total_indirect_emission
+            # TODO: 새로운 배출량 계산 로직 구현 필요
+            logger.warning("process_input 테이블이 삭제되어 배출량 계산이 비활성화되었습니다.")
             
             return {
                 'process_id': process_id,
-                'total_direct_emission': total_direct_emission,
-                'total_indirect_emission': total_indirect_emission,
-                'total_emission': total_emission,
-                'calculation_details': calculation_details
+                'total_direct_emission': 0.0,
+                'total_indirect_emission': 0.0,
+                'total_emission': 0.0,
+                'calculation_details': []
             }
             
         except Exception as e:
