@@ -12,9 +12,7 @@ from .calculation_schema import (
     ProductCreateRequest, ProductResponse, ProductUpdateRequest, 
     ProcessCreateRequest, ProcessResponse, ProcessUpdateRequest,
     ProductNameResponse, InstallCreateRequest, InstallResponse, 
-    InstallUpdateRequest, InstallNameResponse, ProcessInputResponse, 
-    ProcessInputCreateRequest, ProcessInputUpdateRequest, 
-    EmissionCalculationResponse, ProductEmissionResponse,
+    InstallUpdateRequest, InstallNameResponse,
     ProductProcessResponse, ProductProcessCreateRequest
 )
 
@@ -315,37 +313,7 @@ async def delete_process(process_id: int):
         logger.error(f"❌ 프로세스 삭제 실패: {str(e)}")
         raise HTTPException(status_code=500, detail=f"프로세스 삭제 중 오류가 발생했습니다: {str(e)}")
 
-# ============================================================================
-# 📥 ProcessInput 관련 엔드포인트
 
-
-# ============================================================================
-# 🧮 배출량 계산 관련 엔드포인트
-# ============================================================================
-
-@router.post("/emission/process/{process_id}", response_model=EmissionCalculationResponse)
-async def calculate_process_emission(process_id: int):
-    """프로세스별 배출량 계산"""
-    try:
-        logger.info(f"🧮 프로세스 배출량 계산 요청: 프로세스 ID {process_id}")
-        result = await calculation_service.calculate_process_emission(process_id)
-        logger.info(f"✅ 프로세스 배출량 계산 성공: 프로세스 ID {process_id}")
-        return result
-    except Exception as e:
-        logger.error(f"❌ 프로세스 배출량 계산 실패: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"프로세스 배출량 계산 중 오류가 발생했습니다: {str(e)}")
-
-@router.post("/emission/product/{product_id}", response_model=ProductEmissionResponse)
-async def calculate_product_emission(product_id: int):
-    """제품별 배출량 계산"""
-    try:
-        logger.info(f"🧮 제품 배출량 계산 요청: 제품 ID {product_id}")
-        result = await calculation_service.calculate_product_emission(product_id)
-        logger.info(f"✅ 제품 배출량 계산 성공: 제품 ID {product_id}")
-        return result
-    except Exception as e:
-        logger.error(f"❌ 제품 배출량 계산 실패: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"제품 배출량 계산 중 오류가 발생했습니다: {str(e)}")
 
 # ============================================================================
 # 📦 Router Export

@@ -21,7 +21,6 @@ from .calculation_entity import (
     Install,
     Product,
     Process,
-    ProcessInput,
     ProductProcess,  # 새로운 중간 테이블 엔티티
 )
 
@@ -46,11 +45,6 @@ from .calculation_schema import (
     # ProductProcess 관련 스키마
     ProductProcessCreateRequest,
     ProductProcessResponse,
-    
-    # ProcessInput 관련 스키마
-    ProcessInputCreateRequest,
-    ProcessInputResponse,
-    ProcessInputUpdateRequest,
 )
 
 from .calculation_repository import CalculationRepository
@@ -62,7 +56,6 @@ __all__ = [
     "Install",
     "Product", 
     "Process",
-    "ProcessInput",
     "ProductProcess",
     
     # 스키마
@@ -79,9 +72,6 @@ __all__ = [
     "ProcessUpdateRequest",
     "ProductProcessCreateRequest",
     "ProductProcessResponse",
-    "ProcessInputCreateRequest",
-    "ProcessInputResponse",
-    "ProcessInputUpdateRequest",
     
     # 서비스 및 컨트롤러
     "CalculationRepository",

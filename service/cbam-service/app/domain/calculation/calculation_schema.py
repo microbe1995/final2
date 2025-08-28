@@ -145,27 +145,3 @@ class ProcessUpdateRequest(BaseModel):
 
 
 
-# ============================================================================
-# 🧮 배출량 계산 관련 스키마
-# ============================================================================
-
-class EmissionCalculationRequest(BaseModel):
-    """배출량 계산 요청"""
-    process_id: int = Field(..., description="공정 ID")
-
-class EmissionCalculationResponse(BaseModel):
-    """배출량 계산 응답"""
-    process_id: int = Field(..., description="공정 ID")
-    total_direm: float = Field(..., description="총 직접배출량")
-    total_indirem: float = Field(..., description="총 간접배출량")
-    total_em: float = Field(..., description="총 배출량")
-    calculation_details: List[Dict[str, Any]] = Field(..., description="계산 상세")
-
-class ProductEmissionResponse(BaseModel):
-    """제품별 배출량 응답"""
-    product_id: int = Field(..., description="제품 ID")
-    product_name: str = Field(..., description="제품명")
-    total_em: float = Field(..., description="총 배출량")
-    direm: float = Field(..., description="직접배출량")
-    indirem: float = Field(..., description="간접배출량")
-    processes: List[Dict[str, Any]] = Field(..., description="관련 프로세스")

@@ -10,8 +10,7 @@ from app.domain.calculation.calculation_schema import (
     ProductCreateRequest, ProductResponse, ProductUpdateRequest, 
     ProcessCreateRequest, ProcessResponse, ProcessUpdateRequest, 
     ProductNameResponse, InstallCreateRequest, InstallResponse, 
-    InstallUpdateRequest, InstallNameResponse, ProcessInputCreateRequest, 
-    ProcessInputResponse, ProcessInputUpdateRequest, 
+    InstallUpdateRequest, InstallNameResponse,
     ProductProcessCreateRequest, ProductProcessResponse
 )
 
@@ -320,69 +319,3 @@ class CalculationService:
 
 
 
-# ============================================================================
-# 🧮 배출량 계산 메서드
-# ============================================================================
-
-    async def calculate_process_emission(self, process_id: int) -> Dict[str, Any]:
-        """프로세스별 배출량 계산 (process_input 테이블 삭제로 인해 임시 비활성화)"""
-        try:
-            # TODO: 새로운 배출량 계산 로직 구현 필요
-            logger.warning("process_input 테이블이 삭제되어 배출량 계산이 비활성화되었습니다.")
-            
-            return {
-                'process_id': process_id,
-                'total_direct_emission': 0.0,
-                'total_indirect_emission': 0.0,
-                'total_emission': 0.0,
-                'calculation_details': []
-            }
-            
-        except Exception as e:
-            logger.error(f"Error calculating process emission: {e}")
-            raise e
-
-    async def calculate_product_emission(self, product_id: int) -> Dict[str, Any]:
-        """제품별 총 배출량 계산"""
-        try:
-            # 제품 정보 조회
-            product = await self.calc_repository.get_product(product_id)
-            if not product:
-                raise Exception("제품을 찾을 수 없습니다.")
-            
-            # 제품 관련 프로세스 조회
-            processes = await self.calc_repository.get_processes_by_product(product_id)
-            
-            total_direct_emission = 0.0
-            total_indirect_emission = 0.0
-            process_details = []
-            
-            for process in processes:
-                # 각 프로세스의 배출량 계산
-                process_emission = await self.calculate_process_emission(process.get('id'))
-                
-                total_direct_emission += process_emission['total_direct_emission']
-                total_indirect_emission += process_emission['total_indirect_emission']
-                
-                process_details.append({
-                    'process_id': process.get('id'),
-                    'process_name': process.get('process_name'),
-                    'direct_emission': process_emission['total_direct_emission'],
-                    'indirect_emission': process_emission['total_indirect_emission'],
-                    'total_emission': process_emission['total_emission']
-                })
-            
-            total_emission = total_direct_emission + total_indirect_emission
-            
-            return {
-                'product_id': product_id,
-                'product_name': product.get('product_name'),
-                'total_emission': total_emission,
-                'direct_emission': total_direct_emission,
-                'indirect_emission': total_indirect_emission,
-                'processes': process_details
-            }
-            
-        except Exception as e:
-            logger.error(f"Error calculating product emission: {e}")
-            raise e
