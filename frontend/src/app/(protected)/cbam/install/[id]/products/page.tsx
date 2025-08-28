@@ -371,13 +371,13 @@ export default function InstallProductsPage() {
         {/* HS 코드 검색 모달 */}
         {showHSCodeModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 w-full max-w-2xl mx-4">
+            <div className="bg-gray-800 border border-gray-700 rounded-lg p-6 w-full max-w-2xl mx-4 shadow-2xl">
               {/* 모달 헤더 */}
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">HS코드로 CN코드 검색</h3>
+                <h3 className="text-lg font-semibold text-white">HS코드로 CN코드 검색</h3>
                 <button
                   onClick={() => setShowHSCodeModal(false)}
-                  className="text-gray-500 hover:text-gray-700 text-xl"
+                  className="text-gray-400 hover:text-white text-xl transition-colors"
                 >
                   ×
                 </button>
@@ -390,7 +390,7 @@ export default function InstallProductsPage() {
                   value={hsCodeSearchInput}
                   onChange={(e) => handleHSCodeSearchInputChange(e.target.value)}
                   placeholder="HS 코드를 입력하세요"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-600 rounded-md text-white bg-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   autoFocus
                 />
               </div>
@@ -400,26 +400,26 @@ export default function InstallProductsPage() {
                 {isSearching && (
                   <div className="text-center py-4">
                     <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500 mx-auto"></div>
-                    <p className="text-gray-600 mt-2">검색 중...</p>
+                    <p className="text-gray-300 mt-2">검색 중...</p>
                   </div>
                 )}
 
                 {!isSearching && searchResults.length > 0 && (
                   <div className="space-y-2">
-                    <h4 className="text-sm font-medium text-gray-700 mb-2">검색 결과 ({searchResults.length}개)</h4>
+                    <h4 className="text-sm font-medium text-gray-300 mb-2">검색 결과 ({searchResults.length}개)</h4>
                     {searchResults.map((result, index) => (
                       <div
                         key={index}
                         onClick={() => handleSelectCNCodeFromModal(result)}
-                        className="p-3 border border-gray-200 rounded-md cursor-pointer hover:bg-gray-50 transition-colors"
+                        className="p-3 border border-gray-600 rounded-md cursor-pointer hover:bg-gray-700 transition-colors"
                       >
                         <div className="flex justify-between items-start">
                           <div className="flex-1">
-                            <div className="text-sm font-medium text-blue-600">{result.cncode_total}</div>
-                            <div className="text-xs text-gray-600 mt-1">{result.goods_name}</div>
-                            <div className="text-xs text-gray-500">{result.aggregoods_name}</div>
+                            <div className="text-sm font-medium text-blue-400">{result.cncode_total}</div>
+                            <div className="text-xs text-gray-300 mt-1">{result.goods_name}</div>
+                            <div className="text-xs text-gray-400">{result.aggregoods_name}</div>
                           </div>
-                          <div className="text-xs text-gray-400 ml-2">선택</div>
+                          <div className="text-xs text-gray-500 ml-2">선택</div>
                         </div>
                       </div>
                     ))}
@@ -428,13 +428,13 @@ export default function InstallProductsPage() {
 
                 {!isSearching && hsCodeSearchInput.length >= 2 && searchResults.length === 0 && (
                   <div className="text-center py-4">
-                    <p className="text-gray-500">검색 결과가 없습니다.</p>
+                    <p className="text-gray-400">검색 결과가 없습니다.</p>
                   </div>
                 )}
 
                 {hsCodeSearchInput.length < 2 && (
                   <div className="text-center py-4">
-                    <p className="text-gray-500">HS 코드를 2자리 이상 입력해주세요.</p>
+                    <p className="text-gray-400">HS 코드를 2자리 이상 입력해주세요.</p>
                   </div>
                 )}
               </div>
