@@ -38,3 +38,11 @@ CalculationRepository는 직접 psycopg2로 PostgreSQL 연결
     즉 공정과 원료 연료는 1:N 관계야
 
 7. 그리고 각 원료직접배출량, 연료직접배출량, 열유입배출량, 열유출배출량, 폐가스유입배출량, 폐가스유출배출량, 전력생산에 따른 배출량은 직접귀속배출량(attrdir_em) 이고 이건 각 공정에 귀속이 되어야 해 이렇게 지금 process table 이 짜여져 있는지 살펴봐줘
+
+8. 연료직접배출량(fueldir_em) = 연료량(fuel_amount) * 연료배출계수(fuel_factor) * fueloxy_factor(산화계수)
+
+형태로 계산되는 것도 원료직접배출량 패턴을 참고해서 만들어줘 무조건 railway db에 테이블 부터 만들고 그거릉 기준으로 스키마 레포지토리 서비스 모델 컨트롤러 이렇게 만들어줘 엔드포인트 경로까지
+
+id	process_id	fuel_name	fuel_factor	fuel_amount	fuel_oxyfactor	fueldir_em	created_at	updated_at
+
+위 형태로 fueldir 테이블을 만들어줘 
