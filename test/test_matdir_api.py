@@ -35,11 +35,12 @@ def test_matdir_create():
     """원료직접배출량 생성 테스트"""
     print("\n💾 원료직접배출량 생성 테스트")
     
+    # 실제 존재하는 process_id 사용 (101, 102, 103 중 하나)
     payload = {
-        "process_id": 1,  # 실제 존재하는 process_id 사용
-        "mat_name": "테스트 원료",
-        "mat_factor": 1.0,
-        "mat_amount": 1.0,
+        "process_id": 101,  # 실제 존재하는 process_id
+        "mat_name": "철광석",
+        "mat_factor": 1.5,
+        "mat_amount": 100.0,
         "oxyfactor": 1.0
     }
     
@@ -91,12 +92,32 @@ def test_product_api():
     except Exception as e:
         print(f"❌ 오류 발생: {str(e)}")
 
+def test_process_api():
+    """공정 API 테스트 (process_id 확인용)"""
+    print("\n🏭 공정 API 테스트 (process_id 확인용)")
+    
+    try:
+        response = requests.get(f"{BASE_URL}/api/v1/boundary/process")
+        print(f"📥 응답 상태: {response.status_code}")
+        print(f"📥 응답 내용: {response.json()}")
+        
+        if response.status_code == 200:
+            print("✅ 공정 API 정상 작동!")
+        else:
+            print("❌ 공정 API 오류!")
+            
+    except Exception as e:
+        print(f"❌ 오류 발생: {str(e)}")
+
 if __name__ == "__main__":
     print("🚀 matdir API 테스트 시작")
     print("=" * 50)
     
     # 제품 API 테스트 (참고용)
     test_product_api()
+    
+    # 공정 API 테스트 (process_id 확인용)
+    test_process_api()
     
     # matdir API 테스트
     test_matdir_calculate()
