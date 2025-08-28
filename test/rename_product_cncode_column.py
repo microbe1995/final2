@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # 데이터베이스 연결 정보
-DATABASE_URL = "postgresql://postgres:eQGfytQNhXYAZxsJYFhYagpJAgstrni@shortline.proxy.rlwy.net:46071/railway"
+DATABASE_URL = "postgresql://postgres:eQGfytQNhXYAZxsJYlFhYagpJAgstrni@shortline.proxy.rlwy.net:46071/railway"
 
 def rename_product_cncode_column():
     """Product 테이블의 product_cncode 컬럼을 cncode_total로 변경"""

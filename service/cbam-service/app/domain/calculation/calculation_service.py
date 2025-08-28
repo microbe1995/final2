@@ -118,7 +118,7 @@ class CalculationService:
                 "prostart_period": request.prostart_period,
                 "proend_period": request.proend_period,
                 "product_amount": request.product_amount,
-                "product_cncode": request.product_cncode,
+                "cncode_total": request.cncode_total,
                 "goods_name": request.goods_name,
                 "aggrgoods_name": request.aggrgoods_name,
                 "product_sell": request.product_sell,
@@ -180,8 +180,8 @@ class CalculationService:
                 update_data["proend_period"] = request.proend_period
             if request.product_amount is not None:
                 update_data["product_amount"] = request.product_amount
-            if request.product_cncode is not None:
-                update_data["product_cncode"] = request.product_cncode
+            if request.cncode_total is not None:
+                update_data["cncode_total"] = request.cncode_total
             if request.goods_name is not None:
                 update_data["goods_name"] = request.goods_name
             if request.aggrgoods_name is not None:

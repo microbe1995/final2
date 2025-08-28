@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # 데이터베이스 연결 정보
-DATABASE_URL = "postgresql://postgres:eQGfytQNhXYAZxsJYFhYagpJAgstrni@shortline.proxy.rlwy.net:46071/railway"
+DATABASE_URL = "postgresql://postgres:eQGfytQNhXYAZxsJYlFhYagpJAgstrni@shortline.proxy.rlwy.net:46071/railway"
 
 def add_product_english_fields():
     """Product 테이블에 영문명 컬럼들 추가"""
@@ -41,7 +41,7 @@ def add_product_english_fields():
             print(f"  - {col[0]} ({col[1]}, nullable: {col[2]})")
         
         # 새로운 컬럼들 추가
-        print("\n🔧 새로운 컬럼들 추가 중...")
+        print("\n🔧 goods_engname 컬럼 추가 중...")
         
         # goods_engname 컬럼 추가
         try:
@@ -54,6 +54,7 @@ def add_product_english_fields():
             print("⚠️ goods_engname 컬럼이 이미 존재합니다")
         
         # aggrgoods_engname 컬럼 추가
+        print("\n🔧 aggrgoods_engname 컬럼 추가 중...")
         try:
             cursor.execute("""
                 ALTER TABLE product 
@@ -83,7 +84,7 @@ def add_product_english_fields():
         # 샘플 데이터 확인
         print("\n📊 샘플 데이터 확인...")
         cursor.execute("""
-            SELECT id, product_name, product_cncode, goods_name, goods_engname, 
+            SELECT id, product_name, cncode_total, goods_name, goods_engname,
                    aggrgoods_name, aggrgoods_engname
             FROM product 
             LIMIT 5;
@@ -103,7 +104,7 @@ def add_product_english_fields():
         else:
             print("등록된 제품이 없습니다")
         
-        print("🎉 Product 테이블 영문명 컬럼 추가 완료!")
+        print("🎉 Product 테이블 영문 필드 추가 완료!")
         
     except Exception as e:
         print(f"❌ 오류 발생: {str(e)}")

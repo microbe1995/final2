@@ -16,7 +16,7 @@ interface ProductForm {
   prostart_period: string;
   proend_period: string;
   product_amount: number;
-  product_cncode: string;
+  cncode_total: string;
   goods_name: string;
   aggrgoods_name: string;
   product_sell: number;
@@ -33,7 +33,7 @@ export default function ProductPage() {
     prostart_period: '',
     proend_period: '',
     product_amount: 0,
-    product_cncode: '',
+    cncode_total: '',
     goods_name: '',
     aggrgoods_name: '',
     product_sell: 0,
@@ -88,7 +88,7 @@ export default function ProductPage() {
         prostart_period: '',
         proend_period: '',
         product_amount: 0,
-        product_cncode: '',
+        cncode_total: '',
         goods_name: '',
         aggrgoods_name: '',
         product_sell: 0,
@@ -233,8 +233,8 @@ export default function ProductPage() {
                 <Input
                   type="text"
                   placeholder="예: 7208"
-                  value={productForm.product_cncode}
-                  onChange={(e) => handleInputChange('product_cncode', e.target.value)}
+                  value={productForm.cncode_total}
+                  onChange={(e) => handleInputChange('cncode_total', e.target.value)}
                 />
               </div>
 

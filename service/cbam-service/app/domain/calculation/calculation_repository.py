@@ -389,12 +389,12 @@ class CalculationRepository:
                     INSERT INTO product (
                         install_id, product_name, product_category, 
                         prostart_period, proend_period, product_amount,
-                        product_cncode, goods_name, aggrgoods_name,
+                        cncode_total, goods_name, aggrgoods_name,
                         product_sell, product_eusell
                     ) VALUES (
                         %(install_id)s, %(product_name)s, %(product_category)s,
                         %(prostart_period)s, %(proend_period)s, %(product_amount)s,
-                        %(product_cncode)s, %(goods_name)s, %(aggrgoods_name)s,
+                        %(cncode_total)s, %(goods_name)s, %(aggrgoods_name)s,
                         %(product_sell)s, %(product_eusell)s
                     ) RETURNING *
                 """, product_data)
@@ -700,7 +700,7 @@ class CalculationRepository:
                     cursor.execute("""
                         SELECT p.id, p.install_id, p.product_name, p.product_category, 
                                p.prostart_period, p.proend_period, p.product_amount,
-                               p.product_cncode, p.goods_name, p.aggrgoods_name,
+                               p.cncode_total, p.goods_name, p.aggrgoods_name,
                                p.product_sell, p.product_eusell, p.created_at, p.updated_at
                         FROM product p
                         JOIN product_process pp ON p.id = pp.product_id
@@ -1265,7 +1265,7 @@ class CalculationRepository:
                     cursor.execute("""
                         SELECT p.id, p.install_id, p.product_name, p.product_category, 
                                p.prostart_period, p.proend_period, p.product_amount,
-                               p.product_cncode, p.goods_name, p.aggrgoods_name,
+                               p.cncode_total, p.goods_name, p.aggrgoods_name,
                                p.product_sell, p.product_eusell, p.created_at, p.updated_at
                         FROM product p
                         JOIN product_process pp ON p.id = pp.product_id
@@ -1325,7 +1325,7 @@ class CalculationRepository:
                 cursor.execute("""
                     SELECT p.id, p.install_id, p.product_name, p.product_category, 
                            p.prostart_period, p.proend_period, p.product_amount,
-                           p.product_cncode, p.goods_name, p.aggrgoods_name,
+                           p.cncode_total, p.goods_name, p.aggrgoods_name,
                            p.product_sell, p.product_eusell, p.created_at, p.updated_at
                     FROM product p
                     JOIN product_process pp ON p.id = pp.product_id
