@@ -133,11 +133,15 @@ def create_database_engine(database_url: Optional[str] = None):
             echo=False
         )
 
-def get_db_session() -> Session:
-    """데이터베이스 세션 생성"""
+def get_database_session() -> Session:
+    """데이터베이스 세션 생성 (FastAPI 의존성 주입용)"""
     engine = create_database_engine()
     SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
     return SessionLocal()
+
+def get_db_session() -> Session:
+    """데이터베이스 세션 생성 (기존 호환성 유지)"""
+    return get_database_session()
 
 # ============================================================================
 # 🗄️ 데이터베이스 기본 엔티티
@@ -172,3 +176,17 @@ class TimestampMixin:
 class IdentityMixin:
     """ID 공통 필드"""
     id: Mapped[str] = mapped_column(String(36), primary_key=True, index=True)
+
+# ============================================================================
+# 📦 Export 설정
+# ============================================================================
+
+__all__ = [
+    "Base",
+    "get_database_session",
+    "get_db_session",
+    "create_database_engine",
+    "DatabaseBase",
+    "TimestampMixin",
+    "IdentityMixin"
+]

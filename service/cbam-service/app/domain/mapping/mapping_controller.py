@@ -14,8 +14,8 @@ from .mapping_schema import (
     HSCNMappingBatchCreateRequest, HSCNMappingBatchResponse
 )
 
-# 데이터베이스 세션 의존성 (calculation_controller와 동일한 패턴)
-def get_db():
+# 데이터베이스 세션 의존성 (FastAPI 의존성 주입용)
+async def get_db():
     """데이터베이스 세션 의존성"""
     from app.common.database_base import get_database_session
     return get_database_session()
