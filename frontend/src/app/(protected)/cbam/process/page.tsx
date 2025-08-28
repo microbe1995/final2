@@ -38,9 +38,74 @@ export default function ProcessPage() {
   
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [productNames, setProductNames] = useState<ProductName[]>([]);
+  const [processes, setProcesses] = useState<any[]>([]);
+  const [editingProcess, setEditingProcess] = useState<any | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingProducts, setIsLoadingProducts] = useState(false);
+  const [isLoadingProcesses, setIsLoadingProcesses] = useState(false);
   const [message, setMessage] = useState('');
+
+  // 공정 목록 조회
+  const fetchProcesses = async () => {
+    setIsLoadingProcesses(true);
+    try {
+      console.log('🔍 공정 목록 조회 시작');
+      const response = await axiosClient.get(apiEndpoints.cbam.process.list);
+      console.log('📋 공정 목록 응답:', response);
+      setProcesses(response.data);
+      console.log('📋 공정 목록 데이터:', response.data);
+    } catch (error: any) {
+      console.error('❌ 공정 목록 조회 실패:', error);
+      setMessage(`공정 목록을 불러오는데 실패했습니다: ${error.response?.data?.detail || error.message}`);
+    } finally {
+      setIsLoadingProcesses(false);
+    }
+  };
+
+  // 폼 초기화
+  const resetForm = () => {
+    setProcessForm({
+      product_id: 0,
+      process_name: '',
+      start_period: '',
+      end_period: ''
+    });
+    setEditingProcess(null);
+  };
+
+  // 수정 모드 시작
+  const handleEdit = (process: any) => {
+    setEditingProcess(process);
+    setProcessForm({
+      product_id: process.product_id || 0,
+      process_name: process.process_name,
+      start_period: process.start_period || '',
+      end_period: process.end_period || ''
+    });
+  };
+
+  // 수정 취소
+  const handleCancelEdit = () => {
+    resetForm();
+  };
+
+  // 공정 삭제
+  const handleDelete = async (processId: number) => {
+    if (!confirm('정말로 이 공정을 삭제하시겠습니까?')) return;
+
+    try {
+      setIsLoading(true);
+      await axiosClient.delete(apiEndpoints.cbam.process.delete(processId));
+      console.log('✅ 공정 삭제 성공');
+      setMessage('공정이 성공적으로 삭제되었습니다!');
+      fetchProcesses();
+    } catch (error: any) {
+      console.error('❌ 공정 삭제 실패:', error);
+      setMessage(`공정 삭제에 실패했습니다: ${error.response?.data?.detail || error.message}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // 제품명 목록 조회
   useEffect(() => {
@@ -61,6 +126,7 @@ export default function ProcessPage() {
     };
 
     fetchProductNames();
+    fetchProcesses();
   }, []);
 
   // URL에서 product_id 파라미터 읽어오기
@@ -134,24 +200,30 @@ export default function ProcessPage() {
         end_period: new Date(processForm.end_period)
       };
       
-      console.log('📤 프로세스 생성 요청 데이터:', requestData);
-      const response = await axiosClient.post(apiEndpoints.cbam.process.create, requestData);
-      
-      console.log('✅ 프로세스 생성 성공:', response.data);
-      setMessage('프로세스가 성공적으로 생성되었습니다!');
+      if (editingProcess) {
+        // 수정
+        console.log('📤 프로세스 수정 요청 데이터:', requestData);
+        await axiosClient.put(apiEndpoints.cbam.process.update(editingProcess.id), requestData);
+        console.log('✅ 프로세스 수정 성공');
+        setMessage('프로세스가 성공적으로 수정되었습니다!');
+      } else {
+        // 생성
+        console.log('📤 프로세스 생성 요청 데이터:', requestData);
+        const response = await axiosClient.post(apiEndpoints.cbam.process.create, requestData);
+        console.log('✅ 프로세스 생성 성공:', response.data);
+        setMessage('프로세스가 성공적으로 생성되었습니다!');
+      }
       
       // 폼 초기화
-      setProcessForm({
-        product_id: 0,
-        process_name: '',
-        start_period: '',
-        end_period: ''
-      });
+      resetForm();
       setSelectedProduct(null);
       
+      // 공정 목록 새로고침
+      await fetchProcesses();
+      
     } catch (error: any) {
-      console.error('❌ 프로세스 생성 실패:', error);
-      const errorMessage = error.response?.data?.detail || '프로세스 생성에 실패했습니다.';
+      console.error('❌ 프로세스 저장 실패:', error);
+      const errorMessage = error.response?.data?.detail || '프로세스 저장에 실패했습니다.';
       setMessage(`오류: ${errorMessage}`);
     } finally {
       setIsLoading(false);
@@ -183,9 +255,11 @@ export default function ProcessPage() {
             </div>
           )}
 
-          {/* 프로세스 생성 폼 */}
+          {/* 프로세스 생성/수정 폼 */}
           <div className="bg-gray-50 rounded-lg p-6 mb-8">
-            <h2 className="text-xl font-semibold text-gray-900 mb-6">새 프로세스 생성</h2>
+            <h2 className="text-xl font-semibold text-gray-900 mb-6">
+              {editingProcess ? '프로세스 수정' : '새 프로세스 생성'}
+            </h2>
             
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* 제품 선택 */}
@@ -292,7 +366,16 @@ export default function ProcessPage() {
               </div>
 
               {/* 제출 버튼 */}
-              <div className="flex justify-end">
+              <div className="flex justify-end gap-4">
+                {editingProcess && (
+                  <button
+                    type="button"
+                    onClick={handleCancelEdit}
+                    className="px-6 py-2 bg-gray-600 hover:bg-gray-700 text-white font-medium rounded-md transition-colors duration-200"
+                  >
+                    취소
+                  </button>
+                )}
                 <button
                   type="submit"
                   disabled={isLoading || !processForm.product_id}
@@ -302,10 +385,69 @@ export default function ProcessPage() {
                       : 'bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2'
                   }`}
                 >
-                  {isLoading ? '생성 중...' : '프로세스 생성'}
+                  {isLoading ? '저장 중...' : (editingProcess ? '수정' : '프로세스 생성')}
                 </button>
               </div>
             </form>
+          </div>
+
+          {/* 공정 목록 */}
+          <div className="bg-white rounded-lg shadow p-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-6">등록된 공정 목록</h2>
+            
+            {isLoadingProcesses ? (
+              <div className="text-center py-8">
+                <div className="text-gray-500">공정 목록을 불러오는 중...</div>
+              </div>
+            ) : processes.length === 0 ? (
+              <div className="text-center py-8">
+                <div className="text-gray-500">등록된 공정이 없습니다.</div>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left">
+                  <thead className="border-b border-gray-200">
+                    <tr>
+                      <th className="py-3 px-4 text-gray-700 font-semibold">ID</th>
+                      <th className="py-3 px-4 text-gray-700 font-semibold">공정명</th>
+                      <th className="py-3 px-4 text-gray-700 font-semibold">시작일</th>
+                      <th className="py-3 px-4 text-gray-700 font-semibold">종료일</th>
+                      <th className="py-3 px-4 text-gray-700 font-semibold">작업</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {processes.map((process) => (
+                      <tr key={process.id} className="border-b border-gray-100 hover:bg-gray-50">
+                        <td className="py-3 px-4 text-gray-900">{process.id}</td>
+                        <td className="py-3 px-4 text-gray-900">{process.process_name}</td>
+                        <td className="py-3 px-4 text-gray-600">
+                          {process.start_period ? new Date(process.start_period).toLocaleDateString() : '-'}
+                        </td>
+                        <td className="py-3 px-4 text-gray-600">
+                          {process.end_period ? new Date(process.end_period).toLocaleDateString() : '-'}
+                        </td>
+                        <td className="py-3 px-4">
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => handleEdit(process)}
+                              className="px-3 py-1 bg-yellow-600 hover:bg-yellow-700 text-white text-sm rounded transition-colors duration-200"
+                            >
+                              수정
+                            </button>
+                            <button
+                              onClick={() => handleDelete(process.id)}
+                              className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-sm rounded transition-colors duration-200"
+                            >
+                              삭제
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
 
           {/* 제품으로 돌아가기 */}

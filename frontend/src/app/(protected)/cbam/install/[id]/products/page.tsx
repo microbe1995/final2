@@ -42,7 +42,6 @@ interface Process {
 
 interface ProductForm {
   product_name: string;
-  product_category: '단순제품' | '복합제품';
   prostart_period: string;
   proend_period: string;
   product_amount: number;
@@ -72,10 +71,10 @@ export default function InstallProductsPage() {
   const [selectedProductId, setSelectedProductId] = useState<number | null>(null);
   const [showProductForm, setShowProductForm] = useState(false);
   const [showProcessFormForProduct, setShowProcessFormForProduct] = useState<number | null>(null);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
   const [productForm, setProductForm] = useState<ProductForm>({
     product_name: '',
-    product_category: '단순제품',
     prostart_period: '',
     proend_period: '',
     product_amount: 0,
@@ -148,6 +147,51 @@ export default function InstallProductsPage() {
     }));
   };
 
+  // 제품 폼 초기화
+  const resetProductForm = () => {
+    setProductForm({
+      product_name: '',
+      prostart_period: '',
+      proend_period: '',
+      product_amount: 0,
+      product_hscode: '',
+      cncode_total: '',
+      goods_name: '',
+      goods_engname: '',
+      aggrgoods_name: '',
+      aggrgoods_engname: '',
+      product_sell: 0,
+      product_eusell: 0
+    });
+    setEditingProduct(null);
+    setShowProductForm(false);
+  };
+
+  // 제품 수정 모드 시작
+  const handleEditProduct = (product: Product) => {
+    setEditingProduct(product);
+    setProductForm({
+      product_name: product.product_name,
+      prostart_period: product.prostart_period,
+      proend_period: product.proend_period,
+      product_amount: product.product_amount,
+      product_hscode: '',
+      cncode_total: product.cncode_total || '',
+      goods_name: product.goods_name || '',
+      goods_engname: product.goods_engname || '',
+      aggrgoods_name: product.aggrgoods_name || '',
+      aggrgoods_engname: product.aggrgoods_engname || '',
+      product_sell: product.product_sell,
+      product_eusell: product.product_eusell
+    });
+    setShowProductForm(true);
+  };
+
+  // 제품 수정 취소
+  const handleCancelEditProduct = () => {
+    resetProductForm();
+  };
+
   // HS 코드 실시간 검색 함수
   const handleHSCodeSearch = async (searchTerm: string) => {
     if (searchTerm.length < 2) {
@@ -218,38 +262,33 @@ export default function InstallProductsPage() {
         install_id: installId
       };
 
-      const response = await axiosClient.post(apiEndpoints.cbam.product.create, productData);
-      console.log('✅ 제품 생성 성공:', response.data);
-      
-      setToast({
-        message: '제품이 성공적으로 생성되었습니다.',
-        type: 'success'
-      });
-
-                     // 폼 초기화 및 숨기기
-        setProductForm({
-          product_name: '',
-          product_category: '단순제품',
-          prostart_period: '',
-          proend_period: '',
-          product_amount: 0,
-          product_hscode: '', // HS 코드 초기화
-          cncode_total: '', // CN 코드 초기화
-          goods_name: '',
-          goods_engname: '', // 품목영문명 초기화
-          aggrgoods_name: '',
-          aggrgoods_engname: '', // 품목군영문명 초기화
-          product_sell: 0,
-          product_eusell: 0
+      if (editingProduct) {
+        // 수정
+        const response = await axiosClient.put(apiEndpoints.cbam.product.update(editingProduct.id), productData);
+        console.log('✅ 제품 수정 성공:', response.data);
+        setToast({
+          message: '제품이 성공적으로 수정되었습니다.',
+          type: 'success'
         });
-      setShowProductForm(false);
+      } else {
+        // 생성
+        const response = await axiosClient.post(apiEndpoints.cbam.product.create, productData);
+        console.log('✅ 제품 생성 성공:', response.data);
+        setToast({
+          message: '제품이 성공적으로 생성되었습니다.',
+          type: 'success'
+        });
+      }
+
+      // 폼 초기화 및 숨기기
+      resetProductForm();
 
       // 목록 새로고침
       fetchProducts();
     } catch (error: any) {
-      console.error('❌ 제품 생성 실패:', error);
+      console.error('❌ 제품 저장 실패:', error);
       setToast({
-        message: `제품 생성에 실패했습니다: ${error.response?.data?.detail || error.message}`,
+        message: `제품 저장에 실패했습니다: ${error.response?.data?.detail || error.message}`,
         type: 'error'
       });
     }
@@ -454,12 +493,18 @@ export default function InstallProductsPage() {
 
         {/* 제품 관리 섹션 */}
         <div className="space-y-6">
-          {/* 제품 생성 폼 */}
+          {/* 제품 생성/수정 폼 */}
           <div className="bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-semibold text-white">📦 제품 관리</h2>
               <button
-                onClick={() => setShowProductForm(!showProductForm)}
+                onClick={() => {
+                  if (showProductForm) {
+                    resetProductForm();
+                  } else {
+                    setShowProductForm(true);
+                  }
+                }}
                 className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md transition-colors duration-200"
               >
                 {showProductForm ? '취소' : '제품 추가'}
@@ -480,18 +525,7 @@ export default function InstallProductsPage() {
                   />
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">제품 카테고리</label>
-                  <select
-                    value={productForm.product_category}
-                    onChange={(e) => handleProductInputChange('product_category', e.target.value as '단순제품' | '복합제품')}
-                    className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    required
-                  >
-                    <option value="단순제품">단순제품</option>
-                    <option value="복합제품">복합제품</option>
-                  </select>
-                </div>
+                
 
                                                    {/* CN 코드 입력 필드 */}
                   <div>
@@ -560,12 +594,23 @@ export default function InstallProductsPage() {
                   </div>
                 </div>
 
-                <button
-                  type="submit"
-                  className="w-full px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition-colors duration-200"
-                >
-                  📦 제품 생성
-                </button>
+                <div className="flex gap-4">
+                  {editingProduct && (
+                    <button
+                      type="button"
+                      onClick={handleCancelEditProduct}
+                      className="flex-1 px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white font-semibold rounded-lg transition-colors duration-200"
+                    >
+                      취소
+                    </button>
+                  )}
+                  <button
+                    type="submit"
+                    className="flex-1 px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition-colors duration-200"
+                  >
+                    📦 {editingProduct ? '제품 수정' : '제품 생성'}
+                  </button>
+                </div>
               </form>
             )}
           </div>
@@ -588,14 +633,9 @@ export default function InstallProductsPage() {
                   
                   return (
                     <div key={product.id} className="bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-white/20">
-                      <div className="flex justify-between items-start mb-2">
-                        <h4 className="text-white font-semibold text-lg">{product.product_name}</h4>
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          product.product_category === '단순제품' ? 'bg-green-500/20 text-green-300' : 'bg-blue-500/20 text-blue-300'
-                        }`}>
-                          {product.product_category}
-                        </span>
-                      </div>
+                                             <div className="flex justify-between items-start mb-2">
+                         <h4 className="text-white font-semibold text-lg">{product.product_name}</h4>
+                       </div>
                       
                       <div className="space-y-1 mb-3">
                         <p className="text-gray-300 text-sm">기간: {product.prostart_period} ~ {product.proend_period}</p>
@@ -689,6 +729,12 @@ export default function InstallProductsPage() {
                           className="flex-1 px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-md transition-colors duration-200"
                         >
                           {isShowingProcessForm ? '공정 추가 취소' : '공정 추가'}
+                        </button>
+                        <button
+                          onClick={() => handleEditProduct(product)}
+                          className="px-3 py-2 bg-yellow-600 hover:bg-yellow-700 text-white text-sm font-medium rounded-md transition-colors duration-200"
+                        >
+                          수정
                         </button>
                         <button
                           onClick={() => handleDeleteProduct(product.id, product.product_name)}

@@ -29,6 +29,7 @@ export default function InstallPage() {
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
   const [sortBy, setSortBy] = useState<'install_name' | 'id'>('install_name');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  const [editingInstall, setEditingInstall] = useState<Install | null>(null);
   const [installForm, setInstallForm] = useState<InstallForm>({
     install_name: '',
     reporting_year: new Date().getFullYear() // 현재 년도로 기본값 설정
@@ -90,6 +91,29 @@ export default function InstallPage() {
     router.push(`/cbam/install/${installId}/products`);
   };
 
+  // 폼 초기화
+  const resetForm = () => {
+    setInstallForm({
+      install_name: '',
+      reporting_year: new Date().getFullYear()
+    });
+    setEditingInstall(null);
+  };
+
+  // 수정 모드 시작
+  const handleEdit = (install: Install) => {
+    setEditingInstall(install);
+    setInstallForm({
+      install_name: install.install_name,
+      reporting_year: install.reporting_year
+    });
+  };
+
+  // 수정 취소
+  const handleCancelEdit = () => {
+    resetForm();
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -105,31 +129,37 @@ export default function InstallPage() {
         return;
       }
 
-      console.log('📤 사업장 생성 요청 데이터:', installForm);
-      
-      const response = await axiosClient.post(apiEndpoints.cbam.install.create, installForm);
-      
-      console.log('✅ 사업장 생성 성공:', response.data);
-      
-      setToast({
-        message: '사업장이 성공적으로 생성되었습니다!',
-        type: 'success'
-      });
+      if (editingInstall) {
+        // 수정
+        console.log('📤 사업장 수정 요청 데이터:', installForm);
+        await axiosClient.put(apiEndpoints.cbam.install.update(editingInstall.id), installForm);
+        console.log('✅ 사업장 수정 성공');
+        setToast({
+          message: '사업장이 성공적으로 수정되었습니다!',
+          type: 'success'
+        });
+      } else {
+        // 생성
+        console.log('📤 사업장 생성 요청 데이터:', installForm);
+        const response = await axiosClient.post(apiEndpoints.cbam.install.create, installForm);
+        console.log('✅ 사업장 생성 성공:', response.data);
+        setToast({
+          message: '사업장이 성공적으로 생성되었습니다!',
+          type: 'success'
+        });
+      }
 
       // 폼 초기화
-      setInstallForm({
-        install_name: '',
-        reporting_year: new Date().getFullYear()
-      });
+      resetForm();
 
       // 사업장 목록 새로고침
       await fetchInstalls();
 
     } catch (error: any) {
-      console.error('❌ 사업장 생성 실패:', error);
+      console.error('❌ 사업장 저장 실패:', error);
       
       setToast({
-        message: `사업장 생성에 실패했습니다: ${error.response?.data?.detail || error.message}`,
+        message: `사업장 저장에 실패했습니다: ${error.response?.data?.detail || error.message}`,
         type: 'error'
       });
     } finally {
@@ -187,10 +217,10 @@ export default function InstallPage() {
           </div>
         )}
 
-        {/* 사업장 생성 폼 */}
+        {/* 사업장 생성/수정 폼 */}
         <div className="bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10">
           <h2 className="text-2xl font-semibold text-white mb-6 flex items-center gap-2">
-            🏭 사업장 생성
+            {editingInstall ? '🏭 사업장 수정' : '🏭 사업장 생성'}
           </h2>
 
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -226,13 +256,22 @@ export default function InstallPage() {
             </div>
 
             {/* 제출 버튼 */}
-            <div className="flex justify-end pt-6">
+            <div className="flex justify-end gap-4 pt-6">
+              {editingInstall && (
+                <Button
+                  type="button"
+                  onClick={handleCancelEdit}
+                  className="px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white font-semibold rounded-lg transition-colors duration-200"
+                >
+                  취소
+                </Button>
+              )}
               <Button
                 type="submit"
                 disabled={loading}
                 className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors duration-200 disabled:opacity-50"
               >
-                {loading ? '생성 중...' : '사업장 생성'}
+                {loading ? '저장 중...' : (editingInstall ? '수정' : '사업장 생성')}
               </Button>
             </div>
           </form>
@@ -298,6 +337,13 @@ export default function InstallPage() {
                       className="flex-1 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-md transition-colors duration-200"
                     >
                       제품 관리
+                    </button>
+                    <button
+                      onClick={() => handleEdit(install)}
+                      disabled={loading}
+                      className="px-3 py-2 bg-yellow-600 hover:bg-yellow-700 text-white text-sm font-medium rounded-md transition-colors duration-200 disabled:opacity-50"
+                    >
+                      수정
                     </button>
                     <button
                       onClick={() => handleDeleteInstall(install.id, install.install_name)}
