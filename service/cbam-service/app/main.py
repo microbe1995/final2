@@ -16,6 +16,7 @@ from dotenv import load_dotenv
 
 # CBAM 도메인 라우터
 from app.domain.calculation.calculation_controller import router as calculation_router
+from app.domain.mapping.mapping_controller import router as mapping_router
 
 # ReactFlow 기반 라우터들 (현재 CBAM 기능에서는 사용하지 않음)
 # from app.domain.node.node_controller import node_router
@@ -208,6 +209,7 @@ async def log_requests(request: Request, call_next):
 
 # CBAM 도메인 라우터들 등록
 app.include_router(calculation_router, prefix="/api")
+app.include_router(mapping_router, prefix="/api")
 
 # ============================================================================
 # 🏥 헬스체크 엔드포인트

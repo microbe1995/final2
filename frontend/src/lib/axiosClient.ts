@@ -209,6 +209,22 @@ export const apiEndpoints = {
       get: (id: number) => `/api/v1/boundary/process-input/${id}`,
       update: (id: number) => `/api/v1/boundary/process-input/${id}`,
       delete: (id: number) => `/api/v1/boundary/process-input/${id}`
+    },
+    // HS-CN 매핑 API
+    mapping: {
+      lookup: (hs_code: string) => `/api/v1/boundary/cncode/lookup/${hs_code}`,
+      list: '/api/v1/boundary/mapping',
+      get: (id: number) => `/api/v1/boundary/mapping/${id}`,
+      create: '/api/v1/boundary/mapping',
+      update: (id: number) => `/api/v1/boundary/mapping/${id}`,
+      delete: (id: number) => `/api/v1/boundary/mapping/${id}`,
+      search: {
+        hs: (hs_code: string) => `/api/v1/boundary/mapping/search/hs/${hs_code}`,
+        cn: (cn_code: string) => `/api/v1/boundary/mapping/search/cn/${cn_code}`,
+        goods: (goods_name: string) => `/api/v1/boundary/mapping/search/goods/${goods_name}`
+      },
+      stats: '/api/v1/boundary/mapping/stats',
+      batch: '/api/v1/boundary/mapping/batch'
     }
   },
   // Calculation Service (Gateway를 통해 boundary 서비스로)

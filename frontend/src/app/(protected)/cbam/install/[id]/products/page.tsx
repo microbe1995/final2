@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import axiosClient from '@/lib/axiosClient';
 import { apiEndpoints } from '@/lib/axiosClient';
+import { useMappingAPI, HSCNMappingResponse } from '@/hooks/useMappingAPI';
 
 interface Install {
   id: number;
@@ -43,6 +44,7 @@ interface ProductForm {
   prostart_period: string;
   proend_period: string;
   product_amount: number;
+  product_hscode: string; // HS 코드 추가
   product_cncode: string;
   goods_name: string;
   aggrgoods_name: string;
@@ -73,12 +75,18 @@ export default function InstallProductsPage() {
     prostart_period: '',
     proend_period: '',
     product_amount: 0,
+    product_hscode: '', // HS 코드 초기값 추가
     product_cncode: '',
     goods_name: '',
     aggrgoods_name: '',
     product_sell: 0,
     product_eusell: 0
   });
+
+  // HS-CN 매핑 API 훅 사용
+  const { lookupByHSCode, loading: mappingLoading } = useMappingAPI();
+  const [cnCodeResults, setCnCodeResults] = useState<HSCNMappingResponse[]>([]);
+  const [showCnCodeResults, setShowCnCodeResults] = useState(false);
 
   const [processForm, setProcessForm] = useState<ProcessForm>({
     process_name: ''
@@ -128,6 +136,34 @@ export default function InstallProductsPage() {
     }));
   };
 
+  // HS 코드 조회 함수
+  const handleHSCodeLookup = async (hsCode: string) => {
+    if (hsCode.length === 10) {
+      try {
+        const results = await lookupByHSCode(hsCode);
+        setCnCodeResults(results);
+        setShowCnCodeResults(true);
+      } catch (error) {
+        console.error('HS 코드 조회 실패:', error);
+        setCnCodeResults([]);
+        setShowCnCodeResults(false);
+      }
+    } else {
+      setShowCnCodeResults(false);
+    }
+  };
+
+  // CN 코드 선택 함수
+  const handleSelectCNCode = (result: HSCNMappingResponse) => {
+    setProductForm(prev => ({
+      ...prev,
+      product_cncode: result.cncode_total,
+      goods_name: result.goods_name || '',
+      aggrgoods_name: result.aggregoods_name || ''
+    }));
+    setShowCnCodeResults(false);
+  };
+
   const handleProductSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -160,6 +196,7 @@ export default function InstallProductsPage() {
         prostart_period: '',
         proend_period: '',
         product_amount: 0,
+        product_hscode: '', // HS 코드 초기화 추가
         product_cncode: '',
         goods_name: '',
         aggrgoods_name: '',
@@ -343,6 +380,73 @@ export default function InstallProductsPage() {
                   </select>
                 </div>
 
+                {/* HS 코드 입력 필드 */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">HS 코드 (10자리)</label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={productForm.product_hscode}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/\D/g, '').slice(0, 10);
+                        handleProductInputChange('product_hscode', value);
+                        if (value.length === 10) {
+                          handleHSCodeLookup(value);
+                        } else {
+                          setShowCnCodeResults(false);
+                        }
+                      }}
+                      className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="예: 7208510000"
+                      maxLength={10}
+                    />
+                    {mappingLoading && (
+                      <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
+                      </div>
+                    )}
+                  </div>
+                  {productForm.product_hscode.length > 0 && productForm.product_hscode.length < 10 && (
+                    <p className="text-yellow-400 text-xs mt-1">HS 코드는 10자리 숫자여야 합니다.</p>
+                  )}
+                </div>
+
+                {/* CN 코드 결과 표시 */}
+                {showCnCodeResults && cnCodeResults.length > 0 && (
+                  <div className="bg-white/10 border border-white/20 rounded-md p-3">
+                    <h4 className="text-sm font-medium text-white mb-2">🔍 CN 코드 검색 결과:</h4>
+                    <div className="space-y-2 max-h-40 overflow-y-auto">
+                      {cnCodeResults.map((result, index) => (
+                        <div
+                          key={index}
+                          onClick={() => handleSelectCNCode(result)}
+                          className="p-2 bg-white/5 rounded cursor-pointer hover:bg-white/10 transition-colors"
+                        >
+                          <div className="text-sm text-blue-300 font-medium">{result.cncode_total}</div>
+                          <div className="text-xs text-gray-300">{result.goods_name}</div>
+                          <div className="text-xs text-gray-400">{result.aggregoods_name}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* CN 코드 및 품목 정보 표시 */}
+                {productForm.product_cncode && (
+                  <div className="bg-green-500/10 border border-green-500/20 rounded-md p-3">
+                    <h4 className="text-sm font-medium text-green-300 mb-2">✅ 선택된 CN 코드:</h4>
+                    <div className="space-y-1">
+                      <div className="text-sm text-white">CN 코드: <span className="font-medium">{productForm.product_cncode}</span></div>
+                      {productForm.goods_name && (
+                        <div className="text-xs text-gray-300">품목명: {productForm.goods_name}</div>
+                      )}
+                      {productForm.aggrgoods_name && (
+                        <div className="text-xs text-gray-300">제품 대분류: {productForm.aggrgoods_name}</div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-300 mb-2">기간 시작일 *</label>
@@ -407,6 +511,17 @@ export default function InstallProductsPage() {
                         <p className="text-gray-300 text-sm">기간: {product.prostart_period} ~ {product.proend_period}</p>
                         <p className="text-gray-300 text-sm">수량: {product.product_amount.toLocaleString()}</p>
                         <p className="text-gray-300 text-sm">공정 수: {productProcesses.length}개</p>
+                        {product.product_cncode && (
+                          <div className="mt-2 p-2 bg-blue-500/10 rounded border border-blue-500/20">
+                            <p className="text-blue-300 text-sm">CN 코드: <span className="font-medium">{product.product_cncode}</span></p>
+                            {product.goods_name && (
+                              <p className="text-gray-300 text-xs">품목명: {product.goods_name}</p>
+                            )}
+                            {product.aggrgoods_name && (
+                              <p className="text-gray-300 text-xs">제품 대분류: {product.aggrgoods_name}</p>
+                            )}
+                          </div>
+                        )}
                       </div>
 
                       {/* 공정 목록 */}
