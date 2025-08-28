@@ -92,7 +92,13 @@ async def proxy_request(service: str, path: str, request: Request) -> Response:
             normalized_path = f"auth/{normalized_path}"
     elif service == "boundary" or service == "cal-boundary" or service == "cal_boundary":
         # boundary-service는 prefix 없이 직접 라우팅
-        normalized_path = path
+        # 경로 정규화: /api/v1/boundary/install -> /install
+        if normalized_path.startswith("api/"):
+            normalized_path = normalized_path[4:]  # "api/" 제거
+        if normalized_path.startswith("v1/"):
+            normalized_path = normalized_path[3:]  # "v1/" 제거
+        if normalized_path.startswith("boundary/"):
+            normalized_path = normalized_path[9:]  # "boundary/" 제거
 
     target_url = f"{base_url.rstrip('/')}/{normalized_path}"
     

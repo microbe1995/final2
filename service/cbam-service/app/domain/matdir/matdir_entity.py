@@ -17,7 +17,7 @@ class MatDir(Base):
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
     # 관계 설정 (문자열로 참조하여 순환 임포트 방지)
-    process = relationship("Process", back_populates="matdirs", lazy="joined")
+    # process = relationship("Process", back_populates="matdirs", lazy="joined")
 
     def to_dict(self):
         return {
