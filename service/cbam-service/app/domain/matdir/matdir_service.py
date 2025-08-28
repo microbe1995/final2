@@ -10,18 +10,32 @@ class MatDirService:
 
     def create_matdir(self, matdir_data: MatDirCreateRequest):
         """원료직접배출량 데이터 생성"""
-        # 계산 수행
-        matdir_em = self.calculate_matdir_emission(
-            matdir_data.mat_amount,
-            matdir_data.mat_factor,
-            matdir_data.oxyfactor
-        )
+        import logging
+        logger = logging.getLogger(__name__)
         
-        # DB에 저장할 데이터 준비
-        db_data = matdir_data.dict()
-        db_data['matdir_em'] = matdir_em
-        
-        return self.repository.create_matdir(db_data)
+        try:
+            # 계산 수행
+            matdir_em = self.calculate_matdir_emission(
+                matdir_data.mat_amount,
+                matdir_data.mat_factor,
+                matdir_data.oxyfactor
+            )
+            
+            logger.info(f"🧮 계산된 배출량: {matdir_em}")
+            
+            # DB에 저장할 데이터 준비
+            db_data = matdir_data.dict()
+            db_data['matdir_em'] = matdir_em
+            
+            logger.info(f"💾 DB 저장 데이터: {db_data}")
+            
+            result = self.repository.create_matdir(db_data)
+            logger.info(f"✅ DB 저장 성공: ID {result.id}")
+            return result
+            
+        except Exception as e:
+            logger.error(f"❌ 원료직접배출량 생성 중 오류: {str(e)}")
+            raise
 
     def get_matdirs(self, skip: int = 0, limit: int = 100):
         """모든 원료직접배출량 데이터 조회"""

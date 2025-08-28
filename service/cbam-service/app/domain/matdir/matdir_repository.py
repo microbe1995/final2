@@ -10,11 +10,24 @@ class MatDirRepository:
 
     def create_matdir(self, matdir_data: dict) -> MatDir:
         """원료직접배출량 데이터 생성"""
-        db_matdir = MatDir(**matdir_data)
-        self.db.add(db_matdir)
-        self.db.commit()
-        self.db.refresh(db_matdir)
-        return db_matdir
+        import logging
+        logger = logging.getLogger(__name__)
+        
+        try:
+            logger.info(f"🗄️ DB 저장 시작: {matdir_data}")
+            
+            db_matdir = MatDir(**matdir_data)
+            self.db.add(db_matdir)
+            self.db.commit()
+            self.db.refresh(db_matdir)
+            
+            logger.info(f"✅ DB 저장 완료: ID {db_matdir.id}")
+            return db_matdir
+            
+        except Exception as e:
+            logger.error(f"❌ DB 저장 실패: {str(e)}")
+            self.db.rollback()
+            raise
 
     def get_matdirs(self, skip: int = 0, limit: int = 100) -> List[MatDir]:
         """모든 원료직접배출량 데이터 조회"""

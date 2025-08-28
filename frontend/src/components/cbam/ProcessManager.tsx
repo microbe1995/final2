@@ -474,18 +474,27 @@ function ProcessManagerInner() {
     }
 
     try {
-      const savePromises = matDirResults.map(result => 
-        axiosClient.post(apiEndpoints.calculation.matdir.create, {
+      console.log('💾 저장 시작:', {
+        process_id: selectedProcessForMatDir.id,
+        results: matDirResults
+      });
+
+      const savePromises = matDirResults.map((result, index) => {
+        const requestData = {
           process_id: selectedProcessForMatDir.id,
           mat_name: result.mat_name,
           mat_factor: result.mat_factor,
           mat_amount: result.mat_amount,
           oxyfactor: result.oxyfactor
-        })
-      );
+        };
+        
+        console.log(`📤 저장 요청 ${index + 1}:`, requestData);
+        
+        return axiosClient.post(apiEndpoints.calculation.matdir.create, requestData);
+      });
 
-      await Promise.all(savePromises);
-      console.log('✅ 원료직접배출량 데이터 저장 성공');
+      const responses = await Promise.all(savePromises);
+      console.log('✅ 원료직접배출량 데이터 저장 성공:', responses);
       alert('원료직접배출량 데이터가 성공적으로 저장되었습니다!');
       
       // 모달 닫기
@@ -495,6 +504,11 @@ function ProcessManagerInner() {
 
     } catch (error: any) {
       console.error('❌ 원료직접배출량 데이터 저장 실패:', error);
+      console.error('❌ 에러 상세:', {
+        status: error.response?.status,
+        data: error.response?.data,
+        message: error.message
+      });
       alert(`원료직접배출량 데이터 저장에 실패했습니다: ${error.response?.data?.detail || error.message}`);
     }
   }, [selectedProcessForMatDir, matDirResults, setShowMatDirModal, setMatDirResults, setSelectedProcessForMatDir]);

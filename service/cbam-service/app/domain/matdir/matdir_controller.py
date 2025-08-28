@@ -11,27 +11,35 @@ from .matdir_schema import (
     MatDirCalculationResponse
 )
 
-router = APIRouter(prefix="/matdir", tags=["원료직접배출량"])
+router = APIRouter(prefix="", tags=["원료직접배출량"])
 
 def get_matdir_service(db: Session = Depends(get_database_session)) -> MatDirService:
     return MatDirService(db)
 
-@router.post("/", response_model=MatDirResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/matdir", response_model=MatDirResponse, status_code=status.HTTP_201_CREATED)
 async def create_matdir(
     matdir_data: MatDirCreateRequest,
     service: MatDirService = Depends(get_matdir_service)
 ):
     """원료직접배출량 데이터 생성"""
     try:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.info(f"📝 원료직접배출량 생성 요청: {matdir_data.dict()}")
+        
         result = service.create_matdir(matdir_data)
+        logger.info(f"✅ 원료직접배출량 생성 성공: ID {result.id}")
         return result
     except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"❌ 원료직접배출량 생성 실패: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"원료직접배출량 생성 실패: {str(e)}"
         )
 
-@router.get("/", response_model=List[MatDirResponse])
+@router.get("/matdir", response_model=List[MatDirResponse])
 async def get_matdirs(
     skip: int = 0,
     limit: int = 100,
@@ -46,7 +54,7 @@ async def get_matdirs(
             detail=f"원료직접배출량 조회 실패: {str(e)}"
         )
 
-@router.get("/process/{process_id}", response_model=List[MatDirResponse])
+@router.get("/matdir/process/{process_id}", response_model=List[MatDirResponse])
 async def get_matdirs_by_process(
     process_id: int,
     service: MatDirService = Depends(get_matdir_service)
@@ -60,7 +68,7 @@ async def get_matdirs_by_process(
             detail=f"공정별 원료직접배출량 조회 실패: {str(e)}"
         )
 
-@router.get("/{matdir_id}", response_model=MatDirResponse)
+@router.get("/matdir/{matdir_id}", response_model=MatDirResponse)
 async def get_matdir(
     matdir_id: int,
     service: MatDirService = Depends(get_matdir_service)
@@ -82,7 +90,7 @@ async def get_matdir(
             detail=f"원료직접배출량 조회 실패: {str(e)}"
         )
 
-@router.put("/{matdir_id}", response_model=MatDirResponse)
+@router.put("/matdir/{matdir_id}", response_model=MatDirResponse)
 async def update_matdir(
     matdir_id: int,
     matdir_data: MatDirUpdateRequest,
@@ -105,7 +113,7 @@ async def update_matdir(
             detail=f"원료직접배출량 수정 실패: {str(e)}"
         )
 
-@router.delete("/{matdir_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/matdir/{matdir_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_matdir(
     matdir_id: int,
     service: MatDirService = Depends(get_matdir_service)
@@ -126,7 +134,7 @@ async def delete_matdir(
             detail=f"원료직접배출량 삭제 실패: {str(e)}"
         )
 
-@router.post("/calculate", response_model=MatDirCalculationResponse)
+@router.post("/matdir/calculate", response_model=MatDirCalculationResponse)
 async def calculate_matdir_emission(
     calculation_data: MatDirCalculationRequest,
     service: MatDirService = Depends(get_matdir_service)
@@ -140,7 +148,7 @@ async def calculate_matdir_emission(
             detail=f"원료직접배출량 계산 실패: {str(e)}"
         )
 
-@router.get("/process/{process_id}/total")
+@router.get("/matdir/process/{process_id}/total")
 async def get_total_matdir_emission_by_process(
     process_id: int,
     service: MatDirService = Depends(get_matdir_service)
