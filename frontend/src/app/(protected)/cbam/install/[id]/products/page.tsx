@@ -88,6 +88,12 @@ export default function InstallProductsPage() {
   const [cnCodeResults, setCnCodeResults] = useState<HSCNMappingResponse[]>([]);
   const [showCnCodeResults, setShowCnCodeResults] = useState(false);
 
+  // 모달 상태 관리
+  const [showHSCodeModal, setShowHSCodeModal] = useState(false);
+  const [hsCodeSearchInput, setHsCodeSearchInput] = useState('');
+  const [searchResults, setSearchResults] = useState<HSCNMappingResponse[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+
   const [processForm, setProcessForm] = useState<ProcessForm>({
     process_name: ''
   });
@@ -136,32 +142,56 @@ export default function InstallProductsPage() {
     }));
   };
 
-  // HS 코드 조회 함수
-  const handleHSCodeLookup = async (hsCode: string) => {
-    if (hsCode.length === 10) {
-      try {
-        const results = await lookupByHSCode(hsCode);
-        setCnCodeResults(results);
-        setShowCnCodeResults(true);
-      } catch (error) {
-        console.error('HS 코드 조회 실패:', error);
-        setCnCodeResults([]);
-        setShowCnCodeResults(false);
-      }
-    } else {
-      setShowCnCodeResults(false);
+  // HS 코드 실시간 검색 함수
+  const handleHSCodeSearch = async (searchTerm: string) => {
+    if (searchTerm.length < 2) {
+      setSearchResults([]);
+      return;
+    }
+
+    setIsSearching(true);
+    try {
+      // 10자리로 패딩하여 검색 (앞 6자리만 사용)
+      const paddedCode = searchTerm.padEnd(10, '0');
+      const results = await lookupByHSCode(paddedCode);
+      setSearchResults(results);
+    } catch (error) {
+      console.error('HS 코드 검색 실패:', error);
+      setSearchResults([]);
+    } finally {
+      setIsSearching(false);
     }
   };
 
-  // CN 코드 선택 함수
-  const handleSelectCNCode = (result: HSCNMappingResponse) => {
+  // HS 코드 검색 입력 변경 핸들러
+  const handleHSCodeSearchInputChange = (value: string) => {
+    setHsCodeSearchInput(value);
+    // 실시간 검색 (디바운싱 적용)
+    const timeoutId = setTimeout(() => {
+      handleHSCodeSearch(value);
+    }, 300);
+    return () => clearTimeout(timeoutId);
+  };
+
+  // CN 코드 선택 함수 (모달에서)
+  const handleSelectCNCodeFromModal = (result: HSCNMappingResponse) => {
     setProductForm(prev => ({
       ...prev,
+      product_hscode: hsCodeSearchInput,
       product_cncode: result.cncode_total,
       goods_name: result.goods_name || '',
       aggrgoods_name: result.aggregoods_name || ''
     }));
-    setShowCnCodeResults(false);
+    setShowHSCodeModal(false);
+    setHsCodeSearchInput('');
+    setSearchResults([]);
+  };
+
+  // 모달 열기 함수
+  const openHSCodeModal = () => {
+    setShowHSCodeModal(true);
+    setHsCodeSearchInput('');
+    setSearchResults([]);
   };
 
   const handleProductSubmit = async (e: React.FormEvent) => {
@@ -339,6 +369,80 @@ export default function InstallProductsPage() {
           </div>
         )}
 
+        {/* HS 코드 검색 모달 */}
+        {showHSCodeModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 w-full max-w-2xl mx-4">
+              {/* 모달 헤더 */}
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-semibold text-gray-900">HS코드로 CN코드 검색</h3>
+                <button
+                  onClick={() => setShowHSCodeModal(false)}
+                  className="text-gray-500 hover:text-gray-700 text-xl"
+                >
+                  ×
+                </button>
+              </div>
+
+              {/* 검색 입력 필드 */}
+              <div className="mb-4">
+                <input
+                  type="text"
+                  value={hsCodeSearchInput}
+                  onChange={(e) => handleHSCodeSearchInputChange(e.target.value)}
+                  placeholder="HS 코드를 입력하세요"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  autoFocus
+                />
+              </div>
+
+              {/* 검색 결과 */}
+              <div className="max-h-96 overflow-y-auto">
+                {isSearching && (
+                  <div className="text-center py-4">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500 mx-auto"></div>
+                    <p className="text-gray-600 mt-2">검색 중...</p>
+                  </div>
+                )}
+
+                {!isSearching && searchResults.length > 0 && (
+                  <div className="space-y-2">
+                    <h4 className="text-sm font-medium text-gray-700 mb-2">검색 결과 ({searchResults.length}개)</h4>
+                    {searchResults.map((result, index) => (
+                      <div
+                        key={index}
+                        onClick={() => handleSelectCNCodeFromModal(result)}
+                        className="p-3 border border-gray-200 rounded-md cursor-pointer hover:bg-gray-50 transition-colors"
+                      >
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1">
+                            <div className="text-sm font-medium text-blue-600">{result.cncode_total}</div>
+                            <div className="text-xs text-gray-600 mt-1">{result.goods_name}</div>
+                            <div className="text-xs text-gray-500">{result.aggregoods_name}</div>
+                          </div>
+                          <div className="text-xs text-gray-400 ml-2">선택</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {!isSearching && hsCodeSearchInput.length >= 2 && searchResults.length === 0 && (
+                  <div className="text-center py-4">
+                    <p className="text-gray-500">검색 결과가 없습니다.</p>
+                  </div>
+                )}
+
+                {hsCodeSearchInput.length < 2 && (
+                  <div className="text-center py-4">
+                    <p className="text-gray-500">HS 코드를 2자리 이상 입력해주세요.</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* 제품 관리 섹션 */}
         <div className="space-y-6">
           {/* 제품 생성 폼 */}
@@ -382,54 +486,25 @@ export default function InstallProductsPage() {
 
                 {/* HS 코드 입력 필드 */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">HS 코드 (10자리)</label>
-                  <div className="relative">
+                  <label className="block text-sm font-medium text-gray-300 mb-2">HS 코드</label>
+                  <div className="flex gap-2">
                     <input
                       type="text"
                       value={productForm.product_hscode}
-                      onChange={(e) => {
-                        const value = e.target.value.replace(/\D/g, '').slice(0, 10);
-                        handleProductInputChange('product_hscode', value);
-                        if (value.length === 10) {
-                          handleHSCodeLookup(value);
-                        } else {
-                          setShowCnCodeResults(false);
-                        }
-                      }}
-                      className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="예: 7208510000"
-                      maxLength={10}
+                      onChange={(e) => handleProductInputChange('product_hscode', e.target.value)}
+                      className="flex-1 px-3 py-2 bg-white/10 border border-white/20 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="HS 코드를 입력하세요"
+                      readOnly
                     />
-                    {mappingLoading && (
-                      <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
-                      </div>
-                    )}
+                    <button
+                      type="button"
+                      onClick={openHSCodeModal}
+                      className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md transition-colors duration-200"
+                    >
+                      HS CODE 검색
+                    </button>
                   </div>
-                  {productForm.product_hscode.length > 0 && productForm.product_hscode.length < 10 && (
-                    <p className="text-yellow-400 text-xs mt-1">HS 코드는 10자리 숫자여야 합니다.</p>
-                  )}
                 </div>
-
-                {/* CN 코드 결과 표시 */}
-                {showCnCodeResults && cnCodeResults.length > 0 && (
-                  <div className="bg-white/10 border border-white/20 rounded-md p-3">
-                    <h4 className="text-sm font-medium text-white mb-2">🔍 CN 코드 검색 결과:</h4>
-                    <div className="space-y-2 max-h-40 overflow-y-auto">
-                      {cnCodeResults.map((result, index) => (
-                        <div
-                          key={index}
-                          onClick={() => handleSelectCNCode(result)}
-                          className="p-2 bg-white/5 rounded cursor-pointer hover:bg-white/10 transition-colors"
-                        >
-                          <div className="text-sm text-blue-300 font-medium">{result.cncode_total}</div>
-                          <div className="text-xs text-gray-300">{result.goods_name}</div>
-                          <div className="text-xs text-gray-400">{result.aggregoods_name}</div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
 
                 {/* CN 코드 및 품목 정보 표시 */}
                 {productForm.product_cncode && (
