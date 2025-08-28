@@ -17,10 +17,9 @@ class MatDirRepository:
     """원료직접배출량 데이터 접근 클래스"""
     
     def __init__(self):
-        self.database_url = os.getenv('DATABASE_URL')
-        if not self.database_url:
-            logger.warning("DATABASE_URL 환경변수가 설정되지 않았습니다. 데이터베이스 기능이 제한됩니다.")
-            return
+        # Railway PostgreSQL URL 직접 설정
+        self.database_url = "postgresql://postgres:eQGfytQNhXYAZxsJYlFhYagpJAgstrni@shortline.proxy.rlwy.net:46071/railway"
+        logger.info(f"✅ MatDir Repository 초기화: {self.database_url[:50]}...")
         
         try:
             self._initialize_database()
@@ -76,14 +75,31 @@ class MatDirRepository:
                 """)
                 
                 if not cursor.fetchone()[0]:
-                    logger.info("⚠️ matdir 테이블이 존재하지 않습니다. 수동으로 생성해주세요.")
+                    logger.info("⚠️ matdir 테이블이 존재하지 않습니다. 자동으로 생성합니다.")
+                    
+                    # matdir 테이블 생성
+                    cursor.execute("""
+                        CREATE TABLE matdir (
+                            id SERIAL PRIMARY KEY,
+                            process_id INTEGER NOT NULL,
+                            mat_name VARCHAR(255) NOT NULL,
+                            mat_factor NUMERIC(10, 6) NOT NULL,
+                            mat_amount NUMERIC(15, 6) NOT NULL,
+                            oxyfactor NUMERIC(5, 4) DEFAULT 1.0000,
+                            matdir_em NUMERIC(15, 6) DEFAULT 0,
+                            created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+                            updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+                        );
+                    """)
+                    
+                    logger.info("✅ matdir 테이블 생성 완료")
                 else:
                     logger.info("✅ matdir 테이블 확인 완료")
                 
                 conn.commit()
                 
         except Exception as e:
-            logger.error(f"❌ matdir 테이블 확인 실패: {str(e)}")
+            logger.error(f"❌ matdir 테이블 확인/생성 실패: {str(e)}")
             raise
 
     async def create_matdir(self, matdir_data: Dict[str, Any]) -> Dict[str, Any]:
