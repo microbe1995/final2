@@ -25,10 +25,12 @@ logger = logging.getLogger(__name__)
 from app.domain.calculation.calculation_controller import router as calculation_router
 from app.domain.mapping.mapping_controller import router as mapping_router
 from app.domain.matdir.matdir_controller import router as matdir_router
+from app.domain.fueldir.fueldir_controller import router as fueldir_router
 
 # 엔티티 임포트 (순환 참조 방지를 위해 라우터 등록 전에 임포트)
 from app.domain.calculation.calculation_entity import Install, Product, Process, ProductProcess, Edge
 from app.domain.matdir.matdir_entity import MatDir
+from app.domain.fueldir.fueldir_entity import FuelDir
 
 # ============================================================================
 # 🔧 설정 및 초기화
@@ -218,6 +220,7 @@ async def log_requests(request: Request, call_next):
 app.include_router(calculation_router)
 app.include_router(mapping_router)
 app.include_router(matdir_router)
+app.include_router(fueldir_router)
 
 # ============================================================================
 # 🏥 헬스체크 엔드포인트
