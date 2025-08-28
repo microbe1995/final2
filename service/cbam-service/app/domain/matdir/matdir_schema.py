@@ -20,10 +20,10 @@ class MatDirResponse(BaseModel):
     id: int
     process_id: int
     mat_name: str
-    mat_factor: Decimal
-    mat_amount: Decimal
-    oxyfactor: Decimal
-    matdir_em: Decimal
+    mat_factor: float
+    mat_amount: float
+    oxyfactor: float
+    matdir_em: float
     created_at: datetime
     updated_at: datetime
 
@@ -36,5 +36,5 @@ class MatDirCalculationRequest(BaseModel):
     oxyfactor: Decimal = Field(default=Decimal('1.0000'), description="산화계수")
 
 class MatDirCalculationResponse(BaseModel):
-    matdir_em: Decimal = Field(..., description="원료직접배출량")
+    matdir_em: float = Field(..., description="원료직접배출량")
     calculation_formula: str = Field(..., description="계산 공식")

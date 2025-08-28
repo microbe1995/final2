@@ -28,8 +28,7 @@ httpx==0.25.2
 # 환경 변수
 python-dotenv==1.0.0
 
-# 로깅
-loguru==0.7.2
+# 로깅 (표준 logging 모듈 사용)
 
 # 이미지 처리 (도형 렌더링용)
 Pillow==10.1.0

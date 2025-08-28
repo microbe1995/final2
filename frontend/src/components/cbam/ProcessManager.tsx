@@ -1107,7 +1107,7 @@ function ProcessManagerInner() {
                           <div>원료량: {result.mat_amount}</div>
                           <div>산화계수: {result.oxyfactor}</div>
                           <div className="text-green-400 font-medium">
-                            원료직접배출량: {result.matdir_em.toFixed(6)} tCO2e
+                            원료직접배출량: {typeof result.matdir_em === 'number' ? result.matdir_em.toFixed(6) : '0.000000'} tCO2e
                           </div>
                           <div className="text-xs text-gray-400 mt-2">
                             {result.calculation_formula}

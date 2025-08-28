@@ -24,10 +24,10 @@ class MatDir(Base):
             "id": self.id,
             "process_id": self.process_id,
             "mat_name": self.mat_name,
-            "mat_factor": float(self.mat_factor) if self.mat_factor else None,
-            "mat_amount": float(self.mat_amount) if self.mat_amount else None,
-            "oxyfactor": float(self.oxyfactor) if self.oxyfactor else 1.0000,
-            "matdir_em": float(self.matdir_em) if self.matdir_em else 0,
+            "mat_factor": float(self.mat_factor) if self.mat_factor is not None else 0.0,
+            "mat_amount": float(self.mat_amount) if self.mat_amount is not None else 0.0,
+            "oxyfactor": float(self.oxyfactor) if self.oxyfactor is not None else 1.0000,
+            "matdir_em": float(self.matdir_em) if self.matdir_em is not None else 0.0,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None
         }

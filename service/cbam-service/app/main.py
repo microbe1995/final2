@@ -10,9 +10,16 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
-from loguru import logger
 from sqlalchemy import create_engine, text
 from dotenv import load_dotenv
+
+# 로깅 설정
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s | %(levelname)-8s | %(name)s:%(funcName)s:%(lineno)d - %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
+logger = logging.getLogger(__name__)
 
 # CBAM 도메인 라우터
 from app.domain.calculation.calculation_controller import router as calculation_router
@@ -93,7 +100,7 @@ def initialize_database():
             'connect_args': {
                 'connect_timeout': 30,
                 'application_name': 'cbam-service',
-                'options': '-c timezone=utc -c client_encoding=utf8'
+                'options': '-c timezone=utc -c client_encoding=utf8 -c log_min_messages=error -c log_statement=none'
             }
         }
         
@@ -167,6 +174,15 @@ app = FastAPI(
     redoc_url="/redoc" if DEBUG_MODE else None,
     openapi_url="/openapi.json" if DEBUG_MODE else None,
     lifespan=lifespan
+)
+
+# CORS 미들웨어 설정
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # 프로덕션에서는 특정 도메인만 허용
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # ============================================================================
