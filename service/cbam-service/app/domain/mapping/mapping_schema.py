@@ -13,38 +13,38 @@ from datetime import datetime
 class HSCNMappingResponse(BaseModel):
     """HS-CN 매핑 응답"""
     cncode_total: str = Field(..., description="CN 코드 (8자리)")
-    goods_name: Optional[str] = Field(None, description="상세 품명(한글)")
-    goods_engname: Optional[str] = Field(None, description="상세 품명(영문)")
-    aggregoods_name: Optional[str] = Field(None, description="제품 대분류(한글)")
-    aggregoods_engname: Optional[str] = Field(None, description="제품 대분류(영문)")
+    goods_name: Optional[str] = Field(None, description="품목명")
+    goods_engname: Optional[str] = Field(None, description="품목영문명")
+    aggregoods_name: Optional[str] = Field(None, description="품목군명")
+    aggregoods_engname: Optional[str] = Field(None, description="품목군영문명")
 
 class HSCNMappingCreateRequest(BaseModel):
     """HS-CN 매핑 생성 요청"""
     hscode: str = Field(..., description="HS 코드 (앞 6자리)", min_length=6, max_length=6)
-    aggregoods_name: Optional[str] = Field(None, description="제품 대분류(한글)")
-    aggregoods_engname: Optional[str] = Field(None, description="제품 대분류(영문)")
+    aggregoods_name: Optional[str] = Field(None, description="품목군명")
+    aggregoods_engname: Optional[str] = Field(None, description="품목군영문명")
     cncode_total: str = Field(..., description="CN 코드 (8자리)", min_length=8, max_length=8)
-    goods_name: Optional[str] = Field(None, description="상세 품명(한글)")
-    goods_engname: Optional[str] = Field(None, description="상세 품명(영문)")
+    goods_name: Optional[str] = Field(None, description="품목명")
+    goods_engname: Optional[str] = Field(None, description="품목영문명")
 
 class HSCNMappingUpdateRequest(BaseModel):
     """HS-CN 매핑 수정 요청"""
     hscode: Optional[str] = Field(None, description="HS 코드 (앞 6자리)", min_length=6, max_length=6)
-    aggregoods_name: Optional[str] = Field(None, description="제품 대분류(한글)")
-    aggregoods_engname: Optional[str] = Field(None, description="제품 대분류(영문)")
+    aggregoods_name: Optional[str] = Field(None, description="품목군명")
+    aggregoods_engname: Optional[str] = Field(None, description="품목군영문명")
     cncode_total: Optional[str] = Field(None, description="CN 코드 (8자리)", min_length=8, max_length=8)
-    goods_name: Optional[str] = Field(None, description="상세 품명(한글)")
-    goods_engname: Optional[str] = Field(None, description="상세 품명(영문)")
+    goods_name: Optional[str] = Field(None, description="품목명")
+    goods_engname: Optional[str] = Field(None, description="품목영문명")
 
 class HSCNMappingFullResponse(BaseModel):
     """HS-CN 매핑 전체 응답 (ID 포함)"""
     id: int = Field(..., description="매핑 ID")
     hscode: str = Field(..., description="HS 코드 (앞 6자리)")
-    aggregoods_name: Optional[str] = Field(None, description="제품 대분류(한글)")
-    aggregoods_engname: Optional[str] = Field(None, description="제품 대분류(영문)")
+    aggregoods_name: Optional[str] = Field(None, description="품목군명")
+    aggregoods_engname: Optional[str] = Field(None, description="품목군영문명")
     cncode_total: str = Field(..., description="CN 코드 (8자리)")
-    goods_name: Optional[str] = Field(None, description="상세 품명(한글)")
-    goods_engname: Optional[str] = Field(None, description="상세 품명(영문)")
+    goods_name: Optional[str] = Field(None, description="품목명")
+    goods_engname: Optional[str] = Field(None, description="품목영문명")
     created_at: Optional[datetime] = Field(None, description="생성일")
     updated_at: Optional[datetime] = Field(None, description="수정일")
 

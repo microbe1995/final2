@@ -111,11 +111,11 @@ class HSCNMappingRepository:
     # ============================================================================
     
     async def lookup_by_hs_code(self, hs_code: str) -> List[HSCNMapping]:
-        """HS 코드로 CN 코드 조회"""
+        """HS 코드로 CN 코드 조회 (부분 검색 허용)"""
         try:
-            # 입력된 HS 코드를 그대로 사용하여 검색
+            # 부분 검색을 위해 LIKE 연산자 사용
             mappings = self.db.query(HSCNMapping).filter(
-                HSCNMapping.hscode == hs_code
+                HSCNMapping.hscode.like(f"{hs_code}%")
             ).all()
             
             logger.info(f"🔍 HS 코드 조회: {hs_code}, 결과: {len(mappings)}개")

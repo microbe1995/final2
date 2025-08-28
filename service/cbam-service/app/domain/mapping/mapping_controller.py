@@ -38,9 +38,9 @@ async def lookup_cn_code_by_hs_code(
     mapping_service: HSCNMappingService = Depends(get_mapping_service)
 ):
     """
-    HS 코드로 CN 코드 조회
+    HS 코드로 CN 코드 조회 (부분 검색 허용)
     
-    - **hs_code**: HS 코드 (예: 72, 7208, 720851)
+    - **hs_code**: HS 코드 (예: 72, 720, 7208, 720851) - 2자리 이상 입력
     - **응답**: CN 코드 매핑 정보 목록
     """
     try:

@@ -103,19 +103,19 @@ class HSCNMappingService:
     # 🔍 HS 코드 조회 기능
     # ============================================================================
     
-    async def lookup_by_hs_code(self, hs_code_10: str) -> HSCodeLookupResponse:
-        """10자리 HS 코드로 CN 코드 조회"""
+    async def lookup_by_hs_code(self, hs_code: str) -> HSCodeLookupResponse:
+        """HS 코드로 CN 코드 조회 (부분 검색 허용)"""
         try:
-            # HS 코드 유효성 검증
-            if not self._validate_hs_code_10(hs_code_10):
+            # HS 코드 유효성 검증 (부분 검색 허용)
+            if not self._validate_hs_code_10(hs_code):
                 return HSCodeLookupResponse(
                     success=False,
                     data=[],
                     count=0,
-                    message=f"유효하지 않은 HS 코드: {hs_code_10}"
+                    message=f"유효하지 않은 HS 코드: {hs_code}"
                 )
             
-            mappings = await self.repository.lookup_by_hs_code(hs_code_10)
+            mappings = await self.repository.lookup_by_hs_code(hs_code)
             
             # 응답 데이터 변환
             response_data = []
@@ -132,7 +132,7 @@ class HSCNMappingService:
                 success=True,
                 data=response_data,
                 count=len(response_data),
-                message=f"HS 코드 {hs_code_10}에 대한 {len(response_data)}개 매핑을 찾았습니다."
+                message=f"HS 코드 {hs_code}에 대한 {len(response_data)}개 매핑을 찾았습니다."
             )
             
         except Exception as e:
@@ -249,10 +249,13 @@ class HSCNMappingService:
         return hs_code.isdigit()
     
     def _validate_hs_code_10(self, hs_code: str) -> bool:
-        """HS 코드 유효성 검증 (10자리)"""
-        if not hs_code or len(hs_code) != 10:
+        """HS 코드 유효성 검증 (부분 검색 허용)"""
+        if not hs_code:
             return False
-        return hs_code.isdigit()
+        # 2자리 이상의 숫자만 허용 (부분 검색 가능)
+        if len(hs_code) < 2 or not hs_code.isdigit():
+            return False
+        return True
     
     def _validate_cn_code(self, cn_code: str) -> bool:
         """CN 코드 유효성 검증 (8자리)"""
