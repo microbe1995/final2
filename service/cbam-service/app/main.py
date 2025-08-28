@@ -26,6 +26,10 @@ from app.domain.calculation.calculation_controller import router as calculation_
 from app.domain.mapping.mapping_controller import router as mapping_router
 from app.domain.matdir.matdir_controller import router as matdir_router
 
+# 엔티티 임포트 (순환 참조 방지를 위해 라우터 등록 전에 임포트)
+from app.domain.calculation.calculation_entity import Install, Product, Process, ProductProcess, Edge
+from app.domain.matdir.matdir_entity import MatDir
+
 # ============================================================================
 # 🔧 설정 및 초기화
 # ============================================================================
@@ -210,10 +214,10 @@ async def log_requests(request: Request, call_next):
 # 🎯 라우터 등록
 # ============================================================================
 
-# CBAM 도메인 라우터들 등록
-app.include_router(calculation_router, prefix="/api")
-app.include_router(mapping_router, prefix="/api")
-app.include_router(matdir_router, prefix="/api")
+# CBAM 도메인 라우터들 등록 (Gateway를 통한 라우팅을 위해 prefix 제거)
+app.include_router(calculation_router)
+app.include_router(mapping_router)
+app.include_router(matdir_router)
 
 # ============================================================================
 # 🏥 헬스체크 엔드포인트

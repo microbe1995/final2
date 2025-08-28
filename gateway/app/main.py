@@ -84,21 +84,23 @@ async def proxy_request(service: str, path: str, request: Request) -> Response:
     if not base_url:
         return JSONResponse(status_code=404, content={"detail": f"Unknown service: {service}"})
 
-    # 서비스별 경로 정규화 (내부 서비스 라우터 prefix와 정렬)
+    # 서비스별 경로 정규화
     normalized_path = path
     if service == "auth":
-        # auth-service는 이미 라우터에서 "/auth" prefix를 사용하므로 그대로 전달
-        normalized_path = path
+        # auth-service는 "/auth" prefix를 사용
+        if not normalized_path.startswith("auth/"):
+            normalized_path = f"auth/{normalized_path}"
     elif service == "boundary" or service == "cal-boundary" or service == "cal_boundary":
-        # boundary-service는 내부에서 "/api" prefix를 사용하므로 보정
-        # 이미 "api/"로 시작하면 그대로 사용, 아니면 추가
-        if normalized_path and not normalized_path.startswith("api/"):
-            normalized_path = f"api/{normalized_path}"
-        # 만약 "api/api/"로 시작하면 중복 제거
-        elif normalized_path.startswith("api/api/"):
-            normalized_path = normalized_path[4:]  # "api/" 제거
+        # boundary-service는 prefix 없이 직접 라우팅
+        normalized_path = path
 
     target_url = f"{base_url.rstrip('/')}/{normalized_path}"
+    
+    # 라우팅 정보 로깅
+    logger.info(f"🔄 프록시 라우팅: {service} -> {target_url}")
+    logger.info(f"   원본 경로: {path}")
+    logger.info(f"   정규화된 경로: {normalized_path}")
+    
     method = request.method
     headers = dict(request.headers)
     headers.pop("host", None)
