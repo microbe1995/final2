@@ -8,7 +8,7 @@
 ✅ Railway + React Flow + FastAPI 기반 시스템에서 동작 시나리오
 ① Railway DB에 위 ERD대로 테이블 생성
 
-install, product, process, process_input, edge 등 실제 테이블 생성
+install, product, process, edge 등 실제 테이블 생성
 
 생성 후 FastAPI로 REST API 연결
 
@@ -33,12 +33,6 @@ install, product, process, process_input, edge 등 실제 테이블 생성
 연결 시 엣지 테이블에 자동 저장 (edge 테이블)
 
 ③ FastAPI에서 배출량 자동 계산 로직 작동
-
-각 process_input에서:
-
-input_amount × 배출계수 × 산화계수 → 직접배출량
-
-공정별 전체 배출량 합산
 
 공정 간 continue일 경우, 배출량 누적
 

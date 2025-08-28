@@ -464,7 +464,7 @@ function ProcessManagerInner() {
     } finally {
       setIsCalculatingMatDir(false);
     }
-  }, [matDirForm]);
+  }, [matDirForm, setMatDirResults, setMatDirForm, setIsCalculatingMatDir]);
 
   // 원료직접배출량 저장
   const saveMatDirData = useCallback(async () => {
@@ -497,12 +497,12 @@ function ProcessManagerInner() {
       console.error('❌ 원료직접배출량 데이터 저장 실패:', error);
       alert(`원료직접배출량 데이터 저장에 실패했습니다: ${error.response?.data?.detail || error.message}`);
     }
-  }, [selectedProcessForMatDir, matDirResults]);
+  }, [selectedProcessForMatDir, matDirResults, setShowMatDirModal, setMatDirResults, setSelectedProcessForMatDir]);
 
   // 원료직접배출량 결과 삭제
   const removeMatDirResult = useCallback((index: number) => {
     setMatDirResults(prev => prev.filter((_, i) => i !== index));
-  }, []);
+  }, [setMatDirResults]);
 
   const nodeTypes: NodeTypes = { custom: ProductNode, process: ProcessNode };
 
@@ -1084,7 +1084,7 @@ function ProcessManagerInner() {
                 
                 {matDirResults.length === 0 ? (
                   <div className="text-center py-8 text-gray-400">
-                    <p>원료 정보를 입력하고 "확인" 버튼을 눌러 계산을 시작하세요.</p>
+                    <p>원료 정보를 입력하고 &quot;확인&quot; 버튼을 눌러 계산을 시작하세요.</p>
                   </div>
                 ) : (
                   <div className="space-y-3 max-h-96 overflow-y-auto">
