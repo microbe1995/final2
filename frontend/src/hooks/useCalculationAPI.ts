@@ -139,20 +139,6 @@ export interface CalculationStatsResponse {
 // ============================================================================
 
 export const useCalculationAPI = () => {
-  // 🔥 연료 배출량 계산 (실제 API 호출)
-  const calculateFuelEmission = useCallback(
-    async (data: FuelCalculationRequest): Promise<FuelCalculationResponse | null> => {
-      try {
-        const response = await axiosClient.post(apiEndpoints.calculation.fuel, data);
-        return response.data;
-      } catch (error) {
-
-        return null;
-      }
-    },
-    []
-  );
-
   // 🧱 원료 배출량 계산 (실제 API 호출)
   const calculateMaterialEmission = useCallback(
     async (data: MaterialCalculationRequest): Promise<MaterialCalculationResponse | null> => {
@@ -160,7 +146,21 @@ export const useCalculationAPI = () => {
         const response = await axiosClient.post(apiEndpoints.calculation.material, data);
         return response.data;
       } catch (error) {
+        console.error('❌ 원료 배출량 계산 API 호출 실패:', error);
+        return null;
+      }
+    },
+    []
+  );
 
+  // ⛽ 연료 배출량 계산 (실제 API 호출)
+  const calculateFuelEmission = useCallback(
+    async (data: FuelCalculationRequest): Promise<FuelCalculationResponse | null> => {
+      try {
+        const response = await axiosClient.post(apiEndpoints.calculation.fueldir.calculate, data);
+        return response.data;
+      } catch (error) {
+        console.error('❌ 연료 배출량 계산 API 호출 실패:', error);
         return null;
       }
     },

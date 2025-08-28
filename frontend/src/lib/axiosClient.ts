@@ -277,6 +277,16 @@ export const apiEndpoints = {
         byProcess: (process_id: number) => `/api/v1/boundary/matdir/process/${process_id}`,
         calculate: '/api/v1/boundary/matdir/calculate',
         totalByProcess: (process_id: number) => `/api/v1/boundary/matdir/process/${process_id}/total`
+    },
+    fueldir: {
+        create: '/api/v1/boundary/fueldir',
+        list: '/api/v1/boundary/fueldir',
+        get: (id: number) => `/api/v1/boundary/fueldir/${id}`,
+        update: (id: number) => `/api/v1/boundary/fueldir/${id}`,
+        delete: (id: number) => `/api/v1/boundary/fueldir/${id}`,
+        byProcess: (process_id: number) => `/api/v1/boundary/fueldir/process/${process_id}`,
+        calculate: '/api/v1/boundary/fueldir/calculate',
+        totalByProcess: (process_id: number) => `/api/v1/boundary/fueldir/process/${process_id}/total`
     }
 },
   // Data Upload (Gateway를 통해)

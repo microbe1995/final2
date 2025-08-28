@@ -167,9 +167,20 @@ function ProcessNode({
                   data.onMatDirClick(data.processData);
                 }
               }}
-              className='w-full px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded transition-colors'
+              className='w-full px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded transition-colors mb-2'
             >
               📊 원료직접배출량
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                if (data.onFuelDirClick) {
+                  data.onFuelDirClick(data.processData);
+                }
+              }}
+              className='w-full px-2 py-1 bg-green-600 hover:bg-green-700 text-white text-xs rounded transition-colors'
+            >
+              ⛽ 연료직접배출량
             </button>
           </div>
         )}
