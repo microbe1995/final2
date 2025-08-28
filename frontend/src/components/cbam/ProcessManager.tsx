@@ -292,11 +292,7 @@ function ProcessManagerInner() {
     setShowProcessModal(true);
   }, []);
 
-  // 공정 선택 모달 열기 (전체 공정)
-  const openProcessModal = useCallback(() => {
-    setProcessFilterMode('all');
-    setShowProcessModal(true);
-  }, []);
+
 
   // 제품별 공정 선택 모달 열기
   const openProcessModalForProduct = useCallback((product: any) => {
@@ -460,9 +456,6 @@ function ProcessManagerInner() {
       <div className="bg-gray-800 p-4 flex gap-2">
         <Button onClick={addProductNode} disabled={!selectedInstall} className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg flex items-center gap-2">
           <Plus className="h-4 w-4" /> 제품 노드
-        </Button>
-        <Button onClick={openProcessModal} disabled={!selectedInstall} className="bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg flex items-center gap-2">
-          <Plus className="h-4 w-4" /> 공정 노드 (크로스 사업장)
         </Button>
         <Button onClick={addGroupNode} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2">
           <Plus className="h-4 w-4" /> 그룹 노드

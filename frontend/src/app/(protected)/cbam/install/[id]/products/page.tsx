@@ -42,6 +42,7 @@ interface Process {
 
 interface ProductForm {
   product_name: string;
+  product_category: string;
   prostart_period: string;
   proend_period: string;
   product_amount: number;
@@ -75,6 +76,7 @@ export default function InstallProductsPage() {
 
   const [productForm, setProductForm] = useState<ProductForm>({
     product_name: '',
+    product_category: '',
     prostart_period: '',
     proend_period: '',
     product_amount: 0,
@@ -151,6 +153,7 @@ export default function InstallProductsPage() {
   const resetProductForm = () => {
     setProductForm({
       product_name: '',
+      product_category: '',
       prostart_period: '',
       proend_period: '',
       product_amount: 0,
@@ -172,6 +175,7 @@ export default function InstallProductsPage() {
     setEditingProduct(product);
     setProductForm({
       product_name: product.product_name,
+      product_category: product.product_category,
       prostart_period: product.prostart_period,
       proend_period: product.proend_period,
       product_amount: product.product_amount,
@@ -525,9 +529,20 @@ export default function InstallProductsPage() {
                   />
                 </div>
 
-                
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">제품 카테고리</label>
+                  <select
+                    value={productForm.product_category}
+                    onChange={(e) => handleProductInputChange('product_category', e.target.value)}
+                    className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">카테고리를 선택하세요</option>
+                    <option value="단순제품">단순제품</option>
+                    <option value="복합제품">복합제품</option>
+                  </select>
+                </div>
 
-                                                   {/* CN 코드 입력 필드 */}
+                {/* CN 코드 입력 필드 */}
                   <div>
                     <label className="block text-sm font-medium text-gray-300 mb-2">CN 코드</label>
                     <div className="flex gap-2">
@@ -641,6 +656,9 @@ export default function InstallProductsPage() {
                         <p className="text-gray-300 text-sm">기간: {product.prostart_period} ~ {product.proend_period}</p>
                         <p className="text-gray-300 text-sm">수량: {product.product_amount.toLocaleString()}</p>
                         <p className="text-gray-300 text-sm">공정 수: {productProcesses.length}개</p>
+                        {product.product_category && (
+                          <p className="text-gray-300 text-sm">카테고리: <span className="text-blue-300">{product.product_category}</span></p>
+                        )}
                                                  {product.cncode_total && (
                            <div className="mt-2 p-2 bg-blue-500/10 rounded border border-blue-500/20">
                              <p className="text-blue-300 text-sm">CN 코드: <span className="font-medium">{product.cncode_total}</span></p>
