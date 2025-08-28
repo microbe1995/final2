@@ -29,7 +29,7 @@ logger = logging.getLogger("gateway_api")
 
 # 서비스 맵 구성 (환경 변수 기반)
 AUTH_SERVICE_URL = os.getenv("AUTH_SERVICE_URL", "http://auth-service:8000")
-CAL_BOUNDARY_URL = os.getenv("CAL_BOUNDARY_URL", "http://cal-boundary:8001")
+CAL_BOUNDARY_URL = os.getenv("CAL_BOUNDARY_URL", "https://lcafinal-production.up.railway.app")
 
 SERVICE_MAP = {
     "auth": AUTH_SERVICE_URL,
