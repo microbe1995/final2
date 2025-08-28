@@ -60,8 +60,8 @@ const edgeTypes: EdgeTypes = { custom: CustomEdge };
 ============================================================================ */
 function ProcessManagerInner() {
   // 상태 훅
-  const [nodes, , onNodesChange] = useNodesState<any>([]);
-  const [edges, , onEdgesChange] = useEdgesState<any>([]);
+  const [nodes, setNodes, onNodesChange] = useNodesState<any>([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState<any>([]);
   const { addNodes, addEdges } = useReactFlow();
 
   // 사업장 관련 상태
@@ -226,25 +226,31 @@ function ProcessManagerInner() {
     setShowInstallModal(true);
   }, []);
 
-  // 사업장 선택
+  // 사업장 선택 - 캔버스 상태 관리 개선
   const handleInstallSelect = useCallback((install: any) => {
+    console.log('🏭 사업장 선택:', install);
+    
+    // 현재 활성 사업장의 캔버스 상태 저장
+    if (activeInstallId) {
+      setInstallCanvases(prev => ({
+        ...prev,
+        [activeInstallId]: { nodes, edges }
+      }));
+    }
+    
+    // 새로운 사업장 설정
     setSelectedInstall(install);
     setActiveInstallId(install.id);
     setShowInstallModal(false);
     
-    // 해당 사업장의 캔버스가 없으면 초기화
-    if (!installCanvases[install.id]) {
-      setInstallCanvases(prev => ({
-        ...prev,
-        [install.id]: { nodes: [], edges: [] }
-      }));
-    }
-    
-    // 현재 캔버스 상태를 해당 사업장의 캔버스로 설정
+    // 해당 사업장의 캔버스 데이터 가져오기
     const canvasData = installCanvases[install.id] || { nodes: [], edges: [] };
-    onNodesChange(canvasData.nodes);
-    onEdgesChange(canvasData.edges);
-  }, [installCanvases, onNodesChange, onEdgesChange]);
+    console.log('📊 캔버스 데이터 복원:', canvasData);
+    
+    // React Flow 상태 업데이트
+    setNodes(canvasData.nodes);
+    setEdges(canvasData.edges);
+  }, [activeInstallId, nodes, edges, installCanvases, setNodes, setEdges]);
 
   // 제품 노드 추가(모달 열기)
   const addProductNode = useCallback(async () => {
