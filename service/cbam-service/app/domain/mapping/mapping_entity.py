@@ -28,9 +28,9 @@ class HSCNMapping(Base):
     
     # 인덱스 정의
     __table_args__ = (
-        Index('idx_hs_cn_mapping_hscode', 'hscode', comment="HS 코드 검색 최적화"),
-        Index('idx_hs_cn_mapping_cncode', 'cncode_total', comment="CN 코드 검색 최적화"),
-        Index('idx_hs_cn_mapping_created_at', 'created_at', comment="생성일 검색 최적화"),
+        Index('idx_hs_cn_mapping_hscode', 'hscode'),
+        Index('idx_hs_cn_mapping_cncode', 'cncode_total'),
+        Index('idx_hs_cn_mapping_created_at', 'created_at'),
         {'comment': 'HS 코드와 CN 코드 매핑 테이블'}
     )
     
