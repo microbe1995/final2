@@ -1060,12 +1060,15 @@ function ProcessManagerInner() {
                   <div className="flex items-center justify-between">
                     <label className="text-sm font-medium text-gray-300">직접 배출량</label>
                     <div className="flex gap-2">
-                      <input
-                        type="text"
-                        readOnly
-                        value={matDirResults.reduce((sum, result) => sum + result.matdir_em, 0).toFixed(6)}
-                        className="w-32 px-3 py-2 bg-gray-600 border border-gray-500 rounded-md text-white text-right"
-                      />
+                                             <input
+                         type="text"
+                         readOnly
+                         value={matDirResults.reduce((sum, result) => {
+                           const emission = typeof result.matdir_em === 'number' ? result.matdir_em : 0;
+                           return sum + emission;
+                         }, 0).toFixed(6)}
+                         className="w-32 px-3 py-2 bg-gray-600 border border-gray-500 rounded-md text-white text-right"
+                       />
                       <button
                         onClick={saveMatDirData}
                         disabled={matDirResults.length === 0}
