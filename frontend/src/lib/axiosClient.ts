@@ -314,7 +314,7 @@ export const apiEndpoints = {
         getFactor: (mat_name: string) => `/api/v1/matdir/material-master/factor/${mat_name}`,
         autoFactor: '/api/v1/matdir/auto-factor'
     },
-    // Fuel Master API (새로 추가)
+    // Fuel Master API
     fuelMaster: {
         list: '/api/v1/boundary/fuel-master',
         search: (fuel_name: string) => `/api/v1/boundary/fuel-master/search/${fuel_name}`,

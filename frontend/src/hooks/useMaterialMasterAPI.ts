@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { apiEndpoints } from '@/lib/axiosClient';
+import axiosClient, { apiEndpoints } from '@/lib/axiosClient';
 
 // ============================================================================
 // 📝 MatDir 스키마 기반 타입 정의
@@ -41,13 +41,12 @@ export const useMaterialMasterAPI = () => {
     setError(null);
     
     try {
-      const response = await fetch(apiEndpoints.materialMaster.list + `?skip=${skip}&limit=${limit}`);
-      if (!response.ok) {
-        throw new Error(`원료 마스터 목록 조회 실패: ${response.status}`);
-      }
-      return await response.json();
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : '알 수 없는 오류가 발생했습니다';
+      const response = await axiosClient.get(apiEndpoints.materialMaster.list, {
+        params: { skip, limit }
+      });
+      return response.data;
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.detail || err.message || '알 수 없는 오류가 발생했습니다';
       setError(errorMessage);
       throw err;
     } finally {
@@ -61,13 +60,10 @@ export const useMaterialMasterAPI = () => {
     setError(null);
     
     try {
-      const response = await fetch(apiEndpoints.materialMaster.search(matName));
-      if (!response.ok) {
-        throw new Error(`원료 검색 실패: ${response.status}`);
-      }
-      return await response.json();
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : '알 수 없는 오류가 발생했습니다';
+      const response = await axiosClient.get(apiEndpoints.materialMaster.search(matName));
+      return response.data;
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.detail || err.message || '알 수 없는 오류가 발생했습니다';
       setError(errorMessage);
       throw err;
     } finally {
@@ -81,13 +77,10 @@ export const useMaterialMasterAPI = () => {
     setError(null);
     
     try {
-      const response = await fetch(apiEndpoints.materialMaster.getFactor(matName));
-      if (!response.ok) {
-        throw new Error(`배출계수 조회 실패: ${response.status}`);
-      }
-      return await response.json();
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : '알 수 없는 오류가 발생했습니다';
+      const response = await axiosClient.get(apiEndpoints.materialMaster.getFactor(matName));
+      return response.data;
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.detail || err.message || '알 수 없는 오류가 발생했습니다';
       setError(errorMessage);
       throw err;
     } finally {
