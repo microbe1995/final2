@@ -314,14 +314,14 @@ export const apiEndpoints = {
         getFactor: (fuel_name: string) => `/api/v1/boundary/fuel-master/factor/${fuel_name}`,
         autoFactor: '/api/v1/boundary/fueldir/auto-factor'
     },
-    // Material Master API (matdir 서비스 사용) - 최상위로 이동
-    materialMaster: {
-        list: '/api/v1/matdir/material-master',
-        search: (mat_name: string) => `/api/v1/matdir/material-master/search/${mat_name}`,
-        getFactor: (mat_name: string) => `/api/v1/matdir/material-master/factor/${mat_name}`,
-        autoFactor: '/api/v1/matdir/auto-factor'
-    }
-},
+  },
+  // Material Master API (matdir 서비스 사용) - 최상위로 이동
+  materialMaster: {
+      list: '/api/v1/matdir/',
+      search: (mat_name: string) => `/api/v1/matdir/search/${mat_name}`,
+      getFactor: (mat_name: string) => `/api/v1/matdir/factor/${mat_name}`,
+      autoFactor: '/api/v1/matdir/auto-factor'
+  },
   // Data Upload (Gateway를 통해)
   upload: {
     data: '/api/datagather/upload',
