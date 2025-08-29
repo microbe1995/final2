@@ -90,6 +90,10 @@ class FuelDirRepository:
             logger.error(f"fueldir 테이블 초기화 실패: {e}")
             raise
 
+    # ============================================================================
+    # 📋 기존 FuelDir CRUD 메서드들
+    # ============================================================================
+
     async def create_fueldir(self, fueldir_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """연료직접배출량 데이터 생성"""
         if not self.database_url:
@@ -98,217 +102,317 @@ class FuelDirRepository:
             
         try:
             conn = psycopg2.connect(self.database_url)
-            cursor = conn.cursor(cursor_factory=RealDictCursor)
+            conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
             
-            insert_sql = """
-            INSERT INTO fueldir (process_id, fuel_name, fuel_factor, fuel_amount, fuel_oxyfactor, fueldir_em)
-            VALUES (%s, %s, %s, %s, %s, %s)
-            RETURNING *
-            """
-            
-            cursor.execute(insert_sql, (
-                fueldir_data['process_id'],
-                fueldir_data['fuel_name'],
-                fueldir_data['fuel_factor'],
-                fueldir_data['fuel_amount'],
-                fueldir_data.get('fuel_oxyfactor', 1.0000),
-                fueldir_data.get('fueldir_em', 0)
-            ))
-            
-            result = cursor.fetchone()
-            conn.commit()
-            
-            cursor.close()
-            conn.close()
-            
-            if result:
-                logger.info(f"✅ 연료직접배출량 데이터 생성 성공: ID {result['id']}")
+            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                query = """
+                    INSERT INTO fueldir (process_id, fuel_name, fuel_factor, fuel_amount, fuel_oxyfactor, fueldir_em)
+                    VALUES (%s, %s, %s, %s, %s, %s)
+                    RETURNING *
+                """
+                
+                cursor.execute(query, (
+                    fueldir_data['process_id'],
+                    fueldir_data['fuel_name'],
+                    fueldir_data['fuel_factor'],
+                    fueldir_data['fuel_amount'],
+                    fueldir_data.get('fuel_oxyfactor', 1.0000),
+                    fueldir_data.get('fueldir_em', 0)
+                ))
+                
+                result = cursor.fetchone()
+                conn.commit()
+                
+                logger.info(f"✅ FuelDir 생성 성공: ID {result['id']}")
                 return dict(result)
-            else:
-                logger.error("❌ 연료직접배출량 데이터 생성 실패")
-                return None
                 
         except Exception as e:
-            logger.error(f"❌ 연료직접배출량 데이터 생성 중 오류: {e}")
+            logger.error(f"❌ FuelDir 생성 실패: {str(e)}")
+            raise
+        finally:
             if 'conn' in locals():
-                conn.rollback()
                 conn.close()
-            return None
 
     async def get_fueldirs(self, skip: int = 0, limit: int = 100) -> List[Dict[str, Any]]:
         """모든 연료직접배출량 데이터 조회"""
-        if not self.database_url:
-            logger.error("DATABASE_URL이 설정되지 않았습니다.")
-            return []
-            
         try:
-            conn = psycopg2.connect(self.database_url)
-            cursor = conn.cursor(cursor_factory=RealDictCursor)
-            
-            select_sql = """
-            SELECT * FROM fueldir 
-            ORDER BY created_at DESC 
-            LIMIT %s OFFSET %s
-            """
-            
-            cursor.execute(select_sql, (limit, skip))
-            results = cursor.fetchall()
-            
-            cursor.close()
-            conn.close()
-            
-            logger.info(f"✅ 연료직접배출량 데이터 조회 성공: {len(results)}개")
-            return [dict(result) for result in results]
-            
+            return await self._get_fueldirs_db(skip, limit)
         except Exception as e:
-            logger.error(f"❌ 연료직접배출량 데이터 조회 중 오류: {e}")
+            logger.error(f"❌ FuelDir 목록 조회 실패: {str(e)}")
             return []
 
     async def get_fueldirs_by_process(self, process_id: int) -> List[Dict[str, Any]]:
         """특정 공정의 연료직접배출량 데이터 조회"""
-        if not self.database_url:
-            logger.error("DATABASE_URL이 설정되지 않았습니다.")
-            return []
-            
         try:
-            conn = psycopg2.connect(self.database_url)
-            cursor = conn.cursor(cursor_factory=RealDictCursor)
-            
-            select_sql = """
-            SELECT * FROM fueldir 
-            WHERE process_id = %s 
-            ORDER BY created_at DESC
-            """
-            
-            cursor.execute(select_sql, (process_id,))
-            results = cursor.fetchall()
-            
-            cursor.close()
-            conn.close()
-            
-            logger.info(f"✅ 공정별 연료직접배출량 데이터 조회 성공: Process ID {process_id}, {len(results)}개")
-            return [dict(result) for result in results]
-            
+            return await self._get_fueldirs_by_process_db(process_id)
         except Exception as e:
-            logger.error(f"❌ 공정별 연료직접배출량 데이터 조회 중 오류: {e}")
+            logger.error(f"❌ 공정별 FuelDir 조회 실패: {str(e)}")
             return []
 
     async def get_fueldir(self, fueldir_id: int) -> Optional[Dict[str, Any]]:
         """특정 연료직접배출량 데이터 조회"""
-        if not self.database_url:
-            logger.error("DATABASE_URL이 설정되지 않았습니다.")
-            return None
-            
         try:
-            conn = psycopg2.connect(self.database_url)
-            cursor = conn.cursor(cursor_factory=RealDictCursor)
-            
-            select_sql = "SELECT * FROM fueldir WHERE id = %s"
-            cursor.execute(select_sql, (fueldir_id,))
-            result = cursor.fetchone()
-            
-            cursor.close()
-            conn.close()
-            
-            if result:
-                logger.info(f"✅ 연료직접배출량 데이터 조회 성공: ID {fueldir_id}")
-                return dict(result)
-            else:
-                logger.warning(f"⚠️ 연료직접배출량 데이터를 찾을 수 없음: ID {fueldir_id}")
-                return None
-                
+            return await self._get_fueldir_db(fueldir_id)
         except Exception as e:
-            logger.error(f"❌ 연료직접배출량 데이터 조회 중 오류: {e}")
+            logger.error(f"❌ FuelDir 조회 실패: {str(e)}")
             return None
 
     async def update_fueldir(self, fueldir_id: int, fueldir_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """연료직접배출량 데이터 수정"""
-        if not self.database_url:
-            logger.error("DATABASE_URL이 설정되지 않았습니다.")
-            return None
-            
         try:
-            conn = psycopg2.connect(self.database_url)
-            cursor = conn.cursor(cursor_factory=RealDictCursor)
-            
-            # 업데이트할 필드들만 동적으로 구성
-            update_fields = []
-            update_values = []
-            
-            for key, value in fueldir_data.items():
-                if value is not None and key != 'id':
-                    update_fields.append(f"{key} = %s")
-                    update_values.append(value)
-            
-            if not update_fields:
-                logger.warning("업데이트할 필드가 없습니다.")
-                return None
-            
-            update_fields.append("updated_at = CURRENT_TIMESTAMP")
-            update_values.append(fueldir_id)
-            
-            update_sql = f"""
-            UPDATE fueldir 
-            SET {', '.join(update_fields)}
-            WHERE id = %s
-            RETURNING *
-            """
-            
-            cursor.execute(update_sql, update_values)
-            result = cursor.fetchone()
-            
-            if result:
-                conn.commit()
-                logger.info(f"✅ 연료직접배출량 데이터 수정 성공: ID {fueldir_id}")
-                cursor.close()
-                conn.close()
-                return dict(result)
-            else:
-                conn.rollback()
-                logger.warning(f"⚠️ 수정할 연료직접배출량 데이터를 찾을 수 없음: ID {fueldir_id}")
-                cursor.close()
-                conn.close()
-                return None
-                
+            return await self._update_fueldir_db(fueldir_id, fueldir_data)
         except Exception as e:
-            logger.error(f"❌ 연료직접배출량 데이터 수정 중 오류: {e}")
-            if 'conn' in locals():
-                conn.rollback()
-                conn.close()
+            logger.error(f"❌ FuelDir 수정 실패: {str(e)}")
             return None
 
     async def delete_fueldir(self, fueldir_id: int) -> bool:
         """연료직접배출량 데이터 삭제"""
-        if not self.database_url:
-            logger.error("DATABASE_URL이 설정되지 않았습니다.")
+        try:
+            return await self._delete_fueldir_db(fueldir_id)
+        except Exception as e:
+            logger.error(f"❌ FuelDir 삭제 실패: {str(e)}")
             return False
-            
+
+    # ============================================================================
+    # 🏗️ Fuel Master 조회 메서드들 (새로 추가)
+    # ============================================================================
+
+    async def get_fuel_by_name(self, fuel_name: str) -> Optional[Dict[str, Any]]:
+        """연료명으로 마스터 데이터 조회"""
         try:
             conn = psycopg2.connect(self.database_url)
-            cursor = conn.cursor()
+            conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
             
-            delete_sql = "DELETE FROM fueldir WHERE id = %s"
-            cursor.execute(delete_sql, (fueldir_id,))
-            
-            if cursor.rowcount > 0:
-                conn.commit()
-                logger.info(f"✅ 연료직접배출량 데이터 삭제 성공: ID {fueldir_id}")
-                cursor.close()
-                conn.close()
-                return True
-            else:
-                conn.rollback()
-                logger.warning(f"⚠️ 삭제할 연료직접배출량 데이터를 찾을 수 없음: ID {fueldir_id}")
-                cursor.close()
-                conn.close()
-                return False
+            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                query = """
+                    SELECT id, fuel_name, fuel_engname, fuel_factor, net_calory
+                    FROM fuel_master
+                    WHERE fuel_name = %s
+                """
+                
+                cursor.execute(query, (fuel_name,))
+                result = cursor.fetchone()
+                
+                if result:
+                    logger.info(f"✅ 연료 마스터 조회 성공: {fuel_name}")
+                    return dict(result)
+                else:
+                    logger.warning(f"⚠️ 연료 마스터 데이터를 찾을 수 없음: {fuel_name}")
+                    return None
                 
         except Exception as e:
-            logger.error(f"❌ 연료직접배출량 데이터 삭제 중 오류: {e}")
+            logger.error(f"❌ 연료 마스터 조회 실패: {str(e)}")
+            return None
+        finally:
             if 'conn' in locals():
-                conn.rollback()
                 conn.close()
-            return False
+
+    async def search_fuels(self, search_term: str) -> List[Dict[str, Any]]:
+        """연료명으로 검색 (부분 검색)"""
+        try:
+            conn = psycopg2.connect(self.database_url)
+            conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+            
+            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                query = """
+                    SELECT id, fuel_name, fuel_engname, fuel_factor, net_calory
+                    FROM fuel_master
+                    WHERE fuel_name ILIKE %s OR fuel_engname ILIKE %s
+                    ORDER BY fuel_name
+                """
+                
+                search_pattern = f'%{search_term}%'
+                cursor.execute(query, (search_pattern, search_pattern))
+                results = cursor.fetchall()
+                
+                logger.info(f"✅ 연료 마스터 검색 성공: '{search_term}' → {len(results)}개 결과")
+                return [dict(row) for row in results]
+                
+        except Exception as e:
+            logger.error(f"❌ 연료 마스터 검색 실패: {str(e)}")
+            return []
+        finally:
+            if 'conn' in locals():
+                conn.close()
+
+    async def get_all_fuels(self) -> List[Dict[str, Any]]:
+        """모든 연료 마스터 데이터 조회"""
+        try:
+            conn = psycopg2.connect(self.database_url)
+            conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+            
+            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                query = """
+                    SELECT id, fuel_name, fuel_engname, fuel_factor, net_calory
+                    FROM fuel_master
+                    ORDER BY fuel_name
+                """
+                
+                cursor.execute(query)
+                results = cursor.fetchall()
+                
+                logger.info(f"✅ 모든 연료 마스터 조회 성공: {len(results)}개")
+                return [dict(row) for row in results]
+                
+        except Exception as e:
+            logger.error(f"❌ 모든 연료 마스터 조회 실패: {str(e)}")
+            return []
+        finally:
+            if 'conn' in locals():
+                conn.close()
+
+    async def get_fuel_factor_by_name(self, fuel_name: str) -> Optional[Dict[str, Any]]:
+        """연료명으로 배출계수만 조회 (간단한 응답)"""
+        try:
+            fuel = await self.get_fuel_by_name(fuel_name)
+            if fuel:
+                return {
+                    'fuel_name': fuel['fuel_name'],
+                    'fuel_factor': float(fuel['fuel_factor']),
+                    'net_calory': float(fuel['net_calory']) if fuel['net_calory'] else None,
+                    'found': True
+                }
+            else:
+                return {
+                    'fuel_name': fuel_name,
+                    'fuel_factor': None,
+                    'net_calory': None,
+                    'found': False
+                }
+                
+        except Exception as e:
+            logger.error(f"❌ 배출계수 조회 실패: {str(e)}")
+            return {
+                'fuel_name': fuel_name,
+                'fuel_factor': None,
+                'net_calory': None,
+                'found': False
+            }
+
+    # ============================================================================
+    # 📋 기존 DB 작업 메서드들
+    # ============================================================================
+
+    async def _get_fueldirs_db(self, skip: int = 0, limit: int = 100) -> List[Dict[str, Any]]:
+        """모든 연료직접배출량 데이터 조회 (DB 작업)"""
+        try:
+            conn = psycopg2.connect(self.database_url)
+            conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+            
+            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                query = """
+                    SELECT * FROM fueldir 
+                    ORDER BY created_at DESC 
+                    LIMIT %s OFFSET %s
+                """
+                
+                cursor.execute(query, (limit, skip))
+                results = cursor.fetchall()
+                
+                return [dict(row) for row in results]
+                
+        except Exception as e:
+            logger.error(f"❌ FuelDir 목록 조회 실패: {str(e)}")
+            raise
+        finally:
+            if 'conn' in locals():
+                conn.close()
+
+    async def _get_fueldirs_by_process_db(self, process_id: int) -> List[Dict[str, Any]]:
+        """특정 공정의 연료직접배출량 데이터 조회 (DB 작업)"""
+        try:
+            conn = psycopg2.connect(self.database_url)
+            conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+            
+            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                query = """
+                    SELECT * FROM fueldir 
+                    WHERE process_id = %s 
+                    ORDER BY created_at DESC
+                """
+                
+                cursor.execute(query, (process_id,))
+                results = cursor.fetchall()
+                
+                return [dict(row) for row in results]
+                
+        except Exception as e:
+            logger.error(f"❌ 공정별 FuelDir 조회 실패: {str(e)}")
+            raise
+        finally:
+            if 'conn' in locals():
+                conn.close()
+
+    async def _get_fueldir_db(self, fueldir_id: int) -> Optional[Dict[str, Any]]:
+        """특정 연료직접배출량 데이터 조회 (DB 작업)"""
+        try:
+            conn = psycopg2.connect(self.database_url)
+            conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+            
+            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                query = "SELECT * FROM fueldir WHERE id = %s"
+                cursor.execute(query, (fueldir_id,))
+                result = cursor.fetchone()
+                
+                return dict(result) if result else None
+                
+        except Exception as e:
+            logger.error(f"❌ FuelDir 조회 실패: {str(e)}")
+            raise
+        finally:
+            if 'conn' in locals():
+                conn.close()
+
+    async def _update_fueldir_db(self, fueldir_id: int, fueldir_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        """연료직접배출량 데이터 수정 (DB 작업)"""
+        try:
+            conn = psycopg2.connect(self.database_url)
+            conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+            
+            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                # 업데이트할 필드들만 동적으로 생성
+                set_clause = ", ".join([f"{key} = %s" for key in fueldir_data.keys()])
+                values = list(fueldir_data.values()) + [fueldir_id]
+                
+                query = f"""
+                    UPDATE fueldir 
+                    SET {set_clause}, updated_at = NOW()
+                    WHERE id = %s 
+                    RETURNING *
+                """
+                
+                cursor.execute(query, values)
+                result = cursor.fetchone()
+                conn.commit()
+                
+                return dict(result) if result else None
+                
+        except Exception as e:
+            logger.error(f"❌ FuelDir 수정 실패: {str(e)}")
+            raise
+        finally:
+            if 'conn' in locals():
+                conn.close()
+
+    async def _delete_fueldir_db(self, fueldir_id: int) -> bool:
+        """연료직접배출량 데이터 삭제 (DB 작업)"""
+        try:
+            conn = psycopg2.connect(self.database_url)
+            conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+            
+            with conn.cursor() as cursor:
+                query = "DELETE FROM fueldir WHERE id = %s"
+                cursor.execute(query, (fueldir_id,))
+                conn.commit()
+                
+                return cursor.rowcount > 0
+                
+        except Exception as e:
+            logger.error(f"❌ FuelDir 삭제 실패: {str(e)}")
+            raise
+        finally:
+            if 'conn' in locals():
+                conn.close()
 
     async def get_total_fueldir_emission_by_process(self, process_id: int) -> Decimal:
         """특정 공정의 총 연료직접배출량 계산"""

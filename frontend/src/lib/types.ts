@@ -78,3 +78,31 @@ export interface MaterialMasterFactor {
 export interface MaterialMasterSearchRequest {
   mat_name: string;
 }
+
+// ============================================================================
+// 🏗️ Fuel Master 관련 타입들 (새로 추가)
+// ============================================================================
+
+export interface FuelMaster {
+  id: number;
+  fuel_name: string;
+  fuel_engname: string;
+  fuel_factor: number;
+  net_calory?: number;
+}
+
+export interface FuelMasterList {
+  fuels: FuelMaster[];
+  total_count: number;
+}
+
+export interface FuelMasterFactor {
+  fuel_name: string;
+  fuel_factor: number | null;
+  net_calory?: number | null;
+  found: boolean;
+}
+
+export interface FuelMasterSearchRequest {
+  fuel_name: string;
+}

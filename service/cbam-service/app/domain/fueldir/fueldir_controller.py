@@ -13,7 +13,11 @@ from .fueldir_schema import (
     FuelDirUpdateRequest, 
     FuelDirResponse,
     FuelDirCalculationRequest,
-    FuelDirCalculationResponse
+    FuelDirCalculationResponse,
+    FuelMasterSearchRequest,
+    FuelMasterResponse,
+    FuelMasterListResponse,
+    FuelMasterFactorResponse
 )
 
 logger = logging.getLogger(__name__)
@@ -24,7 +28,7 @@ router = APIRouter(prefix="", tags=["fueldir_em"])
 fueldir_service = FuelDirService()
 
 # ============================================================================
-# 📦 FuelDir 관련 엔드포인트
+# 📦 기존 FuelDir 관련 엔드포인트
 # ============================================================================
 
 @router.post("/fueldir", response_model=FuelDirResponse, status_code=201)
@@ -141,6 +145,61 @@ async def get_total_fueldir_emission_by_process(process_id: int):
     except Exception as e:
         logger.error(f"❌ 공정별 총 연료직접배출량 계산 실패: {str(e)}")
         raise HTTPException(status_code=500, detail=f"공정별 총 연료직접배출량 계산 중 오류가 발생했습니다: {str(e)}")
+
+# ============================================================================
+# 🏗️ Fuel Master 관련 엔드포인트 (새로 추가)
+# ============================================================================
+
+@router.get("/fuel-master", response_model=FuelMasterListResponse)
+async def get_all_fuels():
+    """모든 연료 마스터 데이터 조회"""
+    try:
+        logger.info("📋 모든 연료 마스터 데이터 조회 요청")
+        result = await fueldir_service.get_all_fuels()
+        logger.info(f"✅ 모든 연료 마스터 데이터 조회 성공: {result.total_count}개")
+        return result
+    except Exception as e:
+        logger.error(f"❌ 모든 연료 마스터 데이터 조회 실패: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"연료 마스터 데이터 조회 중 오류가 발생했습니다: {str(e)}")
+
+@router.get("/fuel-master/search/{fuel_name}", response_model=List[FuelMasterResponse])
+async def search_fuels(fuel_name: str):
+    """연료명으로 검색 (부분 검색)"""
+    try:
+        logger.info(f"🔍 연료 마스터 검색 요청: '{fuel_name}'")
+        fuels = await fueldir_service.search_fuels(fuel_name)
+        logger.info(f"✅ 연료 마스터 검색 성공: '{fuel_name}' → {len(fuels)}개 결과")
+        return fuels
+    except Exception as e:
+        logger.error(f"❌ 연료 마스터 검색 실패: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"연료 마스터 검색 중 오류가 발생했습니다: {str(e)}")
+
+@router.get("/fuel-master/factor/{fuel_name}", response_model=FuelMasterFactorResponse)
+async def get_fuel_factor(fuel_name: str):
+    """연료명으로 배출계수 조회 (자동 매핑 기능)"""
+    try:
+        logger.info(f"🔍 연료 배출계수 조회 요청: '{fuel_name}'")
+        result = await fueldir_service.get_fuel_factor_by_name(fuel_name)
+        if result.found:
+            logger.info(f"✅ 연료 배출계수 조회 성공: '{fuel_name}' → {result.fuel_factor}")
+        else:
+            logger.warning(f"⚠️ 연료 배출계수를 찾을 수 없음: '{fuel_name}'")
+        return result
+    except Exception as e:
+        logger.error(f"❌ 연료 배출계수 조회 실패: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"연료 배출계수 조회 중 오류가 발생했습니다: {str(e)}")
+
+@router.post("/fueldir/auto-factor", response_model=FuelDirResponse, status_code=201)
+async def create_fueldir_with_auto_factor(fueldir_data: FuelDirCreateRequest):
+    """연료직접배출량 데이터 생성 (배출계수 자동 매핑)"""
+    try:
+        logger.info(f"📝 연료직접배출량 생성 요청 (자동 배출계수): {fueldir_data.dict()}")
+        result = await fueldir_service.create_fueldir_with_auto_factor(fueldir_data)
+        logger.info(f"✅ 연료직접배출량 생성 성공 (자동 배출계수): ID {result.id}")
+        return result
+    except Exception as e:
+        logger.error(f"❌ 연료직접배출량 생성 실패 (자동 배출계수): {str(e)}")
+        raise HTTPException(status_code=500, detail=f"연료직접배출량 생성 중 오류가 발생했습니다: {str(e)}")
 
 # ============================================================================
 # 📊 통계 및 요약 엔드포인트

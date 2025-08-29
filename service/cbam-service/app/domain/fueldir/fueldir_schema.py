@@ -1,10 +1,10 @@
 from pydantic import BaseModel, Field, validator
-from typing import Optional
+from typing import Optional, List
 from decimal import Decimal
 from datetime import datetime
 
 # ============================================================================
-# 📝 요청 스키마
+# 📝 기존 FuelDir 스키마
 # ============================================================================
 
 class FuelDirCreateRequest(BaseModel):
@@ -47,7 +47,7 @@ class FuelDirCalculationRequest(BaseModel):
         return v
 
 # ============================================================================
-# 📤 응답 스키마
+# 📤 기존 응답 스키마
 # ============================================================================
 
 class FuelDirResponse(BaseModel):
@@ -83,7 +83,7 @@ class FuelDirCalculationResponse(BaseModel):
         }
 
 # ============================================================================
-# 📊 통계 및 요약 스키마
+# 📊 기존 통계 및 요약 스키마
 # ============================================================================
 
 class FuelDirSummaryResponse(BaseModel):
@@ -108,3 +108,37 @@ class FuelDirProcessTotalResponse(BaseModel):
         json_encoders = {
             Decimal: lambda v: float(v)
         }
+
+# ============================================================================
+# 🏗️ Fuel Master 스키마 (새로 추가)
+# ============================================================================
+
+class FuelMasterSearchRequest(BaseModel):
+    """연료 마스터 검색 요청"""
+    fuel_name: str = Field(..., description="연료명 (부분 검색 가능)")
+
+class FuelMasterResponse(BaseModel):
+    """연료 마스터 데이터 응답"""
+    id: int = Field(..., description="연료 마스터 ID")
+    fuel_name: str = Field(..., description="연료명")
+    fuel_engname: str = Field(..., description="연료 영문명")
+    fuel_factor: float = Field(..., description="연료 배출계수")
+    net_calory: Optional[float] = Field(None, description="순발열량")
+
+    class Config:
+        from_attributes = True
+        json_encoders = {
+            Decimal: lambda v: float(v)
+        }
+
+class FuelMasterListResponse(BaseModel):
+    """연료 마스터 목록 응답"""
+    fuels: List[FuelMasterResponse] = Field(..., description="연료 마스터 목록")
+    total_count: int = Field(..., description="총 연료 수")
+
+class FuelMasterFactorResponse(BaseModel):
+    """연료 배출계수 조회 응답"""
+    fuel_name: str = Field(..., description="연료명")
+    fuel_factor: float = Field(..., description="배출계수")
+    net_calory: Optional[float] = Field(None, description="순발열량")
+    found: bool = Field(..., description="조회 성공 여부")

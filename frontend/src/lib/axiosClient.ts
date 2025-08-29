@@ -294,6 +294,13 @@ export const apiEndpoints = {
         search: (mat_name: string) => `/api/v1/boundary/material-master/search/${mat_name}`,
         getFactor: (mat_name: string) => `/api/v1/boundary/material-master/factor/${mat_name}`,
         autoFactor: '/api/v1/boundary/matdir/auto-factor'
+    },
+    // Fuel Master API (새로 추가)
+    fuelMaster: {
+        list: '/api/v1/boundary/fuel-master',
+        search: (fuel_name: string) => `/api/v1/boundary/fuel-master/search/${fuel_name}`,
+        getFactor: (fuel_name: string) => `/api/v1/boundary/fuel-master/factor/${fuel_name}`,
+        autoFactor: '/api/v1/boundary/fueldir/auto-factor'
     }
 },
   // Data Upload (Gateway를 통해)

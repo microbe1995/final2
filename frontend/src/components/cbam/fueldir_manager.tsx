@@ -1,7 +1,9 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import axiosClient, { apiEndpoints } from '@/lib/axiosClient';
+import { useFuelMasterAPI } from '@/hooks/useFuelMasterAPI';
+import { FuelMaster, FuelMasterFactor } from '@/lib/types';
 
 interface FuelDirManagerProps {
   selectedProcess: any;
@@ -26,6 +28,9 @@ interface FuelDirResult {
 }
 
 export default function FuelDirManager({ selectedProcess, onClose }: FuelDirManagerProps) {
+  // Fuel Master API Hook
+  const { searchFuels, getFuelFactor, createFuelDirWithAutoFactor, loading, error } = useFuelMasterAPI();
+
   // 연료직접배출량 모달 상태
   const [fuelDirForm, setFuelDirForm] = useState<FuelDirForm>({
     fuel_name: '',
@@ -35,6 +40,52 @@ export default function FuelDirManager({ selectedProcess, onClose }: FuelDirMana
   });
   const [fuelDirResults, setFuelDirResults] = useState<FuelDirResult[]>([]);
   const [isCalculatingFuelDir, setIsCalculatingFuelDir] = useState(false);
+
+  // Fuel Master 자동 배출계수 관련 상태
+  const [fuelSuggestions, setFuelSuggestions] = useState<FuelMaster[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [autoFactorStatus, setAutoFactorStatus] = useState<string>('');
+
+  // 연료명 변경 시 실시간 검색
+  const handleFuelNameChange = useCallback(async (fuelName: string) => {
+    setFuelDirForm(prev => ({ ...prev, fuel_name: fuelName }));
+    
+    if (fuelName.trim().length >= 1) {
+      const suggestions = await searchFuels(fuelName);
+      if (suggestions) {
+        setFuelSuggestions(suggestions);
+        setShowSuggestions(true);
+      }
+    } else {
+      setFuelSuggestions([]);
+      setShowSuggestions(false);
+    }
+  }, [searchFuels]);
+
+  // 연료 선택 시 자동으로 배출계수 설정
+  const handleFuelSelect = useCallback((fuel: FuelMaster) => {
+    setFuelDirForm(prev => ({
+      ...prev,
+      fuel_name: fuel.fuel_name,
+      fuel_factor: fuel.fuel_factor
+    }));
+    setFuelSuggestions([]);
+    setShowSuggestions(false);
+    setAutoFactorStatus(`✅ ${fuel.fuel_name} 배출계수 자동 설정: ${fuel.fuel_factor}`);
+  }, []);
+
+  // 연료명 입력 완료 시 자동으로 배출계수 조회
+  const handleFuelNameBlur = useCallback(async () => {
+    if (fuelDirForm.fuel_name.trim() && fuelDirForm.fuel_factor === 0) {
+      const factorResponse = await getFuelFactor(fuelDirForm.fuel_name);
+      if (factorResponse && factorResponse.found) {
+        setFuelDirForm(prev => ({ ...prev, fuel_factor: factorResponse.fuel_factor || 0 }));
+        setAutoFactorStatus(`✅ ${fuelDirForm.fuel_name} 배출계수 자동 설정: ${factorResponse.fuel_factor}`);
+      } else {
+        setAutoFactorStatus(`⚠️ ${fuelDirForm.fuel_name}의 배출계수를 찾을 수 없습니다. 수동으로 입력해주세요.`);
+      }
+    }
+  }, [fuelDirForm.fuel_name, fuelDirForm.fuel_factor, getFuelFactor]);
 
   // 연료직접배출량 계산
   const calculateFuelDirEmission = useCallback(async () => {
@@ -72,6 +123,7 @@ export default function FuelDirManager({ selectedProcess, onClose }: FuelDirMana
         fuel_amount: 0,
         fuel_oxyfactor: 1.0000
       });
+      setAutoFactorStatus('');
 
     } catch (error: any) {
       console.error('❌ 연료직접배출량 계산 실패:', error);
@@ -177,20 +229,50 @@ export default function FuelDirManager({ selectedProcess, onClose }: FuelDirMana
 
             <div className="space-y-4">
               {/* 투입된 연료명 */}
-              <div>
+              <div className="relative">
                 <label className="block text-sm font-medium text-gray-300 mb-2">투입된 연료명</label>
                 <input
                   type="text"
                   value={fuelDirForm.fuel_name}
-                  onChange={(e) => setFuelDirForm(prev => ({ ...prev, fuel_name: e.target.value }))}
+                  onChange={(e) => handleFuelNameChange(e.target.value)}
+                  onBlur={handleFuelNameBlur}
                   className="w-full px-3 py-2 bg-yellow-500/20 border border-yellow-500/30 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-yellow-500"
-                  placeholder="예: 석탄, 천연가스"
+                  placeholder="예: 원유, 휘발유, 등유"
                 />
+                
+                {/* 연료 제안 드롭다운 */}
+                {showSuggestions && fuelSuggestions.length > 0 && (
+                  <div className="absolute z-10 w-full mt-1 bg-gray-600 border border-gray-500 rounded-md shadow-lg max-h-48 overflow-y-auto">
+                    {fuelSuggestions.map((fuel) => (
+                      <div
+                        key={fuel.id}
+                        onClick={() => handleFuelSelect(fuel)}
+                        className="px-3 py-2 hover:bg-gray-500 cursor-pointer text-white text-sm"
+                      >
+                        <div className="font-medium">{fuel.fuel_name}</div>
+                        <div className="text-gray-300 text-xs">{fuel.fuel_engname}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
+
+              {/* 자동 배출계수 상태 표시 */}
+              {autoFactorStatus && (
+                <div className={`text-sm p-2 rounded-md ${
+                  autoFactorStatus.includes('✅') 
+                    ? 'bg-green-500/20 text-green-300 border border-green-500/30' 
+                    : 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30'
+                }`}>
+                  {autoFactorStatus}
+                </div>
+              )}
 
               {/* 배출계수 */}
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">배출계수</label>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  배출계수 {autoFactorStatus.includes('✅') && '(자동 설정됨)'}
+                </label>
                 <input
                   type="number"
                   step="0.000001"

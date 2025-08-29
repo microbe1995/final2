@@ -9,7 +9,9 @@ from decimal import Decimal
 from app.domain.fueldir.fueldir_repository import FuelDirRepository
 from app.domain.fueldir.fueldir_schema import (
     FuelDirCreateRequest, FuelDirResponse, FuelDirUpdateRequest, 
-    FuelDirCalculationRequest, FuelDirCalculationResponse
+    FuelDirCalculationRequest, FuelDirCalculationResponse,
+    FuelMasterSearchRequest, FuelMasterResponse, 
+    FuelMasterListResponse, FuelMasterFactorResponse
 )
 
 logger = logging.getLogger(__name__)
@@ -22,7 +24,7 @@ class FuelDirService:
         logger.info("✅ FuelDir 서비스 초기화 완료")
     
     # ============================================================================
-    # 📦 FuelDir 관련 메서드
+    # 📦 기존 FuelDir 관련 메서드들
     # ============================================================================
     
     async def create_fueldir(self, request: FuelDirCreateRequest) -> FuelDirResponse:
@@ -101,19 +103,23 @@ class FuelDirService:
             if request.fuel_oxyfactor is not None:
                 update_data['fuel_oxyfactor'] = request.fuel_oxyfactor
             
-            # 배출량 재계산이 필요한 경우
-            if any(key in update_data for key in ['fuel_factor', 'fuel_amount', 'fuel_oxyfactor']):
+            # 값이 변경된 경우에만 재계산
+            if any(key in update_data for key in ['fuel_amount', 'fuel_factor', 'fuel_oxyfactor']):
                 # 기존 데이터 조회
                 existing_fueldir = await self.fueldir_repository.get_fueldir(fueldir_id)
-                if existing_fueldir:
-                    # 새로운 값으로 계산
-                    new_factor = update_data.get('fuel_factor', existing_fueldir['fuel_factor'])
-                    new_amount = update_data.get('fuel_amount', existing_fueldir['fuel_amount'])
-                    new_oxyfactor = update_data.get('fuel_oxyfactor', existing_fueldir['fuel_oxyfactor'])
-                    
-                    new_emission = self.calculate_fueldir_emission(new_amount, new_factor, new_oxyfactor)
-                    update_data['fueldir_em'] = new_emission
-                    logger.info(f"🧮 배출량 재계산: {new_emission}")
+                if not existing_fueldir:
+                    return None
+                
+                # 기존 값과 새 값을 조합하여 계산
+                fuel_amount = update_data.get('fuel_amount', existing_fueldir['fuel_amount'])
+                fuel_factor = update_data.get('fuel_factor', existing_fueldir['fuel_factor'])
+                fuel_oxyfactor = update_data.get('fuel_oxyfactor', existing_fueldir['fuel_oxyfactor'])
+                
+                fueldir_em = self.calculate_fueldir_emission(fuel_amount, fuel_factor, fuel_oxyfactor)
+                update_data['fueldir_em'] = fueldir_em
+            
+            if not update_data:
+                raise Exception("업데이트할 데이터가 없습니다.")
             
             updated_fueldir = await self.fueldir_repository.update_fueldir(fueldir_id, update_data)
             if updated_fueldir:
@@ -126,19 +132,16 @@ class FuelDirService:
     async def delete_fueldir(self, fueldir_id: int) -> bool:
         """연료직접배출량 데이터 삭제"""
         try:
-            return await self.fueldir_repository.delete_fueldir(fueldir_id)
+            success = await self.fueldir_repository.delete_fueldir(fueldir_id)
+            return success
         except Exception as e:
             logger.error(f"Error deleting fueldir: {e}")
             raise e
-    
-    # ============================================================================
-    # 🧮 계산 관련 메서드
-    # ============================================================================
-    
+
     def calculate_fueldir_emission(self, fuel_amount: Decimal, fuel_factor: Decimal, fuel_oxyfactor: Decimal = Decimal('1.0000')) -> Decimal:
-        """연료직접배출량 계산"""
+        """연료직접배출량 계산: fueldir_em = fuel_amount * fuel_factor * fuel_oxyfactor"""
         try:
-            # 기본 공식: 연료량 × 배출계수 × 산화계수
+            # 배출량 계산
             emission = fuel_amount * fuel_factor * fuel_oxyfactor
             
             # 소수점 6자리로 반올림
@@ -177,7 +180,82 @@ class FuelDirService:
         except Exception as e:
             logger.error(f"Error calculating fueldir emission with formula: {e}")
             raise e
-    
+
+    # ============================================================================
+    # 🏗️ Fuel Master 관련 메서드들 (새로 추가)
+    # ============================================================================
+
+    async def get_fuel_by_name(self, fuel_name: str) -> Optional[FuelMasterResponse]:
+        """연료명으로 마스터 데이터 조회"""
+        try:
+            fuel = await self.fueldir_repository.get_fuel_by_name(fuel_name)
+            if fuel:
+                return FuelMasterResponse(**fuel)
+            return None
+        except Exception as e:
+            logger.error(f"Error getting fuel by name '{fuel_name}': {e}")
+            raise e
+
+    async def search_fuels(self, search_term: str) -> List[FuelMasterResponse]:
+        """연료명으로 검색 (부분 검색)"""
+        try:
+            fuels = await self.fueldir_repository.search_fuels(search_term)
+            return [FuelMasterResponse(**fuel) for fuel in fuels]
+        except Exception as e:
+            logger.error(f"Error searching fuels with term '{search_term}': {e}")
+            raise e
+
+    async def get_all_fuels(self) -> FuelMasterListResponse:
+        """모든 연료 마스터 데이터 조회"""
+        try:
+            fuels = await self.fueldir_repository.get_all_fuels()
+            fuel_responses = [FuelMasterResponse(**fuel) for fuel in fuels]
+            return FuelMasterListResponse(
+                fuels=fuel_responses,
+                total_count=len(fuel_responses)
+            )
+        except Exception as e:
+            logger.error(f"Error getting all fuels: {e}")
+            raise e
+
+    async def get_fuel_factor_by_name(self, fuel_name: str) -> FuelMasterFactorResponse:
+        """연료명으로 배출계수 조회 (자동 매핑 기능)"""
+        try:
+            factor_data = await self.fueldir_repository.get_fuel_factor_by_name(fuel_name)
+            return FuelMasterFactorResponse(**factor_data)
+        except Exception as e:
+            logger.error(f"Error getting fuel factor for '{fuel_name}': {e}")
+            # 오류 시에도 응답 형식 유지
+            return FuelMasterFactorResponse(
+                fuel_name=fuel_name,
+                fuel_factor=None,
+                net_calory=None,
+                found=False
+            )
+
+    async def create_fueldir_with_auto_factor(self, request: FuelDirCreateRequest) -> FuelDirResponse:
+        """연료직접배출량 데이터 생성 (배출계수 자동 매핑)"""
+        try:
+            # 배출계수가 제공되지 않은 경우 자동으로 조회
+            if request.fuel_factor is None or request.fuel_factor == 0:
+                logger.info(f"🔍 배출계수 자동 조회: {request.fuel_name}")
+                factor_response = await self.get_fuel_factor_by_name(request.fuel_name)
+                
+                if factor_response.found:
+                    # 자동으로 배출계수 설정
+                    request.fuel_factor = Decimal(str(factor_response.fuel_factor))
+                    logger.info(f"✅ 배출계수 자동 설정: {request.fuel_name} → {request.fuel_factor}")
+                else:
+                    logger.warning(f"⚠️ 배출계수를 찾을 수 없음: {request.fuel_name}")
+                    raise Exception(f"연료 '{request.fuel_name}'의 배출계수를 찾을 수 없습니다. 수동으로 입력해주세요.")
+            
+            # 기존 생성 로직 실행
+            return await self.create_fueldir(request)
+            
+        except Exception as e:
+            logger.error(f"Error creating fueldir with auto factor: {e}")
+            raise e
+
     # ============================================================================
     # 📊 통계 및 요약 메서드
     # ============================================================================
