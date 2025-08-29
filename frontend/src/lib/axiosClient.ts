@@ -266,7 +266,7 @@ export const apiEndpoints = {
         get: (id: number) => `/api/v1/boundary/edge/${id}`,
         delete: (id: number) => `/api/v1/boundary/edge/${id}`
     },
-    sourcestream: {
+    processchain: {
         chain: '/api/v1/processchain/chain',
         chainCreate: '/api/v1/processchain/chain',
         chainGet: (id: number) => `/api/v1/processchain/chain/${id}`,

@@ -109,7 +109,7 @@ function ProcessManagerInner() {
   const fetchProcessChains = useCallback(async () => {
     try {
       setChainLoading(true);
-      const response = await axiosClient.get(apiEndpoints.calculation.sourcestream.chain);
+      const response = await axiosClient.get(apiEndpoints.calculation.processchain.chain);
       if (response.status === 200) {
         setProcessChains(response.data);
         console.log('✅ 통합 공정 그룹 조회 성공:', response.data);
@@ -157,6 +157,13 @@ function ProcessManagerInner() {
   // 통합 공정 그룹 탐지 상태
   const [isDetectingChains, setIsDetectingChains] = useState(false);
   const [detectionStatus, setDetectionStatus] = useState<string>('');
+
+  // 통합 공정 그룹 관련 상태
+  const [integratedProcessGroups, setIntegratedProcessGroups] = useState<any[]>([]);
+  const [showIntegratedGroupsModal, setShowIntegratedGroupsModal] = useState(false);
+
+  // 제품 수량 업데이트 상태
+  const [isUpdatingProduct, setIsUpdatingProduct] = useState(false);
 
   // 크로스 사업장 공정 처리를 위한 상태
   const [crossInstallProcesses, setCrossInstallProcesses] = useState<any[]>([]);
@@ -398,7 +405,7 @@ function ProcessManagerInner() {
         setDetectionStatus(`✅ 탐지 완료: ${result.detected_chains}개 그룹, 총 배출량: ${result.total_integrated_emission}`);
         
         // 탐지된 그룹 목록 가져오기
-        const groupsResponse = await axiosClient.get('/api/v1/boundary/sourcestream/chain');
+        const groupsResponse = await axiosClient.get(apiEndpoints.calculation.processchain.chain);
         if (groupsResponse.status === 200) {
           setIntegratedProcessGroups(groupsResponse.data);
         }
@@ -414,7 +421,7 @@ function ProcessManagerInner() {
   // 통합 공정 그룹 목록 조회
   const loadIntegratedProcessGroups = useCallback(async () => {
     try {
-      const response = await axiosClient.get('/api/v1/boundary/sourcestream/chain');
+      const response = await axiosClient.get(apiEndpoints.calculation.processchain.chain);
       if (response.status === 200) {
         setIntegratedProcessGroups(response.data);
       }

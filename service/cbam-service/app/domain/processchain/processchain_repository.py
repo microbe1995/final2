@@ -4,12 +4,13 @@
 
 import logging
 import asyncio
+import os
 from typing import List, Dict, Any, Optional
 from datetime import datetime
 from decimal import Decimal
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, text, func
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy import select, text, func, create_engine
+from sqlalchemy.orm import sessionmaker, Session
 
 from .processchain_entity import (
     ProcessChain, ProcessChainLink, Base
@@ -36,7 +37,7 @@ class ProcessChainRepository:
         """테이블 생성"""
         try:
             Base.metadata.create_all(bind=self.engine)
-            logger.info("✅ sourcestream 테이블 생성 완료")
+            logger.info("✅ processchain 테이블 생성 완료")
         except Exception as e:
             logger.error(f"❌ 테이블 생성 중 오류: {e}")
             raise e

@@ -22,7 +22,7 @@ from .calculation_schema import (
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="", tags=["Product"])
+router = APIRouter(prefix="/boundary", tags=["Product"])
 
 # 서비스 인스턴스 생성
 calculation_service = CalculationService()
