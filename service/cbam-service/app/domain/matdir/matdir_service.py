@@ -10,8 +10,13 @@ from app.domain.matdir.matdir_repository import MatDirRepository
 from app.domain.matdir.matdir_schema import (
     MatDirCreateRequest, MatDirResponse, MatDirUpdateRequest, 
     MatDirCalculationRequest, MatDirCalculationResponse,
-    MaterialMasterSearchRequest, MaterialMasterResponse, 
-    MaterialMasterListResponse, MaterialMasterFactorResponse
+    # 🔍 새로운 매핑 관련 스키마들
+    MaterialMappingResponse,
+    MaterialMappingCreateRequest,
+    MaterialMappingUpdateRequest,
+    MaterialMappingFullResponse,
+    MaterialNameLookupRequest,
+    MaterialNameLookupResponse
 )
 
 logger = logging.getLogger(__name__)
@@ -169,76 +174,104 @@ class MatDirService:
             raise e
 
     # ============================================================================
-    # 🏗️ Material Master 관련 메서드들 (새로 추가)
+    # 🔍 원료-배출계수 매핑 관련 메서드들 (@mapping/ 패턴과 동일)
     # ============================================================================
 
-    async def get_material_by_name(self, mat_name: str) -> Optional[MaterialMasterResponse]:
-        """원료명으로 마스터 데이터 조회"""
+    async def create_material_mapping(self, mapping_data: MaterialMappingCreateRequest) -> MaterialMappingFullResponse:
+        """원료-배출계수 매핑 생성"""
         try:
-            material = await self.matdir_repository.get_material_by_name(mat_name)
-            if material:
-                return MaterialMasterResponse(**material)
+            mapping = await self.matdir_repository.create_material_mapping(mapping_data)
+            if mapping:
+                return MaterialMappingFullResponse(**mapping)
+            else:
+                raise Exception("원료-배출계수 매핑 생성에 실패했습니다.")
+        except Exception as e:
+            logger.error(f"Error creating material mapping: {e}")
+            raise e
+
+    async def get_all_material_mappings(self, skip: int = 0, limit: int = 100) -> List[MaterialMappingFullResponse]:
+        """모든 원료-배출계수 매핑 조회"""
+        try:
+            mappings = await self.matdir_repository.get_all_material_mappings(skip, limit)
+            return [MaterialMappingFullResponse(**mapping) for mapping in mappings]
+        except Exception as e:
+            logger.error(f"Error getting all material mappings: {e}")
+            raise e
+
+    async def get_material_mapping(self, mapping_id: int) -> Optional[MaterialMappingFullResponse]:
+        """특정 원료-배출계수 매핑 조회"""
+        try:
+            mapping = await self.matdir_repository.get_material_mapping(mapping_id)
+            if mapping:
+                return MaterialMappingFullResponse(**mapping)
             return None
         except Exception as e:
-            logger.error(f"Error getting material by name '{mat_name}': {e}")
+            logger.error(f"Error getting material mapping {mapping_id}: {e}")
             raise e
 
-    async def search_materials(self, search_term: str) -> List[MaterialMasterResponse]:
-        """원료명으로 검색 (부분 검색)"""
+    async def update_material_mapping(self, mapping_id: int, mapping_data: MaterialMappingUpdateRequest) -> Optional[MaterialMappingFullResponse]:
+        """원료-배출계수 매핑 수정"""
         try:
-            materials = await self.matdir_repository.search_materials(search_term)
-            return [MaterialMasterResponse(**material) for material in materials]
+            mapping = await self.matdir_repository.update_material_mapping(mapping_id, mapping_data)
+            if mapping:
+                return MaterialMappingFullResponse(**mapping)
+            return None
         except Exception as e:
-            logger.error(f"Error searching materials with term '{search_term}': {e}")
+            logger.error(f"Error updating material mapping {mapping_id}: {e}")
             raise e
 
-    async def get_all_materials(self) -> MaterialMasterListResponse:
-        """모든 원료 마스터 데이터 조회"""
+    async def delete_material_mapping(self, mapping_id: int) -> bool:
+        """원료-배출계수 매핑 삭제"""
         try:
-            materials = await self.matdir_repository.get_all_materials()
-            material_responses = [MaterialMasterResponse(**material) for material in materials]
-            return MaterialMasterListResponse(
-                materials=material_responses,
-                total_count=len(material_responses)
-            )
+            success = await self.matdir_repository.delete_material_mapping(mapping_id)
+            return success
         except Exception as e:
-            logger.error(f"Error getting all materials: {e}")
+            logger.error(f"Error deleting material mapping {mapping_id}: {e}")
             raise e
 
-    async def get_material_factor_by_name(self, mat_name: str) -> MaterialMasterFactorResponse:
+    # ============================================================================
+    # 🔍 원료명 조회 관련 메서드들 (@mapping/ 패턴과 동일)
+    # ============================================================================
+
+    async def lookup_material_by_name(self, mat_name: str) -> MaterialNameLookupResponse:
         """원료명으로 배출계수 조회 (자동 매핑 기능)"""
         try:
-            factor_data = await self.matdir_repository.get_material_factor_by_name(mat_name)
-            return MaterialMasterFactorResponse(**factor_data)
-        except Exception as e:
-            logger.error(f"Error getting material factor for '{mat_name}': {e}")
-            # 오류 시에도 응답 형식 유지
-            return MaterialMasterFactorResponse(
-                mat_name=mat_name,
-                mat_factor=None,
-                carbon_content=None,
-                found=False
-            )
-
-    async def create_matdir_with_auto_factor(self, request: MatDirCreateRequest) -> MatDirResponse:
-        """원료직접배출량 데이터 생성 (배출계수 자동 매핑)"""
-        try:
-            # 배출계수가 제공되지 않은 경우 자동으로 조회
-            if request.mat_factor is None or request.mat_factor == 0:
-                logger.info(f"🔍 배출계수 자동 조회: {request.mat_name}")
-                factor_response = await self.get_material_factor_by_name(request.mat_name)
+            mappings = await self.matdir_repository.lookup_material_by_name(mat_name)
+            
+            if mappings:
+                # 매핑 결과를 응답 형식으로 변환
+                material_responses = []
+                for mapping in mappings:
+                    material_responses.append(MaterialMappingResponse(
+                        mat_name=mapping['mat_name'],
+                        mat_factor=mapping['mat_factor'],
+                        carbon_content=mapping.get('carbon_content'),
+                        mat_engname=mapping.get('mat_engname')
+                    ))
                 
-                if factor_response.found:
-                    # 자동으로 배출계수 설정
-                    request.mat_factor = Decimal(str(factor_response.mat_factor))
-                    logger.info(f"✅ 배출계수 자동 설정: {request.mat_name} → {request.mat_factor}")
-                else:
-                    logger.warning(f"⚠️ 배출계수를 찾을 수 없음: {request.mat_name}")
-                    raise Exception(f"원료 '{request.mat_name}'의 배출계수를 찾을 수 없습니다. 수동으로 입력해주세요.")
-            
-            # 기존 생성 로직 실행
-            return await self.create_matdir(request)
-            
+                return MaterialNameLookupResponse(
+                    success=True,
+                    data=material_responses,
+                    count=len(material_responses),
+                    message=f"원료 '{mat_name}'에 대한 {len(material_responses)}개의 매핑을 찾았습니다."
+                )
+            else:
+                return MaterialNameLookupResponse(
+                    success=False,
+                    data=[],
+                    count=0,
+                    message=f"원료 '{mat_name}'에 대한 매핑을 찾을 수 없습니다."
+                )
+                
         except Exception as e:
-            logger.error(f"Error creating matdir with auto factor: {e}")
+            logger.error(f"Error looking up material by name '{mat_name}': {e}")
+            raise e
+
+    async def search_material_by_name(self, mat_name: str) -> MaterialNameLookupResponse:
+        """원료명으로 검색 (부분 검색)"""
+        try:
+            # lookup_material_by_name과 동일한 로직 사용
+            return await self.lookup_material_by_name(mat_name)
+        except Exception as e:
+            logger.error(f"Error searching material by name '{mat_name}': {e}")
             raise e

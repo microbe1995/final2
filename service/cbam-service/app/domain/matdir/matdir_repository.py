@@ -487,3 +487,186 @@ class MatDirRepository:
         finally:
             if 'conn' in locals():
                 conn.close()
+
+    # ============================================================================
+    # 🔍 원료-배출계수 매핑 관련 메서드들 (@mapping/ 패턴과 동일)
+    # ============================================================================
+
+    async def create_material_mapping(self, mapping_data) -> Optional[Dict[str, Any]]:
+        """원료-배출계수 매핑 생성"""
+        try:
+            conn = psycopg2.connect(self.database_url)
+            conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+            
+            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                query = """
+                    INSERT INTO material_master (mat_name, mat_factor, carbon_content, mat_engname, created_at, updated_at)
+                    VALUES (%s, %s, %s, %s, NOW(), NOW())
+                    RETURNING *
+                """
+                
+                cursor.execute(query, (
+                    mapping_data.mat_name,
+                    mapping_data.mat_factor,
+                    mapping_data.carbon_content,
+                    mapping_data.mat_engname
+                ))
+                
+                result = cursor.fetchone()
+                conn.commit()
+                
+                return dict(result) if result else None
+                
+        except Exception as e:
+            logger.error(f"❌ 원료-배출계수 매핑 생성 실패: {str(e)}")
+            raise
+        finally:
+            if 'conn' in locals():
+                conn.close()
+
+    async def get_all_material_mappings(self, skip: int = 0, limit: int = 100) -> List[Dict[str, Any]]:
+        """모든 원료-배출계수 매핑 조회"""
+        try:
+            conn = psycopg2.connect(self.database_url)
+            conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+            
+            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                query = """
+                    SELECT * FROM material_master 
+                    ORDER BY created_at DESC 
+                    LIMIT %s OFFSET %s
+                """
+                
+                cursor.execute(query, (limit, skip))
+                results = cursor.fetchall()
+                
+                return [dict(row) for row in results]
+                
+        except Exception as e:
+            logger.error(f"❌ 모든 원료-배출계수 매핑 조회 실패: {str(e)}")
+            raise
+        finally:
+            if 'conn' in locals():
+                conn.close()
+
+    async def get_material_mapping(self, mapping_id: int) -> Optional[Dict[str, Any]]:
+        """특정 원료-배출계수 매핑 조회"""
+        try:
+            conn = psycopg2.connect(self.database_url)
+            conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+            
+            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                query = "SELECT * FROM material_master WHERE id = %s"
+                cursor.execute(query, (mapping_id,))
+                result = cursor.fetchone()
+                
+                return dict(result) if result else None
+                
+        except Exception as e:
+            logger.error(f"❌ 원료-배출계수 매핑 조회 실패: {str(e)}")
+            raise
+        finally:
+            if 'conn' in locals():
+                conn.close()
+
+    async def update_material_mapping(self, mapping_id: int, mapping_data) -> Optional[Dict[str, Any]]:
+        """원료-배출계수 매핑 수정"""
+        try:
+            conn = psycopg2.connect(self.database_url)
+            conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+            
+            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                # 업데이트할 필드들만 동적으로 생성
+                update_fields = []
+                values = []
+                
+                if mapping_data.mat_name is not None:
+                    update_fields.append("mat_name = %s")
+                    values.append(mapping_data.mat_name)
+                
+                if mapping_data.mat_factor is not None:
+                    update_fields.append("mat_factor = %s")
+                    values.append(mapping_data.mat_factor)
+                
+                if mapping_data.carbon_content is not None:
+                    update_fields.append("carbon_content = %s")
+                    values.append(mapping_data.carbon_content)
+                
+                if mapping_data.mat_engname is not None:
+                    update_fields.append("mat_engname = %s")
+                    values.append(mapping_data.mat_engname)
+                
+                if not update_fields:
+                    return await self.get_material_mapping(mapping_id)
+                
+                set_clause = ", ".join(update_fields)
+                values.append(mapping_id)
+                
+                query = f"""
+                    UPDATE material_master 
+                    SET {set_clause}, updated_at = NOW()
+                    WHERE id = %s 
+                    RETURNING *
+                """
+                
+                cursor.execute(query, values)
+                result = cursor.fetchone()
+                conn.commit()
+                
+                return dict(result) if result else None
+                
+        except Exception as e:
+            logger.error(f"❌ 원료-배출계수 매핑 수정 실패: {str(e)}")
+            raise
+        finally:
+            if 'conn' in locals():
+                conn.close()
+
+    async def delete_material_mapping(self, mapping_id: int) -> bool:
+        """원료-배출계수 매핑 삭제"""
+        try:
+            conn = psycopg2.connect(self.database_url)
+            conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+            
+            with conn.cursor() as cursor:
+                query = "DELETE FROM material_master WHERE id = %s"
+                cursor.execute(query, (mapping_id,))
+                conn.commit()
+                
+                return cursor.rowcount > 0
+                
+        except Exception as e:
+            logger.error(f"❌ 원료-배출계수 매핑 삭제 실패: {str(e)}")
+            raise
+        finally:
+            if 'conn' in locals():
+                conn.close()
+
+    # ============================================================================
+    # 🔍 원료명 조회 관련 메서드들 (@mapping/ 패턴과 동일)
+    # ============================================================================
+
+    async def lookup_material_by_name(self, mat_name: str) -> List[Dict[str, Any]]:
+        """원료명으로 배출계수 조회 (자동 매핑 기능)"""
+        try:
+            conn = psycopg2.connect(self.database_url)
+            conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+            
+            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                query = """
+                    SELECT * FROM material_master 
+                    WHERE mat_name ILIKE %s 
+                    ORDER BY mat_name
+                """
+                
+                cursor.execute(query, (f"%{mat_name}%",))
+                results = cursor.fetchall()
+                
+                return [dict(row) for row in results]
+                
+        except Exception as e:
+            logger.error(f"❌ 원료명 조회 실패: {str(e)}")
+            raise
+        finally:
+            if 'conn' in locals():
+                conn.close()
