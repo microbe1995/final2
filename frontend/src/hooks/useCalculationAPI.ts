@@ -275,7 +275,7 @@ export const useCalculationAPI = () => {
   const calculateProcessEmissions = useCallback(
     async (processes: ProductionProcess[]): Promise<ProductionProcess[] | null> => {
       try {
-        const response = await axiosClient.post(apiEndpoints.calculation.process, processes);
+        const response = await axiosClient.post(apiEndpoints.calculation.process.calculate, processes);
         return response.data;
       } catch (error) {
         console.error('Error calculating process emissions:', error);
