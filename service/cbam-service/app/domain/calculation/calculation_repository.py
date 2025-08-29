@@ -927,33 +927,33 @@ class CalculationRepository:
             conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
             
             try:
-            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-                cursor.execute("""
-                    INSERT INTO install (install_name, reporting_year)
+                with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                    cursor.execute("""
+                        INSERT INTO install (install_name, reporting_year)
                         VALUES (%s, %s)
-                    RETURNING *
+                        RETURNING *
                     """, (install_data['install_name'], install_data['reporting_year']))
-                
-                result = cursor.fetchone()
-                conn.commit()
-                
-                if result:
-                    install_dict = dict(result)
+                    
+                    result = cursor.fetchone()
+                    conn.commit()
+                    
+                    if result:
+                        install_dict = dict(result)
                         # datetime 객체를 문자열로 변환
                         if 'created_at' in install_dict and install_dict['created_at']:
                             install_dict['created_at'] = install_dict['created_at'].isoformat()
                         if 'updated_at' in install_dict and install_dict['updated_at']:
                             install_dict['updated_at'] = install_dict['updated_at'].isoformat()
-                    return install_dict
-                else:
-                    raise Exception("사업장 생성에 실패했습니다.")
-                    
-        except Exception as e:
+                        return install_dict
+                    else:
+                        raise Exception("사업장 생성에 실패했습니다.")
+                        
+            except Exception as e:
                 conn.rollback()
-            raise e
-        finally:
-            conn.close()
-
+                raise e
+            finally:
+                conn.close()
+                
         except Exception as e:
             raise e
 
