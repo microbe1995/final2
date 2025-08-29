@@ -2,8 +2,7 @@
 
 import React, { useState, useCallback, useEffect } from 'react';
 import axiosClient, { apiEndpoints } from '@/lib/axiosClient';
-import { useMaterialMasterAPI } from '@/hooks/useMaterialMasterAPI';
-import { MaterialMaster, MaterialMasterFactor } from '@/lib/types';
+import { useMaterialMasterAPI, MaterialMapping } from '@/hooks/useMaterialMasterAPI';
 
 interface MatDirManagerProps {
   selectedProcess: any;
@@ -28,8 +27,15 @@ interface MatDirResult {
 }
 
 export default function MatDirManager({ selectedProcess, onClose }: MatDirManagerProps) {
-  // Material Master API 훅
-  const { getMaterialFactor, searchMaterials, loading: materialLoading, error: materialError } = useMaterialMasterAPI();
+  // Material Master API 훅 (matdir 스키마 기반)
+  const { 
+    searchMaterialByName, 
+    getMaterialFactor, 
+    getMaterialNameSuggestions,
+    autoMapMaterialFactor,
+    loading: materialLoading, 
+    error: materialError 
+  } = useMaterialMasterAPI();
 
   // 원료직접배출량 모달 상태
   const [matDirForm, setMatDirForm] = useState<MatDirForm>({
@@ -41,8 +47,8 @@ export default function MatDirManager({ selectedProcess, onClose }: MatDirManage
   const [matDirResults, setMatDirResults] = useState<MatDirResult[]>([]);
   const [isCalculatingMatDir, setIsCalculatingMatDir] = useState(false);
 
-  // Material Master 관련 상태
-  const [materialSuggestions, setMaterialSuggestions] = useState<MaterialMaster[]>([]);
+  // Material Master 관련 상태 (matdir 스키마 기반)
+  const [materialSuggestions, setMaterialSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [autoFactorStatus, setAutoFactorStatus] = useState<string>('');
 
@@ -51,39 +57,53 @@ export default function MatDirManager({ selectedProcess, onClose }: MatDirManage
     setMatDirForm(prev => ({ ...prev, mat_name: matName }));
     
     if (matName.length >= 2) {
-      const suggestions = await searchMaterials(matName);
-      if (suggestions) {
-        setMaterialSuggestions(suggestions);
-        setShowSuggestions(true);
-      }
+      const suggestions = await getMaterialNameSuggestions(matName);
+      setMaterialSuggestions(suggestions);
+      setShowSuggestions(true);
     } else {
       setMaterialSuggestions([]);
       setShowSuggestions(false);
     }
-  }, [searchMaterials]);
+  }, [getMaterialNameSuggestions]);
 
   // 원료명 선택 시 배출계수 자동 조회
-  const handleMaterialSelect = useCallback(async (material: MaterialMaster) => {
+  const handleMaterialSelect = useCallback(async (selectedName: string) => {
     setMatDirForm(prev => ({ 
       ...prev, 
-      mat_name: material.mat_name,
-      mat_factor: material.mat_factor 
+      mat_name: selectedName
     }));
     setShowSuggestions(false);
-    setAutoFactorStatus(`✅ 자동 설정: ${material.mat_name} (배출계수: ${material.mat_factor})`);
-  }, []);
+    
+    // 배출계수 자동 매핑
+    try {
+      const autoFactor = await autoMapMaterialFactor(selectedName);
+      if (autoFactor !== null) {
+        setMatDirForm(prev => ({ ...prev, mat_factor: autoFactor }));
+        setAutoFactorStatus(`✅ 자동 설정: ${selectedName} (배출계수: ${autoFactor})`);
+      } else {
+        setAutoFactorStatus(`⚠️ 배출계수를 찾을 수 없음: ${selectedName}`);
+      }
+    } catch (err) {
+      setAutoFactorStatus(`❌ 배출계수 조회 실패: ${selectedName}`);
+    }
+  }, [autoMapMaterialFactor]);
 
   // 원료명 입력 완료 시 배출계수 자동 조회
   const handleMaterialNameBlur = useCallback(async () => {
     if (matDirForm.mat_name && matDirForm.mat_factor === 0) {
       setAutoFactorStatus('🔍 배출계수 조회 중...');
-      const factorData = await getMaterialFactor(matDirForm.mat_name);
-      
-      if (factorData && factorData.found) {
-        setMatDirForm(prev => ({ ...prev, mat_factor: factorData.mat_factor || 0 }));
-        setAutoFactorStatus(`✅ 자동 조회: ${matDirForm.mat_name} (배출계수: ${factorData.mat_factor})`);
-      } else {
-        setAutoFactorStatus(`⚠️ 배출계수를 찾을 수 없음: ${matDirForm.mat_name}`);
+      try {
+        const factorData = await getMaterialFactor(matDirForm.mat_name);
+        
+        if (factorData.success && factorData.data.length > 0) {
+          const factor = factorData.data[0].mat_factor;
+          setMatDirForm(prev => ({ ...prev, mat_factor: factor }));
+          setAutoFactorStatus(`✅ 자동 조회: ${matDirForm.mat_name} (배출계수: ${factor})`);
+        } else {
+          setAutoFactorStatus(`⚠️ 배출계수를 찾을 수 없음: ${matDirForm.mat_name}`);
+        }
+      } catch (err) {
+        setAutoFactorStatus(`❌ 배출계수 조회 실패: ${matDirForm.mat_name}`);
       }
     }
   }, [matDirForm.mat_name, matDirForm.mat_factor, getMaterialFactor]);
@@ -255,36 +275,27 @@ export default function MatDirManager({ selectedProcess, onClose }: MatDirManage
                 {/* 원료명 제안 드롭다운 */}
                 {showSuggestions && materialSuggestions.length > 0 && (
                   <div className="absolute z-10 w-full mt-1 bg-gray-700 border border-gray-600 rounded-md shadow-lg max-h-40 overflow-y-auto">
-                    {materialSuggestions.map((material, index) => (
+                    {materialSuggestions.map((suggestion, index) => (
                       <button
-                        key={material.id}
-                        onClick={() => handleMaterialSelect(material)}
+                        key={index}
+                        onClick={() => handleMaterialSelect(suggestion)}
                         className="w-full px-3 py-2 text-left text-white hover:bg-gray-600 focus:bg-gray-600 focus:outline-none"
                       >
-                        <div className="font-medium">{material.mat_name}</div>
-                        <div className="text-xs text-gray-400">
-                          {material.mat_engname} (배출계수: {material.mat_factor})
-                        </div>
+                        <div className="font-medium">{suggestion}</div>
                       </button>
                     ))}
                   </div>
                 )}
               </div>
 
-              {/* 배출계수 */}
+              {/* 배출계수 (읽기 전용) */}
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
                   배출계수 {matDirForm.mat_factor > 0 && <span className="text-green-400">(자동 설정됨)</span>}
                 </label>
-                <input
-                  type="number"
-                  step="0.000001"
-                  min="0"
-                  value={matDirForm.mat_factor}
-                  onChange={(e) => setMatDirForm(prev => ({ ...prev, mat_factor: parseFloat(e.target.value) || 0 }))}
-                  className="w-full px-3 py-2 bg-gray-600 border border-gray-500 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="0.000000"
-                />
+                <div className="w-full px-3 py-2 bg-gray-600 border border-gray-500 rounded-md text-white">
+                  {matDirForm.mat_factor > 0 ? matDirForm.mat_factor : '원료를 선택해주세요'}
+                </div>
               </div>
 
               {/* 투입된 원료량 */}
