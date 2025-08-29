@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import axiosClient from '@/lib/axiosClient';
+import axiosClient, { apiEndpoints } from '@/lib/axiosClient';
 import { MaterialMaster, MaterialMasterList, MaterialMasterFactor } from '@/lib/types';
 
 export const useMaterialMasterAPI = () => {
@@ -12,7 +12,7 @@ export const useMaterialMasterAPI = () => {
     setError(null);
     
     try {
-      const response = await axiosClient.get(axiosClient.apiEndpoints.calculation.materialMaster.list);
+      const response = await axiosClient.get(apiEndpoints.calculation.materialMaster.list);
       return response.data;
     } catch (err: any) {
       const errorMessage = err.response?.data?.detail || err.message || '원료 마스터 데이터 조회 중 오류가 발생했습니다.';
@@ -35,7 +35,7 @@ export const useMaterialMasterAPI = () => {
     
     try {
       const response = await axiosClient.get(
-        axiosClient.apiEndpoints.calculation.materialMaster.search(searchTerm)
+        apiEndpoints.calculation.materialMaster.search(searchTerm)
       );
       return response.data;
     } catch (err: any) {
@@ -59,7 +59,7 @@ export const useMaterialMasterAPI = () => {
     
     try {
       const response = await axiosClient.get(
-        axiosClient.apiEndpoints.calculation.materialMaster.getFactor(matName)
+        apiEndpoints.calculation.materialMaster.getFactor(matName)
       );
       return response.data;
     } catch (err: any) {
@@ -79,7 +79,7 @@ export const useMaterialMasterAPI = () => {
     
     try {
       const response = await axiosClient.post(
-        axiosClient.apiEndpoints.calculation.materialMaster.autoFactor,
+        apiEndpoints.calculation.materialMaster.autoFactor,
         matDirData
       );
       return response.data;
