@@ -14,7 +14,8 @@ from app.domain.calculation.calculation_schema import (
     ProductProcessCreateRequest, ProductProcessResponse,
     ProcessAttrdirEmissionCreateRequest, ProcessAttrdirEmissionResponse, ProcessAttrdirEmissionUpdateRequest,
     ProcessEmissionCalculationRequest, ProcessEmissionCalculationResponse,
-    ProductEmissionCalculationRequest, ProductEmissionCalculationResponse
+    ProductEmissionCalculationRequest, ProductEmissionCalculationResponse,
+    EdgeCreateRequest, EdgeResponse
 )
 
 logger = logging.getLogger(__name__)
@@ -285,6 +286,10 @@ class CalculationService:
         """프로세스 삭제"""
         try:
             success = await self.calc_repository.delete_process(process_id)
+            if success:
+                logger.info(f"✅ 프로세스 {process_id} 삭제 성공")
+            else:
+                logger.warning(f"⚠️ 프로세스 {process_id}를 찾을 수 없음")
             return success
         except Exception as e:
             logger.error(f"Error deleting process {process_id}: {e}")
@@ -438,3 +443,171 @@ class CalculationService:
         except Exception as e:
             logger.error(f"Error calculating product emission for product {request.product_id}: {e}")
             raise e
+
+    # ============================================================================
+    # 🔗 Edge 관련 서비스 메서드
+    # ============================================================================
+
+    async def create_edge(self, edge_data: EdgeCreateRequest) -> EdgeResponse:
+        """Edge 생성 및 자동 통합 그룹 탐지"""
+        try:
+            logger.info(f"🔗 Edge 생성 요청: {edge_data.source_id} -> {edge_data.target_id} ({edge_data.edge_kind})")
+            
+            # 1. Edge 생성
+            edge = await self.calc_repository.create_edge(edge_data.dict())
+            logger.info(f"✅ Edge 생성 완료: ID {edge['id']}")
+            
+            # 2. 자동 통합 그룹 탐지 및 생성
+            try:
+                await self._auto_detect_and_create_process_chain(edge_data.source_id, edge_data.target_id)
+                logger.info(f"✅ 자동 통합 그룹 탐지 및 생성 완료")
+            except Exception as e:
+                logger.warning(f"⚠️ 자동 통합 그룹 생성 실패 (Edge 생성은 성공): {e}")
+            
+            return EdgeResponse(**edge)
+            
+        except Exception as e:
+            logger.error(f"❌ Edge 생성 실패: {e}")
+            raise e
+
+    async def get_edges(self) -> List[EdgeResponse]:
+        """모든 Edge 조회"""
+        try:
+            edges = await self.calc_repository.get_edges()
+            return [EdgeResponse(**edge) for edge in edges]
+        except Exception as e:
+            logger.error(f"❌ Edge 목록 조회 실패: {e}")
+            raise e
+
+    async def delete_edge(self, edge_id: int) -> bool:
+        """Edge 삭제"""
+        try:
+            success = await self.calc_repository.delete_edge(edge_id)
+            if success:
+                logger.info(f"✅ Edge {edge_id} 삭제 성공")
+            else:
+                logger.warning(f"⚠️ Edge {edge_id}를 찾을 수 없음")
+            return success
+        except Exception as e:
+            logger.error(f"❌ Edge 삭제 실패: {e}")
+            raise e
+
+    async def _auto_detect_and_create_process_chain(self, source_process_id: int, target_process_id: int):
+        """Edge 생성 시 자동으로 통합 공정 그룹 탐지 및 생성"""
+        try:
+            logger.info(f"🔍 통합 공정 그룹 자동 탐지: {source_process_id} -> {target_process_id}")
+            
+            # 1. 기존 통합 그룹에서 해당 공정들이 이미 포함되어 있는지 확인
+            existing_chains = await self.calc_repository.get_process_chains_by_process_ids([source_process_id, target_process_id])
+            
+            if existing_chains:
+                logger.info(f"📋 기존 통합 그룹 발견: {len(existing_chains)}개")
+                # 기존 그룹에 새로운 공정 추가 또는 그룹 병합 로직
+                await self._merge_processes_into_existing_chains(source_process_id, target_process_id, existing_chains)
+            else:
+                logger.info("🆕 새로운 통합 그룹 생성")
+                # 새로운 통합 그룹 생성
+                await self._create_new_process_chain([source_process_id, target_process_id])
+                
+        except Exception as e:
+            logger.error(f"❌ 자동 통합 그룹 탐지 실패: {e}")
+            raise e
+
+    async def _merge_processes_into_existing_chains(self, source_id: int, target_id: int, existing_chains: List[Dict]):
+        """기존 통합 그룹에 새로운 공정들을 병합"""
+        try:
+            # 가장 적합한 그룹을 찾아서 병합
+            best_chain = self._find_best_chain_for_merge(source_id, target_id, existing_chains)
+            
+            if best_chain:
+                # 기존 그룹에 새로운 공정들 추가
+                await self.calc_repository.add_processes_to_chain(best_chain['id'], [source_id, target_id])
+                logger.info(f"✅ 공정들을 기존 그룹 {best_chain['id']}에 병합 완료")
+            else:
+                # 새로운 그룹 생성
+                await self._create_new_process_chain([source_id, target_id])
+                
+        except Exception as e:
+            logger.error(f"❌ 기존 그룹 병합 실패: {e}")
+            raise e
+
+    async def _create_new_process_chain(self, process_ids: List[int]):
+        """새로운 통합 공정 그룹 생성"""
+        try:
+            # 1. 통합 그룹 생성
+            chain_name = f"통합공정그룹-{min(process_ids)}-{max(process_ids)}"
+            chain_data = {
+                'chain_name': chain_name,
+                'start_process_id': min(process_ids),
+                'end_process_id': max(process_ids),
+                'chain_length': len(process_ids),
+                'is_active': True
+            }
+            
+            chain = await self.calc_repository.create_process_chain(chain_data)
+            logger.info(f"✅ 새로운 통합 그룹 생성: ID {chain['id']}")
+            
+            # 2. 그룹에 공정들 연결
+            for i, process_id in enumerate(process_ids, 1):
+                link_data = {
+                    'chain_id': chain['id'],
+                    'process_id': process_id,
+                    'sequence_order': i,
+                    'is_continue_edge': True
+                }
+                await self.calc_repository.create_process_chain_link(link_data)
+            
+            logger.info(f"✅ {len(process_ids)}개 공정을 그룹에 연결 완료")
+            
+            # 3. 통합 그룹의 총 배출량 계산 및 업데이트
+            await self._calculate_and_update_chain_emission(chain['id'])
+            
+        except Exception as e:
+            logger.error(f"❌ 새로운 통합 그룹 생성 실패: {e}")
+            raise e
+
+    async def _calculate_and_update_chain_emission(self, chain_id: int):
+        """통합 그룹의 총 배출량 계산 및 업데이트"""
+        try:
+            # 그룹 내 모든 공정의 배출량 합계 계산
+            total_emission = await self.calc_repository.calculate_chain_integrated_emissions(chain_id)
+            logger.info(f"🔥 통합 그룹 {chain_id} 총 배출량: {total_emission}")
+            
+            # 그룹 정보 업데이트 (총 배출량 포함)
+            await self.calc_repository.update_process_chain_emission(chain_id, total_emission)
+            
+        except Exception as e:
+            logger.error(f"❌ 통합 그룹 배출량 계산 실패: {e}")
+            raise e
+
+    def _find_best_chain_for_merge(self, source_id: int, target_id: int, existing_chains: List[Dict]) -> Optional[Dict]:
+        """병합에 가장 적합한 기존 그룹 찾기"""
+        try:
+            best_chain = None
+            best_score = 0
+            
+            for chain in existing_chains:
+                score = 0
+                chain_processes = chain.get('processes', [])
+                
+                # 공정 연결성 점수 계산
+                if source_id in chain_processes or target_id in chain_processes:
+                    score += 10  # 이미 포함된 공정이 있으면 높은 점수
+                
+                # 그룹 크기 점수 (너무 큰 그룹은 피하기)
+                if len(chain_processes) < 10:  # 최대 10개 공정까지만 허용
+                    score += 5
+                
+                # 활성 상태 점수
+                if chain.get('is_active', False):
+                    score += 3
+                
+                if score > best_score:
+                    best_score = score
+                    best_chain = chain
+            
+            return best_chain
+            
+        except Exception as e:
+            logger.error(f"❌ 최적 그룹 찾기 실패: {e}")
+            return None

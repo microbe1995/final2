@@ -16,7 +16,8 @@ from .calculation_schema import (
     ProductProcessResponse, ProductProcessCreateRequest,
     ProcessAttrdirEmissionCreateRequest, ProcessAttrdirEmissionResponse, ProcessAttrdirEmissionUpdateRequest,
     ProcessEmissionCalculationRequest, ProcessEmissionCalculationResponse,
-    ProductEmissionCalculationRequest, ProductEmissionCalculationResponse
+    ProductEmissionCalculationRequest, ProductEmissionCalculationResponse,
+    EdgeResponse, EdgeCreateRequest
 )
 
 logger = logging.getLogger(__name__)
@@ -383,6 +384,50 @@ async def create_process_attrdir_emission(process_id: int):
     except Exception as e:
         logger.error(f"❌ 공정별 직접귀속배출량 계산 실패: {str(e)}")
         raise HTTPException(status_code=500, detail=f"공정별 직접귀속배출량 계산 중 오류가 발생했습니다: {str(e)}")
+
+# ============================================================================
+# 🔗 Edge 관련 엔드포인트
+# ============================================================================
+
+@router.post("/edge", response_model=EdgeResponse, status_code=201)
+async def create_edge(edge_data: EdgeCreateRequest):
+    """Edge 생성 및 자동 통합 그룹 탐지"""
+    try:
+        logger.info(f"🔗 Edge 생성 요청: {edge_data.source_id} -> {edge_data.target_id} ({edge_data.edge_kind})")
+        result = await calculation_service.create_edge(edge_data)
+        logger.info(f"✅ Edge 생성 성공: ID {result.id}")
+        return result
+    except Exception as e:
+        logger.error(f"❌ Edge 생성 실패: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Edge 생성 중 오류가 발생했습니다: {str(e)}")
+
+@router.get("/edge", response_model=List[EdgeResponse])
+async def get_edges():
+    """모든 Edge 목록 조회"""
+    try:
+        logger.info("📋 Edge 목록 조회 요청")
+        edges = await calculation_service.get_edges()
+        logger.info(f"✅ Edge 목록 조회 성공: {len(edges)}개")
+        return edges
+    except Exception as e:
+        logger.error(f"❌ Edge 목록 조회 실패: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Edge 목록 조회 중 오류가 발생했습니다: {str(e)}")
+
+@router.delete("/edge/{edge_id}")
+async def delete_edge(edge_id: int):
+    """Edge 삭제"""
+    try:
+        logger.info(f"🗑️ Edge 삭제 요청: ID {edge_id}")
+        success = await calculation_service.delete_edge(edge_id)
+        if not success:
+            raise HTTPException(status_code=404, detail="Edge를 찾을 수 없습니다")
+        logger.info(f"✅ Edge 삭제 성공: ID {edge_id}")
+        return {"message": "Edge가 성공적으로 삭제되었습니다"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"❌ Edge 삭제 실패: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Edge 삭제 중 오류가 발생했습니다: {str(e)}")
 
 # ============================================================================
 # 📦 Router Export
