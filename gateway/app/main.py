@@ -106,6 +106,9 @@ async def proxy_request(service: str, path: str, request: Request) -> Response:
         if "boundary/" in normalized_path:
             # boundary/ 이후 부분만 추출 (중복 방지)
             normalized_path = normalized_path.split("boundary/", 1)[1]
+        else:
+            # boundary/ prefix가 없는 경우 추가
+            normalized_path = f"boundary/{normalized_path}"
 
     target_url = f"{base_url.rstrip('/')}/{normalized_path}"
     
@@ -113,6 +116,8 @@ async def proxy_request(service: str, path: str, request: Request) -> Response:
     logger.info(f"🔄 프록시 라우팅: {service} -> {target_url}")
     logger.info(f"   원본 경로: {path}")
     logger.info(f"   정규화된 경로: {normalized_path}")
+    logger.info(f"   서비스: {service}")
+    logger.info(f"   기본 URL: {base_url}")
     
     method = request.method
     headers = dict(request.headers)
