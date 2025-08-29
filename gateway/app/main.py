@@ -27,11 +27,11 @@ logging.basicConfig(
 )
 logger = logging.getLogger("gateway_api")
 
-# 서비스 맵 구성 (환경 변수 기반)
+# 서비스 맵 구성 (MSA 원칙: 각 서비스는 독립적인 URL을 가져야 함)
 AUTH_SERVICE_URL = os.getenv("AUTH_SERVICE_URL", "http://auth-service:8000")
 CAL_BOUNDARY_URL = os.getenv("CAL_BOUNDARY_URL", "https://lcafinal-production.up.railway.app")
-MATDIR_URL = os.getenv("MATDIR_URL", "https://lcafinal-production.up.railway.app")
-PROCESSCHAIN_URL = os.getenv("PROCESSCHAIN_URL", "https://lcafinal-production.up.railway.app")
+MATDIR_URL = os.getenv("MATDIR_URL", "https://matdir-service.up.railway.app")  # 독립적인 URL
+PROCESSCHAIN_URL = os.getenv("PROCESSCHAIN_URL", "https://processchain-service.up.railway.app")  # 독립적인 URL
 
 # 환경변수 디버깅 로그
 logger.info(f"🔧 환경변수 확인:")
@@ -97,21 +97,9 @@ async def proxy_request(service: str, path: str, request: Request) -> Response:
     if not base_url:
         return JSONResponse(status_code=404, content={"detail": f"Unknown service: {service}"})
 
-    # 서비스별 경로 정규화
+    # MSA 원칙: 각 서비스는 자체 경로 구조를 가져야 함
+    # Gateway는 단순히 요청을 전달만 함 (경로 조작 금지)
     normalized_path = path
-    if service == "auth":
-        # auth-service는 "/auth" prefix를 사용
-        if not normalized_path.startswith("auth/"):
-            normalized_path = f"auth/{normalized_path}"
-    elif service == "boundary" or service == "cal-boundary" or service == "cal_boundary":
-        # boundary-service는 /boundary prefix를 유지하여 라우팅
-        # 경로 정규화: /api/v1/boundary/install -> /boundary/install
-        if "boundary/" in normalized_path:
-            # boundary/ 이후 부분만 추출 (중복 방지)
-            normalized_path = normalized_path.split("boundary/", 1)[1]
-        else:
-            # boundary/ prefix가 없는 경우 추가
-            normalized_path = f"boundary/{normalized_path}"
 
     target_url = f"{base_url.rstrip('/')}/{normalized_path}"
     

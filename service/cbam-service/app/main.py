@@ -218,10 +218,10 @@ async def log_requests(request: Request, call_next):
 # 🎯 라우터 등록
 # ============================================================================
 
-# CBAM 도메인 라우터들 등록 (Gateway를 통한 라우팅을 위해 prefix 설정)
+# CBAM 도메인 라우터들 등록 (MSA 원칙: 각 서비스는 자체 경로 구조를 가짐)
 app.include_router(calculation_router)
 app.include_router(mapping_router)
-app.include_router(matdir_router, prefix="/matdir")  # matdir prefix 추가
+app.include_router(matdir_router)  # prefix 제거 - MSA 독립성 확보
 app.include_router(fueldir_router)
 app.include_router(processchain_router)
 
