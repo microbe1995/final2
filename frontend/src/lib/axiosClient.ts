@@ -241,6 +241,14 @@ export const apiEndpoints = {
     history: '/api/v1/boundary/calc/history',
     
     // 새로운 테이블 API 엔드포인트들 (단수형으로 통일)
+    install: {
+        create: '/api/v1/boundary/install',
+        list: '/api/v1/boundary/install',
+        get: (id: number) => `/api/v1/boundary/install/${id}`,
+        update: (id: number) => `/api/v1/boundary/install/${id}`,
+        delete: (id: number) => `/api/v1/boundary/install/${id}`,
+        names: '/api/v1/boundary/install/names'
+    },
     boundary: {
         create: '/api/v1/boundary/boundary',
         list: '/api/v1/boundary/boundary'

@@ -39,7 +39,7 @@ export default function InstallPage() {
   const fetchInstalls = async () => {
     try {
       setIsLoadingInstalls(true);
-      const response = await axiosClient.get(apiEndpoints.cbam.install.list);
+              const response = await axiosClient.get(apiEndpoints.calculation.install.list);
       setInstalls(response.data);
       console.log('📋 사업장 목록:', response.data);
     } catch (error: any) {
@@ -132,7 +132,7 @@ export default function InstallPage() {
       if (editingInstall) {
         // 수정
         console.log('📤 사업장 수정 요청 데이터:', installForm);
-        await axiosClient.put(apiEndpoints.cbam.install.update(editingInstall.id), installForm);
+        await axiosClient.put(apiEndpoints.calculation.install.update(editingInstall.id), installForm);
         console.log('✅ 사업장 수정 성공');
         setToast({
           message: '사업장이 성공적으로 수정되었습니다!',
@@ -141,7 +141,7 @@ export default function InstallPage() {
       } else {
         // 생성
         console.log('📤 사업장 생성 요청 데이터:', installForm);
-        const response = await axiosClient.post(apiEndpoints.cbam.install.create, installForm);
+        const response = await axiosClient.post(apiEndpoints.calculation.install.create, installForm);
         console.log('✅ 사업장 생성 성공:', response.data);
         setToast({
           message: '사업장이 성공적으로 생성되었습니다!',
@@ -175,7 +175,7 @@ export default function InstallPage() {
 
     try {
       setLoading(true);
-      await axiosClient.delete(apiEndpoints.cbam.install.delete(id));
+              await axiosClient.delete(apiEndpoints.calculation.install.delete(id));
       console.log('✅ 사업장 삭제 성공');
       
       setToast({

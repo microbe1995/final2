@@ -172,7 +172,7 @@ function ProcessManagerInner() {
   // 사업장 목록 불러오기
   const fetchInstalls = useCallback(async () => {
     try {
-      const response = await axiosClient.get(apiEndpoints.cbam.install.list);
+              const response = await axiosClient.get(apiEndpoints.calculation.install.list);
       setInstalls(response.data);
     } catch (error) {
       console.error('사업장 목록 조회 실패:', error);
