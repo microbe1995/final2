@@ -97,11 +97,11 @@ async def proxy_request(service: str, path: str, request: Request) -> Response:
         if not normalized_path.startswith("auth/"):
             normalized_path = f"auth/{normalized_path}"
     elif service == "boundary" or service == "cal-boundary" or service == "cal_boundary":
-        # boundary-service는 prefix 없이 직접 라우팅
-        # 경로 정규화: /api/v1/boundary/matdir -> /matdir
-        # path에서 boundary/ 이후의 부분만 추출
+        # boundary-service는 /boundary prefix를 유지하여 라우팅
+        # 경로 정규화: /api/v1/boundary/install -> /boundary/install
         if "boundary/" in normalized_path:
-            normalized_path = normalized_path.split("boundary/", 1)[1]
+            # boundary/ 이후 부분을 /boundary/로 시작하도록 유지
+            normalized_path = "boundary/" + normalized_path.split("boundary/", 1)[1]
 
     target_url = f"{base_url.rstrip('/')}/{normalized_path}"
     
