@@ -39,7 +39,7 @@ export default function InstallPage() {
   const fetchInstalls = async () => {
     try {
       setIsLoadingInstalls(true);
-              const response = await axiosClient.get(apiEndpoints.calculation.install.list);
+      const response = await axiosClient.get(apiEndpoints.calculation.install.list);
       setInstalls(response.data);
       console.log('📋 사업장 목록:', response.data);
     } catch (error: any) {
