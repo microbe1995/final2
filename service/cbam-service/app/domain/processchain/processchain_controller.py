@@ -19,7 +19,7 @@ from .processchain_schema import (
 logger = logging.getLogger(__name__)
 
 # 라우터 생성
-router = APIRouter(prefix="/processchain", tags=["ProcessChain"])
+router = APIRouter(prefix="/boundary", tags=["ProcessChain"])
 
 # 서비스 인스턴스 생성
 processchain_service = ProcessChainService()
