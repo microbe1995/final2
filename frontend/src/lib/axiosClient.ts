@@ -233,7 +233,10 @@ export const apiEndpoints = {
     material: '/api/v1/boundary/calc/material/calculate',
     precursor: '/api/v1/boundary/calc/precursor/calculate',
     electricity: '/api/v1/boundary/calc/electricity/calculate',
-    process: '/api/v1/boundary/calc/process/calculate',
+    process: {
+      calculate: '/api/v1/boundary/calc/process/calculate',
+      list: '/api/v1/boundary/process'
+    },
     cbam: '/api/v1/boundary/calc/cbam',
     precursors: '/api/v1/boundary/calc/precursor/user',
     precursorsBatch: '/api/v1/boundary/calc/precursor/save-batch',

@@ -436,7 +436,7 @@ function ProcessManagerInner() {
     
     setIsUpdatingProduct(true);
     try {
-      const response = await axiosClient.put(apiEndpoints.cbam.product.update(selectedProduct.id), productQuantityForm);
+      const response = await axiosClient.put(apiEndpoints.calculation.product.update(selectedProduct.id), productQuantityForm);
       console.log('✅ 제품 수량 업데이트 성공:', response.data);
       
       // 성공 메시지 표시 (간단한 알림)
