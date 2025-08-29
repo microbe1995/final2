@@ -44,7 +44,7 @@ export const useMaterialMasterAPI = () => {
     setError(null);
     
     try {
-      const response = await axiosClient.get(apiEndpoints.calculation.materialMaster.search(mat_name));
+      const response = await axiosClient.get(apiEndpoints.materialMaster.search(mat_name));
       return response.data;
     } catch (err: any) {
       const errorMessage = err.response?.data?.detail || err.message || '원료명 조회 중 오류가 발생했습니다.';
@@ -64,7 +64,7 @@ export const useMaterialMasterAPI = () => {
     setError(null);
     
     try {
-      const response = await axiosClient.get(apiEndpoints.calculation.materialMaster.list, {
+      const response = await axiosClient.get(apiEndpoints.materialMaster.list, {
         params: { skip, limit }
       });
       return response.data;

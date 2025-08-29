@@ -30,8 +30,8 @@ logger = logging.getLogger("gateway_api")
 # 서비스 맵 구성 (MSA 원칙: 각 서비스는 독립적인 URL을 가져야 함)
 AUTH_SERVICE_URL = os.getenv("AUTH_SERVICE_URL", "http://auth-service:8000")
 CAL_BOUNDARY_URL = os.getenv("CAL_BOUNDARY_URL", "https://lcafinal-production.up.railway.app")
-MATDIR_URL = os.getenv("MATDIR_URL", "https://matdir-service.up.railway.app")  # 독립적인 URL
-PROCESSCHAIN_URL = os.getenv("PROCESSCHAIN_URL", "https://processchain-service.up.railway.app")  # 독립적인 URL
+MATDIR_URL = os.getenv("MATDIR_URL", "https://lcafinal-production.up.railway.app")  # CBAM 서비스와 동일
+PROCESSCHAIN_URL = os.getenv("PROCESSCHAIN_URL", "https://lcafinal-production.up.railway.app")  # CBAM 서비스와 동일
 
 # 환경변수 디버깅 로그
 logger.info(f"🔧 환경변수 확인:")

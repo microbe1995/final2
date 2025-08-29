@@ -307,19 +307,19 @@ export const apiEndpoints = {
         calculate: '/api/v1/boundary/fueldir/calculate',
         totalByProcess: (process_id: number) => `/api/v1/boundary/fueldir/process/${process_id}/total`
     },
-    // Material Master API (matdir 서비스 사용)
-    materialMaster: {
-        list: '/api/v1/matdir/material-master',
-        search: (mat_name: string) => `/api/v1/matdir/material-master/search/${mat_name}`,
-        getFactor: (mat_name: string) => `/api/v1/matdir/material-master/factor/${mat_name}`,
-        autoFactor: '/api/v1/matdir/auto-factor'
-    },
     // Fuel Master API
     fuelMaster: {
         list: '/api/v1/boundary/fuel-master',
         search: (fuel_name: string) => `/api/v1/boundary/fuel-master/search/${fuel_name}`,
         getFactor: (fuel_name: string) => `/api/v1/boundary/fuel-master/factor/${fuel_name}`,
         autoFactor: '/api/v1/boundary/fueldir/auto-factor'
+    },
+    // Material Master API (matdir 서비스 사용) - 최상위로 이동
+    materialMaster: {
+        list: '/api/v1/matdir/material-master',
+        search: (mat_name: string) => `/api/v1/matdir/material-master/search/${mat_name}`,
+        getFactor: (mat_name: string) => `/api/v1/matdir/material-master/factor/${mat_name}`,
+        autoFactor: '/api/v1/matdir/auto-factor'
     }
 },
   // Data Upload (Gateway를 통해)
