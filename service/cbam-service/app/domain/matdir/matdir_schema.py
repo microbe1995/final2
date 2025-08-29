@@ -73,6 +73,6 @@ class MaterialMasterListResponse(BaseModel):
 class MaterialMasterFactorResponse(BaseModel):
     """원료 배출계수 조회 응답"""
     mat_name: str = Field(..., description="원료명")
-    mat_factor: float = Field(..., description="배출계수")
+    mat_factor: Optional[float] = Field(None, description="배출계수")
     carbon_content: Optional[float] = Field(None, description="탄소 함량")
     found: bool = Field(..., description="조회 성공 여부")
