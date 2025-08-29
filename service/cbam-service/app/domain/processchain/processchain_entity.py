@@ -1,5 +1,5 @@
 # ============================================================================
-# 🔄 SourceStream Entity - 통합 공정 그룹 데이터 모델
+# 🔄 ProcessChain Entity - 통합 공정 그룹 데이터 모델
 # ============================================================================
 
 from sqlalchemy import Column, Integer, String, Numeric, DateTime, Text, BigInteger, Date, ForeignKey, Boolean
@@ -80,47 +80,6 @@ class ProcessChainLink(Base):
             "updated_at": self.updated_at.isoformat() if self.updated_at else None
         }
 
-
-
 # ============================================================================
-# 🔄 SourceStream 엔티티 (소스 스트림)
+# ✅ SourceStream 엔티티 제거됨 - Edge가 이미 공정 간 연결을 관리
 # ============================================================================
-
-class SourceStream(Base):
-    """소스 스트림 엔티티 - 공정 간 물질/에너지 흐름을 관리"""
-    
-    __tablename__ = "source_stream"
-    
-    id = Column(Integer, primary_key=True, index=True)
-    source_process_id = Column(Integer, ForeignKey("process.id"), nullable=False, index=True)  # 소스 공정 ID
-    target_process_id = Column(Integer, ForeignKey("process.id"), nullable=False, index=True)  # 타겟 공정 ID
-    stream_type = Column(Text, nullable=False)  # 스트림 타입 (material, energy, waste)
-    stream_name = Column(Text, nullable=False)  # 스트림명
-    stream_amount = Column(Numeric(15, 6), nullable=False, default=0)  # 스트림량
-    unit = Column(Text, nullable=False)  # 단위
-    emission_factor = Column(Numeric(10, 6), nullable=False, default=0)  # 배출계수
-    calculated_emission = Column(Numeric(15, 6), nullable=False, default=0)  # 계산된 배출량
-    is_continue_stream = Column(Boolean, nullable=False, default=True)  # continue 스트림 여부
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
-    # 관계 설정
-    source_process = relationship("Process", foreign_keys=[source_process_id])
-    target_process = relationship("Process", foreign_keys=[target_process_id])
-    
-    def to_dict(self) -> Dict[str, Any]:
-        """엔티티를 딕셔너리로 변환"""
-        return {
-            "id": self.id,
-            "source_process_id": self.source_process_id,
-            "target_process_id": self.target_process_id,
-            "stream_type": self.stream_type,
-            "stream_name": self.stream_name,
-            "stream_amount": float(self.stream_amount) if self.stream_amount else 0.0,
-            "unit": self.unit,
-            "emission_factor": float(self.emission_factor) if self.emission_factor else 0.0,
-            "calculated_emission": float(self.calculated_emission) if self.calculated_emission else 0.0,
-            "is_continue_stream": self.is_continue_stream,
-            "created_at": self.created_at.isoformat() if self.created_at else None,
-            "updated_at": self.updated_at.isoformat() if self.updated_at else None
-        }

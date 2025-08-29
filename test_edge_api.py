@@ -75,7 +75,7 @@ def test_edge_creation():
     # 4. 생성된 통합 그룹 확인
     print("\n📋 생성된 통합 그룹 확인 중...")
     try:
-        response = requests.get(f"{API_BASE}/sourcestream/chain")
+        response = requests.get(f"{API_BASE}/processchain/chain")
         if response.status_code == 200:
             chains = response.json()
             print(f"✅ 통합 그룹 목록 조회 성공: {len(chains)}개")
@@ -163,7 +163,7 @@ def test_process_chain_creation():
     # 최종 통합 공정 그룹 상태 확인
     print("\n📊 최종 통합 공정 그룹 상태 확인...")
     try:
-        response = requests.get(f"{API_BASE}/sourcestream/chain")
+        response = requests.get(f"{API_BASE}/processchain/chain")
         if response.status_code == 200:
             chains = response.json()
             print(f"✅ 최종 통합 공정 그룹: {len(chains)}개")

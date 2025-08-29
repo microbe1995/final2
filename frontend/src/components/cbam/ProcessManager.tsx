@@ -153,13 +153,11 @@ function ProcessManagerInner() {
   // 연료직접배출량 모달 상태
   const [showFuelDirModal, setShowFuelDirModal] = useState(false);
   const [selectedProcessForFuelDir, setSelectedProcessForFuelDir] = useState<any>(null);
-  
-  // 통합 공정 그룹 관련 상태
-  const [integratedProcessGroups, setIntegratedProcessGroups] = useState<any[]>([]);
-  const [showIntegratedGroupsModal, setShowIntegratedGroupsModal] = useState(false);
+
+  // 통합 공정 그룹 탐지 상태
   const [isDetectingChains, setIsDetectingChains] = useState(false);
   const [detectionStatus, setDetectionStatus] = useState<string>('');
-  
+
   // 크로스 사업장 공정 처리를 위한 상태
   const [crossInstallProcesses, setCrossInstallProcesses] = useState<any[]>([]);
   const [showCrossInstallModal, setShowCrossInstallModal] = useState(false);
@@ -605,6 +603,26 @@ function ProcessManagerInner() {
         </div>
       )}
 
+      {/* 통합 공정 그룹 상태 표시 */}
+      {processChains.length > 0 && (
+        <div className="absolute top-4 right-4 bg-gray-800 p-4 rounded-lg border border-gray-600 max-w-sm z-10">
+          <h3 className="text-white font-semibold mb-2">🔗 통합 공정 그룹</h3>
+          <div className="space-y-2">
+            {processChains.map((chain) => (
+              <div key={chain.id} className="bg-gray-700 p-3 rounded border border-gray-600">
+                <div className="text-white font-medium">{chain.chain_name}</div>
+                <div className="text-gray-300 text-sm">
+                  공정 {chain.chain_length}개 | 총 배출량: {chain.total_emission || '계산중...'}
+                </div>
+                <div className="text-gray-400 text-xs mt-1">
+                  시작: {chain.start_process_id} → 종료: {chain.end_process_id}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* ReactFlow 캔버스 */}
       <div className="flex-1">
         <ReactFlow
@@ -641,6 +659,7 @@ function ProcessManagerInner() {
                 
                 // 3. 통합 공정 그룹 상태 업데이트
                 // (백엔드에서 자동으로 처리되므로 별도 작업 불필요)
+                updateProcessChainsAfterEdge();
                 
               } else {
                 console.error('❌ Edge 생성 실패:', response.status);

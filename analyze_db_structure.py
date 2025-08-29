@@ -97,7 +97,7 @@ def analyze_emission_tables(conn):
     
     emission_tables = [
         'matdir', 'fueldir', 'process_attrdir_emission',
-        'sourcestream', 'process_chain', 'process_chain_link'
+        'processchain', 'process_chain', 'process_chain_link'
     ]
     
     for table_name in emission_tables:

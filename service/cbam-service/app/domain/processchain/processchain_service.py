@@ -1,5 +1,5 @@
 # ============================================================================
-# 🔄 SourceStream Service - 통합 공정 그룹 비즈니스 로직
+# 🔄 ProcessChain Service - 통합 공정 그룹 비즈니스 로직
 # ============================================================================
 
 import logging
@@ -8,8 +8,8 @@ from datetime import datetime
 from decimal import Decimal
 import json
 
-from .sourcestream_repository import SourceStreamRepository
-from .sourcestream_schema import (
+from .processchain_repository import ProcessChainRepository
+from .processchain_schema import (
     ProcessChainCreate, ProcessChainUpdate, ProcessChainResponse,
     ProcessChainLinkCreate, ProcessChainLinkUpdate, ProcessChainLinkResponse,
     SourceStreamCreate, SourceStreamUpdate, SourceStreamResponse,
@@ -20,12 +20,12 @@ from .sourcestream_schema import (
 
 logger = logging.getLogger(__name__)
 
-class SourceStreamService:
-    """소스 스트림 서비스 - 통합 공정 그룹 비즈니스 로직"""
+class ProcessChainService:
+    """통합 공정 그룹 서비스 클래스"""
     
     def __init__(self):
         """서비스 초기화"""
-        self.repository = SourceStreamRepository()
+        self.repository = ProcessChainRepository()
     
     # ============================================================================
     # 🔄 ProcessChain 관련 서비스 메서드 (통합 공정 그룹)

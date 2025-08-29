@@ -1,25 +1,24 @@
 # ============================================================================
-# 🔄 SourceStream Repository - 통합 공정 그룹 데이터 레포지토리
+# 🔄 ProcessChain Repository - 통합 공정 그룹 데이터 레포지토리
 # ============================================================================
 
-import os
 import logging
-from typing import List, Dict, Any, Optional, Tuple
-from sqlalchemy import create_engine, text
-from sqlalchemy.orm import sessionmaker, Session
-from sqlalchemy.exc import SQLAlchemyError
+import asyncio
+from typing import List, Dict, Any, Optional
 from datetime import datetime
 from decimal import Decimal
-import json
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, text, func
+from sqlalchemy.orm import sessionmaker
 
-from .sourcestream_entity import (
-    ProcessChain, ProcessChainLink, SourceStream, Base
+from .processchain_entity import (
+    ProcessChain, ProcessChainLink, Base
 )
 
 logger = logging.getLogger(__name__)
 
-class SourceStreamRepository:
-    """소스 스트림 레포지토리 - 통합 공정 그룹 데이터 관리"""
+class ProcessChainRepository:
+    """통합 공정 그룹 레포지토리 클래스"""
     
     def __init__(self):
         """레포지토리 초기화"""
