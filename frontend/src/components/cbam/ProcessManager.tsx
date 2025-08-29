@@ -100,7 +100,51 @@ function ProcessManagerInner() {
     product_sell: 0,
     product_eusell: 0
   });
-  const [isUpdatingProduct, setIsUpdatingProduct] = useState(false);
+
+  // 통합 공정 그룹 상태
+  const [processChains, setProcessChains] = useState<any[]>([]);
+  const [chainLoading, setChainLoading] = useState(false);
+
+  // 통합 공정 그룹 조회 함수
+  const fetchProcessChains = useCallback(async () => {
+    try {
+      setChainLoading(true);
+      const response = await axiosClient.get(apiEndpoints.calculation.sourcestream.chain);
+      if (response.status === 200) {
+        setProcessChains(response.data);
+        console.log('✅ 통합 공정 그룹 조회 성공:', response.data);
+      }
+    } catch (error) {
+      console.error('❌ 통합 공정 그룹 조회 실패:', error);
+    } finally {
+      setChainLoading(false);
+    }
+  }, []);
+
+  // Edge 생성 후 통합 공정 그룹 상태 업데이트
+  const updateProcessChainsAfterEdge = useCallback(async () => {
+    // 잠시 대기 후 상태 업데이트 (백엔드 처리 시간 고려)
+    setTimeout(() => {
+      fetchProcessChains();
+    }, 1000);
+  }, [fetchProcessChains]);
+
+  // 초기 로드 및 Edge 변경 시 통합 공정 그룹 상태 업데이트
+  useEffect(() => {
+    fetchProcessChains();
+  }, [fetchProcessChains]);
+
+  // Edge 변경 시 통합 공정 그룹 상태 업데이트
+  useEffect(() => {
+    if (edges.length > 0) {
+      // Edge가 변경될 때마다 통합 공정 그룹 상태 업데이트
+      const timer = setTimeout(() => {
+        fetchProcessChains();
+      }, 2000); // 2초 후 업데이트
+      
+      return () => clearTimeout(timer);
+    }
+  }, [edges, fetchProcessChains]);
   
   // 원료직접배출량 모달 상태
   const [showMatDirModal, setShowMatDirModal] = useState(false);
@@ -568,16 +612,52 @@ function ProcessManagerInner() {
           edges={edges}
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
-          onConnect={(params: Connection) =>
-            addEdges({
-              id: `e-${Date.now()}-${Math.random().toString(36).slice(2)}`,
-              source: params.source!,
-              target: params.target!,
-              sourceHandle: params.sourceHandle ?? undefined,
-              targetHandle: params.targetHandle ?? undefined,
-              type: 'custom',
-            })
-          }
+          onConnect={async (params: Connection) => {
+            try {
+              // 1. 백엔드에 Edge 생성 요청
+              const edgeData = {
+                source_id: parseInt(params.source!),
+                target_id: parseInt(params.target!),
+                edge_kind: 'continue'
+              };
+              
+              const response = await axiosClient.post(apiEndpoints.calculation.edge.create, edgeData);
+              
+              if (response.status === 201) {
+                const newEdge = response.data;
+                
+                // 2. ReactFlow 상태에 Edge 추가
+                addEdges({
+                  id: `e-${newEdge.id}`,
+                  source: params.source!,
+                  target: params.target!,
+                  sourceHandle: params.sourceHandle ?? undefined,
+                  targetHandle: params.targetHandle ?? undefined,
+                  type: 'custom',
+                  data: { backendId: newEdge.id }
+                });
+                
+                console.log('✅ Edge 생성 성공:', newEdge);
+                
+                // 3. 통합 공정 그룹 상태 업데이트
+                // (백엔드에서 자동으로 처리되므로 별도 작업 불필요)
+                
+              } else {
+                console.error('❌ Edge 생성 실패:', response.status);
+              }
+            } catch (error) {
+              console.error('❌ Edge 생성 중 오류:', error);
+              // 에러 발생 시에도 로컬에 Edge 추가 (사용자 경험 개선)
+              addEdges({
+                id: `e-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+                source: params.source!,
+                target: params.target!,
+                sourceHandle: params.sourceHandle ?? undefined,
+                targetHandle: params.targetHandle ?? undefined,
+                type: 'custom',
+              });
+            }
+          }}
           nodeTypes={nodeTypes}
           edgeTypes={edgeTypes}
           connectionMode={ConnectionMode.Loose}

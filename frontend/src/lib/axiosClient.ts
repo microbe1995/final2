@@ -262,7 +262,15 @@ export const apiEndpoints = {
     },
     edge: {
         create: '/api/v1/boundary/edge',
-        list: '/api/v1/boundary/edge'
+        list: '/api/v1/boundary/edge',
+        get: (id: number) => `/api/v1/boundary/edge/${id}`,
+        delete: (id: number) => `/api/v1/boundary/edge/${id}`
+    },
+    sourcestream: {
+        chain: '/api/v1/boundary/sourcestream/chain',
+        chainCreate: '/api/v1/boundary/sourcestream/chain',
+        chainGet: (id: number) => `/api/v1/boundary/sourcestream/chain/${id}`,
+        chainDelete: (id: number) => `/api/v1/boundary/sourcestream/chain/${id}`
     },
     productionEmission: {
         create: '/api/v1/boundary/production-emission',
