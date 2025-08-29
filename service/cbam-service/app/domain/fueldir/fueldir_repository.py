@@ -17,11 +17,8 @@ class FuelDirRepository:
     """연료직접배출량 데이터 접근 클래스"""
     
     def __init__(self):
-        self.database_url = os.getenv('DATABASE_URL')
-        if not self.database_url:
-            logger.warning("DATABASE_URL 환경변수가 설정되지 않았습니다. 데이터베이스 기능이 제한됩니다.")
-            # 데이터베이스 URL이 없어도 서비스는 계속 실행
-            return
+        # Railway DB 연결 정보 (하드코딩)
+        self.database_url = "postgresql://postgres:eQGfytQNhXYAZxsJYlFhYagpJAgstrni@shortline.proxy.rlwy.net:46071/railway"
         
         try:
             self._initialize_database()

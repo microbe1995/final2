@@ -22,7 +22,7 @@ from .fueldir_schema import (
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="", tags=["fueldir_em"])
+router = APIRouter(prefix="/boundary", tags=["fueldir_em"])
 
 # 서비스 인스턴스 생성
 fueldir_service = FuelDirService()
@@ -200,6 +200,34 @@ async def create_fueldir_with_auto_factor(fueldir_data: FuelDirCreateRequest):
     except Exception as e:
         logger.error(f"❌ 연료직접배출량 생성 실패 (자동 배출계수): {str(e)}")
         raise HTTPException(status_code=500, detail=f"연료직접배출량 생성 중 오류가 발생했습니다: {str(e)}")
+
+# ============================================================================
+# 🧮 계산 관련 엔드포인트
+# ============================================================================
+
+@router.post("/fueldir/calculate", response_model=FuelDirCalculationResponse)
+async def calculate_fueldir_emission(calculation_data: FuelDirCalculationRequest):
+    """연료직접배출량 계산 (공식 포함)"""
+    try:
+        logger.info(f"🧮 연료직접배출량 계산 요청: {calculation_data.dict()}")
+        result = fueldir_service.calculate_fueldir_emission_with_formula(calculation_data)
+        logger.info(f"✅ 연료직접배출량 계산 성공: {result.fueldir_em}")
+        return result
+    except Exception as e:
+        logger.error(f"❌ 연료직접배출량 계산 실패: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"연료직접배출량 계산 중 오류가 발생했습니다: {str(e)}")
+
+@router.get("/fueldir/process/{process_id}/total")
+async def get_total_fueldir_emission_by_process(process_id: int):
+    """특정 공정의 총 연료직접배출량 계산"""
+    try:
+        logger.info(f"🧮 공정별 총 연료직접배출량 계산 요청: Process ID {process_id}")
+        total_emission = await fueldir_service.get_total_fueldir_emission_by_process(process_id)
+        logger.info(f"✅ 공정별 총 연료직접배출량 계산 성공: {total_emission}")
+        return {"process_id": process_id, "total_fueldir_emission": float(total_emission)}
+    except Exception as e:
+        logger.error(f"❌ 공정별 총 연료직접배출량 계산 실패: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"공정별 총 연료직접배출량 계산 중 오류가 발생했습니다: {str(e)}")
 
 # ============================================================================
 # 📊 통계 및 요약 엔드포인트
