@@ -8,7 +8,7 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 
-from app.config import settings
+
 from .mapping_schema import HSCNMappingCreateRequest, HSCNMappingUpdateRequest
 
 logger = logging.getLogger(__name__)
@@ -18,7 +18,7 @@ class HSCNMappingRepository:
     
     def __init__(self, db_session=None):
         # 설정에서 데이터베이스 URL 가져오기
-        self.database_url = settings.database_url
+        self.database_url = os.getenv('DATABASE_URL')
     
     # ============================================================================
     # 📋 기본 CRUD 작업

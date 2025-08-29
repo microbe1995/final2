@@ -927,33 +927,33 @@ class CalculationRepository:
             conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
             
             try:
-                with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-                    cursor.execute("""
-                        INSERT INTO install (install_name, reporting_year)
+            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                cursor.execute("""
+                    INSERT INTO install (install_name, reporting_year)
                         VALUES (%s, %s)
-                        RETURNING *
+                    RETURNING *
                     """, (install_data['install_name'], install_data['reporting_year']))
-                    
-                    result = cursor.fetchone()
-                    conn.commit()
-                    
-                    if result:
-                        install_dict = dict(result)
+                
+                result = cursor.fetchone()
+                conn.commit()
+                
+                if result:
+                    install_dict = dict(result)
                         # datetime 객체를 문자열로 변환
                         if 'created_at' in install_dict and install_dict['created_at']:
                             install_dict['created_at'] = install_dict['created_at'].isoformat()
                         if 'updated_at' in install_dict and install_dict['updated_at']:
                             install_dict['updated_at'] = install_dict['updated_at'].isoformat()
-                        return install_dict
-                    else:
-                        raise Exception("사업장 생성에 실패했습니다.")
-                        
-            except Exception as e:
+                    return install_dict
+                else:
+                    raise Exception("사업장 생성에 실패했습니다.")
+                    
+        except Exception as e:
                 conn.rollback()
-                raise e
-            finally:
-                conn.close()
-                
+            raise e
+        finally:
+            conn.close()
+
         except Exception as e:
             raise e
 
@@ -966,15 +966,15 @@ class CalculationRepository:
             conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
             
             try:
-                with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-                    cursor.execute("""
+            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                cursor.execute("""
                         SELECT id, install_name, reporting_year, created_at, updated_at
                         FROM install
                         ORDER BY created_at DESC
-                    """)
-                    
-                    results = cursor.fetchall()
-                    installs = []
+                """)
+                
+                results = cursor.fetchall()
+                installs = []
                     
                     for result in results:
                         install_dict = dict(result)
@@ -983,15 +983,15 @@ class CalculationRepository:
                             install_dict['created_at'] = install_dict['created_at'].isoformat()
                         if 'updated_at' in install_dict and install_dict['updated_at']:
                             install_dict['updated_at'] = install_dict['updated_at'].isoformat()
-                        installs.append(install_dict)
-                    
-                    return installs
-                    
-            except Exception as e:
-                raise e
-            finally:
-                conn.close()
+                    installs.append(install_dict)
                 
+                return installs
+                
+        except Exception as e:
+            raise e
+        finally:
+            conn.close()
+
         except Exception as e:
             raise e
 
@@ -1004,21 +1004,21 @@ class CalculationRepository:
             conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
             
             try:
-                with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-                    cursor.execute("""
+            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                cursor.execute("""
                         SELECT id, install_name
                         FROM install
                         ORDER BY install_name ASC
-                    """)
-                    
-                    results = cursor.fetchall()
-                    return [dict(result) for result in results]
-                    
-            except Exception as e:
-                raise e
-            finally:
-                conn.close()
+                """)
                 
+                results = cursor.fetchall()
+                    return [dict(result) for result in results]
+                
+        except Exception as e:
+            raise e
+        finally:
+            conn.close()
+
         except Exception as e:
             raise e
 
@@ -1031,29 +1031,29 @@ class CalculationRepository:
             conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
             
             try:
-                with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-                    cursor.execute("""
+            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                cursor.execute("""
                         SELECT id, install_name, reporting_year, created_at, updated_at
                         FROM install
                         WHERE id = %s
-                    """, (install_id,))
-                    
-                    result = cursor.fetchone()
-                    if result:
-                        install_dict = dict(result)
+                """, (install_id,))
+                
+                result = cursor.fetchone()
+                if result:
+                    install_dict = dict(result)
                         # datetime 객체를 문자열로 변환
                         if 'created_at' in install_dict and install_dict['created_at']:
                             install_dict['created_at'] = install_dict['created_at'].isoformat()
                         if 'updated_at' in install_dict and install_dict['updated_at']:
                             install_dict['updated_at'] = install_dict['updated_at'].isoformat()
-                        return install_dict
-                    return None
-                    
-            except Exception as e:
-                raise e
-            finally:
-                conn.close()
+                    return install_dict
+                return None
                 
+        except Exception as e:
+            raise e
+        finally:
+            conn.close()
+
         except Exception as e:
             raise e
 
@@ -1066,35 +1066,35 @@ class CalculationRepository:
             conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
             
             try:
-                with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-                    # 동적으로 SET 절 생성
-                    set_clause = ", ".join([f"{key} = %s" for key in update_data.keys()])
-                    values = list(update_data.values()) + [install_id]
-                    
-                    cursor.execute(f"""
+            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                # 동적으로 SET 절 생성
+                set_clause = ", ".join([f"{key} = %s" for key in update_data.keys()])
+                values = list(update_data.values()) + [install_id]
+                
+                cursor.execute(f"""
                         UPDATE install SET {set_clause}, updated_at = NOW()
-                        WHERE id = %s RETURNING *
-                    """, values)
-                    
-                    result = cursor.fetchone()
-                    conn.commit()
-                    
-                    if result:
-                        install_dict = dict(result)
+                    WHERE id = %s RETURNING *
+                """, values)
+                
+                result = cursor.fetchone()
+                conn.commit()
+                
+                if result:
+                    install_dict = dict(result)
                         # datetime 객체를 문자열로 변환
                         if 'created_at' in install_dict and install_dict['created_at']:
                             install_dict['created_at'] = install_dict['created_at'].isoformat()
                         if 'updated_at' in install_dict and install_dict['updated_at']:
                             install_dict['updated_at'] = install_dict['updated_at'].isoformat()
-                        return install_dict
-                    return None
-                    
-            except Exception as e:
-                conn.rollback()
-                raise e
-            finally:
-                conn.close()
+                    return install_dict
+                return None
                 
+        except Exception as e:
+            conn.rollback()
+            raise e
+        finally:
+            conn.close()
+
         except Exception as e:
             raise e
 
@@ -1102,19 +1102,19 @@ class CalculationRepository:
         """데이터베이스에서 사업장 삭제"""
         try:
             import psycopg2
-            
+
             conn = psycopg2.connect(self.database_url)
             conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
-            
+
             try:
                 with conn.cursor() as cursor:
                     cursor.execute("""
                         DELETE FROM install WHERE id = %s
                     """, (install_id,))
-                    
+
                     conn.commit()
                     return cursor.rowcount > 0
-                    
+
             except Exception as e:
                 conn.rollback()
                 raise e

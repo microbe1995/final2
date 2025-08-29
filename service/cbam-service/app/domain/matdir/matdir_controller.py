@@ -25,7 +25,7 @@ from .matdir_schema import (
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/", tags=["material_master"])
+router = APIRouter(prefix="", tags=["material_master"])
 
 # 서비스 인스턴스 생성
 matdir_service = MatDirService()
