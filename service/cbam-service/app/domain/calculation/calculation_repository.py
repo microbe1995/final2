@@ -12,7 +12,8 @@ import os
 from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from .calculation_entity import Edge, EdgeResponse
+from .calculation_entity import Edge
+from .calculation_schema import EdgeResponse
 
 logger = logging.getLogger(__name__)
 
