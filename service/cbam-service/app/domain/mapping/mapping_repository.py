@@ -3,21 +3,20 @@
 # ============================================================================
 
 import logging
+import os
 from typing import List, Optional, Dict, Any
-from sqlalchemy.orm import Session
-from sqlalchemy import and_, or_, func, desc
-from sqlalchemy.exc import SQLAlchemyError
-
-from .mapping_entity import HSCNMapping
-from .mapping_schema import HSCNMappingCreateRequest, HSCNMappingUpdateRequest
+import psycopg2
+from psycopg2.extras import RealDictCursor
+from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 
 logger = logging.getLogger(__name__)
 
 class HSCNMappingRepository:
-    """HS-CN 매핑 데이터베이스 리포지토리"""
+    """HS-CN 매핑 데이터베이스 리포지토리 (psycopg2 직접 연결)"""
     
-    def __init__(self, db: Session):
-        self.db = db
+    def __init__(self, db_session=None):
+        # Railway DB 연결 정보
+        self.database_url = "postgresql://postgres:eQGfytQNhXYAZxsJYlFhYagpJAgstrni@shortline.proxy.rlwy.net:46071/railway"
     
     # ============================================================================
     # 📋 기본 CRUD 작업
@@ -110,20 +109,34 @@ class HSCNMappingRepository:
     # 🔍 HS 코드 조회 기능
     # ============================================================================
     
-    async def lookup_by_hs_code(self, hs_code: str) -> List[HSCNMapping]:
+    async def lookup_by_hs_code(self, hs_code: str) -> List[Dict[str, Any]]:
         """HS 코드로 CN 코드 조회 (부분 검색 허용)"""
         try:
-            # 부분 검색을 위해 LIKE 연산자 사용
-            mappings = self.db.query(HSCNMapping).filter(
-                HSCNMapping.hscode.like(f"{hs_code}%")
-            ).all()
+            conn = psycopg2.connect(self.database_url)
+            conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
             
-            logger.info(f"🔍 HS 코드 조회: {hs_code}, 결과: {len(mappings)}개")
-            return mappings
-            
-        except SQLAlchemyError as e:
+            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                # 부분 검색을 위해 LIKE 연산자 사용
+                query = """
+                    SELECT hscode, cncode_total, goods_name, goods_engname, 
+                           aggregoods_name, aggregoods_engname
+                    FROM hs_cn_mapping 
+                    WHERE hscode LIKE %s
+                    ORDER BY hscode, cncode_total
+                """
+                
+                cursor.execute(query, (f"{hs_code}%",))
+                results = cursor.fetchall()
+                
+                logger.info(f"🔍 HS 코드 조회: {hs_code}, 결과: {len(results)}개")
+                return [dict(row) for row in results]
+                
+        except Exception as e:
             logger.error(f"❌ HS 코드 조회 실패: {str(e)}")
             return []
+        finally:
+            if 'conn' in locals():
+                conn.close()
     
     async def search_by_hs_code(self, hs_code: str) -> List[HSCNMapping]:
         """HS 코드로 검색 (부분 일치)"""

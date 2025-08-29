@@ -22,7 +22,7 @@ from .matdir_schema import (
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="", tags=["matdir_em"])
+router = APIRouter(prefix="/boundary", tags=["matdir_em"])
 
 # 서비스 인스턴스 생성
 matdir_service = MatDirService()

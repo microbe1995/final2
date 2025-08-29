@@ -14,29 +14,19 @@ from .mapping_schema import (
     HSCNMappingBatchCreateRequest, HSCNMappingBatchResponse
 )
 
-# 데이터베이스 세션 의존성 (FastAPI 의존성 주입용)
-async def get_db():
-    """데이터베이스 세션 의존성"""
-    from app.common.database_base import get_database_session
-    return get_database_session()
-
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="", tags=["HS-CN Mapping"])
+router = APIRouter(prefix="/boundary", tags=["HS-CN Mapping"])
 
-# 서비스 인스턴스 생성
-def get_mapping_service(db: Session = Depends(get_db)) -> HSCNMappingService:
-    return HSCNMappingService(db)
+# 서비스 인스턴스 생성 (의존성 주입 없이 직접 생성)
+mapping_service = HSCNMappingService(None)  # Repository에서 직접 DB 연결 사용
 
 # ============================================================================
 # 🔍 HS 코드 조회 엔드포인트 (메인 기능)
 # ============================================================================
 
 @router.get("/cncode/lookup/{hs_code}", response_model=List[HSCNMappingResponse])
-async def lookup_cn_code_by_hs_code(
-    hs_code: str,
-    mapping_service: HSCNMappingService = Depends(get_mapping_service)
-):
+async def lookup_cn_code_by_hs_code(hs_code: str):
     """
     HS 코드로 CN 코드 조회 (부분 검색 허용)
     
