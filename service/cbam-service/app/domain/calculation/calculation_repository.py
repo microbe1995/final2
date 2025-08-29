@@ -966,15 +966,15 @@ class CalculationRepository:
             conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
             
             try:
-            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-                cursor.execute("""
+                with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                    cursor.execute("""
                         SELECT id, install_name, reporting_year, created_at, updated_at
                         FROM install
                         ORDER BY created_at DESC
-                """)
-                
-                results = cursor.fetchall()
-                installs = []
+                    """)
+                    
+                    results = cursor.fetchall()
+                    installs = []
                     
                     for result in results:
                         install_dict = dict(result)
@@ -983,15 +983,15 @@ class CalculationRepository:
                             install_dict['created_at'] = install_dict['created_at'].isoformat()
                         if 'updated_at' in install_dict and install_dict['updated_at']:
                             install_dict['updated_at'] = install_dict['updated_at'].isoformat()
-                    installs.append(install_dict)
+                        installs.append(install_dict)
+                    
+                    return installs
+                    
+            except Exception as e:
+                raise e
+            finally:
+                conn.close()
                 
-                return installs
-                
-        except Exception as e:
-            raise e
-        finally:
-            conn.close()
-
         except Exception as e:
             raise e
 
@@ -1004,21 +1004,21 @@ class CalculationRepository:
             conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
             
             try:
-            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-                cursor.execute("""
+                with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                    cursor.execute("""
                         SELECT id, install_name
                         FROM install
                         ORDER BY install_name ASC
-                """)
-                
-                results = cursor.fetchall()
+                    """)
+                    
+                    results = cursor.fetchall()
                     return [dict(result) for result in results]
+                    
+            except Exception as e:
+                raise e
+            finally:
+                conn.close()
                 
-        except Exception as e:
-            raise e
-        finally:
-            conn.close()
-
         except Exception as e:
             raise e
 
@@ -1031,29 +1031,29 @@ class CalculationRepository:
             conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
             
             try:
-            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-                cursor.execute("""
+                with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                    cursor.execute("""
                         SELECT id, install_name, reporting_year, created_at, updated_at
                         FROM install
                         WHERE id = %s
-                """, (install_id,))
-                
-                result = cursor.fetchone()
-                if result:
-                    install_dict = dict(result)
+                    """, (install_id,))
+                    
+                    result = cursor.fetchone()
+                    if result:
+                        install_dict = dict(result)
                         # datetime 객체를 문자열로 변환
                         if 'created_at' in install_dict and install_dict['created_at']:
                             install_dict['created_at'] = install_dict['created_at'].isoformat()
                         if 'updated_at' in install_dict and install_dict['updated_at']:
                             install_dict['updated_at'] = install_dict['updated_at'].isoformat()
-                    return install_dict
-                return None
+                        return install_dict
+                    return None
+                    
+            except Exception as e:
+                raise e
+            finally:
+                conn.close()
                 
-        except Exception as e:
-            raise e
-        finally:
-            conn.close()
-
         except Exception as e:
             raise e
 
