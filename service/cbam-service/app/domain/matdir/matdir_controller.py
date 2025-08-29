@@ -14,7 +14,7 @@ from .matdir_schema import (
     MatDirResponse,
     MatDirCalculationRequest,
     MatDirCalculationResponse,
-    # 🔍 새로운 매핑 관련 스키마들
+    # 🔍 원료-배출계수 매핑 관련 스키마들
     MaterialMappingResponse,
     MaterialMappingCreateRequest,
     MaterialMappingUpdateRequest,
@@ -31,7 +31,7 @@ router = APIRouter(prefix="/boundary", tags=["matdir_em"])
 matdir_service = MatDirService()
 
 # ============================================================================
-# 📦 기존 MatDir 관련 엔드포인트
+# 📦 1. 기존 MatDir 관련 엔드포인트 (원료직접배출량 데이터 관리)
 # ============================================================================
 
 @router.post("/matdir", response_model=MatDirResponse, status_code=201)
@@ -122,7 +122,7 @@ async def delete_matdir(matdir_id: int):
         raise HTTPException(status_code=500, detail=f"원료직접배출량 삭제 중 오류가 발생했습니다: {str(e)}")
 
 # ============================================================================
-# 🧮 계산 관련 엔드포인트
+# 🧮 2. 계산 관련 엔드포인트
 # ============================================================================
 
 @router.post("/matdir/calculate", response_model=MatDirCalculationResponse)
@@ -150,7 +150,7 @@ async def get_total_matdir_emission_by_process(process_id: int):
         raise HTTPException(status_code=500, detail=f"공정별 총 원료직접배출량 계산 중 오류가 발생했습니다: {str(e)}")
 
 # ============================================================================
-# 🔍 원료-배출계수 매핑 관련 엔드포인트 (@mapping/ 패턴과 동일)
+# 🔍 3. 원료-배출계수 매핑 관련 엔드포인트 (MaterialMapping 스키마 기반)
 # ============================================================================
 
 @router.post("/material-mapping", response_model=MaterialMappingFullResponse, status_code=201)
@@ -229,7 +229,7 @@ async def delete_material_mapping(mapping_id: int):
         raise HTTPException(status_code=500, detail=f"원료-배출계수 매핑 삭제 중 오류가 발생했습니다: {str(e)}")
 
 # ============================================================================
-# 🔍 원료명 조회 관련 엔드포인트 (@mapping/ 패턴과 동일)
+# 🔍 4. 원료명 검색 및 조회 엔드포인트 (MaterialNameLookup 스키마 기반)
 # ============================================================================
 
 @router.post("/material-lookup", response_model=MaterialNameLookupResponse)
@@ -255,3 +255,43 @@ async def search_material_by_name(mat_name: str):
     except Exception as e:
         logger.error(f"❌ 원료명 검색 실패: {str(e)}")
         raise HTTPException(status_code=500, detail=f"원료명 검색 중 오류가 발생했습니다: {str(e)}")
+
+# ============================================================================
+# 🔍 5. 프론트엔드 호환성을 위한 material-master 엔드포인트
+# ============================================================================
+
+@router.get("/material-master", response_model=List[MaterialMappingFullResponse])
+async def get_material_master_list(skip: int = 0, limit: int = 100):
+    """원료 마스터 목록 조회 (프론트엔드 호환성)"""
+    try:
+        logger.info("📋 원료 마스터 목록 조회 요청")
+        mappings = await matdir_service.get_all_material_mappings(skip, limit)
+        logger.info(f"✅ 원료 마스터 목록 조회 성공: {len(mappings)}개")
+        return mappings
+    except Exception as e:
+        logger.error(f"❌ 원료 마스터 목록 조회 실패: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"원료 마스터 목록 조회 중 오류가 발생했습니다: {str(e)}")
+
+@router.get("/material-master/search/{mat_name}", response_model=MaterialNameLookupResponse)
+async def search_material_master_by_name(mat_name: str):
+    """원료 마스터에서 원료명으로 검색 (프론트엔드 호환성)"""
+    try:
+        logger.info(f"🔍 원료 마스터 검색 요청: '{mat_name}'")
+        result = await matdir_service.lookup_material_by_name(mat_name)
+        logger.info(f"✅ 원료 마스터 검색 성공: '{mat_name}' → {result.count}개 결과")
+        return result
+    except Exception as e:
+        logger.error(f"❌ 원료 마스터 검색 실패: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"원료 마스터 검색 중 오류가 발생했습니다: {str(e)}")
+
+@router.get("/material-master/factor/{mat_name}", response_model=MaterialNameLookupResponse)
+async def get_material_master_factor(mat_name: str):
+    """원료 마스터에서 원료명으로 배출계수 조회 (프론트엔드 호환성)"""
+    try:
+        logger.info(f"🔍 원료 마스터 배출계수 조회 요청: '{mat_name}'")
+        result = await matdir_service.lookup_material_by_name(mat_name)
+        logger.info(f"✅ 원료 마스터 배출계수 조회 성공: '{mat_name}' → {result.count}개 결과")
+        return result
+    except Exception as e:
+        logger.error(f"❌ 원료 마스터 배출계수 조회 실패: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"원료 마스터 배출계수 조회 중 오류가 발생했습니다: {str(e)}")
