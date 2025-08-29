@@ -3,16 +3,13 @@
 # ============================================================================
 
 from sqlalchemy import Column, Integer, String, Numeric, DateTime, Text, BigInteger, Date, ForeignKey, Boolean
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from typing import Dict, Any, List
 from decimal import Decimal
 
-# Process 엔티티 import
-from ..calculation.calculation_entity import Process
-
-Base = declarative_base()
+# 공통 Base 클래스와 Process 엔티티 import
+from ..calculation.calculation_entity import Base, Process
 
 # ============================================================================
 # 🔄 ProcessChain 엔티티 (통합 공정 그룹)

@@ -32,6 +32,7 @@ from app.domain.sourcestream.sourcestream_controller import router as sourcestre
 from app.domain.calculation.calculation_entity import Install, Product, Process, ProductProcess, Edge
 from app.domain.matdir.matdir_entity import MatDir
 from app.domain.fueldir.fueldir_entity import FuelDir
+from app.domain.sourcestream.sourcestream_entity import ProcessChain, ProcessChainLink, SourceStream
 
 # ============================================================================
 # 🔧 설정 및 초기화
