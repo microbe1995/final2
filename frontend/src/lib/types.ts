@@ -50,3 +50,31 @@ export interface ReportConfig {
   includeTables: boolean;
   sections: string[];
 }
+
+// ============================================================================
+// 🏗️ Material Master 관련 타입들 (새로 추가)
+// ============================================================================
+
+export interface MaterialMaster {
+  id: number;
+  mat_name: string;
+  mat_engname: string;
+  carbon_content?: number;
+  mat_factor: number;
+}
+
+export interface MaterialMasterList {
+  materials: MaterialMaster[];
+  total_count: number;
+}
+
+export interface MaterialMasterFactor {
+  mat_name: string;
+  mat_factor: number | null;
+  carbon_content?: number | null;
+  found: boolean;
+}
+
+export interface MaterialMasterSearchRequest {
+  mat_name: string;
+}

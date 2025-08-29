@@ -59,12 +59,153 @@ class CalculationRepository:
             
             logger.info("✅ 데이터베이스 연결 성공")
             self._create_tables()
+            self._create_triggers()  # 트리거 생성 추가
             
         except Exception as e:
             logger.error(f"❌ 데이터베이스 연결 실패: {str(e)}")
             # 연결 실패해도 서비스는 계속 실행
             logger.warning("데이터베이스 연결 실패로 인해 일부 기능이 제한됩니다.")
     
+    def _create_triggers(self):
+        """자동 집계를 위한 트리거 생성"""
+        try:
+            import psycopg2
+            
+            conn = psycopg2.connect(self.database_url)
+            conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+            
+            with conn.cursor() as cursor:
+                # 1. matdir 테이블 트리거 함수 생성
+                cursor.execute("""
+                    CREATE OR REPLACE FUNCTION update_process_attrdir_emission_on_matdir_change()
+                    RETURNS TRIGGER AS $$
+                    BEGIN
+                        -- matdir 테이블 변경 시 해당 공정의 직접귀속배출량 자동 업데이트
+                        IF TG_OP = 'INSERT' OR TG_OP = 'UPDATE' THEN
+                            -- 해당 공정의 총 원료직접배출량과 총 연료직접배출량 계산
+                            INSERT INTO process_attrdir_emission (process_id, total_matdir_emission, total_fueldir_emission, attrdir_em, calculation_date)
+                            SELECT 
+                                COALESCE(NEW.process_id, OLD.process_id) as process_id,
+                                COALESCE(SUM(m.matdir_em), 0) as total_matdir_emission,
+                                COALESCE(SUM(f.fueldir_em), 0) as total_fueldir_emission,
+                                COALESCE(SUM(m.matdir_em), 0) + COALESCE(SUM(f.fueldir_em), 0) as attrdir_em,
+                                NOW() as calculation_date
+                            FROM (SELECT DISTINCT process_id FROM matdir WHERE process_id = COALESCE(NEW.process_id, OLD.process_id)) p
+                            LEFT JOIN matdir m ON p.process_id = m.process_id
+                            LEFT JOIN fueldir f ON p.process_id = f.process_id
+                            GROUP BY p.process_id
+                            ON CONFLICT (process_id) 
+                            DO UPDATE SET 
+                                total_matdir_emission = EXCLUDED.total_matdir_emission,
+                                total_fueldir_emission = EXCLUDED.total_fueldir_emission,
+                                attrdir_em = EXCLUDED.attrdir_em,
+                                calculation_date = NOW(),
+                                updated_at = NOW();
+                        ELSIF TG_OP = 'DELETE' THEN
+                            -- 삭제 시에도 해당 공정의 직접귀속배출량 업데이트
+                            INSERT INTO process_attrdir_emission (process_id, total_matdir_emission, total_fueldir_emission, attrdir_em, calculation_date)
+                            SELECT 
+                                OLD.process_id as process_id,
+                                COALESCE(SUM(m.matdir_em), 0) as total_matdir_emission,
+                                COALESCE(SUM(f.fueldir_em), 0) as total_fueldir_emission,
+                                COALESCE(SUM(m.matdir_em), 0) + COALESCE(SUM(f.fueldir_em), 0) as attrdir_em,
+                                NOW() as calculation_date
+                            FROM (SELECT DISTINCT process_id FROM matdir WHERE process_id = OLD.process_id) p
+                            LEFT JOIN matdir m ON p.process_id = m.process_id
+                            LEFT JOIN fueldir f ON p.process_id = f.process_id
+                            GROUP BY p.process_id
+                            ON CONFLICT (process_id) 
+                            DO UPDATE SET 
+                                total_matdir_emission = EXCLUDED.total_matdir_emission,
+                                total_fueldir_emission = EXCLUDED.total_fueldir_emission,
+                                attrdir_em = EXCLUDED.attrdir_em,
+                                calculation_date = NOW(),
+                                updated_at = NOW();
+                        END IF;
+                        
+                        RETURN COALESCE(NEW, OLD);
+                    END;
+                    $$ LANGUAGE plpgsql;
+                """)
+                
+                # 2. fueldir 테이블 트리거 함수 생성
+                cursor.execute("""
+                    CREATE OR REPLACE FUNCTION update_process_attrdir_emission_on_fueldir_change()
+                    RETURNS TRIGGER AS $$
+                    BEGIN
+                        -- fueldir 테이블 변경 시 해당 공정의 직접귀속배출량 자동 업데이트
+                        IF TG_OP = 'INSERT' OR TG_OP = 'UPDATE' THEN
+                            -- 해당 공정의 총 원료직접배출량과 총 연료직접배출량 계산
+                            INSERT INTO process_attrdir_emission (process_id, total_matdir_emission, total_fueldir_emission, attrdir_em, calculation_date)
+                            SELECT 
+                                COALESCE(NEW.process_id, OLD.process_id) as process_id,
+                                COALESCE(SUM(m.matdir_em), 0) as total_matdir_emission,
+                                COALESCE(SUM(f.fueldir_em), 0) as total_fueldir_emission,
+                                COALESCE(SUM(m.matdir_em), 0) + COALESCE(SUM(f.fueldir_em), 0) as attrdir_em,
+                                NOW() as calculation_date
+                            FROM (SELECT DISTINCT process_id FROM fueldir WHERE process_id = COALESCE(NEW.process_id, OLD.process_id)) p
+                            LEFT JOIN matdir m ON p.process_id = m.process_id
+                            LEFT JOIN fueldir f ON p.process_id = f.process_id
+                            GROUP BY p.process_id
+                            ON CONFLICT (process_id) 
+                            DO UPDATE SET 
+                                total_matdir_emission = EXCLUDED.total_matdir_emission,
+                                total_fueldir_emission = EXCLUDED.total_fueldir_emission,
+                                attrdir_em = EXCLUDED.attrdir_em,
+                                calculation_date = NOW(),
+                                updated_at = NOW();
+                        ELSIF TG_OP = 'DELETE' THEN
+                            -- 삭제 시에도 해당 공정의 직접귀속배출량 업데이트
+                            INSERT INTO process_attrdir_emission (process_id, total_matdir_emission, total_fueldir_emission, attrdir_em, calculation_date)
+                            SELECT 
+                                OLD.process_id as process_id,
+                                COALESCE(SUM(m.matdir_em), 0) as total_matdir_emission,
+                                COALESCE(SUM(f.fueldir_em), 0) as total_fueldir_emission,
+                                COALESCE(SUM(m.matdir_em), 0) + COALESCE(SUM(f.fueldir_em), 0) as attrdir_em,
+                                NOW() as calculation_date
+                            FROM (SELECT DISTINCT process_id FROM fueldir WHERE process_id = OLD.process_id) p
+                            LEFT JOIN matdir m ON p.process_id = m.process_id
+                            LEFT JOIN fueldir f ON p.process_id = f.process_id
+                            GROUP BY p.process_id
+                            ON CONFLICT (process_id) 
+                            DO UPDATE SET 
+                                total_matdir_emission = EXCLUDED.total_matdir_emission,
+                                total_fueldir_emission = EXCLUDED.total_fueldir_emission,
+                                attrdir_em = EXCLUDED.attrdir_em,
+                                calculation_date = NOW(),
+                                updated_at = NOW();
+                        END IF;
+                        
+                        RETURN COALESCE(NEW, OLD);
+                    END;
+                    $$ LANGUAGE plpgsql;
+                """)
+                
+                # 3. matdir 테이블에 트리거 생성
+                cursor.execute("""
+                    DROP TRIGGER IF EXISTS trigger_update_process_attrdir_emission_on_matdir ON matdir;
+                    CREATE TRIGGER trigger_update_process_attrdir_emission_on_matdir
+                    AFTER INSERT OR UPDATE OR DELETE ON matdir
+                    FOR EACH ROW EXECUTE FUNCTION update_process_attrdir_emission_on_matdir_change();
+                """)
+                
+                # 4. fueldir 테이블에 트리거 생성
+                cursor.execute("""
+                    DROP TRIGGER IF EXISTS trigger_update_process_attrdir_emission_on_fueldir ON fueldir;
+                    CREATE TRIGGER trigger_update_process_attrdir_emission_on_fueldir
+                    AFTER INSERT OR UPDATE OR DELETE ON fueldir
+                    FOR EACH ROW EXECUTE FUNCTION update_process_attrdir_emission_on_fueldir_change();
+                """)
+                
+                conn.commit()
+                logger.info("✅ 자동 집계 트리거 생성 완료")
+                
+        except Exception as e:
+            logger.error(f"❌ 트리거 생성 실패: {str(e)}")
+            raise
+        finally:
+            conn.close()
+
     def _create_tables(self):
         """필요한 테이블들을 생성합니다"""
         try:
@@ -248,7 +389,9 @@ class CalculationRepository:
         except Exception as e:
             logger.error(f"❌ 테이블 생성 실패: {str(e)}")
             raise
-    
+        finally:
+            conn.close()
+
     # ============================================================================
     # 📦 Product 관련 메서드
     # ============================================================================
@@ -1293,12 +1436,10 @@ class CalculationRepository:
         try:
             with conn.cursor(cursor_factory=RealDictCursor) as cursor:
                 cursor.execute("""
-                    SELECT pae.id, pae.process_id, p.process_name,
-                           pae.total_matdir_emission, pae.total_fueldir_emission, 
-                           pae.attrdir_em, pae.calculation_date, 
-                           pae.created_at, pae.updated_at
+                    SELECT pae.id, pae.process_id, pae.total_matdir_emission, 
+                           pae.total_fueldir_emission, pae.attrdir_em, 
+                           pae.calculation_date, pae.created_at, pae.updated_at
                     FROM process_attrdir_emission pae
-                    JOIN process p ON pae.process_id = p.id
                     ORDER BY pae.process_id
                 """)
                 

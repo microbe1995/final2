@@ -110,6 +110,19 @@ export default function FuelDirManager({ selectedProcess, onClose }: FuelDirMana
 
       const responses = await Promise.all(savePromises);
       console.log('✅ 연료직접배출량 데이터 저장 성공:', responses);
+      
+      // 🚀 자동 집계: 해당 공정의 직접귀속배출량 계산
+      try {
+        console.log('🔄 자동 집계 시작: 공정 ID', selectedProcess.id);
+        const aggregationResponse = await axiosClient.post(
+          `/api/v1/boundary/emission/process/${selectedProcess.id}/attrdir`
+        );
+        console.log('✅ 자동 집계 성공:', aggregationResponse.data);
+      } catch (aggregationError: any) {
+        console.warn('⚠️ 자동 집계 실패 (수동으로 나중에 실행 가능):', aggregationError);
+        // 자동 집계 실패해도 저장은 성공했으므로 경고만 표시
+      }
+      
       alert('연료직접배출량 데이터가 성공적으로 저장되었습니다!');
       
       // 모달 닫기

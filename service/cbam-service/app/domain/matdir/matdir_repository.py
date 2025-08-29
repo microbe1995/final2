@@ -102,24 +102,53 @@ class MatDirRepository:
                     
                     logger.info("✅ matdir 테이블 생성 완료")
                 else:
-                    logger.info("✅ matdir 테이블 확인 완료")
-                
-                conn.commit()
-                logger.info("✅ 데이터베이스 테이블 확인 완료")
-                
+                    logger.info("✅ matdir 테이블이 이미 존재합니다.")
+                    
         except Exception as e:
-            logger.error(f"❌ matdir 테이블 확인/생성 실패: {str(e)}")
+            logger.error(f"❌ matdir 테이블 생성 실패: {str(e)}")
             raise
+        finally:
+            if 'conn' in locals():
+                conn.close()
 
-    async def create_matdir(self, matdir_data: Dict[str, Any]) -> Dict[str, Any]:
+    # ============================================================================
+    # 📋 기존 MatDir CRUD 메서드들
+    # ============================================================================
+
+    async def create_matdir(self, matdir_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """원료직접배출량 데이터 생성"""
-        if not self.database_url:
-            raise Exception("데이터베이스가 연결되지 않았습니다.")
         try:
-            return await self._create_matdir_db(matdir_data)
+            conn = psycopg2.connect(self.database_url)
+            conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+            
+            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                query = """
+                    INSERT INTO matdir (process_id, mat_name, mat_factor, mat_amount, oxyfactor, matdir_em)
+                    VALUES (%s, %s, %s, %s, %s, %s)
+                    RETURNING *
+                """
+                
+                cursor.execute(query, (
+                    matdir_data['process_id'],
+                    matdir_data['mat_name'],
+                    matdir_data['mat_factor'],
+                    matdir_data['mat_amount'],
+                    matdir_data.get('oxyfactor', 1.0000),
+                    matdir_data.get('matdir_em', 0)
+                ))
+                
+                result = cursor.fetchone()
+                conn.commit()
+                
+                logger.info(f"✅ MatDir 생성 성공: ID {result['id']}")
+                return dict(result)
+                
         except Exception as e:
-            logger.error(f"❌ 원료직접배출량 데이터 생성 실패: {str(e)}")
+            logger.error(f"❌ MatDir 생성 실패: {str(e)}")
             raise
+        finally:
+            if 'conn' in locals():
+                conn.close()
 
     async def get_matdirs(self, skip: int = 0, limit: int = 100) -> List[Dict[str, Any]]:
         """모든 원료직접배출량 데이터 조회"""
@@ -182,39 +211,124 @@ class MatDirRepository:
         return total_emission
 
     # ============================================================================
-    # 🔧 실제 DB 작업 메서드들
+    # 🏗️ Material Master 조회 메서드들 (새로 추가)
     # ============================================================================
 
-    async def _create_matdir_db(self, matdir_data: Dict[str, Any]) -> Dict[str, Any]:
-        """원료직접배출량 데이터 생성 (DB 작업)"""
+    async def get_material_by_name(self, mat_name: str) -> Optional[Dict[str, Any]]:
+        """원료명으로 마스터 데이터 조회"""
         try:
             conn = psycopg2.connect(self.database_url)
             conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
             
             with conn.cursor(cursor_factory=RealDictCursor) as cursor:
                 query = """
-                    INSERT INTO matdir (
-                        process_id, mat_name, mat_factor, mat_amount, 
-                        oxyfactor, matdir_em, created_at, updated_at
-                    ) VALUES (
-                        %(process_id)s, %(mat_name)s, %(mat_factor)s, %(mat_amount)s,
-                        %(oxyfactor)s, %(matdir_em)s, NOW(), NOW()
-                    ) RETURNING *
+                    SELECT id, mat_name, mat_engname, carbon_content, mat_factor
+                    FROM material_master
+                    WHERE mat_name = %s
                 """
                 
-                cursor.execute(query, matdir_data)
+                cursor.execute(query, (mat_name,))
                 result = cursor.fetchone()
-                conn.commit()
                 
-                logger.info(f"✅ MatDir 생성 성공: ID {result['id']}")
-                return dict(result)
+                if result:
+                    logger.info(f"✅ 원료 마스터 조회 성공: {mat_name}")
+                    return dict(result)
+                else:
+                    logger.warning(f"⚠️ 원료 마스터 데이터를 찾을 수 없음: {mat_name}")
+                    return None
                 
         except Exception as e:
-            logger.error(f"❌ MatDir 생성 실패: {str(e)}")
-            raise
+            logger.error(f"❌ 원료 마스터 조회 실패: {str(e)}")
+            return None
         finally:
             if 'conn' in locals():
                 conn.close()
+
+    async def search_materials(self, search_term: str) -> List[Dict[str, Any]]:
+        """원료명으로 검색 (부분 검색)"""
+        try:
+            conn = psycopg2.connect(self.database_url)
+            conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+            
+            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                query = """
+                    SELECT id, mat_name, mat_engname, carbon_content, mat_factor
+                    FROM material_master
+                    WHERE mat_name ILIKE %s OR mat_engname ILIKE %s
+                    ORDER BY mat_name
+                """
+                
+                search_pattern = f'%{search_term}%'
+                cursor.execute(query, (search_pattern, search_pattern))
+                results = cursor.fetchall()
+                
+                logger.info(f"✅ 원료 마스터 검색 성공: '{search_term}' → {len(results)}개 결과")
+                return [dict(row) for row in results]
+                
+        except Exception as e:
+            logger.error(f"❌ 원료 마스터 검색 실패: {str(e)}")
+            return []
+        finally:
+            if 'conn' in locals():
+                conn.close()
+
+    async def get_all_materials(self) -> List[Dict[str, Any]]:
+        """모든 원료 마스터 데이터 조회"""
+        try:
+            conn = psycopg2.connect(self.database_url)
+            conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+            
+            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                query = """
+                    SELECT id, mat_name, mat_engname, carbon_content, mat_factor
+                    FROM material_master
+                    ORDER BY mat_name
+                """
+                
+                cursor.execute(query)
+                results = cursor.fetchall()
+                
+                logger.info(f"✅ 모든 원료 마스터 조회 성공: {len(results)}개")
+                return [dict(row) for row in results]
+                
+        except Exception as e:
+            logger.error(f"❌ 모든 원료 마스터 조회 실패: {str(e)}")
+            return []
+        finally:
+            if 'conn' in locals():
+                conn.close()
+
+    async def get_material_factor_by_name(self, mat_name: str) -> Optional[Dict[str, Any]]:
+        """원료명으로 배출계수만 조회 (간단한 응답)"""
+        try:
+            material = await self.get_material_by_name(mat_name)
+            if material:
+                return {
+                    'mat_name': material['mat_name'],
+                    'mat_factor': float(material['mat_factor']),
+                    'carbon_content': float(material['carbon_content']) if material['carbon_content'] else None,
+                    'found': True
+                }
+            else:
+                return {
+                    'mat_name': mat_name,
+                    'mat_factor': None,
+                    'carbon_content': None,
+                    'found': False
+                }
+                
+        except Exception as e:
+            logger.error(f"❌ 배출계수 조회 실패: {str(e)}")
+            return {
+                'mat_name': mat_name,
+                'mat_factor': None,
+                'carbon_content': None,
+                'found': False
+            }
+
+    # ============================================================================
+    # 📋 기존 DB 작업 메서드들
+    # ============================================================================
 
     async def _get_matdirs_db(self, skip: int = 0, limit: int = 100) -> List[Dict[str, Any]]:
         """모든 원료직접배출량 데이터 조회 (DB 작업)"""

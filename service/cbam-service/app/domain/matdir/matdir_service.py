@@ -9,7 +9,9 @@ from decimal import Decimal
 from app.domain.matdir.matdir_repository import MatDirRepository
 from app.domain.matdir.matdir_schema import (
     MatDirCreateRequest, MatDirResponse, MatDirUpdateRequest, 
-    MatDirCalculationRequest, MatDirCalculationResponse
+    MatDirCalculationRequest, MatDirCalculationResponse,
+    MaterialMasterSearchRequest, MaterialMasterResponse, 
+    MaterialMasterListResponse, MaterialMasterFactorResponse
 )
 
 logger = logging.getLogger(__name__)
@@ -22,7 +24,7 @@ class MatDirService:
         logger.info("✅ MatDir 서비스 초기화 완료")
     
     # ============================================================================
-    # 📦 MatDir 관련 메서드
+    # 📦 기존 MatDir 관련 메서드들
     # ============================================================================
     
     async def create_matdir(self, request: MatDirCreateRequest) -> MatDirResponse:
@@ -164,4 +166,79 @@ class MatDirService:
             return total_emission
         except Exception as e:
             logger.error(f"Error getting total matdir emission for process {process_id}: {e}")
+            raise e
+
+    # ============================================================================
+    # 🏗️ Material Master 관련 메서드들 (새로 추가)
+    # ============================================================================
+
+    async def get_material_by_name(self, mat_name: str) -> Optional[MaterialMasterResponse]:
+        """원료명으로 마스터 데이터 조회"""
+        try:
+            material = await self.matdir_repository.get_material_by_name(mat_name)
+            if material:
+                return MaterialMasterResponse(**material)
+            return None
+        except Exception as e:
+            logger.error(f"Error getting material by name '{mat_name}': {e}")
+            raise e
+
+    async def search_materials(self, search_term: str) -> List[MaterialMasterResponse]:
+        """원료명으로 검색 (부분 검색)"""
+        try:
+            materials = await self.matdir_repository.search_materials(search_term)
+            return [MaterialMasterResponse(**material) for material in materials]
+        except Exception as e:
+            logger.error(f"Error searching materials with term '{search_term}': {e}")
+            raise e
+
+    async def get_all_materials(self) -> MaterialMasterListResponse:
+        """모든 원료 마스터 데이터 조회"""
+        try:
+            materials = await self.matdir_repository.get_all_materials()
+            material_responses = [MaterialMasterResponse(**material) for material in materials]
+            return MaterialMasterListResponse(
+                materials=material_responses,
+                total_count=len(material_responses)
+            )
+        except Exception as e:
+            logger.error(f"Error getting all materials: {e}")
+            raise e
+
+    async def get_material_factor_by_name(self, mat_name: str) -> MaterialMasterFactorResponse:
+        """원료명으로 배출계수 조회 (자동 매핑 기능)"""
+        try:
+            factor_data = await self.matdir_repository.get_material_factor_by_name(mat_name)
+            return MaterialMasterFactorResponse(**factor_data)
+        except Exception as e:
+            logger.error(f"Error getting material factor for '{mat_name}': {e}")
+            # 오류 시에도 응답 형식 유지
+            return MaterialMasterFactorResponse(
+                mat_name=mat_name,
+                mat_factor=None,
+                carbon_content=None,
+                found=False
+            )
+
+    async def create_matdir_with_auto_factor(self, request: MatDirCreateRequest) -> MatDirResponse:
+        """원료직접배출량 데이터 생성 (배출계수 자동 매핑)"""
+        try:
+            # 배출계수가 제공되지 않은 경우 자동으로 조회
+            if request.mat_factor is None or request.mat_factor == 0:
+                logger.info(f"🔍 배출계수 자동 조회: {request.mat_name}")
+                factor_response = await self.get_material_factor_by_name(request.mat_name)
+                
+                if factor_response.found:
+                    # 자동으로 배출계수 설정
+                    request.mat_factor = Decimal(str(factor_response.mat_factor))
+                    logger.info(f"✅ 배출계수 자동 설정: {request.mat_name} → {request.mat_factor}")
+                else:
+                    logger.warning(f"⚠️ 배출계수를 찾을 수 없음: {request.mat_name}")
+                    raise Exception(f"원료 '{request.mat_name}'의 배출계수를 찾을 수 없습니다. 수동으로 입력해주세요.")
+            
+            # 기존 생성 로직 실행
+            return await self.create_matdir(request)
+            
+        except Exception as e:
+            logger.error(f"Error creating matdir with auto factor: {e}")
             raise e
