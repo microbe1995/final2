@@ -41,7 +41,7 @@ export const useMaterialMasterAPI = () => {
     setError(null);
     
     try {
-      const response = await axiosClient.get(apiEndpoints.materialMaster.list, {
+      const response = await axiosClient.get(apiEndpoints.calculation.materialMaster.list, {
         params: { skip, limit }
       });
       return response.data;
@@ -60,7 +60,7 @@ export const useMaterialMasterAPI = () => {
     setError(null);
     
     try {
-      const response = await axiosClient.get(apiEndpoints.materialMaster.search(matName));
+      const response = await axiosClient.get(apiEndpoints.calculation.materialMaster.search(matName));
       return response.data;
     } catch (err: any) {
       const errorMessage = err.response?.data?.detail || err.message || '알 수 없는 오류가 발생했습니다';
@@ -77,7 +77,7 @@ export const useMaterialMasterAPI = () => {
     setError(null);
     
     try {
-      const response = await axiosClient.get(apiEndpoints.materialMaster.getFactor(matName));
+      const response = await axiosClient.get(apiEndpoints.calculation.materialMaster.getFactor(matName));
       return response.data;
     } catch (err: any) {
       const errorMessage = err.response?.data?.detail || err.message || '알 수 없는 오류가 발생했습니다';
@@ -94,7 +94,7 @@ export const useMaterialMasterAPI = () => {
     
     try {
       const result = await searchMaterialByName(query);
-      return result.data.map(item => item.mat_name);
+      return result.data.map((item: MaterialMapping) => item.mat_name);
     } catch (err) {
       return [];
     }
