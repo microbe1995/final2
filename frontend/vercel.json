@@ -141,6 +141,11 @@
       "source": "/home",
       "destination": "/",
       "permanent": true
+    },
+    {
+      "source": "/install",
+      "destination": "/cbam/install",
+      "permanent": false
     }
   ]
 }

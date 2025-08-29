@@ -915,10 +915,10 @@ class CalculationRepository:
             conn.close()
 
     # ============================================================================
-    # 🏭 Install 관련 Repository 메서드
+    # 🏭 Install 관련 Repository 메서드 (누락된 메서드들 추가)
     # ============================================================================
 
-    async def create_install(self, install_data: Dict[str, Any]) -> Dict[str, Any]:
+    async def _create_install_db(self, install_data: Dict[str, Any]) -> Dict[str, Any]:
         """데이터베이스에 사업장 생성"""
         try:
             import psycopg2
@@ -926,28 +926,38 @@ class CalculationRepository:
             conn = psycopg2.connect(self.database_url)
             conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
             
-            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-                cursor.execute("""
-                    INSERT INTO install (install_name, reporting_year)
-                    VALUES (%(install_name)s, %(reporting_year)s)
-                    RETURNING *
-                """, install_data)
-                
-                result = cursor.fetchone()
-                conn.commit()
-                
-                if result:
-                    install_dict = dict(result)
-                    return install_dict
-                else:
-                    raise Exception("사업장 생성에 실패했습니다.")
+            try:
+                with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                    cursor.execute("""
+                        INSERT INTO install (install_name, reporting_year)
+                        VALUES (%s, %s)
+                        RETURNING *
+                    """, (install_data['install_name'], install_data['reporting_year']))
                     
+                    result = cursor.fetchone()
+                    conn.commit()
+                    
+                    if result:
+                        install_dict = dict(result)
+                        # datetime 객체를 문자열로 변환
+                        if 'created_at' in install_dict and install_dict['created_at']:
+                            install_dict['created_at'] = install_dict['created_at'].isoformat()
+                        if 'updated_at' in install_dict and install_dict['updated_at']:
+                            install_dict['updated_at'] = install_dict['updated_at'].isoformat()
+                        return install_dict
+                    else:
+                        raise Exception("사업장 생성에 실패했습니다.")
+                        
+            except Exception as e:
+                conn.rollback()
+                raise e
+            finally:
+                conn.close()
+                
         except Exception as e:
             raise e
-        finally:
-            conn.close()
 
-    async def get_installs(self) -> List[Dict[str, Any]]:
+    async def _get_installs_db(self) -> List[Dict[str, Any]]:
         """데이터베이스에서 사업장 목록 조회"""
         try:
             import psycopg2
@@ -955,25 +965,37 @@ class CalculationRepository:
             conn = psycopg2.connect(self.database_url)
             conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
             
-            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-                cursor.execute("""
-                    SELECT * FROM install ORDER BY id
-                """)
-                
-                results = cursor.fetchall()
-                installs = []
-                for row in results:
-                    install_dict = dict(row)
-                    installs.append(install_dict)
-                
-                return installs
+            try:
+                with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                    cursor.execute("""
+                        SELECT id, install_name, reporting_year, created_at, updated_at
+                        FROM install
+                        ORDER BY created_at DESC
+                    """)
+                    
+                    results = cursor.fetchall()
+                    installs = []
+                    
+                    for result in results:
+                        install_dict = dict(result)
+                        # datetime 객체를 문자열로 변환
+                        if 'created_at' in install_dict and install_dict['created_at']:
+                            install_dict['created_at'] = install_dict['created_at'].isoformat()
+                        if 'updated_at' in install_dict and install_dict['updated_at']:
+                            install_dict['updated_at'] = install_dict['updated_at'].isoformat()
+                        installs.append(install_dict)
+                    
+                    return installs
+                    
+            except Exception as e:
+                raise e
+            finally:
+                conn.close()
                 
         except Exception as e:
             raise e
-        finally:
-            conn.close()
 
-    async def get_install_names(self) -> List[Dict[str, Any]]:
+    async def _get_install_names_db(self) -> List[Dict[str, Any]]:
         """데이터베이스에서 사업장명 목록 조회 (드롭다운용)"""
         try:
             import psycopg2
@@ -981,24 +1003,26 @@ class CalculationRepository:
             conn = psycopg2.connect(self.database_url)
             conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
             
-            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-                cursor.execute("""
-                    SELECT id, install_name FROM install ORDER BY install_name
-                """)
-                
-                results = cursor.fetchall()
-                install_names = []
-                for row in results:
-                    install_names.append(dict(row))
-                
-                return install_names
+            try:
+                with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                    cursor.execute("""
+                        SELECT id, install_name
+                        FROM install
+                        ORDER BY install_name ASC
+                    """)
+                    
+                    results = cursor.fetchall()
+                    return [dict(result) for result in results]
+                    
+            except Exception as e:
+                raise e
+            finally:
+                conn.close()
                 
         except Exception as e:
             raise e
-        finally:
-            conn.close()
 
-    async def get_install(self, install_id: int) -> Optional[Dict[str, Any]]:
+    async def _get_install_db(self, install_id: int) -> Optional[Dict[str, Any]]:
         """데이터베이스에서 특정 사업장 조회"""
         try:
             import psycopg2
@@ -1006,23 +1030,34 @@ class CalculationRepository:
             conn = psycopg2.connect(self.database_url)
             conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
             
-            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-                cursor.execute("""
-                    SELECT * FROM install WHERE id = %s
-                """, (install_id,))
-                
-                result = cursor.fetchone()
-                if result:
-                    install_dict = dict(result)
-                    return install_dict
-                return None
+            try:
+                with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                    cursor.execute("""
+                        SELECT id, install_name, reporting_year, created_at, updated_at
+                        FROM install
+                        WHERE id = %s
+                    """, (install_id,))
+                    
+                    result = cursor.fetchone()
+                    if result:
+                        install_dict = dict(result)
+                        # datetime 객체를 문자열로 변환
+                        if 'created_at' in install_dict and install_dict['created_at']:
+                            install_dict['created_at'] = install_dict['created_at'].isoformat()
+                        if 'updated_at' in install_dict and install_dict['updated_at']:
+                            install_dict['updated_at'] = install_dict['updated_at'].isoformat()
+                        return install_dict
+                    return None
+                    
+            except Exception as e:
+                raise e
+            finally:
+                conn.close()
                 
         except Exception as e:
             raise e
-        finally:
-            conn.close()
 
-    async def update_install(self, install_id: int, update_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    async def _update_install_db(self, install_id: int, update_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """데이터베이스에서 사업장 수정"""
         try:
             import psycopg2
@@ -1030,82 +1065,58 @@ class CalculationRepository:
             conn = psycopg2.connect(self.database_url)
             conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
             
-            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-                # 동적으로 SET 절 생성
-                set_clause = ", ".join([f"{key} = %s" for key in update_data.keys()])
-                values = list(update_data.values()) + [install_id]
-                
-                cursor.execute(f"""
-                    UPDATE install SET {set_clause} 
-                    WHERE id = %s RETURNING *
-                """, values)
-                
-                result = cursor.fetchone()
-                conn.commit()
-                
-                if result:
-                    install_dict = dict(result)
-                    return install_dict
-                return None
+            try:
+                with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                    # 동적으로 SET 절 생성
+                    set_clause = ", ".join([f"{key} = %s" for key in update_data.keys()])
+                    values = list(update_data.values()) + [install_id]
+                    
+                    cursor.execute(f"""
+                        UPDATE install SET {set_clause}, updated_at = NOW()
+                        WHERE id = %s RETURNING *
+                    """, values)
+                    
+                    result = cursor.fetchone()
+                    conn.commit()
+                    
+                    if result:
+                        install_dict = dict(result)
+                        # datetime 객체를 문자열로 변환
+                        if 'created_at' in install_dict and install_dict['created_at']:
+                            install_dict['created_at'] = install_dict['created_at'].isoformat()
+                        if 'updated_at' in install_dict and install_dict['updated_at']:
+                            install_dict['updated_at'] = install_dict['updated_at'].isoformat()
+                        return install_dict
+                    return None
+                    
+            except Exception as e:
+                conn.rollback()
+                raise e
+            finally:
+                conn.close()
                 
         except Exception as e:
-            conn.rollback()
             raise e
-        finally:
-            conn.close()
 
-    async def delete_install(self, install_id: int) -> bool:
-        """데이터베이스에서 사업장 삭제 (연결된 제품들도 함께 삭제) - 다대다 관계 지원"""
+    async def _delete_install_db(self, install_id: int) -> bool:
+        """데이터베이스에서 사업장 삭제"""
         try:
             import psycopg2
-
+            
             conn = psycopg2.connect(self.database_url)
             conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
-
+            
             try:
                 with conn.cursor() as cursor:
-                    # 1. 해당 사업장의 제품들과 연결된 제품-공정 관계 삭제
-                    cursor.execute("""
-                        DELETE FROM product_process 
-                        WHERE product_id IN (
-                            SELECT id FROM product WHERE install_id = %s
-                        )
-                    """, (install_id,))
-                    logger.info(f"🗑️ 사업장 {install_id}의 제품-공정 관계 삭제 완료")
-
-                    # 2. 해당 사업장의 제품들과 연결되지 않은 공정들 삭제 (고아 공정)
-                    cursor.execute("""
-                        DELETE FROM process 
-                        WHERE id NOT IN (
-                            SELECT DISTINCT process_id FROM product_process
-                        )
-                    """)
-                    logger.info(f"🗑️ 고아 공정들 삭제 완료")
-
-                    # 3. 해당 사업장의 제품들 삭제
-                    cursor.execute("""
-                        DELETE FROM product WHERE install_id = %s
-                    """, (install_id,))
-                    logger.info(f"🗑️ 사업장 {install_id}의 제품들 삭제 완료")
-
-                    # 4. 마지막으로 사업장 삭제
                     cursor.execute("""
                         DELETE FROM install WHERE id = %s
                     """, (install_id,))
-
+                    
                     conn.commit()
-                    deleted = cursor.rowcount > 0
+                    return cursor.rowcount > 0
                     
-                    if deleted:
-                        logger.info(f"✅ 사업장 {install_id} 삭제 성공")
-                    else:
-                        logger.warning(f"⚠️ 사업장 {install_id}를 찾을 수 없음")
-                    
-                    return deleted
-
             except Exception as e:
                 conn.rollback()
-                logger.error(f"❌ 사업장 삭제 중 오류 발생: {str(e)}")
                 raise e
             finally:
                 conn.close()
