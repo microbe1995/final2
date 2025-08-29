@@ -66,7 +66,8 @@ class FuelDirRepository:
                 fueldir_em DECIMAL(15,6) DEFAULT 0,
                 created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-                CONSTRAINT fk_fueldir_process FOREIGN KEY (process_id) REFERENCES process(id) ON DELETE CASCADE
+                CONSTRAINT fk_fueldir_process FOREIGN KEY (process_id) REFERENCES process(id) ON DELETE CASCADE,
+                CONSTRAINT unique_fueldir_process_fuel UNIQUE(process_id, fuel_name)
             );
             """
             
@@ -77,6 +78,7 @@ class FuelDirRepository:
             index_sql = """
             CREATE INDEX IF NOT EXISTS idx_fueldir_process_id ON fueldir(process_id);
             CREATE INDEX IF NOT EXISTS idx_fueldir_fuel_name ON fueldir(fuel_name);
+            CREATE INDEX IF NOT EXISTS idx_fueldir_process_fuel ON fueldir(process_id, fuel_name);
             CREATE INDEX IF NOT EXISTS idx_fueldir_created_at ON fueldir(created_at);
             """
             
@@ -95,7 +97,7 @@ class FuelDirRepository:
     # ============================================================================
 
     async def create_fueldir(self, fueldir_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-        """연료직접배출량 데이터 생성"""
+        """연료직접배출량 데이터 생성 (중복 방지)"""
         if not self.database_url:
             logger.error("DATABASE_URL이 설정되지 않았습니다.")
             return None
@@ -105,29 +107,58 @@ class FuelDirRepository:
             conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
             
             with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-                query = """
-                    INSERT INTO fueldir (process_id, fuel_name, fuel_factor, fuel_amount, fuel_oxyfactor, fueldir_em)
-                    VALUES (%s, %s, %s, %s, %s, %s)
-                    RETURNING *
-                """
+                # 중복 데이터 확인
+                cursor.execute("""
+                    SELECT id FROM fueldir 
+                    WHERE process_id = %s AND fuel_name = %s
+                """, (fueldir_data['process_id'], fueldir_data['fuel_name']))
                 
-                cursor.execute(query, (
-                    fueldir_data['process_id'],
-                    fueldir_data['fuel_name'],
-                    fueldir_data['fuel_factor'],
-                    fueldir_data['fuel_amount'],
-                    fueldir_data.get('fuel_oxyfactor', 1.0000),
-                    fueldir_data.get('fueldir_em', 0)
-                ))
+                existing_record = cursor.fetchone()
+                
+                if existing_record:
+                    # 중복 데이터가 있으면 업데이트
+                    logger.info(f"🔄 중복 데이터 발견, 업데이트: process_id={fueldir_data['process_id']}, fuel_name={fueldir_data['fuel_name']}")
+                    query = """
+                        UPDATE fueldir 
+                        SET fuel_factor = %s, fuel_amount = %s, fuel_oxyfactor = %s, fueldir_em = %s, updated_at = NOW()
+                        WHERE process_id = %s AND fuel_name = %s
+                        RETURNING *
+                    """
+                    
+                    cursor.execute(query, (
+                        fueldir_data['fuel_factor'],
+                        fueldir_data['fuel_amount'],
+                        fueldir_data.get('fuel_oxyfactor', 1.0000),
+                        fueldir_data.get('fueldir_em', 0),
+                        fueldir_data['process_id'],
+                        fueldir_data['fuel_name']
+                    ))
+                else:
+                    # 새로운 데이터 삽입
+                    query = """
+                        INSERT INTO fueldir (process_id, fuel_name, fuel_factor, fuel_amount, fuel_oxyfactor, fueldir_em)
+                        VALUES (%s, %s, %s, %s, %s, %s)
+                        RETURNING *
+                    """
+                    
+                    cursor.execute(query, (
+                        fueldir_data['process_id'],
+                        fueldir_data['fuel_name'],
+                        fueldir_data['fuel_factor'],
+                        fueldir_data['fuel_amount'],
+                        fueldir_data.get('fuel_oxyfactor', 1.0000),
+                        fueldir_data.get('fueldir_em', 0)
+                    ))
                 
                 result = cursor.fetchone()
                 conn.commit()
                 
-                logger.info(f"✅ FuelDir 생성 성공: ID {result['id']}")
+                action = "업데이트" if existing_record else "생성"
+                logger.info(f"✅ FuelDir {action} 성공: ID {result['id']}")
                 return dict(result)
                 
         except Exception as e:
-            logger.error(f"❌ FuelDir 생성 실패: {str(e)}")
+            logger.error(f"❌ FuelDir 생성/업데이트 실패: {str(e)}")
             raise
         finally:
             if 'conn' in locals():

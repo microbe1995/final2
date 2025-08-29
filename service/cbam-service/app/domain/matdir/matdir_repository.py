@@ -96,8 +96,18 @@ class MatDirRepository:
                             oxyfactor NUMERIC(5, 4) DEFAULT 1.0000,
                             matdir_em NUMERIC(15, 6) DEFAULT 0,
                             created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-                            updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+                            updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+                            CONSTRAINT fk_matdir_process FOREIGN KEY (process_id) REFERENCES process(id) ON DELETE CASCADE,
+                            CONSTRAINT unique_matdir_process_material UNIQUE(process_id, mat_name)
                         );
+                    """)
+                    
+                    # 인덱스 생성
+                    cursor.execute("""
+                        CREATE INDEX idx_matdir_process_id ON matdir(process_id);
+                        CREATE INDEX idx_matdir_mat_name ON matdir(mat_name);
+                        CREATE INDEX idx_matdir_process_material ON matdir(process_id, mat_name);
+                        CREATE INDEX idx_matdir_created_at ON matdir(created_at);
                     """)
                     
                     logger.info("✅ matdir 테이블 생성 완료")
@@ -116,35 +126,64 @@ class MatDirRepository:
     # ============================================================================
 
     async def create_matdir(self, matdir_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-        """원료직접배출량 데이터 생성"""
+        """원료직접배출량 데이터 생성 (중복 방지)"""
         try:
             conn = psycopg2.connect(self.database_url)
             conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
             
             with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-                query = """
-                    INSERT INTO matdir (process_id, mat_name, mat_factor, mat_amount, oxyfactor, matdir_em)
-                    VALUES (%s, %s, %s, %s, %s, %s)
-                    RETURNING *
-                """
+                # 중복 데이터 확인
+                cursor.execute("""
+                    SELECT id FROM matdir 
+                    WHERE process_id = %s AND mat_name = %s
+                """, (matdir_data['process_id'], matdir_data['mat_name']))
                 
-                cursor.execute(query, (
-                    matdir_data['process_id'],
-                    matdir_data['mat_name'],
-                    matdir_data['mat_factor'],
-                    matdir_data['mat_amount'],
-                    matdir_data.get('oxyfactor', 1.0000),
-                    matdir_data.get('matdir_em', 0)
-                ))
+                existing_record = cursor.fetchone()
+                
+                if existing_record:
+                    # 중복 데이터가 있으면 업데이트
+                    logger.info(f"🔄 중복 데이터 발견, 업데이트: process_id={matdir_data['process_id']}, mat_name={matdir_data['mat_name']}")
+                    query = """
+                        UPDATE matdir 
+                        SET mat_factor = %s, mat_amount = %s, oxyfactor = %s, matdir_em = %s, updated_at = NOW()
+                        WHERE process_id = %s AND mat_name = %s
+                        RETURNING *
+                    """
+                    
+                    cursor.execute(query, (
+                        matdir_data['mat_factor'],
+                        matdir_data['mat_amount'],
+                        matdir_data.get('oxyfactor', 1.0000),
+                        matdir_data.get('matdir_em', 0),
+                        matdir_data['process_id'],
+                        matdir_data['mat_name']
+                    ))
+                else:
+                    # 새로운 데이터 삽입
+                    query = """
+                        INSERT INTO matdir (process_id, mat_name, mat_factor, mat_amount, oxyfactor, matdir_em)
+                        VALUES (%s, %s, %s, %s, %s, %s)
+                        RETURNING *
+                    """
+                    
+                    cursor.execute(query, (
+                        matdir_data['process_id'],
+                        matdir_data['mat_name'],
+                        matdir_data['mat_factor'],
+                        matdir_data['mat_amount'],
+                        matdir_data.get('oxyfactor', 1.0000),
+                        matdir_data.get('matdir_em', 0)
+                    ))
                 
                 result = cursor.fetchone()
                 conn.commit()
                 
-                logger.info(f"✅ MatDir 생성 성공: ID {result['id']}")
+                action = "업데이트" if existing_record else "생성"
+                logger.info(f"✅ MatDir {action} 성공: ID {result['id']}")
                 return dict(result)
                 
         except Exception as e:
-            logger.error(f"❌ MatDir 생성 실패: {str(e)}")
+            logger.error(f"❌ MatDir 생성/업데이트 실패: {str(e)}")
             raise
         finally:
             if 'conn' in locals():

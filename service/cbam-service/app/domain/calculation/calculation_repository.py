@@ -797,19 +797,8 @@ class CalculationRepository:
 
         try:
             with conn.cursor() as cursor:
-                # 1. 해당 사업장의 제품들과 연결된 공정들의 프로세스 입력 데이터 삭제
-                cursor.execute("""
-                    DELETE FROM process_input 
-                    WHERE process_id IN (
-                        SELECT DISTINCT pp.process_id 
-                        FROM product_process pp
-                        JOIN product p ON pp.product_id = p.id 
-                        WHERE p.install_id = %s
-                    )
-                """, (install_id,))
-                logger.info(f"🗑️ 사업장 {install_id}의 프로세스 입력 데이터 삭제 완료")
+                # 1. 해당 사업장의 제품들과 연결된 제품-공정 관계 삭제
 
-                # 2. 해당 사업장의 제품들과 연결된 제품-공정 관계 삭제
                 cursor.execute("""
                     DELETE FROM product_process 
                     WHERE product_id IN (
@@ -818,7 +807,7 @@ class CalculationRepository:
                 """, (install_id,))
                 logger.info(f"🗑️ 사업장 {install_id}의 제품-공정 관계 삭제 완료")
 
-                # 3. 해당 사업장의 제품들과 연결되지 않은 공정들 삭제 (고아 공정)
+                # 2. 해당 사업장의 제품들과 연결되지 않은 공정들 삭제 (고아 공정)
                 cursor.execute("""
                     DELETE FROM process 
                     WHERE id NOT IN (
@@ -827,13 +816,13 @@ class CalculationRepository:
                 """)
                 logger.info(f"🗑️ 고아 공정들 삭제 완료")
 
-                # 4. 해당 사업장의 제품들 삭제
+                # 3. 해당 사업장의 제품들 삭제
                 cursor.execute("""
                     DELETE FROM product WHERE install_id = %s
                 """, (install_id,))
                 logger.info(f"🗑️ 사업장 {install_id}의 제품들 삭제 완료")
 
-                # 5. 마지막으로 사업장 삭제
+                # 4. 마지막으로 사업장 삭제
                 cursor.execute("""
                     DELETE FROM install WHERE id = %s
                 """, (install_id,))
@@ -1037,15 +1026,7 @@ class CalculationRepository:
         
         try:
             with conn.cursor() as cursor:
-                # 1. 먼저 해당 공정의 프로세스 입력 데이터 삭제
-                cursor.execute("""
-                    DELETE FROM process_input WHERE process_id = %s
-                """, (process_id,))
-                
-                deleted_inputs = cursor.rowcount
-                logger.info(f"🗑️ 공정 {process_id}의 프로세스 입력 {deleted_inputs}개 삭제 완료")
-                
-                # 2. 해당 공정과 연결된 제품-공정 관계 삭제
+                # 1. 해당 공정과 연결된 제품-공정 관계 삭제
                 cursor.execute("""
                     DELETE FROM product_process WHERE process_id = %s
                 """, (process_id,))
@@ -1053,7 +1034,7 @@ class CalculationRepository:
                 deleted_relations = cursor.rowcount
                 logger.info(f"🗑️ 공정 {process_id}의 제품-공정 관계 {deleted_relations}개 삭제 완료")
                 
-                # 3. 마지막으로 공정 삭제
+                # 2. 마지막으로 공정 삭제
                 cursor.execute("""
                     DELETE FROM process WHERE id = %s
                 """, (process_id,))
