@@ -1066,37 +1066,34 @@ class CalculationRepository:
             conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
             
             try:
-            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-                # 동적으로 SET 절 생성
-                set_clause = ", ".join([f"{key} = %s" for key in update_data.keys()])
-                values = list(update_data.values()) + [install_id]
-                
-                cursor.execute(f"""
+                with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                    # 동적으로 SET 절 생성
+                    set_clause = ", ".join([f"{key} = %s" for key in update_data.keys()])
+                    values = list(update_data.values()) + [install_id]
+                    
+                    cursor.execute(f"""
                         UPDATE install SET {set_clause}, updated_at = NOW()
-                    WHERE id = %s RETURNING *
-                """, values)
-                
-                result = cursor.fetchone()
-                conn.commit()
-                
-                if result:
-                    install_dict = dict(result)
+                        WHERE id = %s RETURNING *
+                    """, values)
+                    
+                    result = cursor.fetchone()
+                    conn.commit()
+                    
+                    if result:
+                        install_dict = dict(result)
                         # datetime 객체를 문자열로 변환
                         if 'created_at' in install_dict and install_dict['created_at']:
                             install_dict['created_at'] = install_dict['created_at'].isoformat()
                         if 'updated_at' in install_dict and install_dict['updated_at']:
                             install_dict['updated_at'] = install_dict['updated_at'].isoformat()
-                    return install_dict
-                return None
-                
-        except Exception as e:
-            conn.rollback()
-            raise e
-        finally:
-            conn.close()
-
-        except Exception as e:
-            raise e
+                        return install_dict
+                    return None
+                    
+            except Exception as e:
+                conn.rollback()
+                raise e
+            finally:
+                conn.close()
 
     async def _delete_install_db(self, install_id: int) -> bool:
         """데이터베이스에서 사업장 삭제"""
