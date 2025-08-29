@@ -74,7 +74,32 @@ class CalculationRepository:
             conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
             
             with conn.cursor() as cursor:
-                # product 테이블이 이미 존재하는지 확인
+                # 1. install 테이블 생성
+                cursor.execute("""
+                    SELECT EXISTS (
+                        SELECT FROM information_schema.tables 
+                        WHERE table_name = 'install'
+                    );
+                """)
+                
+                if not cursor.fetchone()[0]:
+                    logger.info("⚠️ install 테이블이 존재하지 않습니다. 자동으로 생성합니다.")
+                    
+                    cursor.execute("""
+                        CREATE TABLE install (
+                            id SERIAL PRIMARY KEY,
+                            install_name TEXT NOT NULL,
+                            reporting_year INTEGER NOT NULL DEFAULT EXTRACT(YEAR FROM NOW()),
+                            created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+                            updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+                        );
+                    """)
+                    
+                    logger.info("✅ install 테이블 생성 완료")
+                else:
+                    logger.info("✅ install 테이블 확인 완료")
+                
+                # 2. product 테이블 생성
                 cursor.execute("""
                     SELECT EXISTS (
                         SELECT FROM information_schema.tables 
@@ -83,10 +108,142 @@ class CalculationRepository:
                 """)
                 
                 if not cursor.fetchone()[0]:
-                    logger.info("⚠️ product 테이블이 존재하지 않습니다. 수동으로 생성해주세요.")
+                    logger.info("⚠️ product 테이블이 존재하지 않습니다. 자동으로 생성합니다.")
+                    
+                    cursor.execute("""
+                        CREATE TABLE product (
+                            id SERIAL PRIMARY KEY,
+                            install_id INTEGER NOT NULL REFERENCES install(id) ON DELETE CASCADE,
+                            product_name TEXT NOT NULL,
+                            product_category TEXT NOT NULL,
+                            prostart_period DATE NOT NULL,
+                            proend_period DATE NOT NULL,
+                            product_amount NUMERIC(15, 6) NOT NULL DEFAULT 0,
+                            cncode_total TEXT,
+                            goods_name TEXT,
+                            goods_engname TEXT,
+                            aggrgoods_name TEXT,
+                            aggrgoods_engname TEXT,
+                            product_sell NUMERIC(15, 6) DEFAULT 0,
+                            product_eusell NUMERIC(15, 6) DEFAULT 0,
+                            created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+                            updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+                        );
+                    """)
+                    
+                    logger.info("✅ product 테이블 생성 완료")
+                else:
+                    logger.info("✅ product 테이블 확인 완료")
+                
+                # 3. process 테이블 생성
+                cursor.execute("""
+                    SELECT EXISTS (
+                        SELECT FROM information_schema.tables 
+                        WHERE table_name = 'process'
+                    );
+                """)
+                
+                if not cursor.fetchone()[0]:
+                    logger.info("⚠️ process 테이블이 존재하지 않습니다. 자동으로 생성합니다.")
+                    
+                    cursor.execute("""
+                        CREATE TABLE process (
+                            id SERIAL PRIMARY KEY,
+                            process_name TEXT NOT NULL,
+                            start_period DATE NOT NULL,
+                            end_period DATE NOT NULL,
+                            created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+                            updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+                        );
+                    """)
+                    
+                    logger.info("✅ process 테이블 생성 완료")
+                else:
+                    logger.info("✅ process 테이블 확인 완료")
+                
+                # 4. product_process 중간 테이블 생성
+                cursor.execute("""
+                    SELECT EXISTS (
+                        SELECT FROM information_schema.tables 
+                        WHERE table_name = 'product_process'
+                    );
+                """)
+                
+                if not cursor.fetchone()[0]:
+                    logger.info("⚠️ product_process 테이블이 존재하지 않습니다. 자동으로 생성합니다.")
+                    
+                    cursor.execute("""
+                        CREATE TABLE product_process (
+                            id SERIAL PRIMARY KEY,
+                            product_id INTEGER NOT NULL REFERENCES product(id) ON DELETE CASCADE,
+                            process_id INTEGER NOT NULL REFERENCES process(id) ON DELETE CASCADE,
+                            created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+                            updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+                            UNIQUE(product_id, process_id)
+                        );
+                    """)
+                    
+                    logger.info("✅ product_process 테이블 생성 완료")
+                else:
+                    logger.info("✅ product_process 테이블 확인 완료")
+                
+                # 5. edge 테이블 생성
+                cursor.execute("""
+                    SELECT EXISTS (
+                        SELECT FROM information_schema.tables 
+                        WHERE table_name = 'edge'
+                    );
+                """)
+                
+                if not cursor.fetchone()[0]:
+                    logger.info("⚠️ edge 테이블이 존재하지 않습니다. 자동으로 생성합니다.")
+                    
+                    cursor.execute("""
+                        CREATE TABLE edge (
+                            id SERIAL PRIMARY KEY,
+                            source_id INTEGER NOT NULL,
+                            target_id INTEGER NOT NULL,
+                            edge_kind TEXT NOT NULL,
+                            created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+                            updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+                        );
+                    """)
+                    
+                    logger.info("✅ edge 테이블 생성 완료")
+                else:
+                    logger.info("✅ edge 테이블 확인 완료")
+                
+                # 6. process_attrdir_emission 테이블 생성 (새로 추가)
+                cursor.execute("""
+                    SELECT EXISTS (
+                        SELECT FROM information_schema.tables 
+                        WHERE table_name = 'process_attrdir_emission'
+                    );
+                """)
+                
+                if not cursor.fetchone()[0]:
+                    logger.info("⚠️ process_attrdir_emission 테이블이 존재하지 않습니다. 자동으로 생성합니다.")
+                    
+                    cursor.execute("""
+                        CREATE TABLE process_attrdir_emission (
+                            id SERIAL PRIMARY KEY,
+                            process_id INTEGER NOT NULL REFERENCES process(id) ON DELETE CASCADE,
+                            total_matdir_emission NUMERIC(15, 6) DEFAULT 0,
+                            total_fueldir_emission NUMERIC(15, 6) DEFAULT 0,
+                            attrdir_em NUMERIC(15, 6) DEFAULT 0,
+                            calculation_date TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+                            created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+                            updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+                            UNIQUE(process_id)
+                        );
+                    """)
+                    
+                    logger.info("✅ process_attrdir_emission 테이블 생성 완료")
+                else:
+                    logger.info("✅ process_attrdir_emission 테이블 확인 완료")
                 
                 conn.commit()
-                logger.info("✅ 데이터베이스 테이블 확인 완료")
+                logger.info("✅ 모든 데이터베이스 테이블 확인/생성 완료")
                 
         except Exception as e:
             logger.error(f"❌ 테이블 생성 실패: {str(e)}")
@@ -1020,6 +1177,201 @@ class CalculationRepository:
                 return result
                     
         except Exception as e:
+            raise e
+        finally:
+            conn.close()
+
+    # ============================================================================
+    # 📊 배출량 계산 관련 메서드들
+    # ============================================================================
+    
+    async def calculate_process_attrdir_emission(self, process_id: int) -> Dict[str, Any]:
+        """공정별 직접귀속배출량 계산 및 저장"""
+        import psycopg2
+        from psycopg2.extras import RealDictCursor
+        from decimal import Decimal
+        
+        conn = psycopg2.connect(self.database_url)
+        conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+        
+        try:
+            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                # 1. 공정 정보 조회
+                cursor.execute("""
+                    SELECT id, process_name FROM process WHERE id = %s
+                """, (process_id,))
+                
+                process = cursor.fetchone()
+                if not process:
+                    raise Exception(f"공정 ID {process_id}를 찾을 수 없습니다.")
+                
+                # 2. 해당 공정의 총 원료직접배출량 조회
+                cursor.execute("""
+                    SELECT COALESCE(SUM(matdir_em), 0) as total_matdir_emission
+                    FROM matdir WHERE process_id = %s
+                """, (process_id,))
+                
+                matdir_result = cursor.fetchone()
+                total_matdir_emission = Decimal(str(matdir_result['total_matdir_emission'])) if matdir_result else Decimal('0')
+                
+                # 3. 해당 공정의 총 연료직접배출량 조회
+                cursor.execute("""
+                    SELECT COALESCE(SUM(fueldir_em), 0) as total_fueldir_emission
+                    FROM fueldir WHERE process_id = %s
+                """, (process_id,))
+                
+                fueldir_result = cursor.fetchone()
+                total_fueldir_emission = Decimal(str(fueldir_result['total_fueldir_emission'])) if fueldir_result else Decimal('0')
+                
+                # 4. 직접귀속배출량 계산
+                attrdir_em = total_matdir_emission + total_fueldir_emission
+                
+                # 5. process_attrdir_emission 테이블에 저장 또는 업데이트
+                cursor.execute("""
+                    INSERT INTO process_attrdir_emission 
+                    (process_id, total_matdir_emission, total_fueldir_emission, attrdir_em, calculation_date)
+                    VALUES (%s, %s, %s, %s, NOW())
+                    ON CONFLICT (process_id) 
+                    DO UPDATE SET 
+                        total_matdir_emission = EXCLUDED.total_matdir_emission,
+                        total_fueldir_emission = EXCLUDED.total_fueldir_emission,
+                        attrdir_em = EXCLUDED.attrdir_em,
+                        calculation_date = NOW(),
+                        updated_at = NOW()
+                    RETURNING id, process_id, total_matdir_emission, total_fueldir_emission, 
+                              attrdir_em, calculation_date, created_at, updated_at
+                """, (process_id, total_matdir_emission, total_fueldir_emission, attrdir_em))
+                
+                result = cursor.fetchone()
+                conn.commit()
+                
+                logger.info(f"✅ 공정 {process_id} 직접귀속배출량 계산 완료: attrdir_em = {attrdir_em}")
+                
+                return dict(result) if result else {}
+                
+        except Exception as e:
+            conn.rollback()
+            logger.error(f"❌ 공정별 배출량 요약 계산 중 오류: {str(e)}")
+            raise e
+        finally:
+            conn.close()
+    
+    async def get_process_attrdir_emission(self, process_id: int) -> Optional[Dict[str, Any]]:
+        """공정별 직접귀속배출량 조회"""
+        import psycopg2
+        from psycopg2.extras import RealDictCursor
+        
+        conn = psycopg2.connect(self.database_url)
+        conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+        
+        try:
+            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                cursor.execute("""
+                    SELECT id, process_id, total_matdir_emission, total_fueldir_emission, 
+                           attrdir_em, calculation_date, created_at, updated_at
+                    FROM process_attrdir_emission 
+                    WHERE process_id = %s
+                """, (process_id,))
+                
+                result = cursor.fetchone()
+                return dict(result) if result else None
+                
+        except Exception as e:
+            logger.error(f"❌ 공정별 배출량 요약 조회 중 오류: {str(e)}")
+            raise e
+        finally:
+            conn.close()
+    
+    async def get_all_process_attrdir_emissions(self) -> List[Dict[str, Any]]:
+        """모든 공정별 직접귀속배출량 조회"""
+        import psycopg2
+        from psycopg2.extras import RealDictCursor
+        
+        conn = psycopg2.connect(self.database_url)
+        conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+        
+        try:
+            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                cursor.execute("""
+                    SELECT pae.id, pae.process_id, p.process_name,
+                           pae.total_matdir_emission, pae.total_fueldir_emission, 
+                           pae.attrdir_em, pae.calculation_date, 
+                           pae.created_at, pae.updated_at
+                    FROM process_attrdir_emission pae
+                    JOIN process p ON pae.process_id = p.id
+                    ORDER BY pae.process_id
+                """)
+                
+                results = cursor.fetchall()
+                return [dict(result) for result in results]
+                
+        except Exception as e:
+            logger.error(f"❌ 모든 공정별 배출량 요약 조회 중 오류: {str(e)}")
+            raise e
+        finally:
+            conn.close()
+    
+    async def calculate_product_total_emission(self, product_id: int) -> Dict[str, Any]:
+        """제품별 총 배출량 계산"""
+        import psycopg2
+        from psycopg2.extras import RealDictCursor
+        from decimal import Decimal
+        
+        conn = psycopg2.connect(self.database_url)
+        conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+        
+        try:
+            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                # 1. 제품 정보 조회
+                cursor.execute("""
+                    SELECT id, product_name FROM product WHERE id = %s
+                """, (product_id,))
+                
+                product = cursor.fetchone()
+                if not product:
+                    raise Exception(f"제품 ID {product_id}를 찾을 수 없습니다.")
+                
+                # 2. 해당 제품과 연결된 모든 공정의 배출량 합계 계산
+                cursor.execute("""
+                    SELECT 
+                        COALESCE(SUM(pae.attrdir_em), 0) as total_emission,
+                        COUNT(pae.process_id) as process_count
+                    FROM product_process pp
+                    LEFT JOIN process_attrdir_emission pae ON pp.process_id = pae.process_id
+                    WHERE pp.product_id = %s
+                """, (product_id,))
+                
+                result = cursor.fetchone()
+                total_emission = Decimal(str(result['total_emission'])) if result else Decimal('0')
+                process_count = result['process_count'] if result else 0
+                
+                # 3. 각 공정별 배출량 상세 정보 조회
+                cursor.execute("""
+                    SELECT 
+                        p.id as process_id,
+                        p.process_name,
+                        COALESCE(pae.total_matdir_emission, 0) as total_matdir_emission,
+                        COALESCE(pae.total_fueldir_emission, 0) as total_fueldir_emission,
+                        COALESCE(pae.attrdir_em, 0) as attrdir_em
+                    FROM product_process pp
+                    JOIN process p ON pp.process_id = p.id
+                    LEFT JOIN process_attrdir_emission pae ON pp.process_id = pae.process_id
+                    WHERE pp.product_id = %s
+                    ORDER BY p.id
+                """, (product_id,))
+                
+                process_emissions = cursor.fetchall()
+                
+                return {
+                    "product_id": product_id,
+                    "product_name": product['product_name'],
+                    "total_emission": float(total_emission),
+                    "process_count": process_count,
+                    "process_emissions": [dict(pe) for pe in process_emissions]
+                }
+                
+        except Exception as e:
+            logger.error(f"❌ 제품별 총 배출량 계산 중 오류: {str(e)}")
             raise e
         finally:
             conn.close()
