@@ -12,7 +12,6 @@ from .processchain_repository import ProcessChainRepository
 from .processchain_schema import (
     ProcessChainCreate, ProcessChainUpdate, ProcessChainResponse,
     ProcessChainLinkCreate, ProcessChainLinkUpdate, ProcessChainLinkResponse,
-    SourceStreamCreate, SourceStreamUpdate, SourceStreamResponse,
     ProcessChainAnalysisRequest, ProcessChainAnalysisResponse,
     ChainDetectionRequest, ChainDetectionResponse,
     AutoDetectAndCalculateRequest, AutoDetectAndCalculateResponse
@@ -207,39 +206,7 @@ class ProcessChainService:
             logger.error(f"❌ 통합 공정 그룹 자동 탐지 및 계산 실패: {e}")
             raise e
     
-    # ============================================================================
-    # 🔄 SourceStream 관련 서비스 메서드
-    # ============================================================================
-    
-    async def create_source_stream(self, stream_data: SourceStreamCreate) -> SourceStreamResponse:
-        """소스 스트림 생성"""
-        try:
-            logger.info(f"📝 소스 스트림 생성 요청: {stream_data.dict()}")
-            
-            # 스트림 데이터 준비
-            stream_dict = stream_data.dict()
-            stream_dict["created_at"] = datetime.utcnow()
-            stream_dict["updated_at"] = datetime.utcnow()
-            
-            # 스트림 생성
-            stream = await self.repository.create_source_stream(stream_dict)
-            
-            logger.info(f"✅ 소스 스트림 생성 성공: ID {stream.id}")
-            return SourceStreamResponse(**stream.to_dict())
-            
-        except Exception as e:
-            logger.error(f"❌ 소스 스트림 생성 실패: {e}")
-            raise e
-    
-    async def get_source_streams(self, source_process_id: Optional[int] = None) -> List[SourceStreamResponse]:
-        """소스 스트림 조회"""
-        try:
-            streams = await self.repository.get_source_streams(source_process_id)
-            return [SourceStreamResponse(**stream.to_dict()) for stream in streams]
-            
-        except Exception as e:
-            logger.error(f"❌ 소스 스트림 조회 실패: {e}")
-            raise e
+
     
     # ============================================================================
     # 📊 통합 공정 그룹 분석 서비스 메서드
