@@ -8,8 +8,9 @@ from datetime import datetime
 import psycopg2
 from psycopg2.extras import RealDictCursor
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
-import os
 from decimal import Decimal
+
+from app.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -17,8 +18,8 @@ class FuelDirRepository:
     """연료직접배출량 데이터 접근 클래스"""
     
     def __init__(self):
-        # Railway DB 연결 정보 (하드코딩)
-        self.database_url = "postgresql://postgres:eQGfytQNhXYAZxsJYlFhYagpJAgstrni@shortline.proxy.rlwy.net:46071/railway"
+        # 설정에서 데이터베이스 URL 가져오기
+        self.database_url = settings.database_url
         
         try:
             self._initialize_database()

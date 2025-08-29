@@ -40,7 +40,7 @@ class HSCNMappingService:
             
             mapping = await self.repository.create_mapping(mapping_data)
             if mapping:
-                return HSCNMappingFullResponse(**mapping.to_dict())
+                return HSCNMappingFullResponse(**mapping)
             return None
             
         except Exception as e:
@@ -52,7 +52,7 @@ class HSCNMappingService:
         try:
             mapping = await self.repository.get_mapping_by_id(mapping_id)
             if mapping:
-                return HSCNMappingFullResponse(**mapping.to_dict())
+                return HSCNMappingFullResponse(**mapping)
             return None
             
         except Exception as e:
@@ -63,7 +63,7 @@ class HSCNMappingService:
         """모든 HS-CN 매핑 조회"""
         try:
             mappings = await self.repository.get_all_mappings(skip, limit)
-            return [HSCNMappingFullResponse(**mapping.to_dict()) for mapping in mappings]
+            return [HSCNMappingFullResponse(**mapping) for mapping in mappings]
             
         except Exception as e:
             logger.error(f"❌ HS-CN 매핑 목록 조회 실패: {str(e)}")
@@ -84,7 +84,7 @@ class HSCNMappingService:
             
             mapping = await self.repository.update_mapping(mapping_id, mapping_data)
             if mapping:
-                return HSCNMappingFullResponse(**mapping.to_dict())
+                return HSCNMappingFullResponse(**mapping)
             return None
             
         except Exception as e:
@@ -117,15 +117,15 @@ class HSCNMappingService:
             
             mappings = await self.repository.lookup_by_hs_code(hs_code)
             
-            # 응답 데이터 변환
+            # 응답 데이터 변환 (딕셔너리에서 키로 접근)
             response_data = []
             for mapping in mappings:
                 response_data.append(HSCNMappingResponse(
-                    cncode_total=mapping.cncode_total,
-                    goods_name=mapping.goods_name,
-                    goods_engname=mapping.goods_engname,
-                    aggregoods_name=mapping.aggregoods_name,
-                    aggregoods_engname=mapping.aggregoods_engname
+                    cncode_total=mapping['cncode_total'],
+                    goods_name=mapping.get('goods_name'),
+                    goods_engname=mapping.get('goods_engname'),
+                    aggregoods_name=mapping.get('aggregoods_name'),
+                    aggregoods_engname=mapping.get('aggregoods_engname')
                 ))
             
             return HSCodeLookupResponse(
@@ -148,7 +148,7 @@ class HSCNMappingService:
         """HS 코드로 검색"""
         try:
             mappings = await self.repository.search_by_hs_code(hs_code)
-            return [HSCNMappingFullResponse(**mapping.to_dict()) for mapping in mappings]
+            return [HSCNMappingFullResponse(**mapping) for mapping in mappings]
         except Exception as e:
             logger.error(f"❌ HS 코드 검색 실패: {str(e)}")
             return []
@@ -157,7 +157,7 @@ class HSCNMappingService:
         """CN 코드로 검색"""
         try:
             mappings = await self.repository.search_by_cn_code(cn_code)
-            return [HSCNMappingFullResponse(**mapping.to_dict()) for mapping in mappings]
+            return [HSCNMappingFullResponse(**mapping) for mapping in mappings]
         except Exception as e:
             logger.error(f"❌ CN 코드 검색 실패: {str(e)}")
             return []
@@ -166,7 +166,7 @@ class HSCNMappingService:
         """품목명으로 검색"""
         try:
             mappings = await self.repository.search_by_goods_name(goods_name)
-            return [HSCNMappingFullResponse(**mapping.to_dict()) for mapping in mappings]
+            return [HSCNMappingFullResponse(**mapping) for mapping in mappings]
         except Exception as e:
             logger.error(f"❌ 품목명 검색 실패: {str(e)}")
             return []

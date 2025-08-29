@@ -8,8 +8,9 @@ from datetime import datetime
 import psycopg2
 from psycopg2.extras import RealDictCursor
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
-import os
 from decimal import Decimal
+
+from app.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -17,11 +18,8 @@ class MatDirRepository:
     """원료직접배출량 데이터 접근 클래스"""
     
     def __init__(self):
-        self.database_url = os.getenv('DATABASE_URL')
-        if not self.database_url:
-            logger.warning("DATABASE_URL 환경변수가 설정되지 않았습니다. 데이터베이스 기능이 제한됩니다.")
-            # 데이터베이스 URL이 없어도 서비스는 계속 실행
-            return
+        # 설정에서 데이터베이스 URL 가져오기
+        self.database_url = settings.database_url
         
         try:
             self._initialize_database()

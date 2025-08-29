@@ -3,12 +3,12 @@
 # ============================================================================
 
 import logging
-import os
 from typing import List, Optional, Dict, Any
 import psycopg2
 from psycopg2.extras import RealDictCursor
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 
+from app.config import settings
 from .mapping_schema import HSCNMappingCreateRequest, HSCNMappingUpdateRequest
 
 logger = logging.getLogger(__name__)
@@ -17,8 +17,8 @@ class HSCNMappingRepository:
     """HS-CN 매핑 데이터베이스 리포지토리 (psycopg2 직접 연결)"""
     
     def __init__(self, db_session=None):
-        # Railway DB 연결 정보
-        self.database_url = "postgresql://postgres:eQGfytQNhXYAZxsJYlFhYagpJAgstrni@shortline.proxy.rlwy.net:46071/railway"
+        # 설정에서 데이터베이스 URL 가져오기
+        self.database_url = settings.database_url
     
     # ============================================================================
     # 📋 기본 CRUD 작업
