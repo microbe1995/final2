@@ -71,41 +71,7 @@ class ProcessChainLinkResponse(ProcessChainLinkBase):
     class Config:
         from_attributes = True
 
-# ============================================================================
-# 📊 IntegratedProcessGroupEmission 스키마 (통합 그룹 배출량)
-# ============================================================================
 
-class IntegratedProcessGroupEmissionBase(BaseModel):
-    """통합 공정 그룹 배출량 기본 스키마 (누적이 아님!)"""
-    chain_id: int = Field(..., description="그룹 ID")
-    process_id: int = Field(..., description="공정 ID")
-    integrated_matdir_emission: Decimal = Field(default=0, description="그룹의 총 원료배출량")
-    integrated_fueldir_emission: Decimal = Field(default=0, description="그룹의 총 연료배출량")
-    integrated_attrdir_em: Decimal = Field(default=0, description="그룹의 총 직접귀속배출량")
-    group_processes: Optional[str] = Field(None, description="그룹에 속한 공정들 (JSON)")
-
-class IntegratedProcessGroupEmissionCreate(IntegratedProcessGroupEmissionBase):
-    """통합 공정 그룹 배출량 생성 스키마"""
-    pass
-
-class IntegratedProcessGroupEmissionUpdate(BaseModel):
-    """통합 공정 그룹 배출량 수정 스키마"""
-    chain_id: Optional[int] = Field(None, description="그룹 ID")
-    process_id: Optional[int] = Field(None, description="공정 ID")
-    integrated_matdir_emission: Optional[Decimal] = Field(None, description="그룹의 총 원료배출량")
-    integrated_fueldir_emission: Optional[Decimal] = Field(None, description="그룹의 총 연료배출량")
-    integrated_attrdir_em: Optional[Decimal] = Field(None, description="그룹의 총 직접귀속배출량")
-    group_processes: Optional[str] = Field(None, description="그룹에 속한 공정들 (JSON)")
-
-class IntegratedProcessGroupEmissionResponse(IntegratedProcessGroupEmissionBase):
-    """통합 공정 그룹 배출량 응답 스키마"""
-    id: int
-    calculation_date: Optional[datetime] = None
-    created_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
-    
-    class Config:
-        from_attributes = True
 
 # ============================================================================
 # 🔄 SourceStream 스키마
@@ -165,26 +131,10 @@ class ProcessChainAnalysisRequest(BaseModel):
 class ProcessChainAnalysisResponse(BaseModel):
     """통합 공정 그룹 분석 응답 스키마"""
     chain: ProcessChainWithLinksResponse
-    integrated_emissions: List[IntegratedProcessGroupEmissionResponse] = []
     total_integrated_emission: Decimal = Field(default=0, description="그룹의 총 배출량")
     analysis_date: datetime = Field(default_factory=datetime.utcnow)
 
-# ============================================================================
-# 🔄 통합 공정 그룹 배출량 계산 관련 스키마
-# ============================================================================
 
-class IntegratedEmissionCalculationRequest(BaseModel):
-    """통합 공정 그룹 배출량 계산 요청 스키마"""
-    chain_id: int = Field(..., description="그룹 ID")
-    recalculate_all: bool = Field(default=False, description="전체 재계산 여부")
-
-class IntegratedEmissionCalculationResponse(BaseModel):
-    """통합 공정 그룹 배출량 계산 응답 스키마"""
-    chain_id: int
-    calculated_processes: int = Field(description="계산된 공정 수")
-    total_integrated_emission: Decimal = Field(description="그룹의 총 배출량")
-    calculation_date: datetime = Field(default_factory=datetime.utcnow)
-    status: str = Field(description="계산 상태")
 
 # ============================================================================
 # 🔄 통합 공정 그룹 자동 탐지 관련 스키마

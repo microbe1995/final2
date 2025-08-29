@@ -110,6 +110,12 @@ function ProcessManagerInner() {
   const [showFuelDirModal, setShowFuelDirModal] = useState(false);
   const [selectedProcessForFuelDir, setSelectedProcessForFuelDir] = useState<any>(null);
   
+  // 통합 공정 그룹 관련 상태
+  const [integratedProcessGroups, setIntegratedProcessGroups] = useState<any[]>([]);
+  const [showIntegratedGroupsModal, setShowIntegratedGroupsModal] = useState(false);
+  const [isDetectingChains, setIsDetectingChains] = useState(false);
+  const [detectionStatus, setDetectionStatus] = useState<string>('');
+  
   // 크로스 사업장 공정 처리를 위한 상태
   const [crossInstallProcesses, setCrossInstallProcesses] = useState<any[]>([]);
   const [showCrossInstallModal, setShowCrossInstallModal] = useState(false);
@@ -232,6 +238,8 @@ function ProcessManagerInner() {
     fetchInstalls();
   }, [fetchInstalls]);
 
+
+
   // 캔버스 상태 변경 시 해당 사업장의 캔버스 데이터 업데이트
   useEffect(() => {
     if (activeInstallId) {
@@ -331,6 +339,48 @@ function ProcessManagerInner() {
     setShowProductModal(false);
   }, [addNodes, selectedInstall, handleProductNodeClickComplex]);
 
+  // 통합 공정 그룹 자동 탐지 및 계산
+  const detectIntegratedProcessGroups = useCallback(async () => {
+    try {
+      setIsDetectingChains(true);
+      setDetectionStatus('🔍 연결된 공정들을 탐지 중...');
+      
+      const response = await axiosClient.post('/api/v1/boundary/sourcestream/auto-detect-and-calculate', {
+        max_chain_length: 10,
+        include_inactive: false,
+        recalculate_existing: false
+      });
+      
+      if (response.status === 200) {
+        const result = response.data;
+        setDetectionStatus(`✅ 탐지 완료: ${result.detected_chains}개 그룹, 총 배출량: ${result.total_integrated_emission}`);
+        
+        // 탐지된 그룹 목록 가져오기
+        const groupsResponse = await axiosClient.get('/api/v1/boundary/sourcestream/chain');
+        if (groupsResponse.status === 200) {
+          setIntegratedProcessGroups(groupsResponse.data);
+        }
+      }
+    } catch (error) {
+      console.error('통합 공정 그룹 탐지 오류:', error);
+      setDetectionStatus('❌ 탐지 실패: ' + (error as any).message);
+    } finally {
+      setIsDetectingChains(false);
+    }
+  }, []);
+
+  // 통합 공정 그룹 목록 조회
+  const loadIntegratedProcessGroups = useCallback(async () => {
+    try {
+      const response = await axiosClient.get('/api/v1/boundary/sourcestream/chain');
+      if (response.status === 200) {
+        setIntegratedProcessGroups(response.data);
+      }
+    } catch (error) {
+      console.error('통합 공정 그룹 조회 오류:', error);
+    }
+  }, []);
+
   // 제품 수량 업데이트
   const handleProductQuantityUpdate = useCallback(async () => {
     if (!selectedProduct) return;
@@ -419,6 +469,11 @@ function ProcessManagerInner() {
     addNodes(newNode);
   }, [addNodes]);
 
+  // 컴포넌트 마운트 시 통합 공정 그룹 목록 불러오기
+  useEffect(() => {
+    loadIntegratedProcessGroups();
+  }, [loadIntegratedProcessGroups]);
+
   const nodeTypes: NodeTypes = { custom: ProductNode, process: ProcessNode };
 
   return (
@@ -484,7 +539,27 @@ function ProcessManagerInner() {
         <Button onClick={addGroupNode} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2">
           <Plus className="h-4 w-4" /> 그룹 노드
         </Button>
+        <Button 
+          onClick={detectIntegratedProcessGroups} 
+          disabled={isDetectingChains || !selectedInstall}
+          className="bg-green-600 hover:bg-green-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg flex items-center gap-2"
+        >
+          🔗 통합 공정 그룹 탐지
+        </Button>
+        <Button 
+          onClick={() => setShowIntegratedGroupsModal(true)} 
+          className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+        >
+          📊 통합 그룹 목록
+        </Button>
       </div>
+      
+      {/* 탐지 상태 표시 */}
+      {detectionStatus && (
+        <div className="bg-gray-800 px-4 py-2 border-l-4 border-blue-500">
+          <div className="text-sm text-blue-300">{detectionStatus}</div>
+        </div>
+      )}
 
       {/* ReactFlow 캔버스 */}
       <div className="flex-1">
@@ -882,6 +957,85 @@ function ProcessManagerInner() {
           selectedProcess={selectedProcessForFuelDir}
           onClose={() => setShowFuelDirModal(false)}
         />
+      )}
+
+      {/* 통합 공정 그룹 모달 */}
+      {showIntegratedGroupsModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-gray-800 rounded-lg p-6 w-full max-w-4xl max-h-[80vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold text-white">📊 통합 공정 그룹 목록</h2>
+              <button
+                onClick={() => setShowIntegratedGroupsModal(false)}
+                className="text-gray-400 hover:text-white text-2xl"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="mb-4 flex gap-2">
+              <button
+                onClick={loadIntegratedProcessGroups}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
+              >
+                🔄 목록 새로고침
+              </button>
+              <button
+                onClick={detectIntegratedProcessGroups}
+                disabled={isDetectingChains}
+                className="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 text-white rounded-lg"
+              >
+                {isDetectingChains ? '🔍 탐지 중...' : '🔗 새로 탐지'}
+              </button>
+            </div>
+
+            {integratedProcessGroups.length === 0 ? (
+              <div className="text-center py-8 text-gray-400">
+                <div className="text-4xl mb-4">🔍</div>
+                <div className="text-lg mb-2">통합 공정 그룹이 없습니다</div>
+                <div className="text-sm">"🔗 새로 탐지" 버튼을 클릭하여 연결된 공정들을 찾아보세요</div>
+              </div>
+            ) : (
+              <div className="grid gap-4">
+                {integratedProcessGroups.map((group: any) => (
+                  <div key={group.id} className="bg-gray-700 rounded-lg p-4 border border-gray-600">
+                    <div className="flex justify-between items-start mb-3">
+                      <div>
+                        <h3 className="text-lg font-semibold text-white mb-1">
+                          🔗 {group.chain_name}
+                        </h3>
+                        <div className="text-sm text-gray-300">
+                          그룹 ID: {group.id} | 공정 수: {group.chain_length}개
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-sm text-gray-400">상태</div>
+                        <div className={`text-sm font-medium ${group.is_active ? 'text-green-400' : 'text-red-400'}`}>
+                          {group.is_active ? '활성' : '비활성'}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <div className="text-gray-400 mb-1">시작 공정 ID</div>
+                        <div className="text-white font-medium">{group.start_process_id}</div>
+                      </div>
+                      <div>
+                        <div className="text-gray-400 mb-1">종료 공정 ID</div>
+                        <div className="text-white font-medium">{group.end_process_id}</div>
+                      </div>
+                    </div>
+                    
+                    <div className="mt-3 text-xs text-gray-400">
+                      생성일: {new Date(group.created_at).toLocaleString()}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
       )}
     </div>
   );

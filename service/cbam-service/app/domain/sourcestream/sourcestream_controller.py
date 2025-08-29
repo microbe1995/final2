@@ -12,7 +12,6 @@ from .sourcestream_schema import (
     ProcessChainLinkCreate, ProcessChainLinkUpdate, ProcessChainLinkResponse,
     SourceStreamCreate, SourceStreamUpdate, SourceStreamResponse,
     ProcessChainAnalysisRequest, ProcessChainAnalysisResponse,
-    IntegratedEmissionCalculationRequest, IntegratedEmissionCalculationResponse,
     ChainDetectionRequest, ChainDetectionResponse,
     AutoDetectAndCalculateRequest, AutoDetectAndCalculateResponse
 )

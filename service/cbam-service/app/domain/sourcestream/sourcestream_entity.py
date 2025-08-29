@@ -80,44 +80,7 @@ class ProcessChainLink(Base):
             "updated_at": self.updated_at.isoformat() if self.updated_at else None
         }
 
-# ============================================================================
-# 📊 IntegratedProcessGroupEmission 엔티티 (통합 그룹 배출량)
-# ============================================================================
 
-class IntegratedProcessGroupEmission(Base):
-    """통합 공정 그룹 배출량 엔티티 - 그룹의 총 배출량을 관리 (누적이 아님!)"""
-    
-    __tablename__ = "integrated_process_group_emission"
-    
-    id = Column(Integer, primary_key=True, index=True)
-    chain_id = Column(Integer, ForeignKey("process_chain.id"), nullable=False, index=True)  # 그룹 ID
-    process_id = Column(Integer, ForeignKey("process.id"), nullable=False, index=True)  # 공정 ID
-    integrated_matdir_emission = Column(Numeric(15, 6), nullable=False, default=0)  # 그룹의 총 원료배출량
-    integrated_fueldir_emission = Column(Numeric(15, 6), nullable=False, default=0)  # 그룹의 총 연료배출량
-    integrated_attrdir_em = Column(Numeric(15, 6), nullable=False, default=0)  # 그룹의 총 직접귀속배출량
-    group_processes = Column(Text)  # 그룹에 속한 공정들 (JSON 형태로 저장)
-    calculation_date = Column(DateTime, default=datetime.utcnow)  # 계산 일시
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
-    # 관계 설정
-    chain = relationship("ProcessChain")
-    process = relationship("Process")
-    
-    def to_dict(self) -> Dict[str, Any]:
-        """엔티티를 딕셔너리로 변환"""
-        return {
-            "id": self.id,
-            "chain_id": self.chain_id,
-            "process_id": self.process_id,
-            "integrated_matdir_emission": float(self.integrated_matdir_emission) if self.integrated_matdir_emission else 0.0,
-            "integrated_fueldir_emission": float(self.integrated_fueldir_emission) if self.integrated_fueldir_emission else 0.0,
-            "integrated_attrdir_em": float(self.integrated_attrdir_em) if self.integrated_attrdir_em else 0.0,
-            "group_processes": self.group_processes,
-            "calculation_date": self.calculation_date.isoformat() if self.calculation_date else None,
-            "created_at": self.created_at.isoformat() if self.created_at else None,
-            "updated_at": self.updated_at.isoformat() if self.updated_at else None
-        }
 
 # ============================================================================
 # 🔄 SourceStream 엔티티 (소스 스트림)
