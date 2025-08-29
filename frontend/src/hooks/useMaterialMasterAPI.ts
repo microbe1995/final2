@@ -28,14 +28,37 @@ export interface MaterialNameLookupResponse {
 }
 
 // ============================================================================
-// 🔍 원료 마스터 API 훅
+// 🔍 원료 마스터 API 훅 (@mapping/ 패턴과 동일)
 // ============================================================================
 
 export const useMaterialMasterAPI = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // 원료 마스터 목록 조회
+  // ============================================================================
+  // 🔍 원료명 조회 (메인 기능 - @mapping/의 lookupByHSCode와 동일 패턴)
+  // ============================================================================
+
+  const lookupMaterialByName = useCallback(async (mat_name: string): Promise<MaterialNameLookupResponse> => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const response = await axiosClient.get(apiEndpoints.calculation.materialMaster.search(mat_name));
+      return response.data;
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.detail || err.message || '원료명 조회 중 오류가 발생했습니다.';
+      setError(errorMessage);
+      throw new Error(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // ============================================================================
+  // 📋 기본 CRUD 작업
+  // ============================================================================
+
   const getMaterialMasterList = useCallback(async (skip = 0, limit = 100): Promise<MaterialMappingFull[]> => {
     setLoading(true);
     setError(null);
@@ -46,64 +69,46 @@ export const useMaterialMasterAPI = () => {
       });
       return response.data;
     } catch (err: any) {
-      const errorMessage = err.response?.data?.detail || err.message || '알 수 없는 오류가 발생했습니다';
+      const errorMessage = err.response?.data?.detail || err.message || '원료 마스터 목록 조회 중 오류가 발생했습니다.';
       setError(errorMessage);
-      throw err;
+      throw new Error(errorMessage);
     } finally {
       setLoading(false);
     }
   }, []);
 
-  // 원료명으로 검색
   const searchMaterialByName = useCallback(async (matName: string): Promise<MaterialNameLookupResponse> => {
-    setLoading(true);
-    setError(null);
-    
-    try {
-      const response = await axiosClient.get(apiEndpoints.calculation.materialMaster.search(matName));
-      return response.data;
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.detail || err.message || '알 수 없는 오류가 발생했습니다';
-      setError(errorMessage);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+    // lookupMaterialByName과 동일한 로직 사용
+    return await lookupMaterialByName(matName);
+  }, [lookupMaterialByName]);
 
-  // 원료명으로 배출계수 조회
   const getMaterialFactor = useCallback(async (matName: string): Promise<MaterialNameLookupResponse> => {
-    setLoading(true);
-    setError(null);
-    
-    try {
-      const response = await axiosClient.get(apiEndpoints.calculation.materialMaster.getFactor(matName));
-      return response.data;
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.detail || err.message || '알 수 없는 오류가 발생했습니다';
-      setError(errorMessage);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+    // lookupMaterialByName과 동일한 로직 사용
+    return await lookupMaterialByName(matName);
+  }, [lookupMaterialByName]);
 
-  // 원료명 자동 완성 (검색 결과에서 원료명만 추출)
+  // ============================================================================
+  // 🚀 자동 매핑 기능 (프론트엔드 편의 기능)
+  // ============================================================================
+
   const getMaterialNameSuggestions = useCallback(async (query: string): Promise<string[]> => {
     if (!query.trim()) return [];
     
     try {
-      const result = await searchMaterialByName(query);
-      return result.data.map((item: MaterialMapping) => item.mat_name);
+      const result = await lookupMaterialByName(query);
+      if (result.success && result.data.length > 0) {
+        // 원료명만 추출하여 반환
+        return result.data.map((item: MaterialMapping) => item.mat_name);
+      }
+      return [];
     } catch (err) {
       return [];
     }
-  }, [searchMaterialByName]);
+  }, [lookupMaterialByName]);
 
-  // 배출계수 자동 매핑 (원료명으로 배출계수 자동 찾기)
   const autoMapMaterialFactor = useCallback(async (matName: string): Promise<number | null> => {
     try {
-      const result = await getMaterialFactor(matName);
+      const result = await lookupMaterialByName(matName);
       if (result.success && result.data.length > 0) {
         // 첫 번째 결과의 배출계수 반환
         return result.data[0].mat_factor;
@@ -112,14 +117,18 @@ export const useMaterialMasterAPI = () => {
     } catch (err) {
       return null;
     }
-  }, [getMaterialFactor]);
+  }, [lookupMaterialByName]);
 
   return {
     loading,
     error,
+    // 메인 기능
+    lookupMaterialByName,
+    // 기본 CRUD
     getMaterialMasterList,
     searchMaterialByName,
     getMaterialFactor,
+    // 자동 매핑 기능
     getMaterialNameSuggestions,
     autoMapMaterialFactor,
   };

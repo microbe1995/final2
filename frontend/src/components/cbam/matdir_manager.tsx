@@ -27,10 +27,9 @@ interface MatDirResult {
 }
 
 export default function MatDirManager({ selectedProcess, onClose }: MatDirManagerProps) {
-  // Material Master API 훅 (matdir 스키마 기반)
+  // Material Master API 훅 (개선된 버전)
   const { 
-    searchMaterialByName, 
-    getMaterialFactor, 
+    lookupMaterialByName,  // 메인 기능 (hs-cn 패턴과 동일)
     getMaterialNameSuggestions,
     autoMapMaterialFactor,
     loading: materialLoading, 
@@ -47,26 +46,38 @@ export default function MatDirManager({ selectedProcess, onClose }: MatDirManage
   const [matDirResults, setMatDirResults] = useState<MatDirResult[]>([]);
   const [isCalculatingMatDir, setIsCalculatingMatDir] = useState(false);
 
-  // Material Master 관련 상태 (matdir 스키마 기반)
+  // Material Master 관련 상태 (개선된 버전)
   const [materialSuggestions, setMaterialSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [autoFactorStatus, setAutoFactorStatus] = useState<string>('');
 
-  // 원료명 입력 시 자동 검색
+  // ============================================================================
+  // 🔍 원료명 입력 시 자동 검색 (hs-cn 패턴과 동일)
+  // ============================================================================
+  
   const handleMaterialNameChange = useCallback(async (matName: string) => {
     setMatDirForm(prev => ({ ...prev, mat_name: matName }));
     
     if (matName.length >= 2) {
-      const suggestions = await getMaterialNameSuggestions(matName);
-      setMaterialSuggestions(suggestions);
-      setShowSuggestions(true);
+      try {
+        const suggestions = await getMaterialNameSuggestions(matName);
+        setMaterialSuggestions(suggestions);
+        setShowSuggestions(suggestions.length > 0);
+      } catch (err) {
+        console.warn('원료명 제안 조회 실패:', err);
+        setMaterialSuggestions([]);
+        setShowSuggestions(false);
+      }
     } else {
       setMaterialSuggestions([]);
       setShowSuggestions(false);
     }
   }, [getMaterialNameSuggestions]);
 
-  // 원료명 선택 시 배출계수 자동 조회
+  // ============================================================================
+  // 🚀 원료명 선택 시 배출계수 자동 매핑 (hs-cn 패턴과 동일)
+  // ============================================================================
+  
   const handleMaterialSelect = useCallback(async (selectedName: string) => {
     setMatDirForm(prev => ({ 
       ...prev, 
@@ -76,7 +87,9 @@ export default function MatDirManager({ selectedProcess, onClose }: MatDirManage
     
     // 배출계수 자동 매핑
     try {
+      setAutoFactorStatus('🔍 배출계수 조회 중...');
       const autoFactor = await autoMapMaterialFactor(selectedName);
+      
       if (autoFactor !== null) {
         setMatDirForm(prev => ({ ...prev, mat_factor: autoFactor }));
         setAutoFactorStatus(`✅ 자동 설정: ${selectedName} (배출계수: ${autoFactor})`);
@@ -84,16 +97,20 @@ export default function MatDirManager({ selectedProcess, onClose }: MatDirManage
         setAutoFactorStatus(`⚠️ 배출계수를 찾을 수 없음: ${selectedName}`);
       }
     } catch (err) {
+      console.error('배출계수 자동 매핑 실패:', err);
       setAutoFactorStatus(`❌ 배출계수 조회 실패: ${selectedName}`);
     }
   }, [autoMapMaterialFactor]);
 
-  // 원료명 입력 완료 시 배출계수 자동 조회
+  // ============================================================================
+  // 🔍 원료명 입력 완료 시 배출계수 자동 조회 (hs-cn 패턴과 동일)
+  // ============================================================================
+  
   const handleMaterialNameBlur = useCallback(async () => {
     if (matDirForm.mat_name && matDirForm.mat_factor === 0) {
       setAutoFactorStatus('🔍 배출계수 조회 중...');
       try {
-        const factorData = await getMaterialFactor(matDirForm.mat_name);
+        const factorData = await lookupMaterialByName(matDirForm.mat_name);
         
         if (factorData.success && factorData.data.length > 0) {
           const factor = factorData.data[0].mat_factor;
@@ -103,12 +120,16 @@ export default function MatDirManager({ selectedProcess, onClose }: MatDirManage
           setAutoFactorStatus(`⚠️ 배출계수를 찾을 수 없음: ${matDirForm.mat_name}`);
         }
       } catch (err) {
+        console.error('배출계수 조회 실패:', err);
         setAutoFactorStatus(`❌ 배출계수 조회 실패: ${matDirForm.mat_name}`);
       }
     }
-  }, [matDirForm.mat_name, matDirForm.mat_factor, getMaterialFactor]);
+  }, [matDirForm.mat_name, matDirForm.mat_factor, lookupMaterialByName]);
 
-  // 원료직접배출량 계산
+  // ============================================================================
+  // 🧮 원료직접배출량 계산
+  // ============================================================================
+  
   const calculateMatDirEmission = useCallback(async () => {
     if (!matDirForm.mat_name || matDirForm.mat_factor <= 0 || matDirForm.mat_amount <= 0) {
       alert('모든 필드를 입력해주세요.');
@@ -154,7 +175,10 @@ export default function MatDirManager({ selectedProcess, onClose }: MatDirManage
     }
   }, [matDirForm]);
 
-  // 원료직접배출량 저장
+  // ============================================================================
+  // 💾 원료직접배출량 저장
+  // ============================================================================
+  
   const saveMatDirData = useCallback(async () => {
     if (!selectedProcess || matDirResults.length === 0) {
       alert('저장할 데이터가 없습니다.');
@@ -212,7 +236,10 @@ export default function MatDirManager({ selectedProcess, onClose }: MatDirManage
     }
   }, [selectedProcess, matDirResults, onClose]);
 
-  // 원료직접배출량 결과 삭제
+  // ============================================================================
+  // 🗑️ 원료직접배출량 결과 삭제
+  // ============================================================================
+  
   const removeMatDirResult = useCallback((index: number) => {
     setMatDirResults(prev => prev.filter((_, i) => i !== index));
   }, []);
