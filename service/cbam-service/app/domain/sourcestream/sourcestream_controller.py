@@ -143,21 +143,7 @@ async def detect_process_chains(request: ChainDetectionRequest):
         logger.error(f"❌ 통합 공정 그룹 탐지 API 실패: {e}")
         raise HTTPException(status_code=500, detail=f"통합 공정 그룹 탐지 실패: {str(e)}")
 
-# ============================================================================
-# 📊 통합 공정 그룹 배출량 계산 API 엔드포인트
-# ============================================================================
 
-@router.post("/calculate-emissions", response_model=IntegratedEmissionCalculationResponse)
-async def calculate_chain_integrated_emissions(request: IntegratedEmissionCalculationRequest):
-    """통합 공정 그룹 배출량 계산"""
-    try:
-        logger.info(f"🧮 통합 공정 그룹 배출량 계산 API 호출: {request.dict()}")
-        result = await sourcestream_service.calculate_chain_integrated_emissions(request)
-        logger.info(f"✅ 통합 공정 그룹 배출량 계산 API 성공: chain_id {request.chain_id}")
-        return result
-    except Exception as e:
-        logger.error(f"❌ 통합 공정 그룹 배출량 계산 API 실패: {e}")
-        raise HTTPException(status_code=500, detail=f"통합 공정 그룹 배출량 계산 실패: {str(e)}")
 
 @router.post("/auto-detect-and-calculate", response_model=AutoDetectAndCalculateResponse)
 async def auto_detect_and_calculate_chains(request: AutoDetectAndCalculateRequest):

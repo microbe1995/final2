@@ -184,32 +184,7 @@ class SourceStreamService:
             logger.error(f"❌ 통합 공정 그룹 탐지 실패: {e}")
             raise e
     
-    # ============================================================================
-    # 📊 통합 공정 그룹 배출량 계산 서비스 메서드
-    # ============================================================================
-    
-    async def calculate_chain_integrated_emissions(self, request: IntegratedEmissionCalculationRequest) -> IntegratedEmissionCalculationResponse:
-        """통합 공정 그룹 배출량 계산"""
-        try:
-            logger.info(f"🧮 통합 공정 그룹 배출량 계산 요청: chain_id {request.chain_id}")
-            
-            # 그룹 배출량 계산
-            emission_result = await self.repository.calculate_chain_integrated_emissions(request.chain_id)
-            
-            response = IntegratedEmissionCalculationResponse(
-                chain_id=request.chain_id,
-                calculated_processes=emission_result["process_count"],
-                total_integrated_emission=emission_result["integrated_attrdir_em"],
-                calculation_date=datetime.utcnow(),
-                status="success"
-            )
-            
-            logger.info(f"✅ 통합 공정 그룹 배출량 계산 완료: chain_id {request.chain_id}")
-            return response
-            
-        except Exception as e:
-            logger.error(f"❌ 통합 공정 그룹 배출량 계산 실패: {e}")
-            raise e
+dd 
     
     async def auto_detect_and_calculate_chains(self, request: AutoDetectAndCalculateRequest) -> AutoDetectAndCalculateResponse:
         """통합 공정 그룹 자동 탐지 및 배출량 계산"""

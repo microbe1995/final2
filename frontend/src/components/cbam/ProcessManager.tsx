@@ -993,7 +993,7 @@ function ProcessManagerInner() {
               <div className="text-center py-8 text-gray-400">
                 <div className="text-4xl mb-4">🔍</div>
                 <div className="text-lg mb-2">통합 공정 그룹이 없습니다</div>
-                <div className="text-sm">"🔗 새로 탐지" 버튼을 클릭하여 연결된 공정들을 찾아보세요</div>
+                <div className="text-sm">&ldquo;🔗 새로 탐지&rdquo; 버튼을 클릭하여 연결된 공정들을 찾아보세요</div>
               </div>
             ) : (
               <div className="grid gap-4">
