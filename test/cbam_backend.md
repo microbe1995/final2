@@ -55,7 +55,7 @@ edge_kind_enum: 'consume', 'produce', 'continue'
 🔗 테이블 관계
 install ← product (1:N)
 product ← process (1:N)
-process ← process_input (1:N)
+process ← t (1:N)
 edge 테이블은 process와 product 간의 연결을 관리
 
 - 사업장명 입력시 DB 내 이름과 중복이 되지않도록 할것 

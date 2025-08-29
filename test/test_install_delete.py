@@ -20,7 +20,7 @@ def test_install_delete():
             
             for install in installs:
                 print(f"    - ID: {install['id']}, 이름: {install['install_name']}")
-        e
+        em ""
             print(f"  ❌ 사업장 목록 조회 실패: {response.status_code}")
             return
         
