@@ -184,7 +184,7 @@ class SourceStreamService:
             logger.error(f"❌ 통합 공정 그룹 탐지 실패: {e}")
             raise e
     
-    async def auto_detect_and_calculate_chains(self, request: AutoDetectAndCalculateRequest) -> AutoDetectAndCalculateResponse:해줘
+    async def auto_detect_and_calculate_chains(self, request: AutoDetectAndCalculateRequest) -> AutoDetectAndCalculateResponse:
         """통합 공정 그룹 자동 탐지 및 배출량 계산"""
         try:
             logger.info(f"🚀 통합 공정 그룹 자동 탐지 및 계산 요청: {request.dict()}")
