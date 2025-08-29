@@ -348,33 +348,4 @@ class ProcessChainRepository:
             logger.error(f"❌ 통합 공정 그룹 자동 탐지 및 계산 실패: {e}")
             raise e
     
-    # ============================================================================
-    # 🔄 SourceStream 관련 메서드
-    # ============================================================================
-    
-    async def create_source_stream(self, stream_data: Dict[str, Any]) -> SourceStream:
-        """소스 스트림 생성"""
-        try:
-            with self.get_db() as db:
-                stream = SourceStream(**stream_data)
-                db.add(stream)
-                db.commit()
-                db.refresh(stream)
-                logger.info(f"✅ 소스 스트림 생성 성공: ID {stream.id}")
-                return stream
-        except Exception as e:
-            logger.error(f"❌ 소스 스트림 생성 실패: {e}")
-            raise e
-    
-    async def get_source_streams(self, source_process_id: Optional[int] = None) -> List[SourceStream]:
-        """소스 스트림 조회"""
-        try:
-            with self.get_db() as db:
-                query = db.query(SourceStream)
-                if source_process_id:
-                    query = query.filter(SourceStream.source_process_id == source_process_id)
-                streams = query.all()
-                return streams
-        except Exception as e:
-            logger.error(f"❌ 소스 스트림 조회 실패: {e}")
-            raise e
+
