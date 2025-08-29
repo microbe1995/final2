@@ -30,12 +30,13 @@ logger = logging.getLogger("gateway_api")
 # 서비스 맵 구성 (환경 변수 기반)
 AUTH_SERVICE_URL = os.getenv("AUTH_SERVICE_URL", "http://auth-service:8000")
 CAL_BOUNDARY_URL = os.getenv("CAL_BOUNDARY_URL", "https://lcafinal-production.up.railway.app")
+MATDIR_URL = os.getenv("MATDIR_URL", "https://lcafinal-production.up.railway.app")
 PROCESSCHAIN_URL = os.getenv("PROCESSCHAIN_URL", "https://lcafinal-production.up.railway.app")
 
 # 환경변수 디버깅 로그
 logger.info(f"🔧 환경변수 확인:")
 logger.info(f"   CAL_BOUNDARY_URL: {CAL_BOUNDARY_URL}")
-logger.info(f"   PROCESSCHAIN_URL: {PROCESSCHAIN_URL}")
+logger.info(f"   MATDIR_URL: {MATDIR_URL}")
 logger.info(f"   AUTH_SERVICE_URL: {AUTH_SERVICE_URL}")
 logger.info(f"   RAILWAY_ENVIRONMENT: {os.getenv('RAILWAY_ENVIRONMENT', 'Not Set')}")
 
@@ -50,6 +51,8 @@ SERVICE_MAP = {
     "countries": CAL_BOUNDARY_URL,
     # ProcessChain 서비스 (독립적인 도메인)
     "processchain": PROCESSCHAIN_URL,
+    # Material Master 서비스
+    "matdir": MATDIR_URL,
 }
 
 @asynccontextmanager

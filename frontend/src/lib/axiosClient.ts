@@ -278,10 +278,10 @@ export const apiEndpoints = {
         delete: (id: number) => `/api/v1/boundary/edge/${id}`
     },
     processchain: {
-        chain: '/api/v1/processchain/chain',
-        chainCreate: '/api/v1/processchain/chain',
-        chainGet: (id: number) => `/api/v1/processchain/chain/${id}`,
-        chainDelete: (id: number) => `/api/v1/processchain/chain/${id}`
+        chain: '/api/v1/boundary/processchain/chain',
+        chainCreate: '/api/v1/boundary/processchain/chain',
+        chainGet: (id: number) => `/api/v1/boundary/processchain/chain/${id}`,
+        chainDelete: (id: number) => `/api/v1/boundary/processchain/chain/${id}`
     },
     productionEmission: {
         create: '/api/v1/boundary/production-emission',
@@ -307,12 +307,12 @@ export const apiEndpoints = {
         calculate: '/api/v1/boundary/fueldir/calculate',
         totalByProcess: (process_id: number) => `/api/v1/boundary/fueldir/process/${process_id}/total`
     },
-    // Material Master API (새로 추가)
+    // Material Master API (matdir 서비스 사용)
     materialMaster: {
-        list: '/api/v1/boundary/material-master',
-        search: (mat_name: string) => `/api/v1/boundary/material-master/search/${mat_name}`,
-        getFactor: (mat_name: string) => `/api/v1/boundary/material-master/factor/${mat_name}`,
-        autoFactor: '/api/v1/boundary/matdir/auto-factor'
+        list: '/api/v1/matdir/material-master',
+        search: (mat_name: string) => `/api/v1/matdir/material-master/search/${mat_name}`,
+        getFactor: (mat_name: string) => `/api/v1/matdir/material-master/factor/${mat_name}`,
+        autoFactor: '/api/v1/matdir/auto-factor'
     },
     // Fuel Master API (새로 추가)
     fuelMaster: {
