@@ -9,6 +9,9 @@ from datetime import datetime
 from typing import Dict, Any, List
 from decimal import Decimal
 
+# Process 엔티티 import
+from ..calculation.calculation_entity import Process
+
 Base = declarative_base()
 
 # ============================================================================
