@@ -2,8 +2,7 @@
 # 🎯 Mapping Controller - HS-CN 매핑 API 엔드포인트
 # ============================================================================
 
-from fastapi import APIRouter, HTTPException, Depends, Query
-from sqlalchemy.orm import Session
+from fastapi import APIRouter, HTTPException, Query
 import logging
 from typing import List
 
@@ -57,8 +56,7 @@ async def lookup_cn_code_by_hs_code(hs_code: str):
 @router.get("/mapping", response_model=List[HSCNMappingFullResponse])
 async def get_all_mappings(
     skip: int = Query(0, ge=0, description="건너뛸 레코드 수"),
-    limit: int = Query(100, ge=1, le=1000, description="조회할 레코드 수"),
-    mapping_service: HSCNMappingService = Depends(get_mapping_service)
+    limit: int = Query(100, ge=1, le=1000, description="조회할 레코드 수")
 ):
     """모든 HS-CN 매핑 조회 (페이지네이션)"""
     try:
@@ -71,10 +69,7 @@ async def get_all_mappings(
         raise HTTPException(status_code=500, detail=f"매핑 목록 조회 중 오류가 발생했습니다: {str(e)}")
 
 @router.get("/mapping/{mapping_id}", response_model=HSCNMappingFullResponse)
-async def get_mapping(
-    mapping_id: int,
-    mapping_service: HSCNMappingService = Depends(get_mapping_service)
-):
+async def get_mapping(mapping_id: int):
     """특정 HS-CN 매핑 조회"""
     try:
         logger.info(f"📋 HS-CN 매핑 조회 요청: ID {mapping_id}")
@@ -91,10 +86,7 @@ async def get_mapping(
         raise HTTPException(status_code=500, detail=f"매핑 조회 중 오류가 발생했습니다: {str(e)}")
 
 @router.post("/mapping", response_model=HSCNMappingFullResponse)
-async def create_mapping(
-    request: HSCNMappingCreateRequest,
-    mapping_service: HSCNMappingService = Depends(get_mapping_service)
-):
+async def create_mapping(request: HSCNMappingCreateRequest):
     """HS-CN 매핑 생성"""
     try:
         logger.info(f"📝 HS-CN 매핑 생성 요청: HS={request.hscode}, CN={request.cncode_total}")
@@ -111,11 +103,7 @@ async def create_mapping(
         raise HTTPException(status_code=500, detail=f"매핑 생성 중 오류가 발생했습니다: {str(e)}")
 
 @router.put("/mapping/{mapping_id}", response_model=HSCNMappingFullResponse)
-async def update_mapping(
-    mapping_id: int,
-    request: HSCNMappingUpdateRequest,
-    mapping_service: HSCNMappingService = Depends(get_mapping_service)
-):
+async def update_mapping(mapping_id: int, request: HSCNMappingUpdateRequest):
     """HS-CN 매핑 수정"""
     try:
         logger.info(f"📝 HS-CN 매핑 수정 요청: ID {mapping_id}")
@@ -132,10 +120,7 @@ async def update_mapping(
         raise HTTPException(status_code=500, detail=f"매핑 수정 중 오류가 발생했습니다: {str(e)}")
 
 @router.delete("/mapping/{mapping_id}")
-async def delete_mapping(
-    mapping_id: int,
-    mapping_service: HSCNMappingService = Depends(get_mapping_service)
-):
+async def delete_mapping(mapping_id: int):
     """HS-CN 매핑 삭제"""
     try:
         logger.info(f"🗑️ HS-CN 매핑 삭제 요청: ID {mapping_id}")
@@ -156,10 +141,7 @@ async def delete_mapping(
 # ============================================================================
 
 @router.get("/mapping/search/hs/{hs_code}", response_model=List[HSCNMappingFullResponse])
-async def search_by_hs_code(
-    hs_code: str,
-    mapping_service: HSCNMappingService = Depends(get_mapping_service)
-):
+async def search_by_hs_code(hs_code: str):
     """HS 코드로 검색"""
     try:
         logger.info(f"🔍 HS 코드 검색 요청: {hs_code}")
@@ -171,10 +153,7 @@ async def search_by_hs_code(
         raise HTTPException(status_code=500, detail=f"HS 코드 검색 중 오류가 발생했습니다: {str(e)}")
 
 @router.get("/mapping/search/cn/{cn_code}", response_model=List[HSCNMappingFullResponse])
-async def search_by_cn_code(
-    cn_code: str,
-    mapping_service: HSCNMappingService = Depends(get_mapping_service)
-):
+async def search_by_cn_code(cn_code: str):
     """CN 코드로 검색"""
     try:
         logger.info(f"🔍 CN 코드 검색 요청: {cn_code}")
@@ -186,10 +165,7 @@ async def search_by_cn_code(
         raise HTTPException(status_code=500, detail=f"CN 코드 검색 중 오류가 발생했습니다: {str(e)}")
 
 @router.get("/mapping/search/goods/{goods_name}", response_model=List[HSCNMappingFullResponse])
-async def search_by_goods_name(
-    goods_name: str,
-    mapping_service: HSCNMappingService = Depends(get_mapping_service)
-):
+async def search_by_goods_name(goods_name: str):
     """품목명으로 검색"""
     try:
         logger.info(f"🔍 품목명 검색 요청: {goods_name}")
@@ -205,9 +181,7 @@ async def search_by_goods_name(
 # ============================================================================
 
 @router.get("/mapping/stats", response_model=MappingStatsResponse)
-async def get_mapping_stats(
-    mapping_service: HSCNMappingService = Depends(get_mapping_service)
-):
+async def get_mapping_stats():
     """매핑 통계 조회"""
     try:
         logger.info("📊 매핑 통계 조회 요청")
@@ -223,10 +197,7 @@ async def get_mapping_stats(
 # ============================================================================
 
 @router.post("/mapping/batch", response_model=HSCNMappingBatchResponse)
-async def create_mappings_batch(
-    request: HSCNMappingBatchCreateRequest,
-    mapping_service: HSCNMappingService = Depends(get_mapping_service)
-):
+async def create_mappings_batch(request: HSCNMappingBatchCreateRequest):
     """HS-CN 매핑 일괄 생성"""
     try:
         logger.info(f"📦 HS-CN 매핑 일괄 생성 요청: {len(request.mappings)}개")
