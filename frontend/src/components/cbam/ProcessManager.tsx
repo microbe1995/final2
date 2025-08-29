@@ -183,7 +183,7 @@ function ProcessManagerInner() {
   // 선택된 사업장의 제품 목록 불러오기
   const fetchProductsByInstall = useCallback(async (installId: number) => {
     try {
-      const response = await axiosClient.get(apiEndpoints.cbam.product.list);
+              const response = await axiosClient.get(apiEndpoints.calculation.product.list);
       // 선택된 사업장의 제품만 필터링
       const filteredProducts = response.data.filter((product: any) => product.install_id === installId);
       setProducts(filteredProducts);
@@ -196,7 +196,7 @@ function ProcessManagerInner() {
   // 선택된 사업장의 공정 목록 불러오기
   const fetchProcessesByInstall = useCallback(async (installId: number) => {
     try {
-      const response = await axiosClient.get(apiEndpoints.cbam.process.list);
+      const response = await axiosClient.get(apiEndpoints.calculation.process.list);
       // 선택된 사업장의 제품에 속한 모든 공정을 가져옴 (다대다 관계)
       const installProducts = products.filter((product: any) => product.install_id === installId);
       const productIds = installProducts.map((product: any) => product.id);
@@ -214,7 +214,7 @@ function ProcessManagerInner() {
   // 선택된 사업장의 모든 공정 목록 불러오기 (다대다 관계 처리용)
   const fetchAllProcessesByInstall = useCallback(async (installId: number) => {
     try {
-      const response = await axiosClient.get(apiEndpoints.cbam.process.list);
+      const response = await axiosClient.get(apiEndpoints.calculation.process.list);
       // 선택된 사업장의 제품에 속한 모든 공정을 가져옴 (다대다 관계)
       const installProducts = products.filter((product: any) => product.install_id === installId);
       const productIds = installProducts.map((product: any) => product.id);
@@ -232,7 +232,7 @@ function ProcessManagerInner() {
   // 모든 사업장의 공정 목록 불러오기 (크로스 사업장 처리용)
   const fetchAllCrossInstallProcesses = useCallback(async () => {
     try {
-      const response = await axiosClient.get(apiEndpoints.cbam.process.list);
+      const response = await axiosClient.get(apiEndpoints.calculation.process.list);
       // 현재 사업장의 제품과 관련된 모든 공정을 가져옴 (다른 사업장 포함, 다대다 관계)
       const currentInstallProducts = products.filter((product: any) => product.install_id === selectedInstall?.id);
       const productIds = currentInstallProducts.map((product: any) => product.id);
@@ -250,7 +250,7 @@ function ProcessManagerInner() {
   // 선택된 제품의 공정 목록 불러오기 (다대다 관계)
   const fetchProcessesByProduct = useCallback(async (productId: number) => {
     try {
-      const response = await axiosClient.get(apiEndpoints.cbam.process.list);
+      const response = await axiosClient.get(apiEndpoints.calculation.process.list);
       // 해당 제품과 연결된 모든 공정을 가져옴 (다대다 관계)
       const productProcesses = response.data.filter((process: any) => 
         process.products && process.products.some((p: any) => p.id === productId)
