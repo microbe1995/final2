@@ -3,11 +3,10 @@
 # ============================================================================
 
 import logging
+import asyncio
 from typing import List, Dict, Any, Optional
 from datetime import datetime
-import psycopg2
-from psycopg2.extras import RealDictCursor
-from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
+import asyncpg
 import os
 from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -27,20 +26,41 @@ class CalculationRepository:
             # 데이터베이스 URL이 없어도 서비스는 계속 실행
             return
         
-        try:
-            self._initialize_database()
-        except Exception as e:
-            logger.error(f"데이터베이스 초기화 실패: {e}")
-            # 초기화 실패해도 서비스는 계속 실행
+        # asyncpg 연결 풀 초기화
+        self.pool = None
+        # 초기화는 서비스 시작 시 별도로 호출해야 함
     
-    def _check_database_connection(self) -> bool:
-        """데이터베이스 연결 상태 확인"""
+    async def initialize(self):
+        """데이터베이스 연결 풀 초기화"""
+        if not self.database_url:
+            logger.warning("DATABASE_URL이 없어 데이터베이스 초기화를 건너뜁니다.")
+            return
+        
+        try:
+            # asyncpg 연결 풀 생성
+            self.pool = await asyncpg.create_pool(
+                self.database_url,
+                min_size=5,
+                max_size=20,
+                command_timeout=60
+            )
+            
+            logger.info("✅ 데이터베이스 연결 풀 생성 성공")
+            await self._create_tables_async()
+            await self._create_triggers_async()  # 트리거 생성 추가
+            
+        except Exception as e:
+            logger.error(f"❌ 데이터베이스 연결 실패: {str(e)}")
+            # 연결 실패해도 서비스는 계속 실행
+            logger.warning("데이터베이스 연결 실패로 인해 일부 기능이 제한됩니다.")
+    
+    def _check_database_connection_sync(self) -> bool:
+        """데이터베이스 연결 상태 확인 (동기)"""
         if not self.database_url:
             logger.error("DATABASE_URL이 설정되지 않았습니다.")
             return False
             
         try:
-            import psycopg2
             conn = psycopg2.connect(self.database_url)
             conn.close()
             return True
@@ -48,174 +68,33 @@ class CalculationRepository:
             logger.error(f"데이터베이스 연결 실패: {e}")
             return False
 
-    def _initialize_database(self):
-        """데이터베이스 초기화"""
+    def _initialize_database_sync(self):
+        """데이터베이스 초기화 (동기)"""
         if not self.database_url:
             logger.warning("DATABASE_URL이 없어 데이터베이스 초기화를 건너뜁니다.")
             return
             
         try:
-            import psycopg2
-            
             # 데이터베이스 연결 테스트
             conn = psycopg2.connect(self.database_url)
             conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
             conn.close()
             
             logger.info("✅ 데이터베이스 연결 성공")
-            self._create_tables()
-            self._create_triggers()  # 트리거 생성 추가
+            self._create_tables_sync()
+            self._create_triggers_sync()  # 트리거 생성 추가
             
         except Exception as e:
             logger.error(f"❌ 데이터베이스 연결 실패: {str(e)}")
             # 연결 실패해도 서비스는 계속 실행
             logger.warning("데이터베이스 연결 실패로 인해 일부 기능이 제한됩니다.")
     
-    def _create_triggers(self):
-        """자동 집계를 위한 트리거 생성"""
+    def _create_tables_sync(self):
+        """테이블 생성 (동기)"""
+        if not self.database_url:
+            return
+            
         try:
-            import psycopg2
-            
-            conn = psycopg2.connect(self.database_url)
-            conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
-            
-            with conn.cursor() as cursor:
-                # 1. matdir 테이블 트리거 함수 생성
-                cursor.execute("""
-                    CREATE OR REPLACE FUNCTION update_process_attrdir_emission_on_matdir_change()
-                    RETURNS TRIGGER AS $$
-                    BEGIN
-                        -- matdir 테이블 변경 시 해당 공정의 직접귀속배출량 자동 업데이트
-                        IF TG_OP = 'INSERT' OR TG_OP = 'UPDATE' THEN
-                            -- 해당 공정의 총 원료직접배출량과 총 연료직접배출량 계산
-                            INSERT INTO process_attrdir_emission (process_id, total_matdir_emission, total_fueldir_emission, attrdir_em, calculation_date)
-                            SELECT 
-                                COALESCE(NEW.process_id, OLD.process_id) as process_id,
-                                COALESCE(SUM(m.matdir_em), 0) as total_matdir_emission,
-                                COALESCE(SUM(f.fueldir_em), 0) as total_fueldir_emission,
-                                COALESCE(SUM(m.matdir_em), 0) + COALESCE(SUM(f.fueldir_em), 0) as attrdir_em,
-                                NOW() as calculation_date
-                            FROM (SELECT DISTINCT process_id FROM matdir WHERE process_id = COALESCE(NEW.process_id, OLD.process_id)) p
-                            LEFT JOIN matdir m ON p.process_id = m.process_id
-                            LEFT JOIN fueldir f ON p.process_id = f.process_id
-                            GROUP BY p.process_id
-                            ON CONFLICT (process_id) 
-                            DO UPDATE SET 
-                                total_matdir_emission = EXCLUDED.total_matdir_emission,
-                                total_fueldir_emission = EXCLUDED.total_fueldir_emission,
-                                attrdir_em = EXCLUDED.attrdir_em,
-                                calculation_date = NOW(),
-                                updated_at = NOW();
-                        ELSIF TG_OP = 'DELETE' THEN
-                            -- 삭제 시에도 해당 공정의 직접귀속배출량 업데이트
-                            INSERT INTO process_attrdir_emission (process_id, total_matdir_emission, total_fueldir_emission, attrdir_em, calculation_date)
-                            SELECT 
-                                OLD.process_id as process_id,
-                                COALESCE(SUM(m.matdir_em), 0) as total_matdir_emission,
-                                COALESCE(SUM(f.fueldir_em), 0) as total_fueldir_emission,
-                                COALESCE(SUM(m.matdir_em), 0) + COALESCE(SUM(f.fueldir_em), 0) as attrdir_em,
-                                NOW() as calculation_date
-                            FROM (SELECT DISTINCT process_id FROM matdir WHERE process_id = OLD.process_id) p
-                            LEFT JOIN matdir m ON p.process_id = m.process_id
-                            LEFT JOIN fueldir f ON p.process_id = f.process_id
-                            GROUP BY p.process_id
-                            ON CONFLICT (process_id) 
-                            DO UPDATE SET 
-                                total_matdir_emission = EXCLUDED.total_matdir_emission,
-                                total_fueldir_emission = EXCLUDED.total_fueldir_emission,
-                                attrdir_em = EXCLUDED.attrdir_em,
-                                calculation_date = NOW(),
-                                updated_at = NOW();
-                        END IF;
-                        
-                        RETURN COALESCE(NEW, OLD);
-                    END;
-                    $$ LANGUAGE plpgsql;
-                """)
-                
-                # 2. fueldir 테이블 트리거 함수 생성
-                cursor.execute("""
-                    CREATE OR REPLACE FUNCTION update_process_attrdir_emission_on_fueldir_change()
-                    RETURNS TRIGGER AS $$
-                    BEGIN
-                        -- fueldir 테이블 변경 시 해당 공정의 직접귀속배출량 자동 업데이트
-                        IF TG_OP = 'INSERT' OR TG_OP = 'UPDATE' THEN
-                            -- 해당 공정의 총 원료직접배출량과 총 연료직접배출량 계산
-                            INSERT INTO process_attrdir_emission (process_id, total_matdir_emission, total_fueldir_emission, attrdir_em, calculation_date)
-                            SELECT 
-                                COALESCE(NEW.process_id, OLD.process_id) as process_id,
-                                COALESCE(SUM(m.matdir_em), 0) as total_matdir_emission,
-                                COALESCE(SUM(f.fueldir_em), 0) as total_fueldir_emission,
-                                COALESCE(SUM(m.matdir_em), 0) + COALESCE(SUM(f.fueldir_em), 0) as attrdir_em,
-                                NOW() as calculation_date
-                            FROM (SELECT DISTINCT process_id FROM fueldir WHERE process_id = COALESCE(NEW.process_id, OLD.process_id)) p
-                            LEFT JOIN matdir m ON p.process_id = m.process_id
-                            LEFT JOIN fueldir f ON p.process_id = f.process_id
-                            GROUP BY p.process_id
-                            ON CONFLICT (process_id) 
-                            DO UPDATE SET 
-                                total_matdir_emission = EXCLUDED.total_matdir_emission,
-                                total_fueldir_emission = EXCLUDED.total_fueldir_emission,
-                                attrdir_em = EXCLUDED.attrdir_em,
-                                calculation_date = NOW(),
-                                updated_at = NOW();
-                        ELSIF TG_OP = 'DELETE' THEN
-                            -- 삭제 시에도 해당 공정의 직접귀속배출량 업데이트
-                            INSERT INTO process_attrdir_emission (process_id, total_matdir_emission, total_fueldir_emission, attrdir_em, calculation_date)
-                            SELECT 
-                                OLD.process_id as process_id,
-                                COALESCE(SUM(m.matdir_em), 0) as total_matdir_emission,
-                                COALESCE(SUM(f.fueldir_em), 0) as total_fueldir_emission,
-                                COALESCE(SUM(m.matdir_em), 0) + COALESCE(SUM(f.fueldir_em), 0) as attrdir_em,
-                                NOW() as calculation_date
-                            FROM (SELECT DISTINCT process_id FROM fueldir WHERE process_id = OLD.process_id) p
-                            LEFT JOIN matdir m ON p.process_id = m.process_id
-                            LEFT JOIN fueldir f ON p.process_id = f.process_id
-                            GROUP BY p.process_id
-                            ON CONFLICT (process_id) 
-                            DO UPDATE SET 
-                                total_matdir_emission = EXCLUDED.total_matdir_emission,
-                                total_fueldir_emission = EXCLUDED.total_fueldir_emission,
-                                attrdir_em = EXCLUDED.attrdir_em,
-                                calculation_date = NOW(),
-                                updated_at = NOW();
-                        END IF;
-                        
-                        RETURN COALESCE(NEW, OLD);
-                    END;
-                    $$ LANGUAGE plpgsql;
-                """)
-                
-                # 3. matdir 테이블에 트리거 생성
-                cursor.execute("""
-                    DROP TRIGGER IF EXISTS trigger_update_process_attrdir_emission_on_matdir ON matdir;
-                    CREATE TRIGGER trigger_update_process_attrdir_emission_on_matdir
-                    AFTER INSERT OR UPDATE OR DELETE ON matdir
-                    FOR EACH ROW EXECUTE FUNCTION update_process_attrdir_emission_on_matdir_change();
-                """)
-                
-                # 4. fueldir 테이블에 트리거 생성
-                cursor.execute("""
-                    DROP TRIGGER IF EXISTS trigger_update_process_attrdir_emission_on_fueldir ON fueldir;
-                    CREATE TRIGGER trigger_update_process_attrdir_emission_on_fueldir
-                    AFTER INSERT OR UPDATE OR DELETE ON fueldir
-                    FOR EACH ROW EXECUTE FUNCTION update_process_attrdir_emission_on_fueldir_change();
-                """)
-                
-                conn.commit()
-                logger.info("✅ 자동 집계 트리거 생성 완료")
-                
-        except Exception as e:
-            logger.error(f"❌ 트리거 생성 실패: {str(e)}")
-            raise
-        finally:
-            conn.close()
-
-    def _create_tables(self):
-        """필요한 테이블들을 생성합니다"""
-        try:
-            import psycopg2
-            
             conn = psycopg2.connect(self.database_url)
             conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
             
@@ -456,7 +335,7 @@ class CalculationRepository:
         if not self.database_url:
             raise Exception("데이터베이스가 연결되지 않았습니다.")
         
-        if not self._check_database_connection():
+        if not self._check_database_connection_sync():
             raise Exception("데이터베이스 연결에 실패했습니다.")
             
         try:
@@ -613,16 +492,14 @@ class CalculationRepository:
 
     async def create_edge(self, edge_data: Dict) -> Dict:
         """Edge 생성"""
+        if not self.pool:
+            raise Exception("데이터베이스 연결 풀이 초기화되지 않았습니다.")
+            
         try:
-            import psycopg2
-            
-            conn = psycopg2.connect(self.database_url)
-            conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
-            
-            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-                cursor.execute("""
+            async with self.pool.acquire() as conn:
+                result = await conn.fetchrow("""
                     INSERT INTO edge (source_id, target_id, edge_kind, created_at, updated_at)
-                    VALUES (%s, %s, %s, %s, %s)
+                    VALUES ($1, $2, $3, $4, $5)
                     RETURNING *
                 """, (
                     edge_data['source_id'],
@@ -632,61 +509,43 @@ class CalculationRepository:
                     datetime.utcnow()
                 ))
                 
-                result = cursor.fetchone()
-                conn.commit()
-                
                 return dict(result)
-                
         except Exception as e:
-            logger.error(f"❌ Edge 생성 실패: {e}")
-            raise e
-        finally:
-            conn.close()
+            logger.error(f"❌ Edge 생성 실패: {str(e)}")
+            raise
 
     async def get_edges(self) -> List[Dict]:
         """모든 Edge 조회"""
+        if not self.pool:
+            raise Exception("데이터베이스 연결 풀이 초기화되지 않았습니다.")
+            
         try:
-            import psycopg2
-            
-            conn = psycopg2.connect(self.database_url)
-            conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
-            
-            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-                cursor.execute("""
+            async with self.pool.acquire() as conn:
+                results = await conn.fetch("""
                     SELECT * FROM edge ORDER BY id
                 """)
                 
-                results = cursor.fetchall()
                 edges = [dict(row) for row in results]
                 return edges
-                
         except Exception as e:
-            logger.error(f"❌ Edge 목록 조회 실패: {e}")
-            raise e
-        finally:
-            conn.close()
+            logger.error(f"❌ Edge 목록 조회 실패: {str(e)}")
+            raise
 
     async def delete_edge(self, edge_id: int) -> bool:
         """Edge 삭제"""
+        if not self.pool:
+            raise Exception("데이터베이스 연결 풀이 초기화되지 않았습니다.")
+            
         try:
-            import psycopg2
-            
-            conn = psycopg2.connect(self.database_url)
-            conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
-            
-            with conn.cursor() as cursor:
-                cursor.execute("""
-                    DELETE FROM edge WHERE id = %s
-                """, (edge_id,))
+            async with self.pool.acquire() as conn:
+                result = await conn.execute("""
+                    DELETE FROM edge WHERE id = $1
+                """, edge_id)
                 
-                conn.commit()
-                return cursor.rowcount > 0
-                
+                return result != "DELETE 0"
         except Exception as e:
-            logger.error(f"❌ Edge 삭제 실패: {e}")
-            raise e
-        finally:
-            conn.close()
+            logger.error(f"❌ Edge 삭제 실패: {str(e)}")
+            raise
 
     # ============================================================================
     # 🔗 통합 공정 그룹 관련 Repository 메서드
@@ -694,15 +553,13 @@ class CalculationRepository:
 
     async def get_process_chains_by_process_ids(self, process_ids: List[int]) -> List[Dict]:
         """공정 ID들로 통합 그룹 조회"""
+        if not self.pool:
+            raise Exception("데이터베이스 연결 풀이 초기화되지 않았습니다.")
+            
         try:
-            import psycopg2
-            
-            conn = psycopg2.connect(self.database_url)
-            conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
-            
-            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+            async with self.pool.acquire() as conn:
                 # process_chain_link 테이블을 통해 공정이 포함된 그룹들 조회
-                cursor.execute("""
+                chains = await conn.fetch("""
                     SELECT DISTINCT 
                         pc.id,
                         pc.chain_name,
@@ -714,11 +571,9 @@ class CalculationRepository:
                         pc.updated_at
                     FROM process_chain pc
                     INNER JOIN process_chain_link pcl ON pc.id = pcl.chain_id
-                    WHERE pcl.process_id = ANY(%s)
+                    WHERE pcl.process_id = ANY($1)
                     ORDER BY pc.id
-                """, (process_ids,))
-                
-                chains = cursor.fetchall()
+                """, process_ids)
                 
                 # 각 그룹에 포함된 공정 목록도 함께 조회
                 chain_list = []
@@ -727,39 +582,33 @@ class CalculationRepository:
                     chain_dict['processes'] = []
                     
                     # 해당 그룹에 포함된 공정 목록 조회
-                    cursor.execute("""
+                    process_links = await conn.fetch("""
                         SELECT process_id, sequence_order
                         FROM process_chain_link
-                        WHERE chain_id = %s
+                        WHERE chain_id = $1
                         ORDER BY sequence_order
-                    """, (chain_dict['id'],))
+                    """, chain_dict['id'])
                     
-                    process_links = cursor.fetchall()
                     chain_dict['processes'] = [link['process_id'] for link in process_links]
                     chain_list.append(chain_dict)
                 
                 return chain_list
-                
         except Exception as e:
-            logger.error(f"❌ 공정 ID로 통합 그룹 조회 실패: {e}")
-            raise e
-        finally:
-            conn.close()
+            logger.error(f"❌ 공정 ID로 통합 그룹 조회 실패: {str(e)}")
+            raise
 
     async def create_process_chain(self, chain_data: Dict) -> Dict:
         """통합 공정 그룹 생성"""
+        if not self.pool:
+            raise Exception("데이터베이스 연결 풀이 초기화되지 않았습니다.")
+            
         try:
-            import psycopg2
-            
-            conn = psycopg2.connect(self.database_url)
-            conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
-            
-            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+            async with self.pool.acquire() as conn:
                 # process_chain 테이블에 그룹 정보 저장
-                cursor.execute("""
+                chain = await conn.fetchrow("""
                     INSERT INTO process_chain 
                     (chain_name, start_process_id, end_process_id, chain_length, is_active, created_at, updated_at)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s)
+                    VALUES ($1, $2, $3, $4, $5, $6, $7)
                     RETURNING *
                 """, (
                     chain_data['chain_name'],
@@ -771,16 +620,10 @@ class CalculationRepository:
                     datetime.utcnow()
                 ))
                 
-                chain = cursor.fetchone()
-                conn.commit()
-                
                 return dict(chain)
-                
         except Exception as e:
-            logger.error(f"❌ 통합 공정 그룹 생성 실패: {e}")
-            raise e
-        finally:
-            conn.close()
+            logger.error(f"❌ 통합 공정 그룹 생성 실패: {str(e)}")
+            raise
 
     async def create_process_chain_link(self, link_data: Dict):
         """통합 그룹에 공정 연결"""
@@ -888,31 +731,25 @@ class CalculationRepository:
 
     async def calculate_chain_integrated_emissions(self, chain_id: int) -> float:
         """통합 그룹의 총 배출량 계산"""
+        if not self.pool:
+            raise Exception("데이터베이스 연결 풀이 초기화되지 않았습니다.")
+            
         try:
-            import psycopg2
-            
-            conn = psycopg2.connect(self.database_url)
-            conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
-            
-            with conn.cursor() as cursor:
+            async with self.pool.acquire() as conn:
                 # 그룹 내 모든 공정의 배출량 합계 계산
-                cursor.execute("""
+                result = await conn.fetchrow("""
                     SELECT COALESCE(SUM(attrdir_em), 0) as total_emission
                     FROM process_attrdir_emission pae
                     INNER JOIN process_chain_link pcl ON pae.process_id = pcl.process_id
-                    WHERE pcl.chain_id = %s
-                """, (chain_id,))
+                    WHERE pcl.chain_id = $1
+                """, chain_id)
                 
-                result = cursor.fetchone()
-                total_emission = result[0] if result else 0
+                total_emission = result['total_emission'] if result else 0
                 
                 return float(total_emission)
-                
         except Exception as e:
-            logger.error(f"❌ 통합 그룹 배출량 계산 실패: {e}")
-            raise e
-        finally:
-            conn.close()
+            logger.error(f"❌ 통합 그룹 배출량 계산 실패: {str(e)}")
+            raise
 
     # ============================================================================
     # 🏭 Install 관련 Repository 메서드 (누락된 메서드들 추가)
@@ -920,206 +757,147 @@ class CalculationRepository:
 
     async def _create_install_db(self, install_data: Dict[str, Any]) -> Dict[str, Any]:
         """데이터베이스에 사업장 생성"""
+        if not self.pool:
+            raise Exception("데이터베이스 연결 풀이 초기화되지 않았습니다.")
+            
         try:
-            import psycopg2
-            
-            conn = psycopg2.connect(self.database_url)
-            conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
-            
-            try:
-                with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-                    cursor.execute("""
-                        INSERT INTO install (install_name, reporting_year)
-                        VALUES (%s, %s)
-                        RETURNING *
-                    """, (install_data['install_name'], install_data['reporting_year']))
-                    
-                    result = cursor.fetchone()
-                    conn.commit()
-                    
-                    if result:
-                        install_dict = dict(result)
-                        # datetime 객체를 문자열로 변환
-                        if 'created_at' in install_dict and install_dict['created_at']:
-                            install_dict['created_at'] = install_dict['created_at'].isoformat()
-                        if 'updated_at' in install_dict and install_dict['updated_at']:
-                            install_dict['updated_at'] = install_dict['updated_at'].isoformat()
-                        return install_dict
-                    else:
-                        raise Exception("사업장 생성에 실패했습니다.")
-                        
-            except Exception as e:
-                conn.rollback()
-                raise e
-            finally:
-                conn.close()
+            async with self.pool.acquire() as conn:
+                result = await conn.fetchrow("""
+                    INSERT INTO install (install_name, reporting_year)
+                    VALUES ($1, $2)
+                    RETURNING *
+                """, (install_data['install_name'], install_data['reporting_year']))
                 
+                if result:
+                    install_dict = dict(result)
+                    # datetime 객체를 문자열로 변환
+                    if 'created_at' in install_dict and install_dict['created_at']:
+                        install_dict['created_at'] = install_dict['created_at'].isoformat()
+                    if 'updated_at' in install_dict and install_dict['updated_at']:
+                        install_dict['updated_at'] = install_dict['updated_at'].isoformat()
+                    return install_dict
+                else:
+                    raise Exception("사업장 생성에 실패했습니다.")
         except Exception as e:
-            raise e
+            logger.error(f"❌ 사업장 생성 실패: {str(e)}")
+            raise
 
     async def _get_installs_db(self) -> List[Dict[str, Any]]:
         """데이터베이스에서 사업장 목록 조회"""
+        if not self.pool:
+            raise Exception("데이터베이스 연결 풀이 초기화되지 않았습니다.")
+            
         try:
-            import psycopg2
-            
-            conn = psycopg2.connect(self.database_url)
-            conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
-            
-            try:
-                with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-                    cursor.execute("""
-                        SELECT id, install_name, reporting_year, created_at, updated_at
-                        FROM install
-                        ORDER BY created_at DESC
-                    """)
-                    
-                    results = cursor.fetchall()
-                    installs = []
-                    
-                    for result in results:
-                        install_dict = dict(result)
-                        # datetime 객체를 문자열로 변환
-                        if 'created_at' in install_dict and install_dict['created_at']:
-                            install_dict['created_at'] = install_dict['created_at'].isoformat()
-                        if 'updated_at' in install_dict and install_dict['updated_at']:
-                            install_dict['updated_at'] = install_dict['updated_at'].isoformat()
-                        installs.append(install_dict)
-                    
-                    return installs
-                    
-            except Exception as e:
-                raise e
-            finally:
-                conn.close()
+            async with self.pool.acquire() as conn:
+                results = await conn.fetch("""
+                    SELECT id, install_name, reporting_year, created_at, updated_at
+                    FROM install
+                    ORDER BY created_at DESC
+                """)
                 
+                installs = []
+                for result in results:
+                    install_dict = dict(result)
+                    # datetime 객체를 문자열로 변환
+                    if 'created_at' in install_dict and install_dict['created_at']:
+                        install_dict['created_at'] = install_dict['created_at'].isoformat()
+                    if 'updated_at' in install_dict and install_dict['updated_at']:
+                        install_dict['updated_at'] = install_dict['updated_at'].isoformat()
+                    installs.append(install_dict)
+                
+                return installs
         except Exception as e:
-            raise e
+            logger.error(f"❌ 사업장 목록 조회 실패: {str(e)}")
+            raise
 
     async def _get_install_names_db(self) -> List[Dict[str, Any]]:
         """데이터베이스에서 사업장명 목록 조회 (드롭다운용)"""
+        if not self.pool:
+            raise Exception("데이터베이스 연결 풀이 초기화되지 않았습니다.")
+            
         try:
-            import psycopg2
-            
-            conn = psycopg2.connect(self.database_url)
-            conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
-            
-            try:
-                with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-                    cursor.execute("""
-                        SELECT id, install_name
-                        FROM install
-                        ORDER BY install_name ASC
-                    """)
-                    
-                    results = cursor.fetchall()
-                    return [dict(result) for result in results]
-                    
-            except Exception as e:
-                raise e
-            finally:
-                conn.close()
+            async with self.pool.acquire() as conn:
+                results = await conn.fetch("""
+                    SELECT id, install_name
+                    FROM install
+                    ORDER BY install_name ASC
+                """)
                 
+                return [dict(result) for result in results]
         except Exception as e:
-            raise e
+            logger.error(f"❌ 사업장명 목록 조회 실패: {str(e)}")
+            raise
 
     async def _get_install_db(self, install_id: int) -> Optional[Dict[str, Any]]:
         """데이터베이스에서 특정 사업장 조회"""
+        if not self.pool:
+            raise Exception("데이터베이스 연결 풀이 초기화되지 않았습니다.")
+            
         try:
-            import psycopg2
-            
-            conn = psycopg2.connect(self.database_url)
-            conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
-            
-            try:
-                with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-                    cursor.execute("""
-                        SELECT id, install_name, reporting_year, created_at, updated_at
-                        FROM install
-                        WHERE id = %s
-                    """, (install_id,))
-                    
-                    result = cursor.fetchone()
-                    if result:
-                        install_dict = dict(result)
-                        # datetime 객체를 문자열로 변환
-                        if 'created_at' in install_dict and install_dict['created_at']:
-                            install_dict['created_at'] = install_dict['created_at'].isoformat()
-                        if 'updated_at' in install_dict and install_dict['updated_at']:
-                            install_dict['updated_at'] = install_dict['updated_at'].isoformat()
-                        return install_dict
-                    return None
-                    
-            except Exception as e:
-                raise e
-            finally:
-                conn.close()
+            async with self.pool.acquire() as conn:
+                result = await conn.fetchrow("""
+                    SELECT id, install_name, reporting_year, created_at, updated_at
+                    FROM install
+                    WHERE id = $1
+                """, install_id)
                 
+                if result:
+                    install_dict = dict(result)
+                    # datetime 객체를 문자열로 변환
+                    if 'created_at' in install_dict and install_dict['created_at']:
+                        install_dict['created_at'] = install_dict['created_at'].isoformat()
+                    if 'updated_at' in install_dict and install_dict['updated_at']:
+                        install_dict['updated_at'] = install_dict['updated_at'].isoformat()
+                    return install_dict
+                return None
         except Exception as e:
-            raise e
+            logger.error(f"❌ 사업장 조회 실패: {str(e)}")
+            raise
 
     async def _update_install_db(self, install_id: int, update_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """데이터베이스에서 사업장 수정"""
+        if not self.pool:
+            raise Exception("데이터베이스 연결 풀이 초기화되지 않았습니다.")
+            
         try:
-            import psycopg2
-            
-            conn = psycopg2.connect(self.database_url)
-            conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
-            
-            try:
-                with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-                    # 동적으로 SET 절 생성
-                    set_clause = ", ".join([f"{key} = %s" for key in update_data.keys()])
-                    values = list(update_data.values()) + [install_id]
-                    
-                    cursor.execute(f"""
-                        UPDATE install SET {set_clause}, updated_at = NOW()
-                        WHERE id = %s RETURNING *
-                    """, values)
-                    
-                    result = cursor.fetchone()
-                    conn.commit()
-                    
-                    if result:
-                        install_dict = dict(result)
-                        # datetime 객체를 문자열로 변환
-                        if 'created_at' in install_dict and install_dict['created_at']:
-                            install_dict['created_at'] = install_dict['created_at'].isoformat()
-                        if 'updated_at' in install_dict and install_dict['updated_at']:
-                            install_dict['updated_at'] = install_dict['updated_at'].isoformat()
-                        return install_dict
-                    return None
-                    
-            except Exception as e:
-                conn.rollback()
-                raise e
-            finally:
-                conn.close()
+            async with self.pool.acquire() as conn:
+                # 동적으로 SET 절 생성
+                set_clause = ", ".join([f"{key} = ${i+1}" for i, key in enumerate(update_data.keys())])
+                values = list(update_data.values()) + [install_id]
+                
+                result = await conn.fetchrow(f"""
+                    UPDATE install SET {set_clause}, updated_at = NOW()
+                    WHERE id = ${len(update_data) + 1} RETURNING *
+                """, *values)
+                
+                if result:
+                    install_dict = dict(result)
+                    # datetime 객체를 문자열로 변환
+                    if 'created_at' in install_dict and install_dict['created_at']:
+                        install_dict['created_at'] = install_dict['created_at'].isoformat()
+                    if 'updated_at' in install_dict and install_dict['updated_at']:
+                        install_dict['updated_at'] = install_dict['updated_at'].isoformat()
+                    return install_dict
+                return None
+        except Exception as e:
+            logger.error(f"❌ 사업장 수정 실패: {str(e)}")
+            raise
 
     async def _delete_install_db(self, install_id: int) -> bool:
         """데이터베이스에서 사업장 삭제"""
+        if not self.pool:
+            raise Exception("데이터베이스 연결 풀이 초기화되지 않았습니다.")
+            
         try:
-            import psycopg2
-
-            conn = psycopg2.connect(self.database_url)
-            conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
-
-            try:
-                with conn.cursor() as cursor:
-                    cursor.execute("""
-                        DELETE FROM install WHERE id = %s
-                    """, (install_id,))
-
-                    conn.commit()
-                    return cursor.rowcount > 0
-
-            except Exception as e:
-                conn.rollback()
-                raise e
-            finally:
-                conn.close()
+            async with self.pool.acquire() as conn:
+                result = await conn.execute("""
+                    DELETE FROM install WHERE id = $1
+                """, install_id)
                 
+                return result != "DELETE 0"
         except Exception as e:
-            raise e
+            logger.error(f"❌ 사업장 삭제 실패: {str(e)}")
+            raise
 
     # ============================================================================
     # 📦 Product 관련 Repository 메서드
@@ -1127,29 +905,26 @@ class CalculationRepository:
 
     async def create_product(self, product_data: Dict[str, Any]) -> Dict[str, Any]:
         """데이터베이스에 제품 생성"""
+        if not self.pool:
+            raise Exception("데이터베이스 연결 풀이 초기화되지 않았습니다.")
+            
         try:
-            import psycopg2
-            
-            conn = psycopg2.connect(self.database_url)
-            conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
-            
-            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-                cursor.execute("""
+            async with self.pool.acquire() as conn:
+                result = await conn.fetchrow("""
                     INSERT INTO product (
                         install_id, product_name, product_category, 
                         prostart_period, proend_period, product_amount,
                         cncode_total, goods_name, aggrgoods_name,
                         product_sell, product_eusell
                     ) VALUES (
-                        %(install_id)s, %(product_name)s, %(product_category)s,
-                        %(prostart_period)s, %(proend_period)s, %(product_amount)s,
-                        %(cncode_total)s, %(goods_name)s, %(aggrgoods_name)s,
-                        %(product_sell)s, %(product_eusell)s
+                        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11
                     ) RETURNING *
-                """, product_data)
-                
-                result = cursor.fetchone()
-                conn.commit()
+                """, (
+                    product_data['install_id'], product_data['product_name'], product_data['product_category'],
+                    product_data['prostart_period'], product_data['proend_period'], product_data['product_amount'],
+                    product_data['cncode_total'], product_data['goods_name'], product_data['aggrgoods_name'],
+                    product_data['product_sell'], product_data['product_eusell']
+                ))
                 
                 if result:
                     product_dict = dict(result)

@@ -27,6 +27,11 @@ class CalculationService:
         self.calc_repository = CalculationRepository()
         logger.info("✅ Product 서비스 초기화 완료")
     
+    async def initialize(self):
+        """데이터베이스 연결 초기화"""
+        await self.calc_repository.initialize()
+        logger.info("✅ Product 서비스 데이터베이스 연결 초기화 완료")
+    
     # ============================================================================
     # 🏭 Install 관련 메서드
     # ============================================================================

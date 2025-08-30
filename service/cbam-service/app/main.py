@@ -162,6 +162,15 @@ async def lifespan(app: FastAPI):
     # ReactFlow 기반 서비스 초기화
     logger.info("✅ ReactFlow 기반 서비스 초기화")
     
+    # CalculationService 데이터베이스 연결 초기화
+    try:
+        from app.domain.calculation.calculation_service import CalculationService
+        calc_service = CalculationService()
+        await calc_service.initialize()
+        logger.info("✅ CalculationService 데이터베이스 연결 초기화 완료")
+    except Exception as e:
+        logger.error(f"❌ CalculationService 초기화 실패: {e}")
+    
     yield
     
     # 서비스 종료 시 정리 작업
