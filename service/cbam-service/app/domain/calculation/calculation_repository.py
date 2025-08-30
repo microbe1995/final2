@@ -40,19 +40,28 @@ class CalculationRepository:
             # asyncpg 연결 풀 생성
             self.pool = await asyncpg.create_pool(
                 self.database_url,
-                min_size=5,
-                max_size=20,
-                command_timeout=60
+                min_size=1,  # 최소 연결 수를 줄임
+                max_size=10,  # 최대 연결 수를 줄임
+                command_timeout=30,  # 타임아웃을 줄임
+                server_settings={
+                    'application_name': 'cbam-service'
+                }
             )
             
             logger.info("✅ 데이터베이스 연결 풀 생성 성공")
-            await self._create_tables_async()
-            await self._create_triggers_async()  # 트리거 생성 추가
+            
+            # 테이블 및 트리거 생성은 선택적으로 실행
+            try:
+                await self._create_tables_async()
+                await self._create_triggers_async()
+            except Exception as e:
+                logger.warning(f"⚠️ 테이블/트리거 생성 실패 (기본 기능은 정상): {e}")
             
         except Exception as e:
             logger.error(f"❌ 데이터베이스 연결 실패: {str(e)}")
             # 연결 실패해도 서비스는 계속 실행
             logger.warning("데이터베이스 연결 실패로 인해 일부 기능이 제한됩니다.")
+            self.pool = None
     
     def _check_database_connection_sync(self) -> bool:
         """데이터베이스 연결 상태 확인 (동기)"""
@@ -492,8 +501,11 @@ class CalculationRepository:
 
     async def create_edge(self, edge_data: Dict) -> Dict:
         """Edge 생성"""
+        # 지연 초기화: 필요할 때 데이터베이스 연결 풀 생성
         if not self.pool:
-            raise Exception("데이터베이스 연결 풀이 초기화되지 않았습니다.")
+            await self.initialize()
+            if not self.pool:
+                raise Exception("데이터베이스 연결 풀을 초기화할 수 없습니다.")
             
         try:
             async with self.pool.acquire() as conn:
@@ -516,8 +528,11 @@ class CalculationRepository:
 
     async def get_edges(self) -> List[Dict]:
         """모든 Edge 조회"""
+        # 지연 초기화: 필요할 때 데이터베이스 연결 풀 생성
         if not self.pool:
-            raise Exception("데이터베이스 연결 풀이 초기화되지 않았습니다.")
+            await self.initialize()
+            if not self.pool:
+                raise Exception("데이터베이스 연결 풀을 초기화할 수 없습니다.")
             
         try:
             async with self.pool.acquire() as conn:

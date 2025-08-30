@@ -29,8 +29,12 @@ class CalculationService:
     
     async def initialize(self):
         """데이터베이스 연결 초기화"""
-        await self.calc_repository.initialize()
-        logger.info("✅ Product 서비스 데이터베이스 연결 초기화 완료")
+        try:
+            await self.calc_repository.initialize()
+            logger.info("✅ Product 서비스 데이터베이스 연결 초기화 완료")
+        except Exception as e:
+            logger.warning(f"⚠️ Product 서비스 데이터베이스 초기화 실패 (서비스는 계속 실행): {e}")
+            logger.info("ℹ️ 데이터베이스 연결은 필요할 때 자동으로 초기화됩니다.")
     
     # ============================================================================
     # 🏭 Install 관련 메서드

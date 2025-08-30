@@ -162,14 +162,15 @@ async def lifespan(app: FastAPI):
     # ReactFlow 기반 서비스 초기화
     logger.info("✅ ReactFlow 기반 서비스 초기화")
     
-    # CalculationService 데이터베이스 연결 초기화
+    # CalculationService 데이터베이스 연결 초기화 (선택적)
     try:
         from app.domain.calculation.calculation_service import CalculationService
         calc_service = CalculationService()
         await calc_service.initialize()
         logger.info("✅ CalculationService 데이터베이스 연결 초기화 완료")
     except Exception as e:
-        logger.error(f"❌ CalculationService 초기화 실패: {e}")
+        logger.warning(f"⚠️ CalculationService 초기화 실패 (서비스는 계속 실행): {e}")
+        logger.info("ℹ️ 데이터베이스 연결은 필요할 때 자동으로 초기화됩니다.")
     
     yield
     
@@ -241,10 +242,23 @@ app.include_router(processchain_router)
 @app.get("/health", tags=["health"])
 async def health_check():
     """서비스 상태 확인"""
+    # 데이터베이스 연결 상태 확인
+    db_status = "unknown"
+    try:
+        from app.domain.calculation.calculation_service import CalculationService
+        calc_service = CalculationService()
+        if calc_service.calc_repository.pool:
+            db_status = "connected"
+        else:
+            db_status = "not_initialized"
+    except Exception as e:
+        db_status = f"error: {str(e)}"
+    
     return {
         "status": "healthy",
         "service": APP_NAME,
         "version": APP_VERSION,
+        "database": db_status,
         "timestamp": time.time()
     }
 # ============================================================================
