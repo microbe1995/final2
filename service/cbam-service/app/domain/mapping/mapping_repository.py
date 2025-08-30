@@ -2,6 +2,7 @@
 # 🗄️ Mapping Repository - HS-CN 매핑 데이터베이스 접근 계층
 # ============================================================================
 
+import os
 import logging
 from typing import List, Optional, Dict, Any
 import psycopg2

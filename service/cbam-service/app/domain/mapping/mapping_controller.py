@@ -17,8 +17,10 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/boundary", tags=["HS-CN Mapping"])
 
-# 서비스 인스턴스 생성 (의존성 주입 없이 직접 생성)
-mapping_service = HSCNMappingService(None)  # Repository에서 직접 DB 연결 사용
+# 서비스 인스턴스는 요청 시마다 생성 (모듈 레벨 초기화 방지)
+def get_mapping_service():
+    """매핑 서비스 인스턴스 반환"""
+    return HSCNMappingService(None)  # Repository에서 직접 DB 연결 사용
 
 # ============================================================================
 # 🔍 HS 코드 조회 엔드포인트 (메인 기능)
@@ -35,6 +37,7 @@ async def lookup_cn_code_by_hs_code(hs_code: str):
     try:
         logger.info(f"🔍 HS 코드 조회 요청: {hs_code}")
         
+        mapping_service = get_mapping_service()
         result = await mapping_service.lookup_by_hs_code(hs_code)
         
         if not result.success:
@@ -61,6 +64,7 @@ async def get_all_mappings(
     """모든 HS-CN 매핑 조회 (페이지네이션)"""
     try:
         logger.info(f"📋 HS-CN 매핑 목록 조회 요청: skip={skip}, limit={limit}")
+        mapping_service = get_mapping_service()
         mappings = await mapping_service.get_all_mappings(skip, limit)
         logger.info(f"✅ HS-CN 매핑 목록 조회 성공: {len(mappings)}개")
         return mappings
@@ -73,6 +77,7 @@ async def get_mapping(mapping_id: int):
     """특정 HS-CN 매핑 조회"""
     try:
         logger.info(f"📋 HS-CN 매핑 조회 요청: ID {mapping_id}")
+        mapping_service = get_mapping_service()
         mapping = await mapping_service.get_mapping_by_id(mapping_id)
         if not mapping:
             raise HTTPException(status_code=404, detail="매핑을 찾을 수 없습니다")
@@ -90,6 +95,7 @@ async def create_mapping(request: HSCNMappingCreateRequest):
     """HS-CN 매핑 생성"""
     try:
         logger.info(f"📝 HS-CN 매핑 생성 요청: HS={request.hscode}, CN={request.cncode_total}")
+        mapping_service = get_mapping_service()
         mapping = await mapping_service.create_mapping(request)
         if not mapping:
             raise HTTPException(status_code=400, detail="매핑 생성에 실패했습니다")
@@ -107,6 +113,7 @@ async def update_mapping(mapping_id: int, request: HSCNMappingUpdateRequest):
     """HS-CN 매핑 수정"""
     try:
         logger.info(f"📝 HS-CN 매핑 수정 요청: ID {mapping_id}")
+        mapping_service = get_mapping_service()
         mapping = await mapping_service.update_mapping(mapping_id, request)
         if not mapping:
             raise HTTPException(status_code=404, detail="매핑을 찾을 수 없습니다")
@@ -124,6 +131,7 @@ async def delete_mapping(mapping_id: int):
     """HS-CN 매핑 삭제"""
     try:
         logger.info(f"🗑️ HS-CN 매핑 삭제 요청: ID {mapping_id}")
+        mapping_service = get_mapping_service()
         success = await mapping_service.delete_mapping(mapping_id)
         if not success:
             raise HTTPException(status_code=404, detail="매핑을 찾을 수 없습니다")
@@ -145,6 +153,7 @@ async def search_by_hs_code(hs_code: str):
     """HS 코드로 검색"""
     try:
         logger.info(f"🔍 HS 코드 검색 요청: {hs_code}")
+        mapping_service = get_mapping_service()
         mappings = await mapping_service.search_by_hs_code(hs_code)
         logger.info(f"✅ HS 코드 검색 성공: {len(mappings)}개 결과")
         return mappings
@@ -157,6 +166,7 @@ async def search_by_cn_code(cn_code: str):
     """CN 코드로 검색"""
     try:
         logger.info(f"🔍 CN 코드 검색 요청: {cn_code}")
+        mapping_service = get_mapping_service()
         mappings = await mapping_service.search_by_cn_code(cn_code)
         logger.info(f"✅ CN 코드 검색 성공: {len(mappings)}개 결과")
         return mappings
@@ -169,6 +179,7 @@ async def search_by_goods_name(goods_name: str):
     """품목명으로 검색"""
     try:
         logger.info(f"🔍 품목명 검색 요청: {goods_name}")
+        mapping_service = get_mapping_service()
         mappings = await mapping_service.search_by_goods_name(goods_name)
         logger.info(f"✅ 품목명 검색 성공: {len(mappings)}개 결과")
         return mappings
@@ -185,6 +196,7 @@ async def get_mapping_stats():
     """매핑 통계 조회"""
     try:
         logger.info("📊 매핑 통계 조회 요청")
+        mapping_service = get_mapping_service()
         stats = await mapping_service.get_mapping_stats()
         logger.info("✅ 매핑 통계 조회 성공")
         return stats
@@ -201,6 +213,7 @@ async def create_mappings_batch(request: HSCNMappingBatchCreateRequest):
     """HS-CN 매핑 일괄 생성"""
     try:
         logger.info(f"📦 HS-CN 매핑 일괄 생성 요청: {len(request.mappings)}개")
+        mapping_service = get_mapping_service()
         result = await mapping_service.create_mappings_batch(request)
         logger.info(f"✅ HS-CN 매핑 일괄 생성 완료: 성공 {result.created_count}개, 실패 {result.failed_count}개")
         return result
