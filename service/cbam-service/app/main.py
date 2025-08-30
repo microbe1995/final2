@@ -23,13 +23,18 @@ logger = logging.getLogger(__name__)
 
 # CBAM 도메인 라우터
 from app.domain.calculation.calculation_controller import router as calculation_router
+from app.domain.install.install_controller import router as install_router
+from app.domain.product.product_controller import router as product_router
+from app.domain.process.process_controller import router as process_router
 from app.domain.mapping.mapping_controller import router as mapping_router
 from app.domain.matdir.matdir_controller import router as matdir_router
 from app.domain.fueldir.fueldir_controller import router as fueldir_router
 from app.domain.processchain.processchain_controller import router as processchain_router
 
 # 엔티티 임포트 (순환 참조 방지를 위해 라우터 등록 전에 임포트)
-from app.domain.calculation.calculation_entity import Install, Product, Process, ProductProcess, Edge
+from app.domain.calculation.calculation_entity import Process, ProductProcess, Edge
+from app.domain.install.install_entity import Install
+from app.domain.product.product_entity import Product
 from app.domain.matdir.matdir_entity import MatDir
 from app.domain.fueldir.fueldir_entity import FuelDir
 from app.domain.processchain.processchain_entity import ProcessChain, ProcessChainLink
@@ -172,6 +177,36 @@ async def lifespan(app: FastAPI):
         logger.warning(f"⚠️ CalculationService 초기화 실패 (서비스는 계속 실행): {e}")
         logger.info("ℹ️ 데이터베이스 연결은 필요할 때 자동으로 초기화됩니다.")
     
+    # InstallService 데이터베이스 연결 초기화 (선택적)
+    try:
+        from app.domain.install.install_service import InstallService
+        install_service = InstallService()
+        await install_service.initialize()
+        logger.info("✅ InstallService 데이터베이스 연결 초기화 완료")
+    except Exception as e:
+        logger.warning(f"⚠️ InstallService 초기화 실패 (서비스는 계속 실행): {e}")
+        logger.info("ℹ️ 데이터베이스 연결은 필요할 때 자동으로 초기화됩니다.")
+    
+    # ProductService 데이터베이스 연결 초기화 (선택적)
+    try:
+        from app.domain.product.product_service import ProductService
+        product_service = ProductService()
+        await product_service.initialize()
+        logger.info("✅ ProductService 데이터베이스 연결 초기화 완료")
+    except Exception as e:
+        logger.warning(f"⚠️ ProductService 초기화 실패 (서비스는 계속 실행): {e}")
+        logger.info("ℹ️ 데이터베이스 연결은 필요할 때 자동으로 초기화됩니다.")
+
+    # ProcessService 데이터베이스 연결 초기화 (선택적)
+    try:
+        from app.domain.process.process_service import ProcessService
+        process_service = ProcessService()
+        await process_service.initialize()
+        logger.info("✅ ProcessService 데이터베이스 연결 초기화 완료")
+    except Exception as e:
+        logger.warning(f"⚠️ ProcessService 초기화 실패 (서비스는 계속 실행): {e}")
+        logger.info("ℹ️ 데이터베이스 연결은 필요할 때 자동으로 초기화됩니다.")
+    
     yield
     
     # 서비스 종료 시 정리 작업
@@ -230,6 +265,9 @@ async def log_requests(request: Request, call_next):
 
 # CBAM 도메인 라우터들 등록 (MSA 원칙: 각 서비스는 자체 경로 구조를 가짐)
 app.include_router(calculation_router)
+app.include_router(install_router)
+app.include_router(product_router)
+app.include_router(process_router)
 app.include_router(mapping_router)
 app.include_router(matdir_router)  # prefix 제거 - MSA 독립성 확보
 app.include_router(fueldir_router)
