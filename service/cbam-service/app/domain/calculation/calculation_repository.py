@@ -65,28 +65,7 @@ class CalculationRepository:
     
     # 동기 메서드는 제거됨
 
-    def _initialize_database_sync(self):
-        """데이터베이스 초기화 (동기)"""
-        if not self.database_url:
-            logger.warning("DATABASE_URL이 없어 데이터베이스 초기화를 건너뜁니다.")
-            return
-            
-        try:
-            # 데이터베이스 연결 테스트
-            conn = psycopg2.connect(self.database_url)
-            conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
-            conn.close()
-            
-            logger.info("✅ 데이터베이스 연결 성공")
-            self._create_tables_sync()
-            self._create_triggers_sync()  # 트리거 생성 추가
-            
-        except Exception as e:
-            logger.error(f"❌ 데이터베이스 연결 실패: {str(e)}")
-            # 연결 실패해도 서비스는 계속 실행
-            logger.warning("데이터베이스 연결 실패로 인해 일부 기능이 제한됩니다.")
-    
-    # 동기 메서드들은 제거 (비동기 환경에서 불필요)
+
 
     async def _create_tables_async(self):
         """테이블 생성 (비동기)"""
@@ -295,13 +274,36 @@ class CalculationRepository:
 
     async def get_processes_by_product(self, product_id: int) -> List[Dict[str, Any]]:
         """제품별 프로세스 목록 조회"""
-        if not self.database_url:
-            raise Exception("데이터베이스가 연결되지 않았습니다.")
+        if not self.pool:
+            await self.initialize()
+            if not self.pool:
+                raise Exception("데이터베이스 연결 풀을 초기화할 수 없습니다.")
+        
         try:
-            return await self._get_processes_by_product_db(product_id)
+            async with self.pool.acquire() as conn:
+                results = await conn.fetch("""
+                    SELECT p.id, p.process_name, p.start_period, p.end_period, p.created_at, p.updated_at
+                    FROM process p
+                    JOIN product_process pp ON p.id = pp.process_id
+                    WHERE pp.product_id = $1
+                    ORDER BY p.id
+                """, (product_id,))
+                
+                processes = []
+                for row in results:
+                    process_dict = dict(row)
+                    # datetime.date 객체를 문자열로 변환
+                    if 'start_period' in process_dict and process_dict['start_period']:
+                        process_dict['start_period'] = process_dict['start_period'].isoformat()
+                    if 'end_period' in process_dict and process_dict['end_period']:
+                        process_dict['end_period'] = process_dict['end_period'].isoformat()
+                    processes.append(process_dict)
+                
+                return processes
+                
         except Exception as e:
             logger.error(f"❌ 제품별 프로세스 조회 실패: {str(e)}")
-            raise
+            raise e
 
     # ============================================================================
     # 🔗 ProductProcess 관련 메서드 (다대다 관계)
@@ -401,7 +403,9 @@ class CalculationRepository:
     async def get_process_chains_by_process_ids(self, process_ids: List[int]) -> List[Dict]:
         """공정 ID들로 통합 그룹 조회"""
         if not self.pool:
-            raise Exception("데이터베이스 연결 풀이 초기화되지 않았습니다.")
+            await self.initialize()
+            if not self.pool:
+                raise Exception("데이터베이스 연결 풀을 초기화할 수 없습니다.")
             
         try:
             async with self.pool.acquire() as conn:
@@ -420,7 +424,7 @@ class CalculationRepository:
                     INNER JOIN process_chain_link pcl ON pc.id = pcl.chain_id
                     WHERE pcl.process_id = ANY($1)
                     ORDER BY pc.id
-                """, process_ids)
+                """, (process_ids,))
                 
                 # 각 그룹에 포함된 공정 목록도 함께 조회
                 chain_list = []
@@ -434,7 +438,7 @@ class CalculationRepository:
                         FROM process_chain_link
                         WHERE chain_id = $1
                         ORDER BY sequence_order
-                    """, chain_dict['id'])
+                    """, (chain_dict['id'],))
                     
                     chain_dict['processes'] = [link['process_id'] for link in process_links]
                     chain_list.append(chain_dict)
@@ -442,12 +446,18 @@ class CalculationRepository:
                 return chain_list
         except Exception as e:
             logger.error(f"❌ 공정 ID로 통합 그룹 조회 실패: {str(e)}")
-            raise
+            raise e
+
+    # ============================================================================
+    # 🔗 ProductProcess 관련 Repository 메서드
+    # ============================================================================
 
     async def create_process_chain(self, chain_data: Dict) -> Dict:
         """통합 공정 그룹 생성"""
         if not self.pool:
-            raise Exception("데이터베이스 연결 풀이 초기화되지 않았습니다.")
+            await self.initialize()
+            if not self.pool:
+                raise Exception("데이터베이스 연결 풀을 초기화할 수 없습니다.")
             
         try:
             async with self.pool.acquire() as conn:
@@ -474,17 +484,17 @@ class CalculationRepository:
 
     async def create_process_chain_link(self, link_data: Dict):
         """통합 그룹에 공정 연결"""
+        if not self.pool:
+            await self.initialize()
+            if not self.pool:
+                raise Exception("데이터베이스 연결 풀을 초기화할 수 없습니다.")
+            
         try:
-            import psycopg2
-            
-            conn = psycopg2.connect(self.database_url)
-            conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
-            
-            with conn.cursor() as cursor:
-                cursor.execute("""
+            async with self.pool.acquire() as conn:
+                await conn.execute("""
                     INSERT INTO process_chain_link 
                     (chain_id, process_id, sequence_order, is_continue_edge, created_at, updated_at)
-                    VALUES (%s, %s, %s, %s, %s, %s)
+                    VALUES ($1, $2, $3, $4, $5, $6)
                 """, (
                     link_data['chain_id'],
                     link_data['process_id'],
@@ -494,31 +504,27 @@ class CalculationRepository:
                     datetime.utcnow()
                 ))
                 
-                conn.commit()
-                
         except Exception as e:
             logger.error(f"❌ 공정 그룹 연결 생성 실패: {e}")
             raise e
-        finally:
-            conn.close()
 
     async def add_processes_to_chain(self, chain_id: int, process_ids: List[int]):
         """기존 그룹에 새로운 공정들 추가"""
+        if not self.pool:
+            await self.initialize()
+            if not self.pool:
+                raise Exception("데이터베이스 연결 풀을 초기화할 수 없습니다.")
+            
         try:
-            import psycopg2
-            
-            conn = psycopg2.connect(self.database_url)
-            conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
-            
-            with conn.cursor() as cursor:
+            async with self.pool.acquire() as conn:
                 # 현재 그룹의 최대 순서 번호 조회
-                cursor.execute("""
+                result = await conn.fetchrow("""
                     SELECT COALESCE(MAX(sequence_order), 0) as max_order
                     FROM process_chain_link
-                    WHERE chain_id = %s
+                    WHERE chain_id = $1
                 """, (chain_id,))
                 
-                max_order = cursor.fetchone()[0]
+                max_order = result['max_order'] if result else 0
                 
                 # 새로운 공정들을 순서대로 추가
                 for i, process_id in enumerate(process_ids, max_order + 1):
@@ -536,34 +542,28 @@ class CalculationRepository:
         except Exception as e:
             logger.error(f"❌ 그룹에 공정 추가 실패: {e}")
             raise e
-        finally:
-            conn.close()
 
     async def update_chain_length(self, chain_id: int):
         """그룹 길이 업데이트"""
+        if not self.pool:
+            await self.initialize()
+            if not self.pool:
+                raise Exception("데이터베이스 연결 풀을 초기화할 수 없습니다.")
+            
         try:
-            import psycopg2
-            
-            conn = psycopg2.connect(self.database_url)
-            conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
-            
-            with conn.cursor() as cursor:
-                cursor.execute("""
+            async with self.pool.acquire() as conn:
+                await conn.execute("""
                     UPDATE process_chain 
                     SET chain_length = (
-                        SELECT COUNT(*) FROM process_chain_link WHERE chain_id = %s
+                        SELECT COUNT(*) FROM process_chain_link WHERE chain_id = $1
                     ),
-                    updated_at = %s
-                    WHERE id = %s
+                    updated_at = $2
+                    WHERE id = $3
                 """, (chain_id, datetime.utcnow(), chain_id))
-                
-                conn.commit()
                 
         except Exception as e:
             logger.error(f"❌ 그룹 길이 업데이트 실패: {e}")
             raise e
-        finally:
-            conn.close()
 
     async def update_process_chain_emission(self, chain_id: int, total_emission: float):
         """통합 그룹의 총 배출량 업데이트"""
@@ -579,7 +579,9 @@ class CalculationRepository:
     async def calculate_chain_integrated_emissions(self, chain_id: int) -> float:
         """통합 그룹의 총 배출량 계산"""
         if not self.pool:
-            raise Exception("데이터베이스 연결 풀이 초기화되지 않았습니다.")
+            await self.initialize()
+            if not self.pool:
+                raise Exception("데이터베이스 연결 풀을 초기화되지 않았습니다.")
             
         try:
             async with self.pool.acquire() as conn:
@@ -589,14 +591,14 @@ class CalculationRepository:
                     FROM process_attrdir_emission pae
                     INNER JOIN process_chain_link pcl ON pae.process_id = pcl.process_id
                     WHERE pcl.chain_id = $1
-                """, chain_id)
+                """, (chain_id,))
                 
                 total_emission = result['total_emission'] if result else 0
                 
                 return float(total_emission)
         except Exception as e:
             logger.error(f"❌ 통합 그룹 배출량 계산 실패: {str(e)}")
-            raise
+            raise e
 
 
 
@@ -607,60 +609,209 @@ class CalculationRepository:
 
     async def create_product_process(self, product_process_data: Dict[str, Any]) -> Dict[str, Any]:
         """데이터베이스에 제품-공정 관계 생성"""
+        if not self.pool:
+            await self.initialize()
+            if not self.pool:
+                raise Exception("데이터베이스 연결 풀을 초기화할 수 없습니다.")
+            
         try:
-            import psycopg2
-            
-            conn = psycopg2.connect(self.database_url)
-            conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
-            
-            try:
-                with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-                    cursor.execute("""
-                        INSERT INTO product_process (product_id, process_id)
-                        VALUES (%s, %s)
-                        ON CONFLICT (product_id, process_id) DO NOTHING
-                        RETURNING *
-                    """, (product_process_data['product_id'], product_process_data['process_id']))
-                    
-                    result = cursor.fetchone()
-                    conn.commit()
-                    
-                    if result:
-                        return dict(result)
-                    else:
-                        raise Exception("제품-공정 관계 생성에 실패했습니다.")
-                        
-            except Exception as e:
-                conn.rollback()
-                raise e
-            finally:
-                conn.close()
+            async with self.pool.acquire() as conn:
+                result = await conn.fetchrow("""
+                    INSERT INTO product_process (product_id, process_id)
+                    VALUES ($1, $2)
+                    ON CONFLICT (product_id, process_id) DO NOTHING
+                    RETURNING *
+                """, (product_process_data['product_id'], product_process_data['process_id']))
                 
+                if result:
+                    return dict(result)
+                else:
+                    raise Exception("제품-공정 관계 생성에 실패했습니다.")
+                    
         except Exception as e:
+            logger.error(f"❌ 제품-공정 관계 생성 실패: {str(e)}")
             raise e
 
     async def delete_product_process(self, product_id: int, process_id: int) -> bool:
         """데이터베이스에서 제품-공정 관계 삭제"""
+        if not self.pool:
+            await self.initialize()
+            if not self.pool:
+                raise Exception("데이터베이스 연결 풀을 초기화할 수 없습니다.")
+            
         try:
-            import psycopg2
-            
-            conn = psycopg2.connect(self.database_url)
-            conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
-            
-            try:
-                with conn.cursor() as cursor:
-                    cursor.execute("""
-                        DELETE FROM product_process WHERE product_id = %s AND process_id = %s
-                    """, (product_id, process_id))
-                    
-                    conn.commit()
-                    return cursor.rowcount > 0
-                    
-            except Exception as e:
-                conn.rollback()
-                raise e
-            finally:
-                conn.close()
+            async with self.pool.acquire() as conn:
+                result = await conn.execute("""
+                    DELETE FROM product_process WHERE product_id = $1 AND process_id = $2
+                """, (product_id, process_id))
+                
+                return result != "DELETE 0"
                 
         except Exception as e:
+            logger.error(f"❌ 제품-공정 관계 삭제 실패: {str(e)}")
             raise e
+
+    # ============================================================================
+    # 📊 배출량 계산 관련 Repository 메서드
+    # ============================================================================
+
+    async def calculate_process_attrdir_emission(self, process_id: int) -> Dict[str, Any]:
+        """공정별 직접귀속배출량 계산 및 저장"""
+        if not self.pool:
+            await self.initialize()
+            if not self.pool:
+                raise Exception("데이터베이스 연결 풀을 초기화할 수 없습니다.")
+            
+        try:
+            async with self.pool.acquire() as conn:
+                # 1. 공정 정보 조회
+                process_result = await conn.fetchrow("""
+                    SELECT id, process_name FROM process WHERE id = $1
+                """, (process_id,))
+                
+                if not process_result:
+                    raise Exception(f"공정 ID {process_id}를 찾을 수 없습니다.")
+                
+                # 2. 원료별 직접배출량 계산 (matdir 테이블 기반)
+                matdir_emission = await conn.fetchrow("""
+                    SELECT COALESCE(SUM(emission_amount), 0) as total_matdir_emission
+                    FROM matdir
+                    WHERE process_id = $1
+                """, (process_id,))
+                
+                # 3. 연료별 직접배출량 계산 (fueldir 테이블 기반)
+                fueldir_emission = await conn.fetchrow("""
+                    SELECT COALESCE(SUM(emission_amount), 0) as total_fueldir_emission
+                    FROM fueldir
+                    WHERE process_id = $1
+                """, (process_id,))
+                
+                # 4. 총 직접귀속배출량 계산
+                total_matdir = float(matdir_emission['total_matdir_emission']) if matdir_emission else 0.0
+                total_fueldir = float(fueldir_emission['total_fueldir_emission']) if fueldir_emission else 0.0
+                attrdir_em = total_matdir + total_fueldir
+                
+                # 5. 결과를 process_attrdir_emission 테이블에 저장/업데이트
+                result = await conn.fetchrow("""
+                    INSERT INTO process_attrdir_emission 
+                    (process_id, total_matdir_emission, total_fueldir_emission, attrdir_em, calculation_date)
+                    VALUES ($1, $2, $3, $4, NOW())
+                    ON CONFLICT (process_id) 
+                    DO UPDATE SET
+                        total_matdir_emission = EXCLUDED.total_matdir_emission,
+                        total_fueldir_emission = EXCLUDED.total_fueldir_emission,
+                        attrdir_em = EXCLUDED.attrdir_em,
+                        calculation_date = NOW(),
+                        updated_at = NOW()
+                    RETURNING *
+                """, (process_id, total_matdir, total_fueldir, attrdir_em))
+                
+                return dict(result)
+                
+        except Exception as e:
+            logger.error(f"❌ 공정별 직접귀속배출량 계산 실패: {str(e)}")
+            raise e
+
+    async def get_process_attrdir_emission(self, process_id: int) -> Optional[Dict[str, Any]]:
+        """공정별 직접귀속배출량 조회"""
+        if not self.pool:
+            await self.initialize()
+            if not self.pool:
+                raise Exception("데이터베이스 연결 풀을 초기화할 수 없습니다.")
+            
+        try:
+            async with self.pool.acquire() as conn:
+                result = await conn.fetchrow("""
+                    SELECT * FROM process_attrdir_emission WHERE process_id = $1
+                """, (process_id,))
+                
+                return dict(result) if result else None
+                
+        except Exception as e:
+            logger.error(f"❌ 공정별 직접귀속배출량 조회 실패: {str(e)}")
+            raise e
+
+    async def get_all_process_attrdir_emissions(self) -> List[Dict[str, Any]]:
+        """모든 공정별 직접귀속배출량 조회"""
+        if not self.pool:
+            await self.initialize()
+            if not self.pool:
+                raise Exception("데이터베이스 연결 풀을 초기화할 수 없습니다.")
+            
+        try:
+            async with self.pool.acquire() as conn:
+                results = await conn.fetch("""
+                    SELECT * FROM process_attrdir_emission ORDER BY process_id
+                """)
+                
+                return [dict(row) for row in results]
+                
+        except Exception as e:
+            logger.error(f"❌ 모든 공정별 직접귀속배출량 조회 실패: {str(e)}")
+            raise e
+
+    async def calculate_product_total_emission(self, product_id: int) -> Dict[str, Any]:
+        """제품별 총 배출량 계산"""
+        if not self.pool:
+            await self.initialize()
+            if not self.pool:
+                raise Exception("데이터베이스 연결 풀을 초기화할 수 없습니다.")
+            
+        try:
+            async with self.pool.acquire() as conn:
+                # 1. 제품 정보 조회
+                product_result = await conn.fetchrow("""
+                    SELECT id, product_name FROM product WHERE id = $1
+                """, (product_id,))
+                
+                if not product_result:
+                    raise Exception(f"제품 ID {product_id}를 찾을 수 없습니다.")
+                
+                # 2. 제품과 연결된 공정들의 배출량 조회
+                process_emissions = await conn.fetch("""
+                    SELECT 
+                        p.id as process_id,
+                        p.process_name,
+                        pae.total_matdir_emission,
+                        pae.total_fueldir_emission,
+                        pae.attrdir_em
+                    FROM process p
+                    JOIN product_process pp ON p.id = pp.process_id
+                    LEFT JOIN process_attrdir_emission pae ON p.id = pae.process_id
+                    WHERE pp.product_id = $1
+                    ORDER BY p.id
+                """, (product_id,))
+                
+                # 3. 총 배출량 계산
+                total_emission = 0.0
+                process_count = 0
+                
+                for pe in process_emissions:
+                    if pe['attrdir_em']:
+                        total_emission += float(pe['attrdir_em'])
+                    process_count += 1
+                
+                return {
+                    'product_id': product_id,
+                    'product_name': product_result['product_name'],
+                    'total_emission': total_emission,
+                    'process_count': process_count,
+                    'process_emissions': [dict(pe) for pe in process_emissions]
+                }
+                
+        except Exception as e:
+            logger.error(f"❌ 제품별 총 배출량 계산 실패: {str(e)}")
+            raise e
+
+
+
+
+
+
+
+
+
+
+
+
+

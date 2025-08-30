@@ -26,15 +26,17 @@ from app.domain.calculation.calculation_controller import router as calculation_
 from app.domain.install.install_controller import router as install_router
 from app.domain.product.product_controller import router as product_router
 from app.domain.process.process_controller import router as process_router
+from app.domain.edge.edge_controller import router as edge_router
 from app.domain.mapping.mapping_controller import router as mapping_router
 from app.domain.matdir.matdir_controller import router as matdir_router
 from app.domain.fueldir.fueldir_controller import router as fueldir_router
 from app.domain.processchain.processchain_controller import router as processchain_router
 
 # 엔티티 임포트 (순환 참조 방지를 위해 라우터 등록 전에 임포트)
-from app.domain.calculation.calculation_entity import Process, ProductProcess, Edge
+from app.domain.calculation.calculation_entity import ProductProcess
 from app.domain.install.install_entity import Install
 from app.domain.product.product_entity import Product
+from app.domain.process.process_entity import Process
 from app.domain.matdir.matdir_entity import MatDir
 from app.domain.fueldir.fueldir_entity import FuelDir
 from app.domain.processchain.processchain_entity import ProcessChain, ProcessChainLink
@@ -268,6 +270,7 @@ app.include_router(calculation_router)
 app.include_router(install_router)
 app.include_router(product_router)
 app.include_router(process_router)
+app.include_router(edge_router)
 app.include_router(mapping_router)
 app.include_router(matdir_router)  # prefix 제거 - MSA 독립성 확보
 app.include_router(fueldir_router)

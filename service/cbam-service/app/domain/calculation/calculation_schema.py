@@ -89,33 +89,3 @@ class ProductEmissionCalculationResponse(BaseModel):
     calculation_formula: str = Field(..., description="계산 공식")
     calculation_date: datetime = Field(..., description="계산 일시")
 
-# ============================================================================
-# 🔗 Edge 관련 스키마
-# ============================================================================
-
-class EdgeCreateRequest(BaseModel):
-    """Edge 생성 요청 스키마"""
-    source_id: int
-    target_id: int
-    edge_kind: str  # consume/produce/continue
-    
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "source_id": 1,
-                "target_id": 2,
-                "edge_kind": "continue"
-            }
-        }
-
-class EdgeResponse(BaseModel):
-    """Edge 응답 스키마"""
-    id: int
-    source_id: int
-    target_id: int
-    edge_kind: str
-    created_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
-    
-    class Config:
-        from_attributes = True

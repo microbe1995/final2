@@ -189,7 +189,6 @@ def main():
             cleanup_related_objects(connection)
             
             logger.info("="*80)
-            logger.info("✅ source_stream 테이블 제거 완료!")
             logger.info("✅ 이제 Edge 기반의 단순한 공정 연결 관리만 사용됩니다")
             logger.info("="*80)
         else:

@@ -17,32 +17,7 @@ Base = declarative_base()
 
 
 
-# ============================================================================
-# 🔗 Edge 엔티티 (엣지)
-# ============================================================================
 
-class Edge(Base):
-    """엣지 엔티티"""
-    
-    __tablename__ = "edge"
-    
-    id = Column(Integer, primary_key=True, index=True)
-    source_id = Column(Integer, nullable=False, index=True)  # 소스 노드 ID
-    target_id = Column(Integer, nullable=False, index=True)  # 타겟 노드 ID
-    edge_kind = Column(Text, nullable=False)  # 엣지 종류 (consume/produce/continue)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
-    def to_dict(self) -> Dict[str, Any]:
-        """엔티티를 딕셔너리로 변환"""
-        return {
-            "id": self.id,
-            "source_id": self.source_id,
-            "target_id": self.target_id,
-            "edge_kind": self.edge_kind,
-            "created_at": self.created_at.isoformat() if self.created_at else None,
-            "updated_at": self.updated_at.isoformat() if self.updated_at else None
-        }
 
 # ============================================================================
 # 🔗 ProductProcess 엔티티 (제품-공정 중간 테이블)
@@ -61,7 +36,7 @@ class ProductProcess(Base):
     
     # 관계 설정
     product = relationship("Product", back_populates="product_processes")
-    process = relationship("Process", back_populates="product_processes")
+    process = relationship("Process", back_populates="product_processes", foreign_keys=[process_id])
     
     def to_dict(self) -> Dict[str, Any]:
         """엔티티를 딕셔너리로 변환"""
