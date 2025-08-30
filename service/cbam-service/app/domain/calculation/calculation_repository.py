@@ -11,8 +11,7 @@ import os
 from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from .calculation_entity import Edge
-from .calculation_schema import EdgeResponse
+# Edge 관련 import 제거 - edge 도메인으로 분리됨
 
 logger = logging.getLogger(__name__)
 
@@ -329,72 +328,7 @@ class CalculationRepository:
             logger.error(f"❌ 제품-공정 관계 삭제 실패: {str(e)}")
             raise
 
-    # ============================================================================
-    # 🔗 Edge 관련 Repository 메서드
-    # ============================================================================
-
-    async def create_edge(self, edge_data: Dict) -> Dict:
-        """Edge 생성"""
-        # 지연 초기화: 필요할 때 데이터베이스 연결 풀 생성
-        if not self.pool:
-            await self.initialize()
-            if not self.pool:
-                raise Exception("데이터베이스 연결 풀을 초기화할 수 없습니다.")
-            
-        try:
-            async with self.pool.acquire() as conn:
-                result = await conn.fetchrow("""
-                    INSERT INTO edge (source_id, target_id, edge_kind, created_at, updated_at)
-                    VALUES ($1, $2, $3, $4, $5)
-                    RETURNING *
-                """, (
-                    edge_data['source_id'],
-                    edge_data['target_id'],
-                    edge_data['edge_kind'],
-                    datetime.utcnow(),
-                    datetime.utcnow()
-                ))
-                
-                return dict(result)
-        except Exception as e:
-            logger.error(f"❌ Edge 생성 실패: {str(e)}")
-            raise
-
-    async def get_edges(self) -> List[Dict]:
-        """모든 Edge 조회"""
-        # 지연 초기화: 필요할 때 데이터베이스 연결 풀 생성
-        if not self.pool:
-            await self.initialize()
-            if not self.pool:
-                raise Exception("데이터베이스 연결 풀을 초기화할 수 없습니다.")
-            
-        try:
-            async with self.pool.acquire() as conn:
-                results = await conn.fetch("""
-                    SELECT * FROM edge ORDER BY id
-                """)
-                
-                edges = [dict(row) for row in results]
-                return edges
-        except Exception as e:
-            logger.error(f"❌ Edge 목록 조회 실패: {str(e)}")
-            raise
-
-    async def delete_edge(self, edge_id: int) -> bool:
-        """Edge 삭제"""
-        if not self.pool:
-            raise Exception("데이터베이스 연결 풀이 초기화되지 않았습니다.")
-            
-        try:
-            async with self.pool.acquire() as conn:
-                result = await conn.execute("""
-                    DELETE FROM edge WHERE id = $1
-                """, edge_id)
-                
-                return result != "DELETE 0"
-        except Exception as e:
-            logger.error(f"❌ Edge 삭제 실패: {str(e)}")
-            raise
+    # Edge 관련 Repository 메서드들은 edge 도메인으로 분리됨
 
     # ============================================================================
     # 🔗 통합 공정 그룹 관련 Repository 메서드
