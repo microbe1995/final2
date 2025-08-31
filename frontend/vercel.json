@@ -134,6 +134,14 @@
     {
       "source": "/sw.js",
       "destination": "/sw.js"
+    },
+    {
+      "source": "/api/v1/:path*",
+      "destination": "https://gateway-production-22ef.up.railway.app/api/v1/:path*"
+    },
+    {
+      "source": "/api/:path*",
+      "destination": "https://gateway-production-22ef.up.railway.app/api/:path*"
     }
   ],
   "redirects": [
