@@ -221,7 +221,7 @@ class InstallRepository:
                 
                 return installs
         except Exception as e:
-            logger.error(f"❌ 사업장 목록 조회 실패: {str(e)}")
+            logger.error(f"❌❌❌ 사업장 목록 조회 실패: {str(e)}")
             raise
 
     async def _get_install_names_db(self) -> List[Dict[str, Any]]:

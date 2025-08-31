@@ -43,7 +43,7 @@ export default function InstallPage() {
       setInstalls(response.data);
       console.log('📋 사업장 목록:', response.data);
     } catch (error: any) {
-      console.error('❌ 사업장 목록 조회 실패:', error);
+      console.error('❌❌ 사업장 목록 조회 실패:', error);
       setToast({
         message: `사업장 목록을 불러오는데 실패했습니다: ${error.response?.data?.detail || error.message}`,
         type: 'error'
