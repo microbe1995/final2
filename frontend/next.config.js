@@ -1,73 +1,3 @@
-const withPWA = require('next-pwa')({
-  dest: 'public',
-  register: true,
-  skipWaiting: true,
-  disable: true, // 🔴 임시로 PWA 완전 비활성화 (CORS 문제 해결 후 재활성화)
-  buildExcludes: [
-    /middleware-manifest\.json$/,
-    /app-build-manifest\.json$/,        // PWA에서 문제되는 파일 제외
-    /_buildManifest\.js$/,
-    /_ssgManifest\.js$/
-  ],
-  publicExcludes: [
-    '!workbox-*.js',
-    '!sw.js'
-  ],
-    runtimeCaching: [
-    // 🔴 API 캐싱 제거 (CORS 문제 해결 후 재활성화)
-    // {
-    //   urlPattern: /^https:\/\/gateway-production-22ef\.up\.railway\.app/,
-    //   handler: 'NetworkFirst',
-    //   options: {
-    //     cacheName: 'gateway-api-cache-v2',
-    //     expiration: {
-    //       maxEntries: 100,
-    //       maxAgeSeconds: 60 * 60 * 24,
-    //     },
-    //     cacheableResponse: {
-    //       statuses: [0, 200],
-    //     },
-    //   },
-    // },
-    // {
-    //   urlPattern: /^https:\/\/www\.greensteel\.site/,
-    //   handler: 'NetworkFirst',
-    //   options: {
-    //     cacheName: 'greensteel-api-cache-v2',
-    //     expiration: {
-    //       maxEntries: 100,
-    //       maxAgeSeconds: 60 * 60 * 24,
-    //     },
-    //     cacheableResponse: {
-    //       statuses: [0, 200],
-    //       },
-    //     },
-    //   },
-    {
-      urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp|avif)$/,
-      handler: 'CacheFirst',
-      options: {
-        cacheName: 'image-cache-v2',
-        expiration: {
-          maxEntries: 200,
-          maxAgeSeconds: 60 * 60 * 24 * 30, // 30일
-        },
-      },
-    },
-    {
-      urlPattern: /\.(?:js|css)$/,
-      handler: 'StaleWhileRevalidate',
-      options: {
-        cacheName: 'static-resources-v2',
-        expiration: {
-          maxEntries: 100,
-          maxAgeSeconds: 60 * 60 * 24 * 7, // 7일
-        },
-      },
-    },
-  ],
-});
-
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   assetPrefix:
@@ -120,4 +50,5 @@ const nextConfig = {
   // },
 };
 
-module.exports = withPWA(nextConfig);
+// 🔴 PWA 플러그인 완전 제거 (CORS 문제 해결 후 재활성화)
+module.exports = nextConfig;

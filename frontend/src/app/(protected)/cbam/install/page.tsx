@@ -39,11 +39,39 @@ export default function InstallPage() {
   const fetchInstalls = async () => {
     try {
       setIsLoadingInstalls(true);
+      
+      // 🔴 추가: 상세 디버깅 로그
+      console.log('🚀 Install 목록 조회 시작');
+      console.log('📍 API 엔드포인트:', apiEndpoints.cbam.install.list);
+      console.log('🌐 Base URL:', process.env.NEXT_PUBLIC_API_BASE_URL || '환경변수 없음');
+      console.log('🔑 인증 토큰:', localStorage.getItem('auth_token') ? '존재함' : '없음');
+      
       const response = await axiosClient.get(apiEndpoints.cbam.install.list);
+      
+      console.log('✅ API 응답 성공:', {
+        status: response.status,
+        statusText: response.statusText,
+        dataLength: response.data?.length || 0,
+        data: response.data
+      });
+      
       setInstalls(response.data);
       console.log('📋 사업장 목록:', response.data);
+      
     } catch (error: any) {
-      console.error('❌❌ 사업장 목록 조회 실패:', error);
+      console.error('❌❌ 사업장 목록 조회 실패:', {
+        message: error.message,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        config: {
+          url: error.config?.url,
+          method: error.config?.method,
+          baseURL: error.config?.baseURL,
+          headers: error.config?.headers
+        }
+      });
+      
       setToast({
         message: `사업장 목록을 불러오는데 실패했습니다: ${error.response?.data?.detail || error.message}`,
         type: 'error'
