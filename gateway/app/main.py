@@ -238,8 +238,14 @@ async def proxy_request(service: str, path: str, request: Request) -> Response:
             )
 
     # 응답 헤더 정리
+    # 🔴 수정: hop-by-hop 헤더 필터링 강화
+    hop_by_hop_headers = {
+        "connection", "keep-alive", "proxy-authenticate", "proxy-authorization",
+        "te", "trailers", "transfer-encoding", "upgrade", "host", "content-length"
+    }
+    
     response_headers = {k: v for k, v in resp.headers.items() 
-                       if k.lower() not in {"content-encoding", "transfer-encoding", "connection"}}
+                       if k.lower() not in hop_by_hop_headers}
     
     # CORS 헤더 설정
     origin = request.headers.get('origin')

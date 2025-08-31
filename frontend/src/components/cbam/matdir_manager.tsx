@@ -212,7 +212,7 @@ export default function MatDirManager({ selectedProcess, onClose }: MatDirManage
       try {
         console.log('🔄 자동 집계 시작: 공정 ID', selectedProcess.id);
         const aggregationResponse = await axiosClient.post(
-          `/api/v1/boundary/emission/process/${selectedProcess.id}/attrdir`
+          `/api/v1/cbam/calculation/emission/process/attrdir`
         );
         console.log('✅ 자동 집계 성공:', aggregationResponse.data);
       } catch (aggregationError: any) {

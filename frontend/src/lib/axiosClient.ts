@@ -60,11 +60,22 @@ const axiosClient: AxiosInstance = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  // 🔴 수정: withCredentials 제거 (쿠키 미사용)
+  withCredentials: false,
 });
 
-// 🔴 추가: 환경변수 검증
-if (typeof window !== 'undefined' && !process.env.NEXT_PUBLIC_API_BASE_URL) {
-  console.warn('[AXIOS] NEXT_PUBLIC_API_BASE_URL 환경변수가 설정되지 않았습니다.');
+// 🔴 추가: 환경변수 검증 및 경고
+if (typeof window !== 'undefined') {
+  const baseURL = process.env.NEXT_PUBLIC_API_BASE_URL;
+  if (!baseURL) {
+    console.warn('[AXIOS] NEXT_PUBLIC_API_BASE_URL 환경변수가 설정되지 않았습니다.');
+  } else if (!baseURL.startsWith('https://')) {
+    console.warn('[AXIOS] NEXT_PUBLIC_API_BASE_URL이 https로 시작하지 않습니다:', baseURL);
+  } else if (!baseURL.includes('gateway-production-22ef.up.railway.app')) {
+    console.warn('[AXIOS] NEXT_PUBLIC_API_BASE_URL이 올바른 Gateway URL이 아닙니다:', baseURL);
+  } else {
+    console.log('[AXIOS] Gateway URL 확인됨:', baseURL);
+  }
 }
 
 // 요청 인터셉터
@@ -315,7 +326,7 @@ export const apiEndpoints = {
     },
     
     // Material 계산 API
-    material: '/api/v1/boundary/calculation/emission/process/attrdir',
+    material: '/api/v1/cbam/calculation/emission/process/attrdir',
     
     // Precursor 관련 API
     precursors: '/api/v1/cbam/calculation/emission/process/attrdir/all',
