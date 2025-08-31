@@ -54,6 +54,8 @@ SERVICE_MAP = {
     # 프론트엔드 호환용 별칭
     "cal-boundary": CAL_BOUNDARY_URL,
     "cal_boundary": CAL_BOUNDARY_URL,
+    # 🔴 추가: boundary 서비스 (프론트엔드에서 사용하는 경로)
+    "boundary": CAL_BOUNDARY_URL,
     # 국가/지역 관련 서비스 (boundary 서비스에서 처리)
     "countries": CAL_BOUNDARY_URL,
     # Material Directory 서비스 (CBAM 서비스에서 처리)
@@ -68,8 +70,8 @@ SERVICE_MAP = {
     "fueldir": CAL_BOUNDARY_URL,
     "productprocess": CAL_BOUNDARY_URL,
     "calculation": CAL_BOUNDARY_URL,
-    # 🔴 직접 서비스 라우팅 (prefix 중복 방지)
-    "install": CAL_BOUNDARY_URL,
+    # 🔴 제거: install 서비스는 boundary를 통해 접근 (중복 라우팅 방지)
+    # "install": CAL_BOUNDARY_URL,
 }
 
 @asynccontextmanager
