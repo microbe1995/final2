@@ -227,8 +227,7 @@ async def log_requests(request: Request, call_next):
 # CBAM 도메인 라우터들 등록 (MSA 원칙: Gateway가 경로를 관리)
 # 중요: Gateway를 통해 접근하므로 prefix 없이 등록 (상대 경로 사용)
 
-# 모든 라우터를 명확한 prefix와 함께 등록 (일관된 패턴)
-# 중요: 더 구체적인 경로를 먼저 등록하여 경로 충돌 방지
+# 🔴 수정: 라우터 등록 순서 최적화 (경로 충돌 방지)
 # 1. 계산 및 분석 관련 (가장 구체적인 경로)
 app.include_router(calculation_router, prefix="/calculation")
 app.include_router(processchain_router, prefix="/processchain")
@@ -243,9 +242,13 @@ app.include_router(fueldir_router, prefix="/fueldir")
 # 3. 핵심 도메인 (가장 일반적인 경로 - 마지막에 등록)
 app.include_router(product_router, prefix="/product")
 app.include_router(process_router, prefix="/process")
+
+# 🔴 수정: install 라우터를 별도로 분리하여 명확한 경로 구조 제공
+# Gateway: /api/v1/install/{path} → CBAM: /install/{path}
 app.include_router(install_router, prefix="/install")
 
 logger.info("✅ 모든 라우터 등록 완료 (각 도메인별 prefix로 명확한 경로 분리)")
+logger.info("🔗 Install 라우터 경로: /install/* (Gateway: /api/v1/install/*)")
 
 # ============================================================================
 # 🏥 헬스체크 엔드포인트

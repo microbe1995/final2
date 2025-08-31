@@ -43,7 +43,6 @@ logger.info(f"   RAILWAY_ENVIRONMENT: {os.getenv('RAILWAY_ENVIRONMENT', 'Not Set
 SERVICE_MAP = {
     "auth": AUTH_SERVICE_URL,
     # CBAM 서비스 (통합 서비스) - 모든 도메인을 처리
-    "boundary": CAL_BOUNDARY_URL,
     # 프론트엔드 호환용 별칭
     "cal-boundary": CAL_BOUNDARY_URL,
     "cal_boundary": CAL_BOUNDARY_URL,
@@ -68,7 +67,9 @@ SERVICE_MAP = {
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("🚀 Gateway API 시작 (단일 파일 통합)")
-    logger.info(f"🔗 SERVICE_MAP: {SERVICE_MAP}")
+    logger.info("🔗 등록된 서비스 목록:")
+    for service_name, service_url in SERVICE_MAP.items():
+        logger.info(f"   {service_name}: {service_url}")
     yield
     logger.info("🛑 Gateway API 종료")
 
@@ -124,6 +125,7 @@ async def proxy_request(service: str, path: str, request: Request) -> Response:
     logger.info(f"   정규화된 경로: {normalized_path}")
     logger.info(f"   서비스: {service}")
     logger.info(f"   기본 URL: {base_url}")
+    logger.info(f"   최종 타겟: {target_url}")
     
     method = request.method
     headers = dict(request.headers)

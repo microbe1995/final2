@@ -163,6 +163,7 @@ export const apiEndpoints = {
   // CBAM Service (Gateway를 통해)
   cbam: {
     install: {
+      // 🔴 수정: 중복 경로 제거 (Gateway: /api/v1/install → CBAM: /install)
       create: '/api/v1/install',
       list: '/api/v1/install',
       names: '/api/v1/install/names',
@@ -202,85 +203,85 @@ export const apiEndpoints = {
       batch: '/api/v1/mapping/batch'
     }
   },
-  // Calculation Service (Gateway를 통해 boundary 서비스로)
+  // Calculation Service (Gateway를 통해 직접 서비스로)
   calculation: {
     process: {
-      calculate: '/api/v1/boundary/calc/process/calculate'
+      calculate: '/api/v1/calculation/emission/process/calculate'
     },
     
     // Process Chain 관련 API
     processchain: {
-        list: '/api/v1/boundary/processchain/chain',
-        create: '/api/v1/boundary/processchain/chain',
-        get: (id: number) => `/api/v1/boundary/processchain/chain/${id}`,
-        delete: (id: number) => `/api/v1/boundary/processchain/chain/${id}`,
-        chain: '/api/v1/boundary/processchain/chain',
-        test: '/api/v1/boundary/processchain/test'
+        list: '/api/v1/processchain/chain',
+        create: '/api/v1/processchain/chain',
+        get: (id: number) => `/api/v1/processchain/chain/${id}`,
+        delete: (id: number) => `/api/v1/processchain/chain/${id}`,
+        chain: '/api/v1/processchain/chain',
+        test: '/api/v1/processchain/test'
     },
     edge: {
-        create: '/api/v1/boundary/edge',
-        list: '/api/v1/boundary/edge',
-        get: (id: number) => `/api/v1/boundary/edge/${id}`,
-        delete: (id: number) => `/api/v1/boundary/edge/${id}`
+        create: '/api/v1/edge',
+        list: '/api/v1/edge',
+        get: (id: number) => `/api/v1/edge/${id}`,
+        delete: (id: number) => `/api/v1/edge/${id}`
     },
     matdir: {
-        create: '/api/v1/boundary/matdir',
-        list: '/api/v1/boundary/matdir',
-        get: (id: number) => `/api/v1/boundary/matdir/${id}`,
-        update: (id: number) => `/api/v1/boundary/matdir/${id}`,
-        delete: (id: number) => `/api/v1/boundary/matdir/${id}`,
-        byProcess: (process_id: number) => `/api/v1/boundary/matdir/process/${process_id}`,
-        calculate: '/api/v1/boundary/matdir/calculate',
-        totalByProcess: (process_id: number) => `/api/v1/boundary/matdir/process/${process_id}/total`
+        create: '/api/v1/matdir',
+        list: '/api/v1/matdir',
+        get: (id: number) => `/api/v1/matdir/${id}`,
+        update: (id: number) => `/api/v1/matdir/${id}`,
+        delete: (id: number) => `/api/v1/matdir/${id}`,
+        byProcess: (process_id: number) => `/api/v1/matdir/process/${process_id}`,
+        calculate: '/api/v1/matdir/calculate',
+        totalByProcess: (process_id: number) => `/api/v1/matdir/process/${process_id}/total`
     },
     fueldir: {
-        create: '/api/v1/boundary/fueldir',
-        list: '/api/v1/boundary/fueldir',
-        get: (id: number) => `/api/v1/boundary/fueldir/${id}`,
-        update: (id: number) => `/api/v1/boundary/fueldir/${id}`,
-        delete: (id: number) => `/api/v1/boundary/fueldir/${id}`,
-        byProcess: (process_id: number) => `/api/v1/boundary/fueldir/process/${process_id}`,
-        calculate: '/api/v1/boundary/fueldir/calculate',
-        totalByProcess: (process_id: number) => `/api/v1/boundary/fueldir/process/${process_id}/total`
+        create: '/api/v1/fueldir',
+        list: '/api/v1/fueldir',
+        get: (id: number) => `/api/v1/fueldir/${id}`,
+        update: (id: number) => `/api/v1/fueldir/${id}`,
+        delete: (id: number) => `/api/v1/fueldir/${id}`,
+        byProcess: (process_id: number) => `/api/v1/fueldir/process/${process_id}`,
+        calculate: '/api/v1/fueldir/calculate',
+        totalByProcess: (process_id: number) => `/api/v1/fueldir/process/${process_id}/total`
     },
     // Fuel Master API
     fuelMaster: {
-        list: '/api/v1/boundary/fuel-master',
-        search: (fuel_name: string) => `/api/v1/boundary/fuel-master/search/${fuel_name}`,
-        getFactor: (fuel_name: string) => `/api/v1/boundary/fuel-master/factor/${fuel_name}`,
-        autoFactor: '/api/v1/boundary/fueldir/auto-factor'
+        list: '/api/v1/fueldir/fuel-master',
+        search: (fuel_name: string) => `/api/v1/fueldir/fuel-master/search/${fuel_name}`,
+        getFactor: (fuel_name: string) => `/api/v1/fueldir/fuel-master/factor/${fuel_name}`,
+        autoFactor: '/api/v1/fueldir/auto-factor'
     },
     // Product-Process 관계 API
     productProcess: {
-        create: '/api/v1/boundary/productprocess',
-        list: '/api/v1/boundary/productprocess',
-        get: (id: number) => `/api/v1/boundary/productprocess/${id}`,
-        update: (id: number) => `/api/v1/boundary/productprocess/${id}`,
-        delete: (id: number) => `/api/v1/boundary/productprocess/${id}`,
-        byProduct: (product_id: number) => `/api/v1/boundary/productprocess/product/${product_id}`,
-        byProcess: (process_id: number) => `/api/v1/boundary/productprocess/process/${process_id}`,
-        stats: '/api/v1/boundary/productprocess/stats'
+        create: '/api/v1/productprocess',
+        list: '/api/v1/productprocess',
+        get: (id: number) => `/api/v1/productprocess/${id}`,
+        update: (id: number) => `/api/v1/productprocess/${id}`,
+        delete: (id: number) => `/api/v1/productprocess/${id}`,
+        byProduct: (product_id: number) => `/api/v1/productprocess/product/${product_id}`,
+        byProcess: (process_id: number) => `/api/v1/productprocess/process/${process_id}`,
+        stats: '/api/v1/productprocess/stats'
     },
     // Material 계산 API
-    material: '/api/v1/boundary/calc/material/calculate',
+    material: '/api/v1/calculation/emission/process/attrdir',
     // Precursor 관련 API
-    precursors: '/api/v1/boundary/calc/precursor',
-    precursorsBatch: '/api/v1/boundary/calc/precursor/batch',
-    precursor: '/api/v1/boundary/calc/precursor/calculate',
+    precursors: '/api/v1/calculation/emission/process/attrdir/all',
+    precursorsBatch: '/api/v1/calculation/emission/process/attrdir/batch',
+    precursor: '/api/v1/calculation/emission/process/attrdir',
     // CBAM 계산 API
-    cbam: '/api/v1/boundary/calc/cbam/calculate',
+    cbam: '/api/v1/calculation/emission/process/calculate',
     // Electricity 계산 API
-    electricity: '/api/v1/boundary/calc/electricity/calculate',
+    electricity: '/api/v1/calculation/emission/process/calculate',
     // 통계 및 이력 API
-    stats: '/api/v1/boundary/calc/stats',
-    history: '/api/v1/boundary/calc/history'
+    stats: '/api/v1/calculation/emission/process/attrdir/all',
+    history: '/api/v1/calculation/emission/process/attrdir/all'
   },
   // Material Master API (matdir 서비스 사용) - 경로 패턴 통일
   materialMaster: {
-      list: '/api/v1/boundary/matdir',
-      search: (mat_name: string) => `/api/v1/boundary/matdir/search/${mat_name}`,
-      getFactor: (mat_name: string) => `/api/v1/boundary/matdir/factor/${mat_name}`,
-      autoFactor: '/api/v1/boundary/matdir/auto-factor'
+      list: '/api/v1/matdir',
+      search: (mat_name: string) => `/api/v1/matdir/search/${mat_name}`,
+      getFactor: (mat_name: string) => `/api/v1/matdir/factor/${mat_name}`,
+      autoFactor: '/api/v1/matdir/auto-factor'
   },
 } as const;
 
