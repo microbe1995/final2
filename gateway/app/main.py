@@ -177,17 +177,28 @@ logger.info(f"   허용된 헤더: {allow_headers}")
 # OPTIONS 요청 처리 (CORS preflight)
 @app.options("/{full_path:path}")
 async def handle_options(full_path: str, request: Request):
-    logger.info(f"🌐 OPTIONS {full_path} origin={request.headers.get('origin', 'N/A')}")
+    origin = request.headers.get('origin', 'N/A')
+    logger.info(f"🌐 OPTIONS {full_path} origin={origin}")
     
     # CORS preflight 응답
     response = Response()
-    response.headers["Access-Control-Allow-Origin"] = "*"
-    response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
-    response.headers["Access-Control-Allow-Headers"] = "*"
-    response.headers["Access-Control-Max-Age"] = "86400"
     
-    logger.info(f"🌐 응답: 200 (OPTIONS)")
-    return response
+    # 🔴 수정: origin 기반 CORS 헤더 설정
+    if origin in allowed_origins or "*" in allowed_origins:
+        response.headers["Access-Control-Allow-Origin"] = origin if origin != "N/A" else "*"
+        response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
+        response.headers["Access-Control-Allow-Headers"] = "*"
+        response.headers["Access-Control-Max-Age"] = "86400"
+        
+        logger.info(f"🌐 응답: 200 (OPTIONS) - CORS 허용")
+        return response
+    else:
+        logger.warning(f"🚫 CORS origin 거부: {origin}")
+        return Response(
+            status_code=400,
+            content={"detail": "Origin not allowed"},
+            headers={"Access-Control-Allow-Origin": allowed_origins[0] if allowed_origins else ""}
+        )
 
 # 프록시 유틸리티
 async def proxy_request(service: str, path: str, request: Request) -> Response:
@@ -304,32 +315,8 @@ async def proxy_request(service: str, path: str, request: Request) -> Response:
     )
 
 # 범용 프록시 라우트 (메인 라우팅 역할)
-@app.api_route("/api/v1/{service}/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"])
+@app.api_route("/api/v1/{service}/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
 async def proxy(service: str, path: str, request: Request):
-    # OPTIONS 요청은 CORS preflight이므로 Gateway에서 직접 처리
-    if request.method == "OPTIONS":
-        # CORS 헤더를 일관되게 설정
-        origin = request.headers.get("origin", "")
-        logger.info(f"🔍 CORS preflight 요청 - origin: {origin}, 허용된 origins: {allowed_origins}")
-        
-        if origin in allowed_origins:
-            return Response(
-                status_code=200,
-                headers={
-                    "Access-Control-Allow-Origin": origin,
-                    "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, PATCH, OPTIONS",
-                    "Access-Control-Allow-Headers": "*",
-                    "Access-Control-Max-Age": "86400",
-                }
-            )
-        else:
-            logger.warning(f"🚫 CORS origin 거부: {origin}")
-            return Response(
-                status_code=400,
-                content={"detail": "Origin not allowed", "requested_origin": origin, "allowed_origins": allowed_origins},
-                headers={"Access-Control-Allow-Origin": allowed_origins[0] if allowed_origins else ""}
-            )
-    
     return await proxy_request(service, path, request)
 
 
