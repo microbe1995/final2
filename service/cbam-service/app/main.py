@@ -306,16 +306,17 @@ async def log_requests(request: Request, call_next):
 # ============================================================================
 
 # CBAM 도메인 라우터들 등록 (MSA 원칙: 각 서비스는 자체 경로 구조를 가짐)
-app.include_router(install_router)  # install_router를 가장 먼저 등록
-app.include_router(calculation_router)
-app.include_router(product_router)
-app.include_router(process_router)
-app.include_router(edge_router)
-app.include_router(mapping_router)
-app.include_router(matdir_router)  # prefix 제거 - MSA 독립성 확보
-app.include_router(fueldir_router)
-app.include_router(processchain_router)
-app.include_router(product_process_router)  # 제품-공정 관계 라우터
+# 중요: 더 구체적인 경로를 가진 라우터를 먼저 등록 (FastAPI 라우팅 우선순위)
+app.include_router(calculation_router)  # /calculation 경로
+app.include_router(product_router)      # /product 경로
+app.include_router(process_router)     # /process 경로
+app.include_router(edge_router)        # /edge 경로
+app.include_router(mapping_router)     # /mapping 경로
+app.include_router(matdir_router)      # /matdir 경로
+app.include_router(fueldir_router)     # /fueldir 경로
+app.include_router(processchain_router) # /processchain 경로
+app.include_router(product_process_router) # /productprocess 경로
+app.include_router(install_router)     # /install 경로 (마지막에 등록 - 동적 경로 포함)
 
 # ============================================================================
 # 🏥 헬스체크 엔드포인트
@@ -350,12 +351,33 @@ async def debug_routes():
     routes = []
     for route in app.routes:
         if hasattr(route, 'path') and hasattr(route, 'methods'):
-            routes.append({
+            # 라우터 정보 추가
+            route_info = {
                 "path": route.path,
                 "methods": list(route.methods) if route.methods else [],
-                "name": getattr(route, 'name', 'unknown')
-            })
-    return {"routes": routes}
+                "name": getattr(route, 'name', 'unknown'),
+                "endpoint": str(route.endpoint) if hasattr(route, 'endpoint') else 'unknown'
+            }
+            
+            # 동적 경로인지 확인
+            if '{' in route.path:
+                route_info["dynamic"] = True
+                route_info["path_params"] = [param for param in route.path.split('/') if param.startswith('{') and param.endswith('}')]
+            else:
+                route_info["dynamic"] = False
+                route_info["path_params"] = []
+            
+            routes.append(route_info)
+    
+    # 경로별로 정렬
+    routes.sort(key=lambda x: (x["dynamic"], x["path"]))
+    
+    return {
+        "total_routes": len(routes),
+        "static_routes": [r for r in routes if not r["dynamic"]],
+        "dynamic_routes": [r for r in routes if r["dynamic"]],
+        "all_routes": routes
+    }
 # ============================================================================
 # 🚨 예외 처리 핸들러
 # ============================================================================

@@ -51,24 +51,6 @@ async def get_install_names():
         logger.error(f"❌ 사업장명 목록 조회 실패: {str(e)}")
         raise HTTPException(status_code=500, detail=f"사업장명 목록 조회 중 오류가 발생했습니다: {str(e)}")
 
-@router.get("/{install_id}", response_model=InstallResponse)
-async def get_install(install_id: int):
-    """특정 사업장 조회"""
-    try:
-        logger.info(f"📋 사업장 조회 요청: ID {install_id}")
-        install_service = get_install_service()
-        install = await install_service.get_install(install_id)
-        if not install:
-            raise HTTPException(status_code=404, detail="사업장을 찾을 수 없습니다")
-        
-        logger.info(f"✅ 사업장 조회 성공: ID {install_id}")
-        return install
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"❌ 사업장 조회 실패: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"사업장 조회 중 오류가 발생했습니다: {str(e)}")
-
 @router.post("/", response_model=InstallResponse)
 async def create_install(request: InstallCreateRequest):
     """사업장 생성"""
@@ -86,6 +68,25 @@ async def create_install(request: InstallCreateRequest):
     except Exception as e:
         logger.error(f"❌ 사업장 생성 실패: {str(e)}")
         raise HTTPException(status_code=500, detail=f"사업장 생성 중 오류가 발생했습니다: {str(e)}")
+
+# 동적 경로는 구체적인 경로 뒤에 정의 (FastAPI 라우터 순서 중요!)
+@router.get("/{install_id}", response_model=InstallResponse)
+async def get_install(install_id: int):
+    """특정 사업장 조회"""
+    try:
+        logger.info(f"📋 사업장 조회 요청: ID {install_id}")
+        install_service = get_install_service()
+        install = await install_service.get_install(install_id)
+        if not install:
+            raise HTTPException(status_code=404, detail="사업장을 찾을 수 없습니다")
+        
+        logger.info(f"✅ 사업장 조회 성공: ID {install_id}")
+        return install
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"❌ 사업장 조회 실패: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"사업장 조회 중 오류가 발생했습니다: {str(e)}")
 
 @router.put("/{install_id}", response_model=InstallResponse)
 async def update_install(install_id: int, request: InstallUpdateRequest):
