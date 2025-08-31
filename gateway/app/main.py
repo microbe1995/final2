@@ -28,31 +28,39 @@ logging.basicConfig(
 logger = logging.getLogger("gateway_api")
 
 # 서비스 맵 구성 (MSA 원칙: 각 서비스는 독립적인 URL을 가져야 함)
-AUTH_SERVICE_URL = os.getenv("AUTH_SERVICE_URL", "http://auth-service:8000")
+AUTH_SERVICE_URL = os.getenv("AUTH_SERVICE_URL", "https://auth-service-production-d3.up.railway.app")
 CAL_BOUNDARY_URL = os.getenv("CAL_BOUNDARY_URL", "https://lcafinal-production.up.railway.app")
-MATDIR_URL = os.getenv("MATDIR_URL", "https://lcafinal-production.up.railway.app")  # CBAM 서비스와 동일
-PROCESSCHAIN_URL = os.getenv("PROCESSCHAIN_URL", "https://lcafinal-production.up.railway.app")  # CBAM 서비스와 동일
+
+# Railway 배포 현황: CBAM 서비스가 통합되어 있음
+# 모든 CBAM 관련 도메인은 하나의 서비스에서 처리
 
 # 환경변수 디버깅 로그
 logger.info(f"🔧 환경변수 확인:")
 logger.info(f"   CAL_BOUNDARY_URL: {CAL_BOUNDARY_URL}")
-logger.info(f"   MATDIR_URL: {MATDIR_URL}")
 logger.info(f"   AUTH_SERVICE_URL: {AUTH_SERVICE_URL}")
 logger.info(f"   RAILWAY_ENVIRONMENT: {os.getenv('RAILWAY_ENVIRONMENT', 'Not Set')}")
 
 SERVICE_MAP = {
     "auth": AUTH_SERVICE_URL,
-    # 기본 키
+    # CBAM 서비스 (통합 서비스) - 모든 도메인을 처리
     "boundary": CAL_BOUNDARY_URL,
     # 프론트엔드 호환용 별칭
     "cal-boundary": CAL_BOUNDARY_URL,
     "cal_boundary": CAL_BOUNDARY_URL,
     # 국가/지역 관련 서비스 (boundary 서비스에서 처리)
     "countries": CAL_BOUNDARY_URL,
-    # ProcessChain 서비스 (독립적인 도메인)
-    "processchain": PROCESSCHAIN_URL,
-    # Material Master 서비스
-    "matdir": MATDIR_URL,
+    # Material Directory 서비스 (CBAM 서비스에서 처리)
+    "matdir": CAL_BOUNDARY_URL,
+    # Process Chain 서비스 (CBAM 서비스에서 처리)
+    "processchain": CAL_BOUNDARY_URL,
+    # 기타 CBAM 관련 서비스들
+    "product": CAL_BOUNDARY_URL,
+    "process": CAL_BOUNDARY_URL,
+    "edge": CAL_BOUNDARY_URL,
+    "mapping": CAL_BOUNDARY_URL,
+    "fueldir": CAL_BOUNDARY_URL,
+    "productprocess": CAL_BOUNDARY_URL,
+    "calculation": CAL_BOUNDARY_URL,
 }
 
 @asynccontextmanager
@@ -64,8 +72,8 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="Gateway API",
-    description="Gateway API for LCA Final - 단일 파일 통합 버전",
-    version="0.5.0",
+    description="Gateway API for LCA Final - Railway 배포 버전 (MSA 아키텍처)",
+    version="1.0.0",
     docs_url="/docs",
     lifespan=lifespan,
 )
@@ -74,8 +82,8 @@ app = FastAPI(
 allowed_origins = [o.strip() for o in os.getenv("CORS_URL", "").split(",") if o.strip()]
 if not allowed_origins:
     allowed_origins = [
-        "https://lca-final.vercel.app",
-        "http://localhost:3000",
+        "https://lca-final.vercel.app",  # Railway 프로덕션 프론트엔드
+        "http://localhost:3000",  # 로컬 개발 환경
     ]
 allow_credentials = os.getenv("CORS_ALLOW_CREDENTIALS", "false").lower() == "true"
 allow_methods = [m.strip() for m in os.getenv("CORS_ALLOW_METHODS", "GET,POST,PUT,DELETE,OPTIONS,PATCH").split(",")]
@@ -155,7 +163,17 @@ async def proxy(service: str, path: str, request: Request):
 # 헬스 체크
 @app.get("/health", summary="Gateway 헬스 체크")
 async def health_check_root():
-    return {"status": "healthy", "service": "gateway", "version": "0.5.0"}
+    return {
+        "status": "healthy", 
+        "service": "gateway", 
+        "version": "1.0.0",
+        "environment": "railway-production",
+        "services": {
+            "auth": AUTH_SERVICE_URL,
+            "cbam": CAL_BOUNDARY_URL,
+            "database": "postgres-production-0d25.up.railway.app"
+        }
+    }
 
 # 요청 로깅
 @app.middleware("http")

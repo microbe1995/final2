@@ -11,7 +11,6 @@ from decimal import Decimal
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from sqlalchemy import select, text, func
 from sqlalchemy.orm import selectinload
-
 from app.domain.processchain.processchain_entity import (
     ProcessChain, ProcessChainLink, Base
 )
