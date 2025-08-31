@@ -61,6 +61,8 @@ SERVICE_MAP = {
     "fueldir": CAL_BOUNDARY_URL,
     "productprocess": CAL_BOUNDARY_URL,
     "calculation": CAL_BOUNDARY_URL,
+    # 🔴 직접 서비스 라우팅 (prefix 중복 방지)
+    "install": CAL_BOUNDARY_URL,
 }
 
 @asynccontextmanager

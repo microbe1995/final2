@@ -163,43 +163,43 @@ export const apiEndpoints = {
   // CBAM Service (Gateway를 통해)
   cbam: {
     install: {
-      create: '/api/v1/boundary/install',
-      list: '/api/v1/boundary/install',
-      names: '/api/v1/boundary/install/names',
-      get: (id: number) => `/api/v1/boundary/install/${id}`,
-      update: (id: number) => `/api/v1/boundary/install/${id}`,
-      delete: (id: number) => `/api/v1/boundary/install/${id}`
+      create: '/api/v1/install',
+      list: '/api/v1/install',
+      names: '/api/v1/install/names',
+      get: (id: number) => `/api/v1/install/${id}`,
+      update: (id: number) => `/api/v1/install/${id}`,
+      delete: (id: number) => `/api/v1/install/${id}`
     },
     product: {
-      create: '/api/v1/boundary/product',
-      list: '/api/v1/boundary/product',
-      names: '/api/v1/boundary/product/names',
-      get: (id: number) => `/api/v1/boundary/product/${id}`,
-      update: (id: number) => `/api/v1/boundary/product/${id}`,
-      delete: (id: number) => `/api/v1/boundary/product/${id}`
+      create: '/api/v1/product',
+      list: '/api/v1/product',
+      names: '/api/v1/product/names',
+      get: (id: number) => `/api/v1/product/${id}`,
+      update: (id: number) => `/api/v1/product/${id}`,
+      delete: (id: number) => `/api/v1/product/${id}`
     },
     process: {
-      create: '/api/v1/boundary/process',
-      list: '/api/v1/boundary/process',
-      get: (id: number) => `/api/v1/boundary/process/${id}`,
-      update: (id: number) => `/api/v1/boundary/process/${id}`,
-      delete: (id: number) => `/api/v1/boundary/process/${id}`
+      create: '/api/v1/process',
+      list: '/api/v1/process',
+      get: (id: number) => `/api/v1/process/${id}`,
+      update: (id: number) => `/api/v1/process/${id}`,
+      delete: (id: number) => `/api/v1/process/${id}`
     },
     // HS-CN 매핑 API
     mapping: {
-      lookup: (hs_code: string) => `/api/v1/boundary/cncode/lookup/${hs_code}`,
-      list: '/api/v1/boundary/mapping',
-      get: (id: number) => `/api/v1/boundary/mapping/${id}`,
-      create: '/api/v1/boundary/mapping',
-      update: (id: number) => `/api/v1/boundary/mapping/${id}`,
-      delete: (id: number) => `/api/v1/boundary/mapping/${id}`,
+      lookup: (hs_code: string) => `/api/v1/mapping/cncode/lookup/${hs_code}`,
+      list: '/api/v1/mapping',
+      get: (id: number) => `/api/v1/mapping/${id}`,
+      create: '/api/v1/mapping',
+      update: (id: number) => `/api/v1/mapping/${id}`,
+      delete: (id: number) => `/api/v1/mapping/${id}`,
       search: {
-        hs: (hs_code: string) => `/api/v1/boundary/mapping/search/hs/${hs_code}`,
-        cn: (cn_code: string) => `/api/v1/boundary/mapping/search/cn/${cn_code}`,
-        goods: (goods_name: string) => `/api/v1/boundary/mapping/search/goods/${goods_name}`
+        hs: (hs_code: string) => `/api/v1/mapping/search/hs/${hs_code}`,
+        cn: (cn_code: string) => `/api/v1/mapping/search/cn/${cn_code}`,
+        goods: (goods_name: string) => `/api/v1/mapping/search/goods/${goods_name}`
       },
-      stats: '/api/v1/boundary/mapping/stats',
-      batch: '/api/v1/boundary/mapping/batch'
+      stats: '/api/v1/mapping/stats',
+      batch: '/api/v1/mapping/batch'
     }
   },
   // Calculation Service (Gateway를 통해 boundary 서비스로)
