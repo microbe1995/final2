@@ -103,9 +103,10 @@ else:
         "http://localhost:3000",         # 로컬 개발 환경
     ]
 
-allow_credentials = os.getenv("CORS_ALLOW_CREDENTIALS", "true").lower() == "true"
-allow_methods = [m.strip() for m in os.getenv("CORS_ALLOW_METHODS", "GET,POST,PUT,DELETE,OPTIONS,PATCH").split(",")]
-allow_headers = [h.strip() for h in os.getenv("CORS_ALLOW_HEADERS", "*").split(",")]
+# 🔴 수정: CORS 설정을 더 유연하게
+allow_credentials = True  # 항상 true로 설정
+allow_methods = ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"]
+allow_headers = ["*"]  # 모든 헤더 허용
 
 # CORS 설정 전 로깅
 logger.info(f"🔧 CORS 설정 준비:")
@@ -115,12 +116,15 @@ logger.info(f"   자격증명 허용: {allow_credentials}")
 logger.info(f"   허용된 메서드: {allow_methods}")
 logger.info(f"   허용된 헤더: {allow_headers}")
 
+# 🔴 수정: CORS 미들웨어를 더 유연하게 설정
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,
     allow_credentials=allow_credentials,
     allow_methods=allow_methods,
     allow_headers=allow_headers,
+    expose_headers=["*"],  # 🔴 추가: 모든 헤더 노출
+    max_age=86400,  # 🔴 추가: preflight 캐시 시간
 )
 
 logger.info(f"🔧 CORS 설정 완료:")
@@ -252,7 +256,6 @@ async def proxy(service: str, path: str, request: Request):
 # 헬스 체크
 @app.get("/health", summary="Gateway 헬스 체크")
 async def health_check_root(request: Request):
-    origin = request.headers.get('origin')
     response_data = {
         "status": "healthy", 
         "service": "gateway", 
@@ -264,14 +267,8 @@ async def health_check_root(request: Request):
         }
     }
     
-    response = JSONResponse(content=response_data)
-    
-    # 🔴 추가: CORS 헤더 설정
-    if origin and origin in allowed_origins:
-        response.headers["Access-Control-Allow-Origin"] = origin
-        response.headers["Access-Control-Allow-Credentials"] = "true"
-    
-    return response
+    # 🔴 수정: 미들웨어에서 CORS 헤더를 처리하므로 여기서는 제거
+    return JSONResponse(content=response_data)
 
 # Favicon 처리 (브라우저 자동 요청 방지)
 @app.get("/favicon.ico")
