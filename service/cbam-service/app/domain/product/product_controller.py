@@ -13,8 +13,8 @@ from app.domain.product.product_schema import (
 
 logger = logging.getLogger(__name__)
 
-# Gateway를 통해 접근하므로 /api/v1/boundary/product 경로로 설정
-router = APIRouter(prefix="/api/v1/boundary", tags=["Product"])
+# Gateway를 통해 접근하므로 /product 경로로 설정 (prefix 없음)
+router = APIRouter(tags=["Product"])
 
 # 서비스 인스턴스는 요청 시마다 생성 (모듈 레벨 초기화 방지)
 def get_product_service():

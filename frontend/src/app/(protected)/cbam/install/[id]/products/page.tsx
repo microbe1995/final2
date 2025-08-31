@@ -179,7 +179,7 @@ export default function InstallProductsPage() {
       prostart_period: product.prostart_period,
       proend_period: product.proend_period,
       product_amount: product.product_amount,
-      product_hscode: '',
+      product_hscode: '', // HS 코드는 내부적으로만 사용
       cncode_total: product.cncode_total || '',
       goods_name: product.goods_name || '',
       goods_engname: product.goods_engname || '',
@@ -261,9 +261,21 @@ export default function InstallProductsPage() {
     }
 
     try {
+      // 백엔드 스키마에 맞게 데이터 변환
       const productData = {
-        ...productForm,
-        install_id: installId
+        install_id: installId,
+        product_name: productForm.product_name,
+        product_category: productForm.product_category || '단순제품', // 기본값 설정
+        prostart_period: productForm.prostart_period, // date 형식으로 전송
+        proend_period: productForm.proend_period, // date 형식으로 전송
+        product_amount: parseFloat(productForm.product_amount.toString()) || 0, // float로 변환
+        cncode_total: productForm.cncode_total || null,
+        goods_name: productForm.goods_name || null,
+        goods_engname: productForm.goods_engname || null,
+        aggrgoods_name: productForm.aggrgoods_name || null,
+        aggrgoods_engname: productForm.aggrgoods_engname || null,
+        product_sell: parseFloat(productForm.product_sell.toString()) || 0, // float로 변환
+        product_eusell: parseFloat(productForm.product_eusell.toString()) || 0 // float로 변환
       };
 
       if (editingProduct) {
@@ -310,8 +322,11 @@ export default function InstallProductsPage() {
     }
 
     try {
+      // 백엔드 스키마에 맞게 데이터 변환
       const processData = {
         process_name: processForm.process_name,
+        start_period: null, // 선택적 필드
+        end_period: null,   // 선택적 필드
         product_ids: [productId]  // 다대다 관계를 위해 배열로 전송
       };
 

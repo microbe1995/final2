@@ -13,8 +13,8 @@ from app.domain.process.process_schema import (
 
 logger = logging.getLogger(__name__)
 
-# Gateway를 통해 접근하므로 /api/v1/boundary/process 경로로 설정
-router = APIRouter(prefix="/api/v1/boundary", tags=["Process"])
+# Gateway를 통해 접근하므로 /process 경로로 설정 (prefix 없음)
+router = APIRouter(tags=["Process"])
 
 def get_process_service():
     """Process 서비스 인스턴스 반환"""
@@ -30,7 +30,7 @@ async def get_processes():
         logger.info(f"✅ 프로세스 목록 조회 성공: {len(processes)}개")
         return processes
     except Exception as e:
-        logger.error(f"❌ 프로세스 목록 조회 실패: {str(e)}")
+        logger.error(f"❌❌ 프로세스 목록 조회 실패: {str(e)}")
         raise HTTPException(status_code=500, detail=f"프로세스 목록 조회 중 오류가 발생했습니다: {str(e)}")
 
 @router.get("/{process_id}", response_model=ProcessResponse)

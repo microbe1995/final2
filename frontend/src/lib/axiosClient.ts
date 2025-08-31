@@ -256,13 +256,7 @@ export const apiEndpoints = {
         create: '/api/v1/boundary/boundary',
         list: '/api/v1/boundary/boundary'
     },
-    product: {
-        create: '/api/v1/boundary/product',
-        list: '/api/v1/boundary/product',
-        get: (id: number) => `/api/v1/boundary/product/${id}`,
-        update: (id: number) => `/api/v1/boundary/product/${id}`,
-        delete: (id: number) => `/api/v1/boundary/product/${id}`
-    },
+
     operation: {
         create: '/api/v1/boundary/operation',
         list: '/api/v1/boundary/operation'
