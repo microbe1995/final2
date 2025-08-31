@@ -35,7 +35,7 @@ async def get_products():
         logger.info(f"✅ 제품 목록 조회 성공: {len(products)}개")
         return products
     except Exception as e:
-        logger.error(f"❌ 제품 목록 조회 실패: {str(e)}")
+        logger.error(f"❌❌ 제품 목록 조회 실패: {str(e)}")
         raise HTTPException(status_code=500, detail=f"제품 목록 조회 중 오류가 발생했습니다: {str(e)}")
 
 @router.get("/names", response_model=List[ProductNameResponse])
@@ -48,7 +48,7 @@ async def get_product_names():
         logger.info(f"✅ 제품명 목록 조회 성공: {len(product_names)}개")
         return product_names
     except Exception as e:
-        logger.error(f"❌ 제품명 목록 조회 실패: {str(e)}")
+        logger.error(f"❌❌❌ 제품명 목록 조회 실패: {str(e)}")
         raise HTTPException(status_code=500, detail=f"제품명 목록 조회 중 오류가 발생했습니다: {str(e)}")
 
 @router.get("/{product_id}", response_model=ProductResponse)

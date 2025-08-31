@@ -179,7 +179,7 @@ class ProductRepository:
                 return products
                 
         except Exception as e:
-            logger.error(f"❌ 제품 목록 조회 실패: {str(e)}")
+            logger.error(f"❌❌❌ 제품 목록 조회 실패: {str(e)}")
             raise e
 
     async def get_product(self, product_id: int) -> Optional[Dict[str, Any]]:
