@@ -13,7 +13,7 @@ from app.domain.install.install_schema import (
 
 logger = logging.getLogger(__name__)
 
-# prefix가 /install로 설정되므로 루트 경로(/) 사용
+# prefix 없이 등록되므로 /install 경로로 시작
 router = APIRouter(tags=["Install"])
 
 # 서비스 인스턴스는 요청 시마다 생성 (모듈 레벨 초기화 방지)
@@ -26,7 +26,7 @@ def get_install_service():
 # ============================================================================
 
 # 실제 경로: /install (사업장 목록 조회)
-@router.get("/", response_model=List[InstallResponse])
+@router.get("/install", response_model=List[InstallResponse])
 async def get_installs():
     """사업장 목록 조회"""
     try:
@@ -40,7 +40,7 @@ async def get_installs():
         raise HTTPException(status_code=500, detail=f"사업장 목록 조회 중 오류가 발생했습니다: {str(e)}")
 
 # 실제 경로: /install/names (사업장명 목록 조회)
-@router.get("/names", response_model=List[InstallNameResponse])
+@router.get("/install/names", response_model=List[InstallNameResponse])
 async def get_install_names():
     """사업장명 목록 조회 (드롭다운용)"""
     try:
@@ -54,7 +54,7 @@ async def get_install_names():
         raise HTTPException(status_code=500, detail=f"사업장명 목록 조회 중 오류가 발생했습니다: {str(e)}")
 
 # 실제 경로: /install (사업장 생성)
-@router.post("/", response_model=InstallResponse)
+@router.post("/install", response_model=InstallResponse)
 async def create_install(request: InstallCreateRequest):
     """사업장 생성"""
     try:
@@ -73,7 +73,7 @@ async def create_install(request: InstallCreateRequest):
         raise HTTPException(status_code=500, detail=f"사업장 생성 중 오류가 발생했습니다: {str(e)}")
 
 # 실제 경로: /install/{install_id} (특정 사업장 조회)
-@router.get("/{install_id}", response_model=InstallResponse)
+@router.get("/install/{install_id}", response_model=InstallResponse)
 async def get_install(install_id: int):
     """특정 사업장 조회"""
     try:
@@ -92,7 +92,7 @@ async def get_install(install_id: int):
         raise HTTPException(status_code=500, detail=f"사업장 생성 중 오류가 발생했습니다: {str(e)}")
 
 # 실제 경로: /install/{install_id} (사업장 수정)
-@router.put("/{install_id}", response_model=InstallResponse)
+@router.put("/install/{install_id}", response_model=InstallResponse)
 async def update_install(install_id: int, request: InstallUpdateRequest):
     """사업장 수정"""
     try:
@@ -111,7 +111,7 @@ async def update_install(install_id: int, request: InstallUpdateRequest):
         raise HTTPException(status_code=500, detail=f"사업장 생성 중 오류가 발생했습니다: {str(e)}")
 
 # 실제 경로: /install/{install_id} (사업장 삭제)
-@router.delete("/{install_id}")
+@router.delete("/install/{install_id}")
 async def delete_install(install_id: int):
     """사업장 삭제"""
     try:
