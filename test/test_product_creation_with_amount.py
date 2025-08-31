@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-수정된 제품 생성 API 테스트 스크립트
-언패킹 문제 해결 후 테스트
+Product Amount 포함 제품 생성 API 테스트 스크립트
+임시 해결책으로 product_amount 필드 추가
 """
 
 import asyncio
@@ -14,8 +14,8 @@ from datetime import datetime
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-async def test_product_creation_fixed():
-    """수정된 제품 생성 API 테스트"""
+async def test_product_creation_with_amount():
+    """Product Amount 포함 제품 생성 API 테스트"""
     
     try:
         async with httpx.AsyncClient() as client:
@@ -38,16 +38,19 @@ async def test_product_creation_fixed():
             install_id = installs[0]['id']
             logger.info(f"🔧 사용할 install_id: {install_id}")
             
-            # 2단계: 제품 생성 테스트
-            logger.info("🔍 2단계: 제품 생성 테스트")
+            # 2단계: 제품 생성 테스트 (product_amount 포함)
+            logger.info("🔍 2단계: 제품 생성 테스트 (product_amount 포함)")
             
-            # 테스트 데이터 (5개 핵심 필드만)
+            # 테스트 데이터 (product_amount 포함)
             test_product = {
                 "install_id": install_id,
                 "product_name": f"테스트제품_{datetime.now().strftime('%H%M%S')}",
                 "product_category": "단순제품",
                 "prostart_period": "2024-01-01",
-                "proend_period": "2024-12-31"
+                "proend_period": "2024-12-31",
+                "product_amount": 100.0,  # 임시로 추가
+                "product_sell": 50.0,     # 임시로 추가
+                "product_eusell": 30.0    # 임시로 추가
             }
             
             logger.info(f"📋 테스트 데이터: {test_product}")
@@ -90,8 +93,8 @@ async def test_product_creation_fixed():
 
 async def main():
     """메인 함수"""
-    logger.info("🚀 수정된 제품 생성 API 테스트 시작")
-    await test_product_creation_fixed()
+    logger.info("🚀 Product Amount 포함 제품 생성 API 테스트 시작")
+    await test_product_creation_with_amount()
     logger.info("🏁 테스트 완료")
 
 if __name__ == "__main__":
