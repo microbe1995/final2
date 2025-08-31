@@ -213,7 +213,8 @@ export const apiEndpoints = {
         list: '/api/v1/boundary/processchain/chain',
         create: '/api/v1/boundary/processchain/chain',
         get: (id: number) => `/api/v1/boundary/processchain/chain/${id}`,
-        delete: (id: number) => `/api/v1/boundary/processchain/chain/${id}`
+        delete: (id: number) => `/api/v1/boundary/processchain/chain/${id}`,
+        chain: '/api/v1/boundary/processchain/chain'
     },
     edge: {
         create: '/api/v1/boundary/edge',
@@ -258,7 +259,20 @@ export const apiEndpoints = {
         byProduct: (product_id: number) => `/api/v1/boundary/productprocess/product/${product_id}`,
         byProcess: (process_id: number) => `/api/v1/boundary/productprocess/process/${process_id}`,
         stats: '/api/v1/boundary/productprocess/stats'
-    }
+    },
+    // Material 계산 API
+    material: '/api/v1/boundary/calc/material/calculate',
+    // Precursor 관련 API
+    precursors: '/api/v1/boundary/calc/precursor',
+    precursorsBatch: '/api/v1/boundary/calc/precursor/batch',
+    precursor: '/api/v1/boundary/calc/precursor/calculate',
+    // CBAM 계산 API
+    cbam: '/api/v1/boundary/calc/cbam/calculate',
+    // Electricity 계산 API
+    electricity: '/api/v1/boundary/calc/electricity/calculate',
+    // 통계 및 이력 API
+    stats: '/api/v1/boundary/calc/stats',
+    history: '/api/v1/boundary/calc/history'
   },
   // Material Master API (matdir 서비스 사용) - 경로 패턴 통일
   materialMaster: {
