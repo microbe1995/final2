@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useNodesState, useEdgesState, Node, Edge, Connection } from '@xyflow/react';
 import axiosClient, { apiEndpoints } from '@/lib/axiosClient';
 import { Install, Product, Process } from './useProcessManager';
@@ -14,6 +14,11 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
   // activeInstallId를 selectedInstall에서 계산
   const activeInstallId = selectedInstall?.id || null;
 
+  // 이전 상태를 추적하여 무한 루프 방지
+  const prevInstallIdRef = useRef<number | null>(null);
+  const prevNodesRef = useRef<Node[]>([]);
+  const prevEdgesRef = useRef<Edge[]>([]);
+
   // 캔버스 상태 변경 시 해당 사업장의 캔버스 데이터 업데이트
   useEffect(() => {
     if (activeInstallId) {
@@ -24,25 +29,26 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
     }
   }, [nodes, edges, activeInstallId]);
 
-  // selectedInstall 변경 시 캔버스 상태 복원
+  // selectedInstall 변경 시 캔버스 상태 복원 (안전한 상태 업데이트)
   useEffect(() => {
-    if (selectedInstall) {
+    if (selectedInstall && selectedInstall.id !== prevInstallIdRef.current) {
       const canvasData = installCanvases[selectedInstall.id] || { nodes: [], edges: [] };
-      // 상태 업데이트를 안전하게 처리
-      setNodes(prev => {
-        // 이전 상태와 동일하면 업데이트하지 않음
-        if (JSON.stringify(prev) === JSON.stringify(canvasData.nodes)) {
-          return prev;
-        }
-        return canvasData.nodes;
-      });
-      setEdges(prev => {
-        // 이전 상태와 동일하면 업데이트하지 않음
-        if (JSON.stringify(prev) === JSON.stringify(canvasData.edges)) {
-          return prev;
-        }
-        return canvasData.edges;
-      });
+      
+      // 이전 상태와 동일한지 확인하여 불필요한 업데이트 방지
+      const nodesChanged = JSON.stringify(prevNodesRef.current) !== JSON.stringify(canvasData.nodes);
+      const edgesChanged = JSON.stringify(prevEdgesRef.current) !== JSON.stringify(canvasData.edges);
+      
+      if (nodesChanged) {
+        setNodes(canvasData.nodes);
+        prevNodesRef.current = canvasData.nodes;
+      }
+      
+      if (edgesChanged) {
+        setEdges(canvasData.edges);
+        prevEdgesRef.current = canvasData.edges;
+      }
+      
+      prevInstallIdRef.current = selectedInstall.id;
     }
   }, [selectedInstall?.id, installCanvases, setNodes, setEdges]);
 
@@ -52,7 +58,7 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
     // 실제 캔버스 상태 복원은 useEffect에서 자동으로 처리됨
   }, []);
 
-  // 제품 노드 추가
+  // 제품 노드 추가 (안전한 상태 업데이트)
   const addProductNode = useCallback((product: Product, handleProductNodeClick: (product: Product) => void) => {
     const newNode: Node = {
       id: `product-${Date.now()}-${Math.random().toString(36).slice(2)}`,
@@ -69,10 +75,14 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
     };
 
     // setNodes를 사용하여 안전하게 노드 추가
-    setNodes(prev => [...prev, newNode]);
+    setNodes(prev => {
+      const newNodes = [...prev, newNode];
+      prevNodesRef.current = newNodes;
+      return newNodes;
+    });
   }, [setNodes, selectedInstall?.id]);
 
-  // 공정 노드 추가
+  // 공정 노드 추가 (안전한 상태 업데이트)
   const addProcessNode = useCallback((process: Process, products: Product[], openMatDirModal: (process: Process) => void, openFuelDirModal: (process: Process) => void) => {
     // 해당 공정이 사용되는 모든 제품 정보 찾기
     const relatedProducts = products.filter((product: Product) => 
@@ -105,10 +115,14 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
     };
 
     // setNodes를 사용하여 안전하게 노드 추가
-    setNodes(prev => [...prev, newNode]);
+    setNodes(prev => {
+      const newNodes = [...prev, newNode];
+      prevNodesRef.current = newNodes;
+      return newNodes;
+    });
   }, [setNodes, selectedInstall?.id]);
 
-  // 그룹 노드 추가
+  // 그룹 노드 추가 (안전한 상태 업데이트)
   const addGroupNode = useCallback(() => {
     const newNode: Node<any> = {
       id: `group-${Date.now()}-${Math.random().toString(36).slice(2)}`,
@@ -119,10 +133,14 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
     };
 
     // setNodes를 사용하여 안전하게 노드 추가
-    setNodes(prev => [...prev, newNode]);
+    setNodes(prev => {
+      const newNodes = [...prev, newNode];
+      prevNodesRef.current = newNodes;
+      return newNodes;
+    });
   }, [setNodes]);
 
-  // Edge 생성 처리
+  // Edge 생성 처리 (안전한 상태 업데이트)
   const handleEdgeCreate = useCallback(async (params: Connection, updateProcessChainsAfterEdge: () => void) => {
     try {
       // 백엔드에 Edge 생성 요청
@@ -146,7 +164,11 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
           data: { edgeData: newEdge }
         };
         
-        setEdges(prev => [...prev, edgeToAdd]);
+        setEdges(prev => {
+          const newEdges = [...prev, edgeToAdd];
+          prevEdgesRef.current = newEdges;
+          return newEdges;
+        });
         
         // 콜백 실행
         if (updateProcessChainsAfterEdge) {

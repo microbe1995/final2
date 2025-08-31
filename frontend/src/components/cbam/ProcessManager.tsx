@@ -89,6 +89,7 @@ function ProcessManagerInner() {
     handleProductQuantityUpdate,
   } = useProcessManager();
 
+  // React Flow 컨텍스트 내에서만 useProcessCanvas 사용
   const {
     nodes,
     edges,
