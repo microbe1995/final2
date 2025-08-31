@@ -306,8 +306,7 @@ async def log_requests(request: Request, call_next):
 # ============================================================================
 
 # CBAM 도메인 라우터들 등록 (MSA 원칙: 각 서비스는 자체 경로 구조를 가짐)
-# 중요: 정적 경로를 가진 라우터를 먼저 등록 (FastAPI 라우팅 우선순위)
-# 순서: 정적 경로 -> 동적 경로 (경로 매칭 충돌 방지)
+# 중요: 명확한 경로 구조를 위해 prefix를 사용하여 등록
 
 # 1단계: 정적 경로만 가진 라우터들 (prefix 없음)
 app.include_router(calculation_router)      # /calculation 경로
@@ -320,8 +319,8 @@ app.include_router(fueldir_router)         # /fueldir 경로
 app.include_router(processchain_router)    # /processchain 경로
 app.include_router(product_process_router) # /productprocess 경로
 
-# 2단계: 동적 경로를 포함한 라우터들 (마지막에 등록)
-app.include_router(install_router)         # /install 경로 (동적 경로 포함)
+# 2단계: install_router를 별도 경로로 등록 (prefix 사용)
+app.include_router(install_router, prefix="/install")  # /install 경로로 명확하게 등록
 
 logger.info("✅ 모든 라우터 등록 완료")
 
@@ -374,16 +373,44 @@ async def debug_routes():
                 route_info["dynamic"] = False
                 route_info["path_params"] = []
             
+            # 실제 접근 가능한 경로 정보 추가
+            if route.path == "/":
+                route_info["full_path"] = route.path
+            else:
+                route_info["full_path"] = route.path
+            
             routes.append(route_info)
     
     # 경로별로 정렬
     routes.sort(key=lambda x: (x["dynamic"], x["path"]))
     
+    # 라우터별 그룹화
+    router_groups = {}
+    for route in routes:
+        if route["path"] == "/":
+            group = "root"
+        elif route["path"].startswith("/install"):
+            group = "install"
+        elif route["path"].startswith("/product"):
+            group = "product"
+        elif route["path"].startswith("/process"):
+            group = "process"
+        elif route["path"].startswith("/calculation"):
+            group = "calculation"
+        else:
+            group = "other"
+        
+        if group not in router_groups:
+            router_groups[group] = []
+        router_groups[group].append(route)
+    
     return {
         "total_routes": len(routes),
+        "router_groups": router_groups,
         "static_routes": [r for r in routes if not r["dynamic"]],
         "dynamic_routes": [r for r in routes if r["dynamic"]],
-        "all_routes": routes
+        "all_routes": routes,
+        "install_routes": [r for r in routes if r["path"].startswith("/install") or r["path"] == ""]
     }
 # ============================================================================
 # 🚨 예외 처리 핸들러

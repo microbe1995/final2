@@ -25,8 +25,9 @@ def get_install_service():
 # 🏭 Install 관련 엔드포인트
 # ============================================================================
 
-# 중요: 정적 경로를 먼저 정의 (FastAPI 라우팅 우선순위)
-@router.get("/", response_model=List[InstallResponse])
+# 중요: prefix="/install"을 사용하므로 루트 경로(/)는 제거
+# 실제 경로: /install/ (사업장 목록 조회)
+@router.get("", response_model=List[InstallResponse])
 async def get_installs():
     """사업장 목록 조회"""
     try:
@@ -39,6 +40,7 @@ async def get_installs():
         logger.error(f"❌ 사업장 목록 조회 실패: {str(e)}")
         raise HTTPException(status_code=500, detail=f"사업장 목록 조회 중 오류가 발생했습니다: {str(e)}")
 
+# 실제 경로: /install/names (사업장명 목록 조회)
 @router.get("/names", response_model=List[InstallNameResponse])
 async def get_install_names():
     """사업장명 목록 조회 (드롭다운용)"""
@@ -52,7 +54,8 @@ async def get_install_names():
         logger.error(f"❌ 사업장명 목록 조회 실패: {str(e)}")
         raise HTTPException(status_code=500, detail=f"사업장명 목록 조회 중 오류가 발생했습니다: {str(e)}")
 
-@router.post("/", response_model=InstallResponse)
+# 실제 경로: /install/ (사업장 생성)
+@router.post("", response_model=InstallResponse)
 async def create_install(request: InstallCreateRequest):
     """사업장 생성"""
     try:
@@ -70,7 +73,7 @@ async def create_install(request: InstallCreateRequest):
         logger.error(f"❌ 사업장 생성 실패: {str(e)}")
         raise HTTPException(status_code=500, detail=f"사업장 생성 중 오류가 발생했습니다: {str(e)}")
 
-# 동적 경로는 정적 경로 뒤에 정의 (FastAPI 라우터 순서 중요!)
+# 실제 경로: /install/{install_id} (특정 사업장 조회)
 @router.get("/{install_id}", response_model=InstallResponse)
 async def get_install(install_id: int):
     """특정 사업장 조회"""
@@ -89,6 +92,7 @@ async def get_install(install_id: int):
         logger.error(f"❌ 사업장 조회 실패: {str(e)}")
         raise HTTPException(status_code=500, detail=f"사업장 조회 중 오류가 발생했습니다: {str(e)}")
 
+# 실제 경로: /install/{install_id} (사업장 수정)
 @router.put("/{install_id}", response_model=InstallResponse)
 async def update_install(install_id: int, request: InstallUpdateRequest):
     """사업장 수정"""
@@ -107,6 +111,7 @@ async def update_install(install_id: int, request: InstallUpdateRequest):
         logger.error(f"❌ 사업장 수정 실패: {str(e)}")
         raise HTTPException(status_code=500, detail=f"사업장 수정 중 오류가 발생했습니다: {str(e)}")
 
+# 실제 경로: /install/{install_id} (사업장 삭제)
 @router.delete("/{install_id}")
 async def delete_install(install_id: int):
     """사업장 삭제"""
