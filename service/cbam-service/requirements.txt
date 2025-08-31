@@ -6,8 +6,7 @@
 fastapi>=0.115.6
 uvicorn[standard]>=0.32.0
 
-# 데이터베이스
-sqlalchemy>=2.0.43
+# 데이터베이스 (asyncpg만 사용)
 asyncpg>=0.30.0
 
 # 데이터 검증
