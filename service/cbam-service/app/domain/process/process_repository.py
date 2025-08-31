@@ -152,17 +152,18 @@ class ProcessRepository:
         try:
             async with self.pool.acquire() as conn:
                 # 1. 공정 생성
+                params = (
+                    process_data['process_name'], 
+                    process_data['start_period'], 
+                    process_data['end_period']
+                )
                 result = await conn.fetchrow("""
                     INSERT INTO process (
                         process_name, start_period, end_period
                     ) VALUES (
                         $1, $2, $3
                     ) RETURNING *
-                """, (
-                    process_data['process_name'], 
-                    process_data['start_period'], 
-                    process_data['end_period']
-                ))
+                """, *params)
                 
                 if not result:
                     raise Exception("공정 생성에 실패했습니다.")
@@ -177,7 +178,7 @@ class ProcessRepository:
                             INSERT INTO product_process (product_id, process_id)
                             VALUES ($1, $2)
                             ON CONFLICT (product_id, process_id) DO NOTHING
-                        """, (product_id, process_id))
+                        """, product_id, process_id)
                 
                 # 3. 생성된 공정 정보 반환 (제품 정보 포함)
                 return await self._get_process_with_products_db(process_id)
@@ -218,11 +219,7 @@ class ProcessRepository:
                     products = [dict(product) for product in product_results]
                     process_dict['products'] = products
                     
-                    # datetime.date 객체를 문자열로 변환
-                    if 'start_period' in process_dict and process_dict['start_period']:
-                        process_dict['start_period'] = process_dict['start_period'].isoformat()
-                    if 'end_period' in process_dict and process_dict['end_period']:
-                        process_dict['end_period'] = process_dict['end_period'].isoformat()
+                    # datetime.date 객체는 그대로 유지 (스키마에서 date 타입으로 정의됨)
                     
                     processes.append(process_dict)
                 
@@ -245,11 +242,7 @@ class ProcessRepository:
                 
                 if result:
                     process_dict = dict(result)
-                    # datetime.date 객체를 문자열로 변환
-                    if 'start_period' in process_dict and process_dict['start_period']:
-                        process_dict['start_period'] = process_dict['start_period'].isoformat()
-                    if 'end_period' in process_dict and process_dict['end_period']:
-                        process_dict['end_period'] = process_dict['end_period'].isoformat()
+                    # datetime.date 객체는 그대로 유지 (스키마에서 date 타입으로 정의됨)
                     return process_dict
                 return None
                 
@@ -277,11 +270,7 @@ class ProcessRepository:
                 
                 if result:
                     process_dict = dict(result)
-                    # datetime.date 객체를 문자열로 변환
-                    if 'start_period' in process_dict and process_dict['start_period']:
-                        process_dict['start_period'] = process_dict['start_period'].isoformat()
-                    if 'end_period' in process_dict and process_dict['end_period']:
-                        process_dict['end_period'] = process_dict['end_period'].isoformat()
+                    # datetime.date 객체는 그대로 유지 (스키마에서 date 타입으로 정의됨)
                     return process_dict
                 return None
                 
@@ -358,11 +347,7 @@ class ProcessRepository:
                 products = [dict(product) for product in product_results]
                 process_dict['products'] = products
                 
-                # datetime.date 객체를 문자열로 변환
-                if 'start_period' in process_dict and process_dict['start_period']:
-                    process_dict['start_period'] = process_dict['start_period'].isoformat()
-                if 'end_period' in process_dict and process_dict['end_period']:
-                    process_dict['end_period'] = process_dict['end_period'].isoformat()
+                # datetime.date 객체는 그대로 유지 (스키마에서 date 타입으로 정의됨)
                 
                 return process_dict
                 

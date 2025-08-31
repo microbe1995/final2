@@ -14,8 +14,8 @@ class ProcessResponse(BaseModel):
     """프로세스 응답"""
     id: int = Field(..., description="공정 ID")
     process_name: str = Field(..., description="공정명")
-    start_period: Optional[str] = Field(None, description="시작일")
-    end_period: Optional[str] = Field(None, description="종료일")
+    start_period: Optional[date] = Field(None, description="시작일")
+    end_period: Optional[date] = Field(None, description="종료일")
     created_at: Optional[datetime] = Field(None, description="생성일")
     updated_at: Optional[datetime] = Field(None, description="수정일")
     # 다대다 관계를 위한 제품 정보 (순환 참조 방지를 위해 Dict 사용)
