@@ -15,7 +15,7 @@ const withPWA = require('next-pwa')({
   ],
   runtimeCaching: [
     {
-      urlPattern: /^https:\/\/gateway-production-da31\.up\.railway\.app/,
+      urlPattern: /^https:\/\/gateway-production-22ef\.up\.railway\.app/,
       handler: 'NetworkFirst',
       options: {
         cacheName: 'gateway-api-cache-v2',  // 캐시 버전 업데이트
@@ -90,7 +90,7 @@ const nextConfig = {
         headers: [
           {
             key: 'Content-Security-Policy',
-            value: `default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com https://dapi.kakao.com https://t1.daumcdn.net https://greensteel.site; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: https://www.google-analytics.com https://greensteel.site; connect-src 'self' ${process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.greensteel.site'} http://localhost:8080 http://localhost:8083 https://www.google-analytics.com https://analytics.google.com https://dapi.kakao.com https://greensteel.site; font-src 'self' data:; frame-src 'self' https://greensteel.site https://postcode.map.daum.net;`,
+            value: `default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com https://dapi.kakao.com https://t1.daumcdn.net https://greensteel.site; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: https://www.google-analytics.com https://greensteel.site; connect-src 'self' ${process.env.NEXT_PUBLIC_GATEWAY_URL || 'https://gateway-production-22ef.up.railway.app'} http://localhost:8080 http://localhost:8083 https://www.google-analytics.com https://analytics.google.com https://dapi.kakao.com https://greensteel.site; font-src 'self' data:; frame-src 'self' https://greensteel.site https://postcode.map.daum.net;`,
           },
           {
             key: 'X-Frame-Options',
