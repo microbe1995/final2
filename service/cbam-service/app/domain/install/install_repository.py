@@ -194,7 +194,7 @@ class InstallRepository:
                     INSERT INTO install (install_name, reporting_year)
                     VALUES ($1, $2)
                     RETURNING *
-                """, (install_data['install_name'], install_data['reporting_year']))
+                """, install_data['install_name'], install_data['reporting_year'])
                 
                 if result:
                     install_dict = dict(result)
