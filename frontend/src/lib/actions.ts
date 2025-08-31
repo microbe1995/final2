@@ -3,7 +3,12 @@
 import type { ProjectMeta, AnalysisScope, LciItem } from '@/lib/types';
 
 // Base API configuration for microservice integration
-const API_BASE_URL = process.env.API_GATEWAY_URL || 'https://gateway-production-22ef.up.railway.app/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || '';
+
+// 🔴 추가: 환경변수 검증
+if (!API_BASE_URL) {
+  console.warn('[ACTIONS] NEXT_PUBLIC_API_BASE_URL 환경변수가 설정되지 않았습니다.');
+}
 
 interface ApiResponse<T = any> {
   success: boolean;
@@ -19,13 +24,27 @@ async function apiCall<T = any>(
   data?: any
 ): Promise<ApiResponse<T>> {
   try {
-    // Mock implementation - will be replaced with actual API calls
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    // 🔴 수정: 실제 API 호출 구현
+    const url = `${API_BASE_URL}${endpoint}`;
+    
+    const response = await fetch(url, {
+      method,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: data ? JSON.stringify(data) : undefined,
+    });
 
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const responseData = await response.json();
+    
     return {
       success: true,
-      message: 'Mock API call successful',
-      data: { id: `mock-${Date.now()}` } as T,
+      message: 'API call successful',
+      data: responseData as T,
     };
   } catch (error) {
     console.error(`[API ERROR] ${endpoint}:`, error);
@@ -38,18 +57,18 @@ async function apiCall<T = any>(
 
 // Project Management Service Actions
 export async function createProject(projectData: Partial<ProjectMeta>) {
-  return await apiCall('/projects', 'POST', projectData);
+  return await apiCall('/api/v1/boundary/projects', 'POST', projectData);
 }
 
 export async function getProject(projectId: string) {
-  return await apiCall(`/projects/${projectId}`, 'GET');
+  return await apiCall(`/api/v1/boundary/projects/${projectId}`, 'GET');
 }
 
 export async function updateProject(
   projectId: string,
   projectData: Partial<ProjectMeta>
 ) {
-  return await apiCall(`/projects/${projectId}`, 'PUT', projectData);
+  return await apiCall(`/api/v1/boundary/projects/${projectId}`, 'PUT', projectData);
 }
 
 // Scope Service Actions
@@ -85,8 +104,8 @@ export async function saveScope(
 
   // Call multiple microservices
   const [projectResult, scopeResult] = await Promise.all([
-    apiCall(`/projects/${projectId}/meta`, 'PUT', projectMeta),
-    apiCall(`/projects/${projectId}/scope`, 'PUT', analysisScope),
+    apiCall(`/api/v1/boundary/projects/${projectId}/meta`, 'PUT', projectMeta),
+    apiCall(`/api/v1/boundary/projects/${projectId}/scope`, 'PUT', analysisScope),
   ]);
 
   if (!projectResult.success || !scopeResult.success) {
@@ -105,15 +124,15 @@ export async function saveScope(
 
 // LCI Service Actions
 export async function saveLci(projectId: string, items: LciItem[]) {
-  return await apiCall(`/projects/${projectId}/lci`, 'PUT', { items });
+  return await apiCall(`/api/v1/boundary/projects/${projectId}/lci`, 'PUT', { items });
 }
 
 export async function getLciData(projectId: string) {
-  return await apiCall(`/projects/${projectId}/lci`, 'GET');
+  return await apiCall(`/api/v1/boundary/projects/${projectId}/lci`, 'GET');
 }
 
 export async function validateLciData(projectId: string) {
-  return await apiCall(`/projects/${projectId}/lci/validate`, 'POST');
+  return await apiCall(`/api/v1/boundary/projects/${projectId}/lci/validate`, 'POST');
 }
 
 // LCIA Service Actions
@@ -122,7 +141,7 @@ export async function startLciaRun(
   config: { method: string; categories: string[] }
 ) {
 
-  const result = await apiCall(`/projects/${projectId}/lcia/run`, 'POST', {
+  const result = await apiCall(`/api/v1/boundary/projects/${projectId}/lcia/run`, 'POST', {
     methodSet: config.method,
     categories: config.categories,
     timestamp: new Date().toISOString(),
@@ -141,13 +160,13 @@ export async function startLciaRun(
 
 export async function getLciaResults(projectId: string, runId?: string) {
   const endpoint = runId
-    ? `/projects/${projectId}/lcia/results/${runId}`
-    : `/projects/${projectId}/lcia/results/latest`;
+    ? `/api/v1/boundary/projects/${projectId}/lcia/results/${runId}`
+    : `/api/v1/boundary/projects/${projectId}/lcia/results/latest`;
   return await apiCall(endpoint, 'GET');
 }
 
 export async function getLciaHistory(projectId: string) {
-  return await apiCall(`/projects/${projectId}/lcia/history`, 'GET');
+  return await apiCall(`/api/v1/boundary/projects/${projectId}/lcia/history`, 'GET');
 }
 
 // Report Service Actions
@@ -165,7 +184,7 @@ export async function requestReport(
 > {
 
   const result = await apiCall(
-    `/projects/${projectId}/report/generate`,
+    `/api/v1/boundary/projects/${projectId}/report/generate`,
     'POST',
     {
       format,
@@ -188,7 +207,7 @@ export async function requestReport(
 }
 
 export async function getReportStatus(reportId: string) {
-  return await apiCall(`/reports/${reportId}/status`, 'GET');
+  return await apiCall(`/api/v1/boundary/reports/${reportId}/status`, 'GET');
 }
 
 // File Upload Service Actions
@@ -200,7 +219,7 @@ export async function uploadProcessDiagram(projectId: string, file: File) {
   formData.append('projectId', projectId);
   formData.append('type', 'process-diagram');
 
-  return await apiCall(`/files/upload/process-diagram`, 'POST', {
+  return await apiCall(`/api/v1/boundary/files/upload/process-diagram`, 'POST', {
     fileName: file.name,
     fileSize: file.size,
     mimeType: file.type,
@@ -210,9 +229,9 @@ export async function uploadProcessDiagram(projectId: string, file: File) {
 
 // Data Quality Service Actions
 export async function validateDataQuality(projectId: string) {
-  return await apiCall(`/projects/${projectId}/quality/validate`, 'POST');
+  return await apiCall(`/api/v1/boundary/projects/${projectId}/quality/validate`, 'POST');
 }
 
 export async function getDataQualityReport(projectId: string) {
-  return await apiCall(`/projects/${projectId}/quality/report`, 'GET');
+  return await apiCall(`/api/v1/boundary/projects/${projectId}/quality/report`, 'GET');
 }

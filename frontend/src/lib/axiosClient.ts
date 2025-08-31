@@ -54,13 +54,18 @@ const retryRequest = async (
 
 // axios 인스턴스 생성
 const axiosClient: AxiosInstance = axios.create({
-  // 🔴 수정: 상대 경로 사용 (Gateway를 통한 라우팅)
-  baseURL: '',
+  // 🔴 수정: 환경변수 기반 Gateway URL 사용 (상대 경로 대신)
+  baseURL: process.env.NEXT_PUBLIC_API_BASE_URL || '',
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
   },
 });
+
+// 🔴 추가: 환경변수 검증
+if (typeof window !== 'undefined' && !process.env.NEXT_PUBLIC_API_BASE_URL) {
+  console.warn('[AXIOS] NEXT_PUBLIC_API_BASE_URL 환경변수가 설정되지 않았습니다.');
+}
 
 // 요청 인터셉터
 axiosClient.interceptors.request.use(
@@ -188,8 +193,6 @@ export const apiEndpoints = {
   gateway: {
     health: '/health',
     status: '/status',
-    routing: '/routing',
-    architecture: '/architecture',
   },
   // Auth Service (Gateway를 통해)
   auth: {
@@ -273,7 +276,7 @@ export const apiEndpoints = {
       update: (id: number) => `/api/v1/boundary/matdir/${id}`,
       delete: (id: number) => `/api/v1/boundary/matdir/${id}`,
       byProcess: (process_id: number) => `/api/v1/boundary/matdir/process/${process_id}`,
-      calculate: '/api/v1/boundary/matdir/calculate',
+      calculate: '/api/v1/boundary/calculation/emission/process/attrdir',
       totalByProcess: (process_id: number) => `/api/v1/boundary/matdir/process/${process_id}/total`
     },
     
@@ -285,7 +288,7 @@ export const apiEndpoints = {
       update: (id: number) => `/api/v1/boundary/fueldir/${id}`,
       delete: (id: number) => `/api/v1/boundary/fueldir/${id}`,
       byProcess: (process_id: number) => `/api/v1/boundary/fueldir/process/${process_id}`,
-      calculate: '/api/v1/boundary/fueldir/calculate',
+      calculate: '/api/v1/boundary/calculation/emission/process/attrdir',
       totalByProcess: (process_id: number) => `/api/v1/boundary/fueldir/process/${process_id}/total`
     },
     
@@ -317,7 +320,6 @@ export const apiEndpoints = {
     // Precursor 관련 API
     precursors: '/api/v1/boundary/calculation/emission/process/attrdir/all',
     precursorsBatch: '/api/v1/boundary/calculation/emission/process/attrdir/batch',
-
     precursor: '/api/v1/boundary/calculation/emission/process/attrdir',
     history: '/api/v1/boundary/calculation/emission/process/attrdir/all',
     
@@ -352,52 +354,6 @@ export const apiEndpoints = {
       product: {
         calculate: '/api/v1/boundary/calculation/emission/product/calculate'
       }
-    }
-  },
-  // 최상위 calculation 속성 추가 (기존 코드와의 호환성을 위해)
-  calculation: {
-    // Material 계산 API
-    material: '/api/v1/boundary/calculation/emission/process/attrdir',
-    // Fuel 계산 API
-    fueldir: {
-      calculate: '/api/v1/boundary/calculation/emission/process/attrdir',
-      create: '/api/v1/boundary/calculation/emission/process/attrdir'
-    },
-    // Material 계산 API
-    matdir: {
-      calculate: '/api/v1/boundary/calculation/emission/process/attrdir',
-      create: '/api/v1/boundary/calculation/emission/process/attrdir'
-    },
-    // Process 배출량 계산 API
-    process: {
-      calculate: '/api/v1/boundary/calculation/emission/process/calculate'
-    },
-    // Precursor 관련 API
-    precursors: '/api/v1/boundary/calculation/emission/process/attrdir/all',
-    precursorsBatch: '/api/v1/boundary/calculation/emission/process/attrdir/batch',
-    precursor: '/api/v1/boundary/calculation/emission/process/attrdir',
-    history: '/api/v1/boundary/calculation/emission/process/attrdir/all',
-    // CBAM 계산 API
-    cbam: '/api/v1/boundary/calculation/emission/process/calculate',
-    // 통계 API
-    stats: '/api/v1/boundary/calculation/emission/process/attrdir/all',
-    // 전기 API
-    electricity: '/api/v1/boundary/calculation/emission/process/attrdir',
-    // Edge 관련 API
-    edge: {
-      create: '/api/v1/boundary/edge',
-      list: '/api/v1/boundary/edge',
-      get: (id: number) => `/api/v1/boundary/edge/${id}`,
-      delete: (id: number) => `/api/v1/boundary/edge/${id}`
-    },
-    // Process Chain 관련 API
-    processchain: {
-      list: '/api/v1/boundary/processchain/chain',
-      create: '/api/v1/boundary/processchain/chain',
-      get: (id: number) => `/api/v1/boundary/processchain/chain/${id}`,
-      delete: (id: number) => `/api/v1/boundary/processchain/chain/${id}`,
-      chain: '/api/v1/boundary/processchain/chain',
-      test: '/api/v1/boundary/processchain/test'
     }
   },
   // Material Master API (matdir 서비스 사용) - 경로 패턴 통일
