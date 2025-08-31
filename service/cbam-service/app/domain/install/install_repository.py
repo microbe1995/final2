@@ -160,6 +160,11 @@ class InstallRepository:
         """사업장 삭제"""
         await self._ensure_pool_initialized()
         try:
+            # 삭제 전 연결된 데이터 확인
+            connected_data = await self._get_connected_data_count(install_id)
+            if connected_data['total'] > 0:
+                logger.info(f"🗑️ 사업장 ID {install_id} 삭제 - 연결된 데이터: {connected_data}")
+            
             return await self._delete_install_db(install_id)
         except Exception as e:
             logger.error(f"❌ 사업장 삭제 실패: {str(e)}")
@@ -298,17 +303,116 @@ class InstallRepository:
             raise
 
     async def _delete_install_db(self, install_id: int) -> bool:
-        """데이터베이스에서 사업장 삭제"""
+        """데이터베이스에서 사업장 삭제 (CASCADE 방식)"""
         if not self.pool:
             raise Exception("데이터베이스 연결 풀이 초기화되지 않았습니다.")
             
         try:
             async with self.pool.acquire() as conn:
-                result = await conn.execute("""
-                    DELETE FROM install WHERE id = $1
-                """, install_id)
-                
-                return result != "DELETE 0"
+                # 트랜잭션 시작
+                async with conn.transaction():
+                    logger.info(f"🗑️ 사업장 ID {install_id} 삭제 시작 - 연결된 데이터 정리 중...")
+                    
+                    # 1단계: 연결된 product_process 관계 삭제
+                    await conn.execute("""
+                        DELETE FROM product_process 
+                        WHERE product_id IN (
+                            SELECT id FROM product WHERE install_id = $1
+                        )
+                    """, install_id)
+                    logger.info(f"✅ product_process 관계 삭제 완료")
+                    
+                    # 2단계: 연결된 제품 삭제
+                    await conn.execute("""
+                        DELETE FROM product WHERE install_id = $1
+                    """, install_id)
+                    logger.info(f"✅ 연결된 제품 삭제 완료")
+                    
+                    # 3단계: 연결된 프로세스 삭제 (제품과 연결되지 않은 것들)
+                    await conn.execute("""
+                        DELETE FROM process 
+                        WHERE id NOT IN (
+                            SELECT DISTINCT process_id FROM product_process
+                        )
+                    """)
+                    logger.info(f"✅ 연결되지 않은 프로세스 삭제 완료")
+                    
+                    # 4단계: 연결된 edge 삭제 (제품/프로세스와 연결되지 않은 것들)
+                    await conn.execute("""
+                        DELETE FROM edge 
+                        WHERE source_node_id NOT IN (
+                            SELECT id FROM product UNION SELECT id FROM process
+                        ) OR target_node_id NOT IN (
+                            SELECT id FROM product UNION SELECT id FROM process
+                        )
+                    """)
+                    logger.info(f"✅ 연결되지 않은 edge 삭제 완료")
+                    
+                    # 5단계: 마지막으로 사업장 삭제
+                    result = await conn.execute("""
+                        DELETE FROM install WHERE id = $1
+                    """, install_id)
+                    
+                    if result == "DELETE 0":
+                        logger.warning(f"⚠️ 삭제할 사업장 ID {install_id}를 찾을 수 없습니다")
+                        return False
+                    
+                    logger.info(f"✅ 사업장 ID {install_id} 삭제 완료")
+                    return True
+                    
         except Exception as e:
             logger.error(f"❌ 사업장 삭제 실패: {str(e)}")
             raise
+
+    async def _get_connected_data_count(self, install_id: int) -> Dict[str, int]:
+        """사업장에 연결된 데이터 개수 확인"""
+        if not self.pool:
+            raise Exception("데이터베이스 연결 풀이 초기화되지 않았습니다.")
+            
+        try:
+            async with self.pool.acquire() as conn:
+                # 제품 개수
+                product_count = await conn.fetchval("""
+                    SELECT COUNT(*) FROM product WHERE install_id = $1
+                """, install_id)
+                
+                # 프로세스 개수 (제품과 연결된 것들)
+                process_count = await conn.fetchval("""
+                    SELECT COUNT(DISTINCT p.id) 
+                    FROM process p
+                    JOIN product_process pp ON p.id = pp.process_id
+                    JOIN product pr ON pp.product_id = pr.id
+                    WHERE pr.install_id = $1
+                """, install_id)
+                
+                # Edge 개수
+                edge_count = await conn.fetchval("""
+                    SELECT COUNT(*) 
+                    FROM edge e
+                    WHERE e.source_node_id IN (
+                        SELECT id FROM product WHERE install_id = $1
+                        UNION
+                        SELECT id FROM process p
+                        JOIN product_process pp ON p.id = pp.process_id
+                        JOIN product pr ON pp.product_id = pr.id
+                        WHERE pr.install_id = $1
+                    ) OR e.target_node_id IN (
+                        SELECT id FROM product WHERE install_id = $1
+                        UNION
+                        SELECT id FROM process p
+                        JOIN product_process pp ON p.id = pp.process_id
+                        JOIN product pr ON pp.product_id = pr.id
+                        WHERE pr.install_id = $1
+                    )
+                """, install_id)
+                
+                return {
+                    'products': product_count or 0,
+                    'processes': process_count or 0,
+                    'edges': edge_count or 0,
+                    'total': (product_count or 0) + (process_count or 0) + (edge_count or 0)
+                }
+                
+        except Exception as e:
+            logger.error(f"❌ 연결된 데이터 개수 확인 실패: {str(e)}")
+            return {'products': 0, 'processes': 0, 'edges': 0, 'total': 0}
