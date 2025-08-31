@@ -318,58 +318,62 @@ class InstallRepository:
             
         try:
             async with self.pool.acquire() as conn:
-                # 트랜잭션 시작
-                async with conn.transaction():
-                    logger.info(f"🗑️ 사업장 ID {install_id} 삭제 시작 - 데이터베이스 구조 분석 중...")
-                    
-                    # 먼저 데이터베이스 구조 분석
-                    db_analysis = await self.analyze_database_structure()
-                    logger.info(f"📊 데이터베이스 구조 분석 결과:")
-                    logger.info(f"   - 테이블 개수: {len(db_analysis['table_names'])}")
-                    logger.info(f"   - 외래키 제약조건: {len(db_analysis['foreign_key_constraints'])}")
-                    logger.info(f"   - install 관련 외래키: {db_analysis['install_related_fks']}")
-                    
-                    # install ID 1과 연결된 데이터 확인
-                    if install_id == 1 and 'install_1_connections' in db_analysis:
-                        connections = db_analysis['install_1_connections']
-                        logger.info(f"🔗 install ID 1 연결 데이터:")
-                        if 'products' in connections:
-                            logger.info(f"   - 제품: {len(connections['products'])}개")
-                        if 'processes' in connections:
-                            logger.info(f"   - 프로세스: {len(connections['processes'])}개")
-                    
-                    # 외래키 제약조건에 따른 삭제 순서 결정
-                    delete_order = self._determine_delete_order(db_analysis)
-                    logger.info(f"🗑️ 삭제 순서: {delete_order}")
-                    
-                    # 순서대로 삭제 실행
-                    for step, (table_name, query, params) in enumerate(delete_order, 1):
-                        try:
-                            logger.info(f"📋 {step}단계: {table_name} 테이블 정리 중...")
+                logger.info(f"🗑️ 사업장 ID {install_id} 삭제 시작 - 데이터베이스 구조 분석 중...")
+                
+                # 먼저 데이터베이스 구조 분석
+                db_analysis = await self.analyze_database_structure()
+                logger.info(f"📊 데이터베이스 구조 분석 결과:")
+                logger.info(f"   - 테이블 개수: {len(db_analysis['table_names'])}")
+                logger.info(f"   - 외래키 제약조건: {len(db_analysis['foreign_key_constraints'])}")
+                logger.info(f"   - install 관련 외래키: {db_analysis['install_related_fks']}")
+                
+                # install ID 1과 연결된 데이터 확인
+                if install_id == 1 and 'install_1_connections' in db_analysis:
+                    connections = db_analysis['install_1_connections']
+                    logger.info(f"🔗 install ID 1 연결 데이터:")
+                    if 'products' in connections:
+                        logger.info(f"   - 제품: {len(connections['products'])}개")
+                    if 'processes' in connections:
+                        logger.info(f"   - 프로세스: {len(connections['processes'])}개")
+                
+                # 외래키 제약조건에 따른 삭제 순서 결정
+                delete_order = self._determine_delete_order(db_analysis, install_id)
+                logger.info(f"🗑️ 삭제 순서: {delete_order}")
+                
+                # 순서대로 삭제 실행 (각 단계별로 개별 트랜잭션 사용)
+                for step, (table_name, query, params) in enumerate(delete_order, 1):
+                    try:
+                        logger.info(f"📋 {step}단계: {table_name} 테이블 정리 중...")
+                        async with conn.transaction():
                             result = await conn.execute(query, *params)
                             logger.info(f"✅ {table_name} 정리 완료: {result}")
-                        except Exception as e:
-                            logger.warning(f"⚠️ {table_name} 정리 실패 (건너뜀): {e}")
-                            continue
-                    
-                    # 마지막으로 install 삭제
+                    except Exception as e:
+                        logger.warning(f"⚠️ {table_name} 정리 실패 (건너뜀): {e}")
+                        continue
+                
+                # 마지막으로 install 삭제
+                try:
                     logger.info(f"📋 최종 단계: install 테이블에서 ID {install_id} 삭제")
-                    result = await conn.execute("""
-                        DELETE FROM install WHERE id = $1
-                    """, install_id)
-                    
-                    if result == "DELETE 0":
-                        logger.warning(f"⚠️ 삭제할 사업장 ID {install_id}를 찾을 수 없습니다")
-                        return False
-                    
-                    logger.info(f"✅ 사업장 ID {install_id} 삭제 완료")
-                    return True
+                    async with conn.transaction():
+                        result = await conn.execute("""
+                            DELETE FROM install WHERE id = $1
+                        """, install_id)
+                        
+                        if result == "DELETE 0":
+                            logger.warning(f"⚠️ 삭제할 사업장 ID {install_id}를 찾을 수 없습니다")
+                            return False
+                        
+                        logger.info(f"✅ 사업장 ID {install_id} 삭제 완료")
+                        return True
+                except Exception as e:
+                    logger.error(f"❌ install 테이블 삭제 실패: {str(e)}")
+                    raise
                     
         except Exception as e:
             logger.error(f"❌ 사업장 삭제 실패: {str(e)}")
             raise
 
-    def _determine_delete_order(self, db_analysis: Dict[str, Any]) -> List[tuple]:
+    def _determine_delete_order(self, db_analysis: Dict[str, Any], install_id: int) -> List[tuple]:
         """데이터베이스 구조 분석 결과에 따른 삭제 순서 결정"""
         delete_order = []
         
@@ -381,15 +385,15 @@ class InstallRepository:
             delete_order.append((
                 'product_process',
                 "DELETE FROM product_process WHERE product_id IN (SELECT id FROM product WHERE install_id = $1)",
-                (1,)
+                (install_id,)
             ))
         
         # 2단계: edge 삭제 (product/process를 참조하는 것들)
         if 'edge' in db_analysis['table_names']:
             delete_order.append((
                 'edge',
-                "DELETE FROM edge WHERE source_node_id IN (SELECT id FROM product WHERE install_id = $1 UNION SELECT id FROM process p JOIN product_process pp ON p.id = pp.process_id JOIN product pr ON pp.product_id = pr.id WHERE pr.install_id = $1) OR target_node_id IN (SELECT id FROM product WHERE install_id = $1 UNION SELECT id FROM process p JOIN product_process pp ON p.id = pp.process_id JOIN product pr ON pp.product_id = pr.id WHERE pr.install_id = $1)",
-                (1, 1, 1, 1)
+                "DELETE FROM edge e WHERE e.source_node_id IN (SELECT p.id FROM product p WHERE p.install_id = $1 UNION SELECT proc.id FROM process proc JOIN product_process pp ON proc.id = pp.process_id JOIN product pr ON pp.product_id = pr.id WHERE pr.install_id = $1) OR e.target_node_id IN (SELECT p.id FROM product p WHERE p.install_id = $1 UNION SELECT proc.id FROM process proc JOIN product_process pp ON proc.id = pp.process_id JOIN product pr ON pp.product_id = pr.id WHERE pr.install_id = $1)",
+                (install_id, install_id, install_id, install_id)
             ))
         
         # 3단계: process 삭제 (product와 연결되지 않은 것들)
@@ -405,7 +409,7 @@ class InstallRepository:
             delete_order.append((
                 'product',
                 "DELETE FROM product WHERE install_id = $1",
-                (1,)
+                (install_id,)
             ))
         
         return delete_order
@@ -436,17 +440,17 @@ class InstallRepository:
                     SELECT COUNT(*) 
                     FROM edge e
                     WHERE e.source_node_id IN (
-                        SELECT id FROM product WHERE install_id = $1
+                        SELECT p.id FROM product p WHERE p.install_id = $1
                         UNION
-                        SELECT id FROM process p
-                        JOIN product_process pp ON p.id = pp.process_id
+                        SELECT proc.id FROM process proc
+                        JOIN product_process pp ON proc.id = pp.process_id
                         JOIN product pr ON pp.product_id = pr.id
                         WHERE pr.install_id = $1
                     ) OR e.target_node_id IN (
-                        SELECT id FROM product WHERE install_id = $1
+                        SELECT p.id FROM product p WHERE p.install_id = $1
                         UNION
-                        SELECT id FROM process p
-                        JOIN product_process pp ON p.id = pp.process_id
+                        SELECT proc.id FROM process proc
+                        JOIN product_process pp ON proc.id = pp.process_id
                         JOIN product pr ON pp.product_id = pr.id
                         WHERE pr.install_id = $1
                     )
@@ -700,7 +704,7 @@ class InstallRepository:
                         
                         if product_count > 0:
                             products = await conn.fetch("""
-                                SELECT id, name, install_id FROM product WHERE install_id = 1
+                                SELECT id, product_name, install_id FROM product WHERE install_id = 1
                             """)
                             logger.info(f"📋 연결된 제품들: {[dict(p) for p in products]}")
                             
