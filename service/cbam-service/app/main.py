@@ -5,10 +5,14 @@
 import time
 import logging
 import os
+import re
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy import text
 
 # 로깅 설정
 logging.basicConfig(
@@ -48,27 +52,123 @@ APP_VERSION = os.getenv("APP_VERSION", "1.0.0")
 APP_DESCRIPTION = os.getenv("APP_DESCRIPTION", "ReactFlow 기반 서비스")
 DEBUG_MODE = os.getenv("DEBUG_MODE", "false").lower() == "true"
 
+# 전역 데이터베이스 엔진 및 세션 팩토리
+async_engine = None
+async_session_factory = None
+
 # ============================================================================
 # 🔄 애플리케이션 생명주기 관리
 # ============================================================================
+
+def get_database_url():
+    """데이터베이스 URL 가져오기"""
+    database_url = os.getenv("DATABASE_URL")
+    if not database_url:
+        logger.warning("DATABASE_URL 환경변수가 설정되지 않았습니다.")
+        return None
+    return database_url
+
+def clean_database_url(url: str) -> str:
+    """데이터베이스 URL 정리 및 asyncpg 형식으로 변환"""
+    # Railway PostgreSQL에서 발생할 수 있는 잘못된 파라미터들 제거
+    invalid_params = [
+        'db_type', 'db_type=postgresql', 'db_type=postgres',
+        'db_type=mysql', 'db_type=sqlite'
+    ]
+    
+    for param in invalid_params:
+        if param in url:
+            url = url.replace(param, '')
+            logger.warning(f"잘못된 데이터베이스 파라미터 제거: {param}")
+    
+    # 연속된 & 제거
+    url = re.sub(r'&&+', '&', url)
+    url = re.sub(r'&+$', '', url)
+    
+    if '?' in url and url.split('?')[1].startswith('&'):
+        url = url.replace('?&', '?')
+    
+    # postgresql:// -> postgresql+asyncpg:// 변환 (SQLAlchemy async 지원)
+    if url.startswith('postgresql://'):
+        url = url.replace('postgresql://', 'postgresql+asyncpg://', 1)
+        logger.info("✅ PostgreSQL URL을 asyncpg 형식으로 변환")
+    
+    return url
+
+async def initialize_database():
+    """비동기 데이터베이스 초기화 및 SQLAlchemy 엔진 설정"""
+    global async_engine, async_session_factory
+    
+    try:
+        database_url = get_database_url()
+        if not database_url:
+            logger.warning("DATABASE_URL이 없어 데이터베이스 초기화를 건너뜁니다.")
+            return
+        
+        clean_url = clean_database_url(database_url)
+        
+        # 비동기 SQLAlchemy 엔진 생성
+        async_engine = create_async_engine(
+            clean_url,
+            echo=DEBUG_MODE,  # 디버그 모드에서만 SQL 로깅
+            pool_pre_ping=True,
+            pool_recycle=300,
+            pool_size=5,
+            max_overflow=10,
+            connect_args={
+                'server_settings': {
+                    'application_name': 'cbam-service-async',
+                    'timezone': 'utc',
+                    'client_encoding': 'utf8'
+                }
+            }
+        )
+        
+        # 비동기 세션 팩토리 생성
+        async_session_factory = sessionmaker(
+            async_engine, 
+            class_=AsyncSession, 
+            expire_on_commit=False
+        )
+        
+        logger.info("✅ 비동기 SQLAlchemy 엔진 및 세션 팩토리 생성 완료")
+        
+        # 연결 테스트
+        async with async_engine.begin() as conn:
+            result = await conn.execute(text("SELECT 1"))
+            logger.info("✅ 데이터베이스 연결 테스트 성공")
+        
+    except Exception as e:
+        logger.error(f"❌ 비동기 데이터베이스 초기화 실패: {str(e)}")
+        logger.warning("⚠️ 데이터베이스 연결 실패로 인해 일부 기능이 제한될 수 있습니다.")
+        async_engine = None
+        async_session_factory = None
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """애플리케이션 시작/종료 시 실행되는 함수"""
     logger.info("🚀 Cal_boundary 서비스 시작 중...")
     
+    # 비동기 데이터베이스 초기화
+    await initialize_database()
+    
     # ReactFlow 기반 서비스 초기화
     logger.info("✅ ReactFlow 기반 서비스 초기화")
     
-    # 🔴 Repository 초기화 제거 - 각 도메인에서 필요할 때 자동으로 초기화됨
-    # 각 Repository는 _ensure_pool_initialized()로 자동 초기화
-    logger.info("ℹ️ Repository는 필요할 때 자동으로 초기화됩니다.")
+    # SQLAlchemy 엔진 상태 확인
+    if async_engine:
+        logger.info("✅ SQLAlchemy 비동기 엔진 초기화 완료")
+    else:
+        logger.warning("⚠️ SQLAlchemy 엔진 초기화 실패 - Repository 자동 초기화에 의존")
     
     yield
     
     # 서비스 종료 시 정리 작업
-    logger.info("✅ ReactFlow 기반 서비스 정리 완료")
+    if async_engine:
+        await async_engine.dispose()
+        logger.info("✅ SQLAlchemy 엔진 정리 완료")
     
+    logger.info("✅ ReactFlow 기반 서비스 정리 완료")
     logger.info("🛑 Cal_boundary 서비스 종료 중...")
 
 # ============================================================================
