@@ -318,8 +318,41 @@ export const apiEndpoints = {
     // Precursor 관련 API
     precursors: '/api/v1/calculation/emission/process/attrdir/all',
     precursorsBatch: '/api/v1/calculation/emission/process/attrdir/batch',
-          precursor: '/api/v1/calculation/emission/process/attrdir',
-      history: '/api/v1/calculation/emission/process/attrdir/all'
+    precursor: '/api/v1/calculation/emission/process/attrdir',
+    history: '/api/v1/calculation/emission/process/attrdir/all',
+    
+    // Calculation 관련 API
+    calculation: {
+      // Material 계산 API
+      matdir: {
+        calculate: '/api/v1/calculation/emission/process/attrdir',
+        create: '/api/v1/calculation/emission/process/attrdir',
+        get: (process_id: number) => `/api/v1/calculation/emission/process/attrdir/${process_id}`,
+        update: (process_id: number) => `/api/v1/calculation/emission/process/attrdir/${process_id}`,
+        delete: (process_id: number) => `/api/v1/calculation/emission/process/attrdir/${process_id}`,
+        all: '/api/v1/calculation/emission/process/attrdir/all',
+        batch: '/api/v1/calculation/emission/process/attrdir/batch'
+      },
+      // Fuel 계산 API
+      fueldir: {
+        calculate: '/api/v1/calculation/emission/process/attrdir',
+        create: '/api/v1/calculation/emission/process/attrdir',
+        get: (process_id: number) => `/api/v1/calculation/emission/process/attrdir/${process_id}`,
+        update: (process_id: number) => `/api/v1/calculation/emission/process/attrdir/${process_id}`,
+        delete: (process_id: number) => `/api/v1/calculation/emission/process/attrdir/${process_id}`,
+        all: '/api/v1/calculation/emission/process/attrdir/all',
+        batch: '/api/v1/calculation/emission/process/attrdir/batch'
+      },
+      // Process 배출량 계산 API
+      process: {
+        calculate: '/api/v1/calculation/emission/process/calculate',
+        attrdir: '/api/v1/calculation/emission/process/attrdir'
+      },
+      // Product 배출량 계산 API
+      product: {
+        calculate: '/api/v1/calculation/emission/product/calculate'
+      }
+    }
   },
   // Material Master API (matdir 서비스 사용) - 경로 패턴 통일
   materialMaster: {

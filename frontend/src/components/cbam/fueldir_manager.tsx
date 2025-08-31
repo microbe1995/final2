@@ -167,7 +167,7 @@ export default function FuelDirManager({ selectedProcess, onClose }: FuelDirMana
       try {
         console.log('🔄 자동 집계 시작: 공정 ID', selectedProcess.id);
         const aggregationResponse = await axiosClient.post(
-          `/api/v1/boundary/emission/process/${selectedProcess.id}/attrdir`
+          `/api/v1/calculation/emission/process/attrdir`
         );
         console.log('✅ 자동 집계 성공:', aggregationResponse.data);
       } catch (aggregationError: any) {
