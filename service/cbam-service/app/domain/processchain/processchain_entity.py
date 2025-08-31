@@ -8,9 +8,8 @@ from datetime import datetime
 from typing import Dict, Any, List
 from decimal import Decimal
 
-# 공통 Base 클래스와 Process 엔티티 import
+# 공통 Base 클래스만 import (Process는 문자열로 참조하여 순환 참조 방지)
 from app.domain.calculation.calculation_entity import Base
-from app.domain.process.process_entity import Process
 
 # ============================================================================
 # 🔄 ProcessChain 엔티티 (통합 공정 그룹)
@@ -30,10 +29,10 @@ class ProcessChain(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
-    # 관계 설정
-    start_process = relationship("Process", foreign_keys=[start_process_id])
-    end_process = relationship("Process", foreign_keys=[end_process_id])
-    chain_links = relationship("ProcessChainLink", back_populates="chain", cascade="all, delete-orphan")
+    # 관계 설정 (문자열로 참조하여 순환 참조 방지)
+    start_process = relationship("Process", foreign_keys=[start_process_id], lazy="select")
+    end_process = relationship("Process", foreign_keys=[end_process_id], lazy="select")
+    chain_links = relationship("ProcessChainLink", back_populates="chain", cascade="all, delete-orphan", lazy="select")
     
     def to_dict(self) -> Dict[str, Any]:
         """엔티티를 딕셔너리로 변환"""
@@ -65,9 +64,9 @@ class ProcessChainLink(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
-    # 관계 설정
-    chain = relationship("ProcessChain", back_populates="chain_links")
-    process = relationship("Process")
+    # 관계 설정 (문자열로 참조하여 순환 참조 방지)
+    chain = relationship("ProcessChain", back_populates="chain_links", lazy="select")
+    process = relationship("Process", lazy="select")
     
     def to_dict(self) -> Dict[str, Any]:
         """엔티티를 딕셔너리로 변환"""

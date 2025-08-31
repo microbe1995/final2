@@ -3,12 +3,12 @@
 # ============================================================================
 
 from sqlalchemy import Column, Integer, Text, DateTime, Date, ForeignKey, Numeric
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from typing import Dict, Any
 
-Base = declarative_base()
+# 공통 Base 클래스 사용 (declarative_base 대신)
+from app.domain.calculation.calculation_entity import Base
 
 class Product(Base):
     """제품 엔티티"""

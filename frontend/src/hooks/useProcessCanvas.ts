@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { useNodesState, useEdgesState, useReactFlow, Node, Edge, Connection } from '@xyflow/react';
+import { useNodesState, useEdgesState, Node, Edge, Connection } from '@xyflow/react';
 import axiosClient, { apiEndpoints } from '@/lib/axiosClient';
 import { Install, Product, Process } from './useProcessManager';
 
@@ -7,7 +7,6 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
   // ReactFlow 상태
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
-  const { addNodes, addEdges } = useReactFlow();
 
   // 다중 사업장 캔버스 관리
   const [installCanvases, setInstallCanvases] = useState<{[key: number]: {nodes: Node[], edges: Edge[]}}>({});
@@ -29,10 +28,23 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
   useEffect(() => {
     if (selectedInstall) {
       const canvasData = installCanvases[selectedInstall.id] || { nodes: [], edges: [] };
-      setNodes(canvasData.nodes);
-      setEdges(canvasData.edges);
+      // 상태 업데이트를 안전하게 처리
+      setNodes(prev => {
+        // 이전 상태와 동일하면 업데이트하지 않음
+        if (JSON.stringify(prev) === JSON.stringify(canvasData.nodes)) {
+          return prev;
+        }
+        return canvasData.nodes;
+      });
+      setEdges(prev => {
+        // 이전 상태와 동일하면 업데이트하지 않음
+        if (JSON.stringify(prev) === JSON.stringify(canvasData.edges)) {
+          return prev;
+        }
+        return canvasData.edges;
+      });
     }
-  }, [selectedInstall, installCanvases, setNodes, setEdges]);
+  }, [selectedInstall?.id, installCanvases, setNodes, setEdges]);
 
   // 사업장 선택 시 캔버스 상태 복원 (이제 useEffect에서 자동 처리)
   const handleInstallSelect = useCallback((install: Install) => {
@@ -56,8 +68,9 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
       },
     };
 
-    addNodes(newNode);
-  }, [addNodes, selectedInstall]);
+    // setNodes를 사용하여 안전하게 노드 추가
+    setNodes(prev => [...prev, newNode]);
+  }, [setNodes, selectedInstall?.id]);
 
   // 공정 노드 추가
   const addProcessNode = useCallback((process: Process, products: Product[], openMatDirModal: (process: Process) => void, openFuelDirModal: (process: Process) => void) => {
@@ -91,8 +104,9 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
       },
     };
 
-    addNodes(newNode);
-  }, [addNodes, selectedInstall]);
+    // setNodes를 사용하여 안전하게 노드 추가
+    setNodes(prev => [...prev, newNode]);
+  }, [setNodes, selectedInstall?.id]);
 
   // 그룹 노드 추가
   const addGroupNode = useCallback(() => {
@@ -104,8 +118,9 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
       data: { label: '그룹' },
     };
 
-    addNodes(newNode);
-  }, [addNodes]);
+    // setNodes를 사용하여 안전하게 노드 추가
+    setNodes(prev => [...prev, newNode]);
+  }, [setNodes]);
 
   // Edge 생성 처리
   const handleEdgeCreate = useCallback(async (params: Connection, updateProcessChainsAfterEdge: () => void) => {
@@ -122,45 +137,26 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
       if (response.status === 201) {
         const newEdge = response.data;
         
-        // ReactFlow 상태에 Edge 추가
-        addEdges({
+        // ReactFlow 상태에 Edge 추가 (setEdges 사용)
+        const edgeToAdd = {
           id: `e-${newEdge.id}`,
           source: params.source!,
           target: params.target!,
-          sourceHandle: params.sourceHandle ?? undefined,
-          targetHandle: params.targetHandle ?? undefined,
           type: 'custom',
-          data: { backendId: newEdge.id }
-        });
+          data: { edgeData: newEdge }
+        };
         
-        // 통합 공정 그룹 상태 업데이트
-        updateProcessChainsAfterEdge();
+        setEdges(prev => [...prev, edgeToAdd]);
         
-        return true;
-      } else {
-        if (process.env.NODE_ENV === 'development') {
-          console.error('❌ Edge 생성 실패:', response.status);
+        // 콜백 실행
+        if (updateProcessChainsAfterEdge) {
+          updateProcessChainsAfterEdge();
         }
-        return false;
       }
     } catch (error) {
-      if (process.env.NODE_ENV === 'development') {
-        console.error('❌ Edge 생성 중 오류:', error);
-      }
-      
-      // 에러 발생 시에도 로컬에 Edge 추가 (사용자 경험 개선)
-      addEdges({
-        id: `e-${Date.now()}-${Math.random().toString(36).slice(2)}`,
-        source: params.source!,
-        target: params.target!,
-        sourceHandle: params.sourceHandle ?? undefined,
-        targetHandle: params.targetHandle ?? undefined,
-        type: 'custom',
-      });
-      
-      return false;
+      console.error('Edge 생성 실패:', error);
     }
-  }, [addEdges]);
+  }, [setEdges]);
 
   return {
     // 상태

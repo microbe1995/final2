@@ -1,11 +1,11 @@
 # 🔄 Process Entity - 공정 데이터베이스 모델
 from sqlalchemy import Column, Integer, Text, DateTime, Date
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from typing import Dict, Any, List
 
-Base = declarative_base()
+# 공통 Base 클래스 사용 (declarative_base 대신)
+from app.domain.calculation.calculation_entity import Base
 
 class Process(Base):
     """프로세스 엔티티"""
