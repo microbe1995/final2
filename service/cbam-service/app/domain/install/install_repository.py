@@ -115,6 +115,12 @@ class InstallRepository:
         """사업장 생성"""
         await self._ensure_pool_initialized()
         try:
+            # 데이터 검증
+            await self._validate_install_data(install_data)
+            
+            # 중복 검사
+            await self._check_install_name_duplicate(install_data['install_name'])
+            
             return await self._create_install_db(install_data)
         except Exception as e:
             logger.error(f"❌ 사업장 생성 실패: {str(e)}")
@@ -151,6 +157,24 @@ class InstallRepository:
         """사업장 수정"""
         await self._ensure_pool_initialized()
         try:
+            # 수정할 데이터 검증
+            if 'install_name' in update_data:
+                # 사업장명이 수정되는 경우 중복 검사
+                await self._check_install_name_duplicate_for_update(update_data['install_name'], install_id)
+                
+                # 사업장명 정리 및 검증
+                update_data['install_name'] = await self.validate_and_clean_install_name(update_data['install_name'])
+            
+            if 'reporting_year' in update_data:
+                # 보고기간 검증
+                reporting_year = update_data['reporting_year']
+                if not isinstance(reporting_year, int):
+                    raise ValueError("보고기간(년도)은 정수여야 합니다.")
+                
+                current_year = datetime.now().year
+                if reporting_year < 1900 or reporting_year > current_year + 10:
+                    raise ValueError(f"보고기간(년도)은 1900년부터 {current_year + 10}년 사이여야 합니다.")
+            
             return await self._update_install_db(install_id, update_data)
         except Exception as e:
             logger.error(f"❌ 사업장 수정 실패: {str(e)}")
@@ -729,3 +753,110 @@ class InstallRepository:
         except Exception as e:
             logger.error(f"❌ 데이터베이스 구조 테스트 실패: {str(e)}")
             raise
+
+    # ============================================================================
+    # 🔒 데이터 무결성 검증 메서드
+    # ============================================================================
+
+    async def _validate_install_data(self, install_data: Dict[str, Any]) -> None:
+        """사업장 데이터 검증"""
+        try:
+            # install_name 검증
+            if not install_data.get('install_name'):
+                raise ValueError("사업장명은 필수입니다.")
+            
+            install_name = install_data['install_name'].strip()
+            if len(install_name) == 0:
+                raise ValueError("사업장명은 공백만으로 구성될 수 없습니다.")
+            
+            if len(install_name) > 100:  # 적절한 최대 길이 제한
+                raise ValueError("사업장명은 100자를 초과할 수 없습니다.")
+            
+            # reporting_year 검증
+            reporting_year = install_data.get('reporting_year')
+            if reporting_year is None:
+                raise ValueError("보고기간(년도)은 필수입니다.")
+            
+            if not isinstance(reporting_year, int):
+                raise ValueError("보고기간(년도)은 정수여야 합니다.")
+            
+            current_year = datetime.now().year
+            if reporting_year < 1900 or reporting_year > current_year + 10:
+                raise ValueError(f"보고기간(년도)은 1900년부터 {current_year + 10}년 사이여야 합니다.")
+            
+            logger.info("✅ 사업장 데이터 검증 완료")
+            
+        except Exception as e:
+            logger.error(f"❌ 사업장 데이터 검증 실패: {str(e)}")
+            raise
+
+    async def _check_install_name_duplicate(self, install_name: str) -> None:
+        """사업장명 중복 검사"""
+        if not self.pool:
+            raise Exception("데이터베이스 연결 풀이 초기화되지 않았습니다.")
+        
+        try:
+            async with self.pool.acquire() as conn:
+                # 대소문자 구분 없이 중복 검사 (TRIM과 LOWER 사용)
+                existing_count = await conn.fetchval("""
+                    SELECT COUNT(*) FROM install 
+                    WHERE LOWER(TRIM(install_name)) = LOWER(TRIM($1))
+                """, install_name)
+                
+                if existing_count > 0:
+                    raise ValueError(f"사업장명 '{install_name}'은(는) 이미 존재합니다.")
+                
+                logger.info("✅ 사업장명 중복 검사 완료")
+                
+        except Exception as e:
+            if "이미 존재합니다" in str(e):
+                raise  # 중복 오류는 그대로 전달
+            logger.error(f"❌ 사업장명 중복 검사 실패: {str(e)}")
+            raise
+
+    async def _check_install_name_duplicate_for_update(self, install_name: str, exclude_id: int) -> None:
+        """사업장 수정 시 사업장명 중복 검사 (자기 자신 제외)"""
+        if not self.pool:
+            raise Exception("데이터베이스 연결 풀이 초기화되지 않았습니다.")
+        
+        try:
+            async with self.pool.acquire() as conn:
+                # 자기 자신을 제외하고 중복 검사
+                existing_count = await conn.fetchval("""
+                    SELECT COUNT(*) FROM install 
+                    WHERE LOWER(TRIM(install_name)) = LOWER(TRIM($1))
+                    AND id != $2
+                """, install_name, exclude_id)
+                
+                if existing_count > 0:
+                    raise ValueError(f"사업장명 '{install_name}'은(는) 이미 존재합니다.")
+                
+                logger.info("✅ 사업장 수정 시 중복 검사 완료")
+                
+        except Exception as e:
+            if "이미 존재합니다" in str(e):
+                raise  # 중복 오류는 그대로 전달
+            logger.error(f"❌ 사업장 수정 시 중복 검사 실패: {str(e)}")
+            raise
+
+    async def validate_and_clean_install_name(self, install_name: str) -> str:
+        """사업장명 검증 및 정리"""
+        if not install_name:
+            raise ValueError("사업장명은 필수입니다.")
+        
+        # 앞뒤 공백 제거
+        cleaned_name = install_name.strip()
+        
+        if len(cleaned_name) == 0:
+            raise ValueError("사업장명은 공백만으로 구성될 수 없습니다.")
+        
+        if len(cleaned_name) > 100:
+            raise ValueError("사업장명은 100자를 초과할 수 없습니다.")
+        
+        # 특수문자나 위험한 문자 검증 (선택사항)
+        dangerous_chars = ['<', '>', '"', "'", '&', ';', '--', '/*', '*/']
+        for char in dangerous_chars:
+            if char in cleaned_name:
+                raise ValueError(f"사업장명에 허용되지 않는 문자가 포함되어 있습니다: {char}")
+        
+        return cleaned_name
