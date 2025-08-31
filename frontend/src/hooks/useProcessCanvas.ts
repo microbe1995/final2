@@ -160,6 +160,26 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
   // Edge 생성 처리 (안전한 상태 업데이트)
   const handleEdgeCreate = useCallback(async (params: Connection, updateProcessChainsAfterEdge: () => void) => {
     try {
+      // 🔴 추가: 즉시 시각적 연결 제공 (사용자 경험 개선)
+      const tempEdgeId = `temp-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      const tempEdge = {
+        id: tempEdgeId,
+        source: params.source!,
+        target: params.target!,
+        type: 'custom',
+        data: { isTemporary: true, edgeData: null },
+        style: { strokeDasharray: '5,5', stroke: '#6b7280' } // 🔴 점선으로 임시 Edge 표시
+      };
+      
+      // 임시 Edge를 즉시 화면에 추가
+      setEdges(prev => {
+        const newEdges = [...prev, tempEdge];
+        prevEdgesRef.current = newEdges;
+        return newEdges;
+      });
+      
+      console.log('🔗 임시 Edge 추가됨:', tempEdgeId);
+      
       // 노드 ID에서 숫자 부분만 추출 (예: "product-123-abc" → 123)
       const extractNodeId = (nodeId: string): number => {
         const match = nodeId.match(/(?:product|process|group)-(\d+)/);
@@ -171,6 +191,8 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
       
       if (sourceId === 0 || targetId === 0) {
         console.error('유효하지 않은 노드 ID:', { source: params.source, target: params.target });
+        // 🔴 추가: 임시 Edge 제거
+        setEdges(prev => prev.filter(edge => edge.id !== tempEdgeId));
         return;
       }
       
@@ -189,17 +211,20 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
         const newEdge = response.data;
         console.log('✅ Edge 생성 성공:', newEdge);
         
-        // ReactFlow 상태에 Edge 추가 (setEdges 사용)
-        const edgeToAdd = {
-          id: `e-${newEdge.id}`,
-          source: params.source!,
-          target: params.target!,
-          type: 'custom',
-          data: { edgeData: newEdge }
-        };
-        
+        // 🔴 수정: 임시 Edge를 실제 Edge로 교체
         setEdges(prev => {
-          const newEdges = [...prev, edgeToAdd];
+          const newEdges = prev.map(edge => 
+            edge.id === tempEdgeId 
+              ? {
+                  id: `e-${newEdge.id}`,
+                  source: params.source!,
+                  target: params.target!,
+                  type: 'custom',
+                  data: { edgeData: newEdge, isTemporary: false },
+                  style: { stroke: '#3b82f6' } // 🔴 실선으로 실제 Edge 표시
+                }
+              : edge
+          );
           prevEdgesRef.current = newEdges;
           return newEdges;
         });
@@ -218,6 +243,9 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
         status: error.response?.status,
         params: params
       });
+      
+      // 🔴 추가: 에러 발생 시 임시 Edge 제거
+      setEdges(prev => prev.filter(edge => edge.data?.isTemporary !== true));
       
       // 🔴 추가: 사용자에게 에러 알림 (Toast 등으로 표시 가능)
       if (error.response?.status === 500) {
