@@ -25,8 +25,8 @@ def get_install_service():
 # 🏭 Install 관련 엔드포인트
 # ============================================================================
 
-# 실제 경로: /install (사업장 목록 조회)
-@router.get("/install", response_model=List[InstallResponse])
+# 실제 경로: / (사업장 목록 조회)
+@router.get("/", response_model=List[InstallResponse])
 async def get_installs():
     """사업장 목록 조회"""
     try:
@@ -39,8 +39,8 @@ async def get_installs():
         logger.error(f"❌ 사업장 목록 조회 실패: {str(e)}")
         raise HTTPException(status_code=500, detail=f"사업장 목록 조회 중 오류가 발생했습니다: {str(e)}")
 
-# 실제 경로: /install/names (사업장명 목록 조회)
-@router.get("/install/names", response_model=List[InstallNameResponse])
+# 실제 경로: /names (사업장명 목록 조회)
+@router.get("/names", response_model=List[InstallNameResponse])
 async def get_install_names():
     """사업장명 목록 조회 (드롭다운용)"""
     try:
@@ -53,8 +53,8 @@ async def get_install_names():
         logger.error(f"❌ 사업장명 목록 조회 실패: {str(e)}")
         raise HTTPException(status_code=500, detail=f"사업장명 목록 조회 중 오류가 발생했습니다: {str(e)}")
 
-# 실제 경로: /install (사업장 생성)
-@router.post("/install", response_model=InstallResponse)
+# 실제 경로: / (사업장 생성)
+@router.post("/", response_model=InstallResponse)
 async def create_install(request: InstallCreateRequest):
     """사업장 생성"""
     try:
@@ -72,8 +72,8 @@ async def create_install(request: InstallCreateRequest):
         logger.error(f"❌ 사업장 생성 실패: {str(e)}")
         raise HTTPException(status_code=500, detail=f"사업장 생성 중 오류가 발생했습니다: {str(e)}")
 
-# 실제 경로: /install/{install_id} (특정 사업장 조회)
-@router.get("/install/{install_id}", response_model=InstallResponse)
+# 실제 경로: /{install_id} (특정 사업장 조회)
+@router.get("/{install_id}", response_model=InstallResponse)
 async def get_install(install_id: int):
     """특정 사업장 조회"""
     try:
@@ -91,8 +91,8 @@ async def get_install(install_id: int):
         logger.error(f"❌ 사업장 조회 실패: {str(e)}")
         raise HTTPException(status_code=500, detail=f"사업장 생성 중 오류가 발생했습니다: {str(e)}")
 
-# 실제 경로: /install/{install_id} (사업장 수정)
-@router.put("/install/{install_id}", response_model=InstallResponse)
+# 실제 경로: /{install_id} (사업장 수정)
+@router.put("/{install_id}", response_model=InstallResponse)
 async def update_install(install_id: int, request: InstallUpdateRequest):
     """사업장 수정"""
     try:
@@ -110,8 +110,8 @@ async def update_install(install_id: int, request: InstallUpdateRequest):
         logger.error(f"❌ 사업장 수정 실패: {str(e)}")
         raise HTTPException(status_code=500, detail=f"사업장 생성 중 오류가 발생했습니다: {str(e)}")
 
-# 실제 경로: /install/{install_id} (사업장 삭제)
-@router.delete("/install/{install_id}")
+# 실제 경로: /{install_id} (사업장 삭제)
+@router.delete("/{install_id}")
 async def delete_install(install_id: int):
     """사업장 삭제"""
     try:
@@ -129,8 +129,8 @@ async def delete_install(install_id: int):
         logger.error(f"❌ 사업장 삭제 실패: {str(e)}")
         raise HTTPException(status_code=500, detail=f"사업장 삭제 중 오류가 발생했습니다: {str(e)}")
 
-# 실제 경로: /install/debug/structure (데이터베이스 구조 분석)
-@router.get("/install/debug/structure")
+# 실제 경로: /debug/structure (데이터베이스 구조 분석)
+@router.get("/debug/structure")
 async def debug_database_structure():
     """데이터베이스 구조 분석 (디버그용)"""
     try:
