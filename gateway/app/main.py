@@ -42,18 +42,18 @@ SERVICE_MAP = {
     # CBAM 서비스 (통합 서비스) - 모든 도메인을 처리
     "cbam": CAL_BOUNDARY_URL,                    # 🔴 메인 서비스명으로 통일
     "cal-boundary": CAL_BOUNDARY_URL,            # 🔴 기존 호환성 유지
-    "cal_boundary": CAL_BOUNDARY_URL,            # 🔴 언더스코어 버전 호환성
-    # CBAM 서비스의 세부 도메인들 (직접 접근 가능)
-    "install": CAL_BOUNDARY_URL,                 # 🔴 install 도메인
-    "product": CAL_BOUNDARY_URL,                 # 🔴 product 도메인
-    "process": CAL_BOUNDARY_URL,                 # 🔴 process 도메인
-    "calculation": CAL_BOUNDARY_URL,             # 🔴 calculation 도메인
-    "mapping": CAL_BOUNDARY_URL,                 # 🔴 mapping 도메인
-    "matdir": CAL_BOUNDARY_URL,                  # 🔴 matdir 도메인
-    "fueldir": CAL_BOUNDARY_URL,                 # 🔴 fueldir 도메인
-    "processchain": CAL_BOUNDARY_URL,            # 🔴 processchain 도메인
-    "productprocess": CAL_BOUNDARY_URL,          # 🔴 productprocess 도메인
-    "edge": CAL_BOUNDARY_URL,                    # 🔴 edge 도메인
+    "cal_boundary": CAL_BOUNDARY_URL,            # �� 언더스코어 버전 호환성
+    # 🔴 중복 도메인 제거 - CBAM 통합 서비스가 모든 도메인을 처리
+    # "install": CAL_BOUNDARY_URL,              # ❌ 제거: cbam/install로 통일
+    # "product": CAL_BOUNDARY_URL,              # ❌ 제거: cbam/product로 통일
+    # "process": CAL_BOUNDARY_URL,              # ❌ 제거: cbam/process로 통일
+    # "calculation": CAL_BOUNDARY_URL,          # ❌ 제거: cbam/calculation로 통일
+    # "mapping": CAL_BOUNDARY_URL,              # ❌ 제거: cbam/mapping으로 통일
+    # "matdir": CAL_BOUNDARY_URL,               # ❌ 제거: cbam/matdir로 통일
+    # "fueldir": CAL_BOUNDARY_URL,              # ❌ 제거: cbam/fueldir로 통일
+    # "processchain": CAL_BOUNDARY_URL,         # ❌ 제거: cbam/processchain으로 통일
+    # "productprocess": CAL_BOUNDARY_URL,       # ❌ 제거: cbam/productprocess로 통일
+    # "edge": CAL_BOUNDARY_URL,                 # ❌ 제거: cbam/edge로 통일
 }
 
 @asynccontextmanager
@@ -275,7 +275,7 @@ async def root():
         },
         "services": {
             "auth": "Authentication Service",
-            "cbam": "CBAM Calculation Service",
+            "cbam": "CBAM Calculation Service (통합 서비스)",
             "cal-boundary": "CBAM Calculation Service (Legacy)"
         },
         "usage": "Use /api/v1/{service}/{path} to access microservices through Gateway"
