@@ -223,20 +223,20 @@ async def log_requests(request: Request, call_next):
 # CBAM 도메인 라우터들 등록 (MSA 원칙: Gateway가 경로를 관리)
 # 중요: Gateway를 통해 접근하므로 prefix 없이 등록 (상대 경로 사용)
 
-# 모든 라우터를 루트 경로에 등록 (prefix 없음)
-# 중요: install_router를 먼저 등록하여 /install 경로가 루트 경로와 충돌하지 않도록 함
-app.include_router(install_router)  # /install 경로 (prefix 없음) - 먼저 등록
-app.include_router(calculation_router)      # /calculation 경로
-app.include_router(product_router)          # /product 경로 (prefix 없음)
-app.include_router(process_router)         # /process 경로 (prefix 없음)
-app.include_router(edge_router)            # /edge 경로
-app.include_router(mapping_router)         # /mapping 경로
-app.include_router(matdir_router)          # /matdir 경로
-app.include_router(fueldir_router)         # /fueldir 경로
-app.include_router(processchain_router)    # /processchain 경로
-app.include_router(product_process_router) # /productprocess 경로
+# 모든 라우터를 명확한 prefix와 함께 등록 (일관된 패턴)
+# 중요: 각 도메인별로 명확한 경로 분리하여 충돌 방지
+app.include_router(install_router, prefix="/install")
+app.include_router(calculation_router, prefix="/calculation")
+app.include_router(product_router, prefix="/product")
+app.include_router(process_router, prefix="/process")
+app.include_router(edge_router, prefix="/edge")
+app.include_router(mapping_router, prefix="/mapping")
+app.include_router(matdir_router, prefix="/matdir")
+app.include_router(fueldir_router, prefix="/fueldir")
+app.include_router(processchain_router, prefix="/processchain")
+app.include_router(product_process_router, prefix="/productprocess")
 
-logger.info("✅ 모든 라우터 등록 완료 (install_router 내부 경로를 /install로 시작하여 경로 충돌 방지)")
+logger.info("✅ 모든 라우터 등록 완료 (각 도메인별 prefix로 명확한 경로 분리)")
 
 # ============================================================================
 # 🏥 헬스체크 엔드포인트
