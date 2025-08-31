@@ -15,9 +15,9 @@ HS-CN 매핑 도메인 패키지
 - 매핑 통계
 """
 
-from .mapping_entity import HSCNMapping
+from app.domain.mapping.mapping_entity import HSCNMapping
 
-from .mapping_schema import (
+from app.domain.mapping.mapping_schema import (
     # HS-CN 매핑 관련 스키마
     HSCNMappingCreateRequest,
     HSCNMappingResponse,
@@ -28,9 +28,9 @@ from .mapping_schema import (
     MappingStatsResponse,
 )
 
-from .mapping_repository import HSCNMappingRepository
-from .mapping_service import HSCNMappingService
-from .mapping_controller import mapping_router
+from app.domain.mapping.mapping_repository import HSCNMappingRepository
+from app.domain.mapping.mapping_service import HSCNMappingService
+from app.domain.mapping.mapping_controller import mapping_router
 
 __all__ = [
     # 엔티티

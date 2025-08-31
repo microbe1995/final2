@@ -7,7 +7,7 @@ import logging
 from typing import List, Dict, Any, Optional
 from datetime import datetime
 import asyncpg
-from .edge_schema import EdgeCreateRequest, EdgeUpdateRequest
+from app.domain.edge.edge_schema import EdgeCreateRequest, EdgeUpdateRequest
 
 logger = logging.getLogger(__name__)
 

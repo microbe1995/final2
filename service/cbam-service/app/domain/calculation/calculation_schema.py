@@ -7,7 +7,7 @@ from typing import Optional, List, Dict, Any, TYPE_CHECKING
 from datetime import date, datetime
 
 if TYPE_CHECKING:
-    from .calculation_schema import ProcessResponse, ProductResponse
+    from app.domain.calculation.calculation_schema import ProcessResponse, ProductResponse
 
 
 

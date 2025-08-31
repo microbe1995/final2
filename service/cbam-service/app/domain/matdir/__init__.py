@@ -1,14 +1,14 @@
-from .matdir_entity import MatDir
-from .matdir_schema import (
+from app.domain.matdir.matdir_entity import MatDir
+from app.domain.matdir.matdir_schema import (
     MatDirCreateRequest,
     MatDirUpdateRequest,
     MatDirResponse,
     MatDirCalculationRequest,
     MatDirCalculationResponse
 )
-from .matdir_repository import MatDirRepository
-from .matdir_service import MatDirService
-from .matdir_controller import router as matdir_router
+from app.domain.matdir.matdir_repository import MatDirRepository
+from app.domain.matdir.matdir_service import MatDirService
+from app.domain.matdir.matdir_controller import router as matdir_router
 
 __all__ = [
     "MatDir",

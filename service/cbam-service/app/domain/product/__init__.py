@@ -8,13 +8,13 @@ Product 도메인 패키지
 - 제품명 목록 조회 (드롭다운용)
 - 비동기 데이터베이스 연결 및 관리
 """
-from .product_entity import Product
-from .product_schema import (
+from app.domain.product.product_entity import Product
+from app.domain.product.product_schema import (
     ProductCreateRequest, ProductResponse, ProductUpdateRequest, ProductNameResponse
 )
-from .product_repository import ProductRepository
-from .product_service import ProductService
-from .product_controller import router as product_router
+from app.domain.product.product_repository import ProductRepository
+from app.domain.product.product_service import ProductService
+from app.domain.product.product_controller import router as product_router
 
 __all__ = [
     "Product",

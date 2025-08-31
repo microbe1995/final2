@@ -8,8 +8,8 @@ from datetime import datetime
 from decimal import Decimal
 import json
 
-from .processchain_repository import ProcessChainRepository
-from .processchain_schema import (
+from app.domain.processchain.processchain_repository import ProcessChainRepository
+from app.domain.processchain.processchain_schema import (
     ProcessChainCreate, ProcessChainUpdate, ProcessChainResponse,
     ProcessChainLinkCreate, ProcessChainLinkUpdate, ProcessChainLinkResponse,
     ProcessChainAnalysisRequest, ProcessChainAnalysisResponse,

@@ -6,8 +6,8 @@ from fastapi import APIRouter, HTTPException, Query
 import logging
 from typing import List
 
-from .mapping_service import HSCNMappingService
-from .mapping_schema import (
+from app.domain.mapping.mapping_service import HSCNMappingService
+from app.domain.mapping.mapping_schema import (
     HSCNMappingCreateRequest, HSCNMappingResponse, HSCNMappingUpdateRequest,
     HSCNMappingFullResponse, HSCodeLookupResponse, MappingStatsResponse,
     HSCNMappingBatchCreateRequest, HSCNMappingBatchResponse

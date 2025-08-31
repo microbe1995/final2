@@ -7,8 +7,8 @@ import logging
 from typing import List
 import time
 
-from .calculation_service import CalculationService
-from .calculation_schema import (
+from app.domain.calculation.calculation_service import CalculationService
+from app.domain.calculation.calculation_schema import (
     ProductProcessResponse, ProductProcessCreateRequest,
     ProcessAttrdirEmissionCreateRequest, ProcessAttrdirEmissionResponse, ProcessAttrdirEmissionUpdateRequest,
     ProcessEmissionCalculationRequest, ProcessEmissionCalculationResponse,

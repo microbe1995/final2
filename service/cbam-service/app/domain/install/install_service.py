@@ -6,8 +6,8 @@ import logging
 from typing import List, Optional, Dict, Any
 from datetime import datetime
 
-from .install_repository import InstallRepository
-from .install_schema import (
+from app.domain.install.install_repository import InstallRepository
+from app.domain.install.install_schema import (
     InstallCreateRequest, InstallResponse, InstallUpdateRequest, InstallNameResponse
 )
 

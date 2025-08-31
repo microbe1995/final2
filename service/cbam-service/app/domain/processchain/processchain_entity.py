@@ -9,7 +9,8 @@ from typing import Dict, Any, List
 from decimal import Decimal
 
 # 공통 Base 클래스와 Process 엔티티 import
-from ..calculation.calculation_entity import Base, Process
+from app.domain.calculation.calculation_entity import Base
+from app.domain.process.process_entity import Process
 
 # ============================================================================
 # 🔄 ProcessChain 엔티티 (통합 공정 그룹)

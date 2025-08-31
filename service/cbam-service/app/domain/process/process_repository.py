@@ -4,7 +4,7 @@ import logging
 from typing import List, Dict, Any, Optional
 from datetime import datetime
 import asyncpg
-from .process_schema import ProcessCreateRequest, ProcessUpdateRequest
+from app.domain.process.process_schema import ProcessCreateRequest, ProcessUpdateRequest
 
 logger = logging.getLogger(__name__)
 

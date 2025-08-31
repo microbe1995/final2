@@ -5,8 +5,8 @@
 import logging
 from typing import List, Optional, Dict, Any
 from datetime import datetime
-from .edge_repository import EdgeRepository
-from .edge_schema import (
+from app.domain.edge.edge_repository import EdgeRepository
+from app.domain.edge.edge_schema import (
     EdgeCreateRequest, EdgeResponse, EdgeUpdateRequest
 )
 

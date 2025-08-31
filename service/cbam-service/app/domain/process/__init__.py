@@ -8,13 +8,13 @@ Process 도메인 패키지
 - 제품과의 다대다 관계 관리
 - 비동기 데이터베이스 연결 및 관리
 """
-from .process_entity import Process
-from .process_schema import (
+from app.domain.process.process_entity import Process
+from app.domain.process.process_schema import (
     ProcessCreateRequest, ProcessResponse, ProcessUpdateRequest
 )
-from .process_repository import ProcessRepository
-from .process_service import ProcessService
-from .process_controller import router as process_router
+from app.domain.process.process_repository import ProcessRepository
+from app.domain.process.process_service import ProcessService
+from app.domain.process.process_controller import router as process_router
 
 __all__ = [
     "Process",

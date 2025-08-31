@@ -8,7 +8,7 @@ from typing import List, Dict, Any, Optional
 from datetime import datetime
 import asyncpg
 
-from .install_schema import InstallCreateRequest, InstallUpdateRequest
+from app.domain.install.install_schema import InstallCreateRequest, InstallUpdateRequest
 
 logger = logging.getLogger(__name__)
 

@@ -2,17 +2,17 @@
 # 🔄 ProcessChain Domain - 통합 공정 그룹 관리
 # ============================================================================
 
-from .processchain_entity import ProcessChain, ProcessChainLink
-from .processchain_schema import (
+from app.domain.processchain.processchain_entity import ProcessChain, ProcessChainLink
+from app.domain.processchain.processchain_schema import (
     ProcessChainCreate, ProcessChainUpdate, ProcessChainResponse,
     ProcessChainLinkCreate, ProcessChainLinkUpdate, ProcessChainLinkResponse,
     ProcessChainAnalysisRequest, ProcessChainAnalysisResponse,
     ChainDetectionRequest, ChainDetectionResponse,
     AutoDetectAndCalculateRequest, AutoDetectAndCalculateResponse
 )
-from .processchain_service import ProcessChainService
-from .processchain_repository import ProcessChainRepository
-from .processchain_controller import router
+from app.domain.processchain.processchain_service import ProcessChainService
+from app.domain.processchain.processchain_repository import ProcessChainRepository
+from app.domain.processchain.processchain_controller import router
 
 __all__ = [
     # 엔티티

@@ -7,13 +7,13 @@ Edge 도메인 패키지
 - 비동기 데이터베이스 연결 및 관리
 """
 
-from .edge_entity import Edge
-from .edge_schema import (
+from app.domain.edge.edge_entity import Edge
+from app.domain.edge.edge_schema import (
     EdgeCreateRequest, EdgeResponse, EdgeUpdateRequest
 )
-from .edge_repository import EdgeRepository
-from .edge_service import EdgeService
-from .edge_controller import router as edge_router
+from app.domain.edge.edge_repository import EdgeRepository
+from app.domain.edge.edge_service import EdgeService
+from app.domain.edge.edge_controller import router as edge_router
 
 __all__ = [
     "Edge",

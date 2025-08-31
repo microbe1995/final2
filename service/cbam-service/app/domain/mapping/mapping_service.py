@@ -6,8 +6,8 @@ import logging
 from typing import List, Optional, Dict, Any
 from sqlalchemy.orm import Session
 
-from .mapping_repository import HSCNMappingRepository
-from .mapping_schema import (
+from app.domain.mapping.mapping_repository import HSCNMappingRepository
+from app.domain.mapping.mapping_schema import (
     HSCNMappingCreateRequest, HSCNMappingUpdateRequest, HSCNMappingResponse,
     HSCNMappingFullResponse, HSCodeLookupResponse, MappingStatsResponse,
     HSCNMappingBatchCreateRequest, HSCNMappingBatchResponse

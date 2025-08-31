@@ -2,8 +2,8 @@
 from fastapi import APIRouter, HTTPException
 import logging
 from typing import List
-from .process_service import ProcessService
-from .process_schema import (
+from app.domain.process.process_service import ProcessService
+from app.domain.process.process_schema import (
     ProcessCreateRequest, ProcessResponse, ProcessUpdateRequest
 )
 

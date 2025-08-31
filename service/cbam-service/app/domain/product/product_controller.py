@@ -6,8 +6,8 @@ from fastapi import APIRouter, HTTPException
 import logging
 from typing import List
 
-from .product_service import ProductService
-from .product_schema import (
+from app.domain.product.product_service import ProductService
+from app.domain.product.product_schema import (
     ProductCreateRequest, ProductResponse, ProductUpdateRequest, ProductNameResponse
 )
 

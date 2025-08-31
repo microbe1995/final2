@@ -7,8 +7,8 @@ import logging
 from typing import List
 import time
 
-from .edge_service import EdgeService
-from .edge_schema import (
+from app.domain.edge.edge_service import EdgeService
+from app.domain.edge.edge_schema import (
     EdgeCreateRequest, EdgeResponse, EdgeUpdateRequest
 )
 

@@ -10,7 +10,7 @@ from psycopg2.extras import RealDictCursor
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 
 
-from .mapping_schema import HSCNMappingCreateRequest, HSCNMappingUpdateRequest
+from app.domain.mapping.mapping_schema import HSCNMappingCreateRequest, HSCNMappingUpdateRequest
 
 logger = logging.getLogger(__name__)
 

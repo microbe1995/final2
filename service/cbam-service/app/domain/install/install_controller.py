@@ -6,8 +6,8 @@ from fastapi import APIRouter, HTTPException
 import logging
 from typing import List
 
-from .install_service import InstallService
-from .install_schema import (
+from app.domain.install.install_service import InstallService
+from app.domain.install.install_schema import (
     InstallCreateRequest, InstallResponse, InstallUpdateRequest, InstallNameResponse
 )
 

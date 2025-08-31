@@ -7,8 +7,8 @@ from typing import List, Dict, Any
 import logging
 from datetime import datetime
 
-from .processchain_service import ProcessChainService
-from .processchain_schema import (
+from app.domain.processchain.processchain_service import ProcessChainService
+from app.domain.processchain.processchain_schema import (
     ProcessChainCreate, ProcessChainUpdate, ProcessChainResponse,
     ProcessChainLinkCreate, ProcessChainLinkUpdate, ProcessChainLinkResponse,
     ProcessChainAnalysisRequest, ProcessChainAnalysisResponse,
@@ -166,10 +166,7 @@ async def analyze_process_chain(request: ProcessChainAnalysisRequest):
     except Exception as e:
         logger.error(f"❌ 통합 공정 그룹 분석 API 실패: {e}")
         raise HTTPException(status_code=500, detail=f"통합 공정 그룹 분석 실패: {str(e)}")
-
-# ============================================================================
-# ✅ SourceStream 관련 API 엔드포인트 제거됨 - Edge가 이미 공정 간 연결을 관리
-# ============================================================================
+        
 
 # ============================================================================
 # 🏥 헬스 체크 및 테스트 API 엔드포인트

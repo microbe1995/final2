@@ -7,8 +7,8 @@ import logging
 from typing import List
 import time
 
-from .fueldir_service import FuelDirService
-from .fueldir_schema import (
+from app.domain.fueldir.fueldir_service import FuelDirService
+from app.domain.fueldir.fueldir_schema import (
     FuelDirCreateRequest, 
     FuelDirUpdateRequest, 
     FuelDirResponse,

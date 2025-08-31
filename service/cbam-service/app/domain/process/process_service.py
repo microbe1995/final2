@@ -2,8 +2,8 @@
 import logging
 from typing import List, Optional, Dict, Any
 from datetime import datetime
-from .process_repository import ProcessRepository
-from .process_schema import (
+from app.domain.process.process_repository import ProcessRepository
+from app.domain.process.process_schema import (
     ProcessCreateRequest, ProcessResponse, ProcessUpdateRequest
 )
 

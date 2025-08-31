@@ -6,8 +6,8 @@ import logging
 from typing import List, Optional, Dict, Any
 from datetime import datetime
 
-from .product_repository import ProductRepository
-from .product_schema import (
+from app.domain.product.product_repository import ProductRepository
+from app.domain.product.product_schema import (
     ProductCreateRequest, ProductResponse, ProductUpdateRequest, ProductNameResponse
 )
 

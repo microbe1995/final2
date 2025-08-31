@@ -12,7 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, text, func, create_engine
 from sqlalchemy.orm import sessionmaker, Session
 
-from .processchain_entity import (
+from app.domain.processchain.processchain_entity import (
     ProcessChain, ProcessChainLink, Base
 )
 

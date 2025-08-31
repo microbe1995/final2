@@ -15,13 +15,13 @@ Install 도메인 패키지
 # 📦 모듈 Import
 # ============================================================================
 
-from .install_entity import Install
-from .install_schema import (
+from app.domain.install.install_entity import Install
+from app.domain.install.install_schema import (
     InstallCreateRequest, InstallResponse, InstallUpdateRequest, InstallNameResponse
 )
-from .install_repository import InstallRepository
-from .install_service import InstallService
-from .install_controller import router as install_router
+from app.domain.install.install_repository import InstallRepository
+from app.domain.install.install_service import InstallService
+from app.domain.install.install_controller import router as install_router
 
 # ============================================================================
 # 📋 Export 목록

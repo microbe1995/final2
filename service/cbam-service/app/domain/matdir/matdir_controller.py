@@ -7,8 +7,8 @@ import logging
 from typing import List
 import time
 
-from .matdir_service import MatDirService
-from .matdir_schema import (
+from app.domain.matdir.matdir_service import MatDirService
+from app.domain.matdir.matdir_schema import (
     MatDirCreateRequest, 
     MatDirUpdateRequest, 
     MatDirResponse,

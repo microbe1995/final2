@@ -8,7 +8,7 @@ from typing import List, Dict, Any, Optional
 from datetime import datetime
 import asyncpg
 
-from .product_schema import ProductCreateRequest, ProductUpdateRequest
+from app.domain.product.product_schema import ProductCreateRequest, ProductUpdateRequest
 
 logger = logging.getLogger(__name__)
 
