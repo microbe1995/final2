@@ -37,34 +37,39 @@ export const InstallSelector: React.FC<InstallSelectorProps> = ({
             <div className="text-sm text-gray-300">사업장 추가</div>
           </div>
           
-          {/* 선택된 사업장 카드들 */}
-          {Object.keys(installCanvases).map((installId) => {
-            const install = installs.find(i => i.id === parseInt(installId));
-            if (!install) return null;
-            
-            const isActive = activeInstallId === parseInt(installId);
-            const canvasData = installCanvases[parseInt(installId)];
+          {/* 모든 사업장 카드들 */}
+          {installs.map((install) => {
+            const isActive = activeInstallId === install.id;
+            const canvasData = installCanvases[install.id];
             const nodeCount = canvasData?.nodes?.length || 0;
+            const hasCanvas = !!canvasData;
             
             return (
               <div
-                key={installId}
+                key={install.id}
                 className={`w-48 h-24 rounded-lg flex flex-col justify-center p-3 cursor-pointer transition-all ${
                   isActive 
                     ? 'bg-blue-600 border-2 border-blue-400 shadow-lg' 
-                    : 'bg-gray-700 border-2 border-gray-600 hover:border-gray-500'
+                    : hasCanvas
+                    ? 'bg-gray-700 border-2 border-gray-600 hover:border-gray-500'
+                    : 'bg-gray-600 border-2 border-gray-500 hover:border-gray-400 opacity-75'
                 }`}
                 onClick={() => onInstallSelect(install)}
               >
                 <div className="flex items-center justify-between mb-1">
                   <div className="font-semibold text-white text-sm">{install.install_name}</div>
-                  <div className="text-xs text-gray-300">{nodeCount}개 노드</div>
+                  <div className="text-xs text-gray-300">
+                    {hasCanvas ? `${nodeCount}개 노드` : '새 캔버스'}
+                  </div>
                 </div>
                 <div className="text-xs text-gray-300">
                   {install.reporting_year && `${install.reporting_year}년`}
                 </div>
                 {isActive && (
                   <div className="text-xs text-blue-200 mt-1">활성</div>
+                )}
+                {!hasCanvas && (
+                  <div className="text-xs text-gray-400 mt-1">미사용</div>
                 )}
               </div>
             );
