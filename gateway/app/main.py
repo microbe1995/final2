@@ -135,31 +135,22 @@ async def handle_options(full_path: str, request: Request):
     origin = request.headers.get('origin')
     logger.info(f"🌐 OPTIONS {full_path} origin={origin}")
     
-    # CORS preflight 응답
-    response = Response()
+    # CORS preflight 응답 - 항상 성공
+    response = Response(
+        status_code=200,  # 🔴 수정: 항상 200 OK 반환
+        content="",
+        headers={
+            "Access-Control-Allow-Origin": origin if origin and origin in allowed_origins else allowed_origins[0] if allowed_origins else "*",
+            "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS, PATCH",
+            "Access-Control-Allow-Headers": "*",
+            "Access-Control-Max-Age": "86400",
+            "Access-Control-Allow-Credentials": "true",
+            "Content-Type": "text/plain",
+        }
+    )
     
-    # 🔴 수정: 모든 허용된 origin에 대해 CORS 헤더 설정
-    if origin and origin in allowed_origins:
-        response.headers["Access-Control-Allow-Origin"] = origin
-        response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
-        response.headers["Access-Control-Allow-Headers"] = "*"
-        response.headers["Access-Control-Max-Age"] = "86400"
-        response.headers["Access-Control-Allow-Credentials"] = "true"
-        
-        logger.info(f"🌐 응답: 200 (OPTIONS) - CORS 허용: {origin}")
-        return response
-    else:
-        # 🔴 수정: origin이 없거나 허용되지 않은 경우에도 기본 CORS 헤더 설정
-        logger.warning(f"🚫 CORS origin 거부 또는 없음: {origin}")
-        
-        # 기본 CORS 헤더 설정 (브라우저 호환성)
-        if allowed_origins:
-            response.headers["Access-Control-Allow-Origin"] = allowed_origins[0]
-        response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
-        response.headers["Access-Control-Allow-Headers"] = "*"
-        response.headers["Access-Control-Max-Age"] = "86400"
-        
-        return response
+    logger.info(f"🌐 응답: 200 (OPTIONS) - CORS 허용: {origin}")
+    return response
 
 # 프록시 유틸리티
 async def proxy_request(service: str, path: str, request: Request) -> Response:
@@ -260,8 +251,9 @@ async def proxy(service: str, path: str, request: Request):
 
 # 헬스 체크
 @app.get("/health", summary="Gateway 헬스 체크")
-async def health_check_root():
-    return {
+async def health_check_root(request: Request):
+    origin = request.headers.get('origin')
+    response_data = {
         "status": "healthy", 
         "service": "gateway", 
         "version": "1.0.0",
@@ -271,6 +263,15 @@ async def health_check_root():
             "cbam": CAL_BOUNDARY_URL,
         }
     }
+    
+    response = JSONResponse(content=response_data)
+    
+    # 🔴 추가: CORS 헤더 설정
+    if origin and origin in allowed_origins:
+        response.headers["Access-Control-Allow-Origin"] = origin
+        response.headers["Access-Control-Allow-Credentials"] = "true"
+    
+    return response
 
 # Favicon 처리 (브라우저 자동 요청 방지)
 @app.get("/favicon.ico")
