@@ -189,9 +189,13 @@ app = FastAPI(
 # CORS 미들웨어 설정
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # 프로덕션에서는 특정 도메인만 허용
+    allow_origins=[
+        "https://lca-final.vercel.app",  # Vercel 프론트엔드
+        "https://gateway-production-22ef.up.railway.app",  # Gateway
+        "http://localhost:3000",  # 로컬 개발 환경
+    ],
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     allow_headers=["*"],
 )
 
