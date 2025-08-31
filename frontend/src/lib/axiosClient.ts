@@ -4,7 +4,6 @@ import axios, {
   AxiosResponse,
   AxiosError,
 } from 'axios';
-import { env } from './env';
 
 // 요청 중복 방지를 위한 pending requests 관리
 const pendingRequests = new Map<string, AbortController>();
@@ -55,7 +54,8 @@ const retryRequest = async (
 
 // axios 인스턴스 생성
 const axiosClient: AxiosInstance = axios.create({
-  baseURL: env.NEXT_PUBLIC_API_BASE_URL, // 🔴 수정: env.ts에서 가져온 URL 사용
+  // 🔴 수정: Vercel 프록시 제거 후 직접 Gateway URL 사용
+  baseURL: 'https://gateway-production-22ef.up.railway.app',
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
