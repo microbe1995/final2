@@ -78,11 +78,11 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# CORS 설정
+# CORS 설정 - 프론트엔드 오리진만 허용 (게이트웨이 자기 자신은 제외)
 allowed_origins = [o.strip() for o in os.getenv("CORS_URL", "").split(",") if o.strip()]
 if not allowed_origins:
     allowed_origins = [
-        "https://lca-final.vercel.app",  # Railway 프로덕션 프론트엔드
+        "https://lca-final.vercel.app",  # Vercel 프로덕션 프론트엔드
         "http://localhost:3000",  # 로컬 개발 환경
     ]
 allow_credentials = os.getenv("CORS_ALLOW_CREDENTIALS", "false").lower() == "true"
@@ -97,7 +97,11 @@ app.add_middleware(
     allow_headers=allow_headers,
 )
 
-logger.info(f"🔧 CORS origins={allowed_origins}, credentials={allow_credentials}")
+logger.info(f"🔧 CORS 설정 완료:")
+logger.info(f"   허용된 오리진: {allowed_origins}")
+logger.info(f"   자격증명 허용: {allow_credentials}")
+logger.info(f"   허용된 메서드: {allow_methods}")
+logger.info(f"   허용된 헤더: {allow_headers}")
 
 # 프록시 유틸리티
 async def proxy_request(service: str, path: str, request: Request) -> Response:
@@ -191,6 +195,8 @@ async def proxy(service: str, path: str, request: Request):
     if request.method == "OPTIONS":
         # CORS 헤더를 일관되게 설정
         origin = request.headers.get("origin", "")
+        logger.info(f"🔍 CORS preflight 요청 - origin: {origin}, 허용된 origins: {allowed_origins}")
+        
         if origin in allowed_origins:
             return Response(
                 status_code=200,
@@ -202,9 +208,10 @@ async def proxy(service: str, path: str, request: Request):
                 }
             )
         else:
+            logger.warning(f"🚫 CORS origin 거부: {origin}")
             return Response(
                 status_code=400,
-                content={"detail": "Origin not allowed"},
+                content={"detail": "Origin not allowed", "requested_origin": origin, "allowed_origins": allowed_origins},
                 headers={"Access-Control-Allow-Origin": allowed_origins[0] if allowed_origins else ""}
             )
     
