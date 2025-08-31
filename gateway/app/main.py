@@ -103,6 +103,7 @@ logger.info(f"🔧 CORS origins={allowed_origins}, credentials={allow_credential
 async def proxy_request(service: str, path: str, request: Request) -> Response:
     base_url = SERVICE_MAP.get(service)
     if not base_url:
+        logger.error(f"❌ Unknown service: {service}")
         return JSONResponse(status_code=404, content={"detail": f"Unknown service: {service}"})
 
     # MSA 원칙: 각 서비스는 자체 경로 구조를 가져야 함
@@ -134,12 +135,54 @@ async def proxy_request(service: str, path: str, request: Request) -> Response:
                 params=params,
                 content=body,
             )
+            
+            # 응답 상태 코드 로깅
+            logger.info(f"✅ 프록시 응답: {method} {target_url} -> {resp.status_code}")
+            
         except httpx.RequestError as e:
-            logger.error(f"Upstream request error: {e}")
-            return JSONResponse(status_code=502, content={"detail": "Bad Gateway", "error": str(e)})
+            logger.error(f"❌ Upstream request error: {e}")
+            return JSONResponse(
+                status_code=502, 
+                content={
+                    "detail": "Bad Gateway", 
+                    "error": str(e),
+                    "service": service,
+                    "target_url": target_url
+                }
+            )
+        except httpx.TimeoutException as e:
+            logger.error(f"❌ Upstream timeout: {e}")
+            return JSONResponse(
+                status_code=504, 
+                content={
+                    "detail": "Gateway Timeout", 
+                    "error": str(e),
+                    "service": service,
+                    "target_url": target_url
+                }
+            )
+        except Exception as e:
+            logger.error(f"❌ Unexpected proxy error: {e}")
+            return JSONResponse(
+                status_code=500, 
+                content={
+                    "detail": "Internal Gateway Error", 
+                    "error": str(e),
+                    "service": service,
+                    "target_url": target_url
+                }
+            )
 
-    response_headers = {k: v for k, v in resp.headers.items() if k.lower() not in {"content-encoding", "transfer-encoding", "connection"}}
-    return Response(content=resp.content, status_code=resp.status_code, headers=response_headers, media_type=resp.headers.get("content-type"))
+    # 응답 헤더 정리
+    response_headers = {k: v for k, v in resp.headers.items() 
+                       if k.lower() not in {"content-encoding", "transfer-encoding", "connection"}}
+    
+    return Response(
+        content=resp.content, 
+        status_code=resp.status_code, 
+        headers=response_headers, 
+        media_type=resp.headers.get("content-type")
+    )
 
 # 범용 프록시 라우트 (메인 라우팅 역할)
 @app.api_route("/api/v1/{service}/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"])

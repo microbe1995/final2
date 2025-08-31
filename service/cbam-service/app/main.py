@@ -306,17 +306,24 @@ async def log_requests(request: Request, call_next):
 # ============================================================================
 
 # CBAM 도메인 라우터들 등록 (MSA 원칙: 각 서비스는 자체 경로 구조를 가짐)
-# 중요: 더 구체적인 경로를 가진 라우터를 먼저 등록 (FastAPI 라우팅 우선순위)
-app.include_router(calculation_router)  # /calculation 경로
-app.include_router(product_router)      # /product 경로
-app.include_router(process_router)     # /process 경로
-app.include_router(edge_router)        # /edge 경로
-app.include_router(mapping_router)     # /mapping 경로
-app.include_router(matdir_router)      # /matdir 경로
-app.include_router(fueldir_router)     # /fueldir 경로
-app.include_router(processchain_router) # /processchain 경로
+# 중요: 정적 경로를 가진 라우터를 먼저 등록 (FastAPI 라우팅 우선순위)
+# 순서: 정적 경로 -> 동적 경로 (경로 매칭 충돌 방지)
+
+# 1단계: 정적 경로만 가진 라우터들 (prefix 없음)
+app.include_router(calculation_router)      # /calculation 경로
+app.include_router(product_router)          # /product 경로
+app.include_router(process_router)         # /process 경로
+app.include_router(edge_router)            # /edge 경로
+app.include_router(mapping_router)         # /mapping 경로
+app.include_router(matdir_router)          # /matdir 경로
+app.include_router(fueldir_router)         # /fueldir 경로
+app.include_router(processchain_router)    # /processchain 경로
 app.include_router(product_process_router) # /productprocess 경로
-app.include_router(install_router)     # /install 경로 (마지막에 등록 - 동적 경로 포함)
+
+# 2단계: 동적 경로를 포함한 라우터들 (마지막에 등록)
+app.include_router(install_router)         # /install 경로 (동적 경로 포함)
+
+logger.info("✅ 모든 라우터 등록 완료")
 
 # ============================================================================
 # 🏥 헬스체크 엔드포인트
