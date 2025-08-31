@@ -227,8 +227,8 @@ async def log_requests(request: Request, call_next):
 # 중요: install_router를 먼저 등록하여 /install 경로가 루트 경로와 충돌하지 않도록 함
 app.include_router(install_router)  # /install 경로 (prefix 없음) - 먼저 등록
 app.include_router(calculation_router)      # /calculation 경로
-app.include_router(product_router)          # /product 경로
-app.include_router(process_router)         # /process 경로
+app.include_router(product_router)          # /api/v1/boundary/product 경로 (prefix 포함)
+app.include_router(process_router)         # /api/v1/boundary/process 경로 (prefix 포함)
 app.include_router(edge_router)            # /edge 경로
 app.include_router(mapping_router)         # /mapping 경로
 app.include_router(matdir_router)          # /matdir 경로

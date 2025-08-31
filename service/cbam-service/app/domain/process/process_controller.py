@@ -13,8 +13,8 @@ from app.domain.process.process_schema import (
 
 logger = logging.getLogger(__name__)
 
-# Gateway를 통해 접근하므로 prefix 제거 (경로 중복 방지)
-router = APIRouter(tags=["Process"])
+# Gateway를 통해 접근하므로 /api/v1/boundary/process 경로로 설정
+router = APIRouter(prefix="/api/v1/boundary", tags=["Process"])
 
 def get_process_service():
     """Process 서비스 인스턴스 반환"""
