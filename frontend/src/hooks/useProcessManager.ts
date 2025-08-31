@@ -166,7 +166,7 @@ export const useProcessManager = () => {
   const fetchProcessChains = useCallback(async () => {
     try {
       setChainLoading(true);
-      const response = await axiosClient.get(apiEndpoints.calculation.processchain.chain);
+      const response = await axiosClient.get(apiEndpoints.cbam.processchain.chain);
       if (response.status === 200) {
         setProcessChains(response.data);
       }
@@ -195,7 +195,7 @@ export const useProcessManager = () => {
         const result = response.data;
         setDetectionStatus(`✅ 탐지 완료: ${result.detected_chains}개 그룹, 총 배출량: ${result.total_integrated_emission}`);
         
-        const groupsResponse = await axiosClient.get(apiEndpoints.calculation.processchain.chain);
+        const groupsResponse = await axiosClient.get(apiEndpoints.cbam.processchain.chain);
         if (groupsResponse.status === 200) {
           setIntegratedProcessGroups(groupsResponse.data);
         }
@@ -213,7 +213,7 @@ export const useProcessManager = () => {
   // 통합 공정 그룹 목록 조회
   const loadIntegratedProcessGroups = useCallback(async () => {
     try {
-      const response = await axiosClient.get(apiEndpoints.calculation.processchain.chain);
+      const response = await axiosClient.get(apiEndpoints.cbam.processchain.chain);
       if (response.status === 200) {
         setIntegratedProcessGroups(response.data);
       }

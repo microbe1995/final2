@@ -117,7 +117,7 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
         edge_kind: 'continue'
       };
       
-      const response = await axiosClient.post(apiEndpoints.calculation.edge.create, edgeData);
+      const response = await axiosClient.post(apiEndpoints.cbam.edge.create, edgeData);
       
       if (response.status === 201) {
         const newEdge = response.data;

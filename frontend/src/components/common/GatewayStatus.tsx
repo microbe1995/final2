@@ -3,49 +3,19 @@
 import React, { useState, useEffect } from 'react';
 import axiosClient, { apiEndpoints } from '@/lib/axiosClient';
 
-interface GatewayStatus {
+interface GatewayHealth {
   status: string;
-  gateway: string;
-  timestamp: string;
-}
-
-interface ServiceStatus {
-  [key: string]: {
-    status: string;
-    url: string;
-    response_time: number;
+  service: string;
+  version: string;
+  environment: string;
+  services: {
+    auth: string;
+    cbam: string;
   };
 }
 
-interface RoutingInfo {
-  gateway_name: string;
-  architecture: string;
-  domain_routing: Record<string, unknown>;
-  supported_methods: string[];
-  timeout_settings: Record<string, unknown>;
-  ddd_features: Record<string, unknown>;
-}
-
-interface ArchitectureInfo {
-  gateway: string;
-  architecture: string;
-  version: string;
-  description: string;
-  domains: Record<string, unknown>;
-  features: Record<string, unknown>;
-  layers: Record<string, unknown>;
-}
-
 const GatewayStatus: React.FC = () => {
-  const [gatewayHealth, setGatewayHealth] = useState<GatewayStatus | null>(
-    null
-  );
-  const [serviceStatus, setServiceStatus] = useState<ServiceStatus | null>(
-    null
-  );
-  const [routingInfo, setRoutingInfo] = useState<RoutingInfo | null>(null);
-  const [architectureInfo, setArchitectureInfo] =
-    useState<ArchitectureInfo | null>(null);
+  const [gatewayHealth, setGatewayHealth] = useState<GatewayHealth | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -56,19 +26,6 @@ const GatewayStatus: React.FC = () => {
     try {
       const healthResponse = await axiosClient.get(apiEndpoints.gateway.health);
       setGatewayHealth(healthResponse.data);
-
-      const statusResponse = await axiosClient.get(apiEndpoints.gateway.status);
-      setServiceStatus(statusResponse.data);
-
-      const routingResponse = await axiosClient.get(
-        apiEndpoints.gateway.routing
-      );
-      setRoutingInfo(routingResponse.data);
-
-      const architectureResponse = await axiosClient.get(
-        apiEndpoints.gateway.architecture
-      );
-      setArchitectureInfo(architectureResponse.data);
     } catch (err: unknown) {
       const errorMessage =
         err instanceof Error ? err.message : 'Gateway 연결 실패';
@@ -83,14 +40,6 @@ const GatewayStatus: React.FC = () => {
   useEffect(() => {
     testGatewayConnection();
   }, []);
-
-  // Object.entries를 안전하게 사용하는 헬퍼 함수
-  const safeObjectEntries = <T extends Record<string, any>>(obj: T): [string, T[keyof T]][] => {
-    if (obj && typeof obj === 'object') {
-      return Object.keys(obj).map(key => [key, obj[key]]);
-    }
-    return [];
-  };
 
   return (
     <div className='p-6 bg-white rounded-lg shadow-md'>
@@ -127,7 +76,7 @@ const GatewayStatus: React.FC = () => {
           <h3 className='text-lg font-semibold text-green-800 mb-2'>
             Gateway 상태
           </h3>
-          <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
+          <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
             <div>
               <span className='font-medium'>상태:</span>
               <span
@@ -141,85 +90,57 @@ const GatewayStatus: React.FC = () => {
               </span>
             </div>
             <div>
-              <span className='font-medium'>이름:</span>
+              <span className='font-medium'>서비스:</span>
               <span className='ml-2 text-gray-700'>
-                {gatewayHealth.gateway}
+                {gatewayHealth.service}
               </span>
             </div>
             <div>
-              <span className='font-medium'>시간:</span>
+              <span className='font-medium'>버전:</span>
               <span className='ml-2 text-gray-700'>
-                {new Date(gatewayHealth.timestamp).toLocaleString()}
+                {gatewayHealth.version}
+              </span>
+            </div>
+            <div>
+              <span className='font-medium'>환경:</span>
+              <span className='ml-2 text-gray-700'>
+                {gatewayHealth.environment}
               </span>
             </div>
           </div>
         </div>
       )}
 
-      {serviceStatus && (
-        <div className='mb-6'>
-          <h3 className='text-lg font-semibold mb-4'>서비스 상태</h3>
-          <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-            {safeObjectEntries(serviceStatus).map(([serviceName, service]) => (
-              <div key={serviceName} className='p-4 border rounded-md'>
-                <div className='flex items-center justify-between mb-2'>
-                  <span className='font-medium capitalize'>{serviceName}</span>
-                  <span
-                    className={`px-2 py-1 rounded-full text-xs ${
-                      service.status === 'healthy'
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-red-100 text-red-800'
-                    }`}
-                  >
-                    {service.status}
-                  </span>
-                </div>
-                <p className='text-sm text-gray-600'>URL: {service.url}</p>
-                <p className='text-sm text-gray-600'>
-                  응답시간: {service.response_time}ms
-                </p>
-              </div>
-            ))}
+      {gatewayHealth && (
+        <div className='mb-6 p-4 bg-blue-50 border border-blue-200 rounded-md'>
+          <h3 className='text-lg font-semibold text-blue-800 mb-2'>
+            연결된 서비스
+          </h3>
+          <div className='space-y-2'>
+            <div className='flex justify-between items-center'>
+              <span className='font-medium'>Auth Service:</span>
+              <span className='text-sm text-gray-600'>
+                {gatewayHealth.services.auth ? '연결됨' : '연결 안됨'}
+              </span>
+            </div>
+            <div className='flex justify-between items-center'>
+              <span className='font-medium'>CBAM Service:</span>
+              <span className='text-sm text-gray-600'>
+                {gatewayHealth.services.cbam ? '연결됨' : '연결 안됨'}
+              </span>
+            </div>
           </div>
         </div>
       )}
 
-      {routingInfo && (
-        <div className='mb-6'>
-          <h3 className='text-lg font-semibold mb-4'>라우팅 정보</h3>
-          <div className='bg-gray-50 p-4 rounded-md'>
-            <pre className='text-sm text-gray-700 overflow-x-auto'>
-              {JSON.stringify(routingInfo, null, 2)}
-            </pre>
-          </div>
-        </div>
-      )}
-
-      {architectureInfo && (
-        <div className='mb-6'>
-          <h3 className='text-lg font-semibold mb-4'>아키텍처 정보</h3>
-          <div className='bg-gray-50 p-4 rounded-md'>
-            <pre className='text-sm text-gray-700 overflow-x-auto'>
-              {JSON.stringify(architectureInfo, null, 2)}
-            </pre>
-          </div>
-        </div>
-      )}
-
-      <div className='mt-8 p-4 bg-blue-50 border border-blue-200 rounded-md'>
-        <h3 className='text-lg font-semibold text-blue-800 mb-2'>사용법</h3>
-        <ul className='text-sm text-blue-700 space-y-1'>
-          <li>• Gateway 서비스가 실행 중인지 확인하세요 (포트 8080)</li>
-          <li>
-            • 환경 변수 NEXT_PUBLIC_API_BASE_URL이 올바르게 설정되었는지
-            확인하세요
-          </li>
-          <li>
-            • &ldquo;연결 테스트&rdquo; 버튼을 클릭하여 Gateway 연결을
-            확인하세요
-          </li>
-          <li>• 오류가 발생하면 Gateway 서비스 로그를 확인하세요</li>
-        </ul>
+      <div className='p-4 bg-gray-50 rounded-md'>
+        <h3 className='text-lg font-semibold mb-2'>사용법</h3>
+        <p className='text-sm text-gray-600 mb-2'>
+          Gateway는 모든 API 요청을 적절한 마이크로서비스로 라우팅합니다.
+        </p>
+        <p className='text-sm text-gray-600'>
+          <strong>예시:</strong> /api/v1/boundary/install → CBAM Service
+        </p>
       </div>
     </div>
   );

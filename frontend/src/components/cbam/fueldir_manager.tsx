@@ -96,7 +96,7 @@ export default function FuelDirManager({ selectedProcess, onClose }: FuelDirMana
 
     setIsCalculatingFuelDir(true);
     try {
-      const response = await axiosClient.post(apiEndpoints.calculation.fueldir.calculate, {
+      const response = await axiosClient.post(apiEndpoints.cbam.calculation.fueldir.calculate, {
         fuel_amount: fuelDirForm.fuel_amount,
         fuel_factor: fuelDirForm.fuel_factor,
         fuel_oxyfactor: fuelDirForm.fuel_oxyfactor
@@ -157,7 +157,7 @@ export default function FuelDirManager({ selectedProcess, onClose }: FuelDirMana
         
         console.log(`📤 저장 요청 ${index + 1}:`, requestData);
         
-        return axiosClient.post(apiEndpoints.calculation.fueldir.create, requestData);
+        return axiosClient.post(apiEndpoints.cbam.calculation.fueldir.create, requestData);
       });
 
       const responses = await Promise.all(savePromises);
