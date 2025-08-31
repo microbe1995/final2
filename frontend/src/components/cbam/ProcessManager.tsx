@@ -181,6 +181,16 @@ function ProcessManagerInner() {
     await handleEdgeCreate(params, updateProcessChainsAfterEdge);
   }, [handleEdgeCreate, updateProcessChainsAfterEdge]);
 
+  // 🔴 추가: 연결 시작 이벤트
+  const handleConnectStart = useCallback((event: any, params: any) => {
+    console.log('🔗 연결 시작:', params);
+  }, []);
+
+  // 🔴 추가: 연결 종료 이벤트
+  const handleConnectEnd = useCallback((event: any) => {
+    console.log('🔗 연결 종료:', event);
+  }, []);
+
   const nodeTypes: NodeTypes = { 
     product: ProductNode,  // 🔴 수정: 'product' 타입 추가
     process: ProcessNode,  // 🔴 수정: 'process' 타입으로 변경
@@ -249,6 +259,8 @@ function ProcessManagerInner() {
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
           onConnect={handleConnect}
+          onConnectStart={handleConnectStart}
+          onConnectEnd={handleConnectEnd}
           nodeTypes={nodeTypes}
           edgeTypes={edgeTypes}
           connectionMode={ConnectionMode.Loose}

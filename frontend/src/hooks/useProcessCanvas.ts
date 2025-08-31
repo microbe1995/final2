@@ -174,6 +174,23 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
         return;
       }
       
+      // 🔴 추가: 같은 노드 간 연결 방지
+      if (params.source === params.target) {
+        console.log('❌ 같은 노드 간 연결은 불가능:', { source: params.source, target: params.target });
+        return;
+      }
+      
+      // 🔴 추가: 이미 존재하는 연결 확인
+      const existingEdge = edges.find(edge => 
+        (edge.source === params.source && edge.target === params.target) ||
+        (edge.source === params.target && edge.target === params.source)
+      );
+      
+      if (existingEdge) {
+        console.log('❌ 이미 존재하는 연결:', existingEdge);
+        return;
+      }
+      
       // 🔴 추가: 즉시 시각적 연결 제공 (사용자 경험 개선)
       const tempEdgeId = `temp-${Date.now()}-${Math.random().toString(36).slice(2)}`;
       const tempEdge = {
@@ -222,6 +239,15 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
       const targetId = extractNodeId(params.target);
       const sourceNodeType = extractNodeType(params.source);
       const targetNodeType = extractNodeType(params.target);
+      
+      console.log('🔍 추출된 정보:', {
+        source: params.source,
+        target: params.target,
+        sourceId,
+        targetId,
+        sourceNodeType,
+        targetNodeType
+      });
       
       if (sourceId === 0 || targetId === 0) {
         console.error('유효하지 않은 노드 ID:', { source: params.source, target: params.target });
@@ -296,7 +322,7 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
         console.error('🔴 알 수 없는 오류:', error);
       }
     }
-  }, [setEdges]);
+  }, [setEdges, edges]);
 
   return {
     // 상태
