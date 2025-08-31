@@ -11,7 +11,6 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import create_engine, text
-from dotenv import load_dotenv
 
 # 로깅 설정
 logging.basicConfig(
@@ -51,9 +50,7 @@ Cal_boundary 서비스 메인 애플리케이션
 CBAM 관련 HTTP API를 제공하는 FastAPI 애플리케이션입니다.
 """
 
-# 환경 변수 로드 (.env는 로컬에서만 사용)
-if not os.getenv("RAILWAY_ENVIRONMENT"):
-    load_dotenv()
+# Railway 환경에서는 자동으로 환경변수가 설정됨
 
 # 환경 변수 설정
 APP_NAME = os.getenv("APP_NAME", "Cal_boundary Service")

@@ -2,6 +2,7 @@
 # 📦 FuelDir Repository - 연료직접배출량 데이터 접근
 # ============================================================================
 
+import os
 import logging
 from typing import List, Dict, Any, Optional
 from datetime import datetime
