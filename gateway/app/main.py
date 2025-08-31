@@ -177,11 +177,34 @@ async def proxy_request(service: str, path: str, request: Request) -> Response:
         if not normalized_path.endswith('/'):
             normalized_path = normalized_path + '/'
         logger.info(f"🔍 install 경로 슬래시 추가: {path} → {normalized_path}")
+    
+    # 🔴 추가: 다른 주요 경로들도 슬래시 처리
+    elif service == "cbam" and (path == "product" or path.startswith("product/")):
+        if not normalized_path.endswith('/'):
+            normalized_path = normalized_path + '/'
+        logger.info(f"🔍 product 경로 슬래시 추가: {path} → {normalized_path}")
+    
+    # 🔴 추가: process 경로도 슬래시 처리
+    elif service == "cbam" and (path == "process" or path.startswith("process/")):
+        if not normalized_path.endswith('/'):
+            normalized_path = normalized_path + '/'
+        logger.info(f"🔍 process 경로 슬래시 추가: {path} → {normalized_path}")
 
     target_url = f"{base_url.rstrip('/')}/{normalized_path}"
     
     # 라우팅 정보 로깅
     logger.info(f"🔄 프록시 라우팅: {service} -> {target_url}")
+    logger.info(f"   📍 원본 경로: {path}")
+    logger.info(f"   📍 정규화된 경로: {normalized_path}")
+    logger.info(f"   📍 최종 URL: {target_url}")
+    
+    # 🔴 추가: 307 리다이렉트 방지를 위한 경로 검증
+    if service == "cbam" and path in ["install", "product", "process"]:
+        expected_url = f"{base_url.rstrip('/')}/{path}/"
+        if target_url != expected_url:
+            logger.warning(f"⚠️ 경로 정규화 불일치: {target_url} vs {expected_url}")
+            target_url = expected_url
+            logger.info(f"🔧 경로 수정됨: {target_url}")
     
     method = request.method
     headers = dict(request.headers)
