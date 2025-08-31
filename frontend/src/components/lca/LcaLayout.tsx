@@ -3,7 +3,6 @@
 import { ReactNode, useState, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { env } from '@/lib/env';
 import {
   Menu,
   X,
@@ -127,7 +126,7 @@ export default function LcaLayout({ children }: LcaLayoutProps) {
               </div>
               <div className="flex flex-col">
                 <span className="text-xl font-bold text-white">
-                  {env.NEXT_PUBLIC_APP_NAME}
+                  {process.env.NEXT_PUBLIC_APP_NAME || 'GreenSteel'}
                 </span>
                 <span className="text-xs text-ecotrace-textSecondary">ESG Platform</span>
               </div>

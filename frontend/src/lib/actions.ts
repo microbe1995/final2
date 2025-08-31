@@ -22,25 +22,6 @@ async function apiCall<T = any>(
     // Mock implementation - will be replaced with actual API calls
     await new Promise(resolve => setTimeout(resolve, 1000));
 
-
-    // TODO: Replace with actual fetch call to microservice
-    /*
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-      method,
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${getAuthToken()}`, // TODO: Implement auth
-      },
-      body: data ? JSON.stringify(data) : undefined,
-    })
-    
-    if (!response.ok) {
-      throw new Error(`API call failed: ${response.statusText}`)
-    }
-    
-    return await response.json()
-    */
-
     return {
       success: true,
       message: 'Mock API call successful',

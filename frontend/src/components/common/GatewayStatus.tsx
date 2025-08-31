@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 import axiosClient, { apiEndpoints } from '@/lib/axiosClient';
-import { env } from '@/lib/env';
 
 interface GatewayStatus {
   status: string;
@@ -109,10 +108,10 @@ const GatewayStatus: React.FC = () => {
       <div className='mb-6 p-4 bg-gray-50 rounded-md'>
         <h3 className='text-lg font-semibold mb-2'>연결 정보</h3>
         <p className='text-sm text-gray-600'>
-          <strong>Gateway URL:</strong> {env.NEXT_PUBLIC_API_BASE_URL}
+          <strong>Gateway URL:</strong> {process.env.NEXT_PUBLIC_API_BASE_URL || 'https://gateway-production-22ef.up.railway.app'}
         </p>
         <p className='text-sm text-gray-600'>
-          <strong>환경:</strong> {env.NEXT_PUBLIC_ENV}
+          <strong>환경:</strong> {process.env.NEXT_PUBLIC_ENV || 'production'}
         </p>
       </div>
 

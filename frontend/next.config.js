@@ -43,11 +43,6 @@ const nextConfig = {
       },
     ];
   },
-  // 🔴 API 프록시 설정 제거 (Vercel에서 처리)
-  // async rewrites() {
-  //   // Vercel에서 API 프록시 처리
-  //   return [];
-  // },
 };
 
 // 🔴 PWA 플러그인 완전 제거 (CORS 문제 해결 후 재활성화)
