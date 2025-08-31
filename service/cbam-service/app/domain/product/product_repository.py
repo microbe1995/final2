@@ -182,7 +182,7 @@ class ProductRepository:
                     )
                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
                     RETURNING *
-                """, params)
+                """, *params)
                 
                 logger.info(f"✅ 제품 생성 성공: {result}")
                 return dict(result)
@@ -224,7 +224,7 @@ class ProductRepository:
             async with self.pool.acquire() as conn:
                 result = await conn.fetchrow("""
                     SELECT * FROM product WHERE id = $1
-                """, (product_id,))
+                """, product_id)
                 
                 if result:
                     product_dict = dict(result)
@@ -295,7 +295,7 @@ class ProductRepository:
             async with self.pool.acquire() as conn:
                 result = await conn.execute("""
                     DELETE FROM product WHERE id = $1
-                """, (product_id,))
+                """, product_id)
                 
                 return result != "DELETE 0"
                 
@@ -310,7 +310,7 @@ class ProductRepository:
             async with self.pool.acquire() as conn:
                 results = await conn.fetch("""
                     SELECT * FROM product WHERE install_id = $1 ORDER BY id
-                """, (install_id,))
+                """, install_id)
                 
                 products = []
                 for row in results:
