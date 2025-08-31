@@ -60,8 +60,10 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
 
   // 제품 노드 추가 (안전한 상태 업데이트)
   const addProductNode = useCallback((product: Product, handleProductNodeClick: (product: Product) => void) => {
+    // 🔴 수정: 더 작은 ID 생성 (int32 범위 내)
+    const nodeId = Math.floor(Math.random() * 1000000) + 1; // 1 ~ 1,000,000
     const newNode: Node = {
-      id: `product-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      id: `product-${nodeId}-${Math.random().toString(36).slice(2)}`,
       type: 'product',  // 'product' 타입으로 설정
       position: { x: Math.random() * 400 + 100, y: Math.random() * 300 + 100 },
       data: {
@@ -101,8 +103,10 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
     const isExternalProcess = process.products && 
       process.products.some((p: Product) => p.install_id !== selectedInstall?.id);
     
+    // 🔴 수정: 더 작은 ID 생성 (int32 범위 내)
+    const nodeId = Math.floor(Math.random() * 1000000) + 1; // 1 ~ 1,000,000
     const newNode: Node = {
-      id: `process-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      id: `process-${nodeId}-${Math.random().toString(36).slice(2)}`,
       type: 'process',
       position: { x: Math.random() * 400 + 100, y: Math.random() * 300 + 100 },
       data: {
@@ -132,8 +136,10 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
 
   // 그룹 노드 추가 (안전한 상태 업데이트)
   const addGroupNode = useCallback(() => {
+    // 🔴 수정: 더 작은 ID 생성 (int32 범위 내)
+    const nodeId = Math.floor(Math.random() * 1000000) + 1; // 1 ~ 1,000,000
     const newNode: Node<any> = {
-      id: `group-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      id: `group-${nodeId}-${Math.random().toString(36).slice(2)}`,
       type: 'group',  // 🔴 수정: 'group' 타입으로 설정
       position: { x: Math.random() * 400 + 100, y: Math.random() * 300 + 100 },
       style: { width: 200, height: 100 },
@@ -183,7 +189,15 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
       // 노드 ID에서 숫자 부분만 추출 (예: "product-123-abc" → 123)
       const extractNodeId = (nodeId: string): number => {
         const match = nodeId.match(/(?:product|process|group)-(\d+)/);
-        return match ? parseInt(match[1]) : 0;
+        const extractedId = match ? parseInt(match[1]) : 0;
+        
+        // 🔴 추가: int32 범위 검증
+        if (extractedId > 2147483647 || extractedId < -2147483648) {
+          console.error('❌ 노드 ID가 int32 범위를 초과:', extractedId);
+          return 0;
+        }
+        
+        return extractedId;
       };
       
       const sourceId = extractNodeId(params.source!);
