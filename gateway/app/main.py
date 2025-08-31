@@ -138,21 +138,28 @@ async def handle_options(full_path: str, request: Request):
     # CORS preflight 응답
     response = Response()
     
+    # 🔴 수정: 모든 허용된 origin에 대해 CORS 헤더 설정
     if origin and origin in allowed_origins:
         response.headers["Access-Control-Allow-Origin"] = origin
         response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
         response.headers["Access-Control-Allow-Headers"] = "*"
         response.headers["Access-Control-Max-Age"] = "86400"
+        response.headers["Access-Control-Allow-Credentials"] = "true"
         
         logger.info(f"🌐 응답: 200 (OPTIONS) - CORS 허용: {origin}")
         return response
     else:
-        logger.warning(f"🚫 CORS origin 거부: {origin}")
-        return Response(
-            status_code=400,
-            content={"detail": "Origin not allowed"},
-            headers={"Access-Control-Allow-Origin": allowed_origins[0] if allowed_origins else ""}
-        )
+        # 🔴 수정: origin이 없거나 허용되지 않은 경우에도 기본 CORS 헤더 설정
+        logger.warning(f"🚫 CORS origin 거부 또는 없음: {origin}")
+        
+        # 기본 CORS 헤더 설정 (브라우저 호환성)
+        if allowed_origins:
+            response.headers["Access-Control-Allow-Origin"] = allowed_origins[0]
+        response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
+        response.headers["Access-Control-Allow-Headers"] = "*"
+        response.headers["Access-Control-Max-Age"] = "86400"
+        
+        return response
 
 # 프록시 유틸리티
 async def proxy_request(service: str, path: str, request: Request) -> Response:
@@ -265,12 +272,28 @@ async def health_check_root():
         }
     }
 
+# Favicon 처리 (브라우저 자동 요청 방지)
+@app.get("/favicon.ico")
+async def favicon():
+    return Response(
+        status_code=204,  # No Content
+        content="",
+        headers={"Cache-Control": "public, max-age=86400"}
+    )
+
 # 요청 로깅
 @app.middleware("http")
 async def log_all_requests(request: Request, call_next):
-    logger.info(f"🌐 {request.method} {request.url.path} origin={request.headers.get('origin','N/A')}")
+    # favicon.ico 요청은 로깅에서 제외
+    if request.url.path != "/favicon.ico":
+        logger.info(f"🌐 {request.method} {request.url.path} origin={request.headers.get('origin','N/A')}")
+    
     response = await call_next(request)
-    logger.info(f"🌐 응답: {response.status_code}")
+    
+    # favicon.ico 응답은 로깅에서 제외
+    if request.url.path != "/favicon.ico":
+        logger.info(f"🌐 응답: {response.status_code}")
+    
     return response
 
 # 예외 처리
