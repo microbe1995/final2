@@ -189,15 +189,24 @@ async def proxy_request(service: str, path: str, request: Request) -> Response:
 async def proxy(service: str, path: str, request: Request):
     # OPTIONS 요청은 CORS preflight이므로 Gateway에서 직접 처리
     if request.method == "OPTIONS":
-        return Response(
-            status_code=200,
-            headers={
-                "Access-Control-Allow-Origin": "*",
-                "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, PATCH, OPTIONS",
-                "Access-Control-Allow-Headers": "*",
-                "Access-Control-Max-Age": "86400",
-            }
-        )
+        # CORS 헤더를 일관되게 설정
+        origin = request.headers.get("origin", "")
+        if origin in allowed_origins:
+            return Response(
+                status_code=200,
+                headers={
+                    "Access-Control-Allow-Origin": origin,
+                    "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, PATCH, OPTIONS",
+                    "Access-Control-Allow-Headers": "*",
+                    "Access-Control-Max-Age": "86400",
+                }
+            )
+        else:
+            return Response(
+                status_code=400,
+                content={"detail": "Origin not allowed"},
+                headers={"Access-Control-Allow-Origin": allowed_origins[0] if allowed_origins else ""}
+            )
     
     return await proxy_request(service, path, request)
 
