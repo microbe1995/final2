@@ -205,19 +205,9 @@ export const apiEndpoints = {
   },
   // Calculation Service (Gateway를 통해 boundary 서비스로)
   calculation: {
-    fuel: '/api/v1/boundary/calc/fuel/calculate',
-    material: '/api/v1/boundary/calc/material/calculate',
-    precursor: '/api/v1/boundary/calc/precursor/calculate',
-    electricity: '/api/v1/boundary/calc/electricity/calculate',
     process: {
-      calculate: '/api/v1/boundary/calc/process/calculate',
-      list: '/api/v1/boundary/process'
+      calculate: '/api/v1/boundary/calc/process/calculate'
     },
-    cbam: '/api/v1/boundary/calc/cbam',
-    precursors: '/api/v1/boundary/calc/precursor/user',
-    precursorsBatch: '/api/v1/boundary/calc/precursor/save-batch',
-    stats: '/api/v1/boundary/calc/stats',
-    history: '/api/v1/boundary/calc/history',
     
     // Process Chain 관련 API
     processchain: {
