@@ -78,7 +78,9 @@ class EdgeRepository:
                 await conn.execute("""
                     CREATE TABLE IF NOT EXISTS edge (
                         id SERIAL PRIMARY KEY,
+                        source_node_type TEXT NOT NULL,
                         source_id INTEGER NOT NULL,
+                        target_node_type TEXT NOT NULL,
                         target_id INTEGER NOT NULL,
                         edge_kind TEXT NOT NULL,
                         created_at TIMESTAMP DEFAULT NOW(),
@@ -88,7 +90,13 @@ class EdgeRepository:
                 
                 # 인덱스 생성
                 await conn.execute("""
+                    CREATE INDEX IF NOT EXISTS idx_edge_source_node_type ON edge(source_node_type)
+                """)
+                await conn.execute("""
                     CREATE INDEX IF NOT EXISTS idx_edge_source_id ON edge(source_id)
+                """)
+                await conn.execute("""
+                    CREATE INDEX IF NOT EXISTS idx_edge_target_node_type ON edge(target_node_type)
                 """)
                 await conn.execute("""
                     CREATE INDEX IF NOT EXISTS idx_edge_target_id ON edge(target_id)
@@ -110,11 +118,13 @@ class EdgeRepository:
         try:
             async with self.pool.acquire() as conn:
                 result = await conn.fetchrow("""
-                    INSERT INTO edge (source_id, target_id, edge_kind)
-                    VALUES ($1, $2, $3)
+                    INSERT INTO edge (source_node_type, source_id, target_node_type, target_id, edge_kind)
+                    VALUES ($1, $2, $3, $4, $5)
                     RETURNING *
                 """, 
+                    edge_data.get('source_node_type'),  # 🔴 수정: 개별 인수로 전달
                     edge_data.get('source_id'),  # 🔴 수정: 개별 인수로 전달
+                    edge_data.get('target_node_type'),  # 🔴 수정: 개별 인수로 전달
                     edge_data.get('target_id'),  # 🔴 수정: 개별 인수로 전달
                     edge_data.get('edge_kind')   # 🔴 수정: 개별 인수로 전달
                 )
@@ -162,18 +172,37 @@ class EdgeRepository:
         await self._ensure_pool_initialized()
         
         try:
+            # 동적으로 업데이트할 필드와 값을 구성
+            set_clauses = []
+            values = [edge_id]  # 첫 번째 값은 WHERE 조건의 edge_id
+            
+            if 'source_node_type' in update_data:
+                set_clauses.append("source_node_type = $" + str(len(values) + 1))
+                values.append(update_data['source_node_type'])
+            if 'source_id' in update_data:
+                set_clauses.append("source_id = $" + str(len(values) + 1))
+                values.append(update_data['source_id'])
+            if 'target_node_type' in update_data:
+                set_clauses.append("target_node_type = $" + str(len(values) + 1))
+                values.append(update_data['target_node_type'])
+            if 'target_id' in update_data:
+                set_clauses.append("target_id = $" + str(len(values) + 1))
+                values.append(update_data['target_id'])
+            if 'edge_kind' in update_data:
+                set_clauses.append("edge_kind = $" + str(len(values) + 1))
+                values.append(update_data['edge_kind'])
+            
+            set_clauses.append("updated_at = NOW()")
+            
+            query = f"""
+                UPDATE edge 
+                SET {', '.join(set_clauses)}
+                WHERE id = $1
+                RETURNING *
+            """
+            
             async with self.pool.acquire() as conn:
-                result = await conn.fetchrow("""
-                    UPDATE edge 
-                    SET source_id = $2, target_id = $3, edge_kind = $4, updated_at = NOW()
-                    WHERE id = $1
-                    RETURNING *
-                """, 
-                    edge_id,  # 🔴 수정: 개별 인수로 전달
-                    update_data.get('source_id'),  # 🔴 수정: 개별 인수로 전달
-                    update_data.get('target_id'),  # 🔴 수정: 개별 인수로 전달
-                    update_data.get('edge_kind')   # 🔴 수정: 개별 인수로 전달
-                )
+                result = await conn.fetchrow(query, *values)
                 
                 return dict(result) if result else None
                 

@@ -32,7 +32,9 @@ class EdgeService:
         """엣지 생성"""
         try:
             edge_data = {
+                "source_node_type": request.source_node_type,
                 "source_id": request.source_id,
+                "target_node_type": request.target_node_type,
                 "target_id": request.target_id,
                 "edge_kind": request.edge_kind
             }
@@ -71,8 +73,12 @@ class EdgeService:
         """엣지 업데이트"""
         try:
             update_data = {}
+            if request.source_node_type is not None:
+                update_data["source_node_type"] = request.source_node_type
             if request.source_id is not None:
                 update_data["source_id"] = request.source_id
+            if request.target_node_type is not None:
+                update_data["target_node_type"] = request.target_node_type
             if request.target_id is not None:
                 update_data["target_id"] = request.target_id
             if request.edge_kind is not None:

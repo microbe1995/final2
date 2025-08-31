@@ -200,8 +200,18 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
         return extractedId;
       };
       
+      // 노드 타입 추출
+      const extractNodeType = (nodeId: string): string => {
+        if (nodeId.startsWith('product-')) return 'product';
+        if (nodeId.startsWith('process-')) return 'process';
+        if (nodeId.startsWith('group-')) return 'group';
+        return 'unknown';
+      };
+      
       const sourceId = extractNodeId(params.source!);
       const targetId = extractNodeId(params.target!);
+      const sourceNodeType = extractNodeType(params.source!);
+      const targetNodeType = extractNodeType(params.target!);
       
       if (sourceId === 0 || targetId === 0) {
         console.error('유효하지 않은 노드 ID:', { source: params.source, target: params.target });
@@ -212,7 +222,9 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
       
       // 백엔드에 Edge 생성 요청
       const edgeData = {
+        source_node_type: sourceNodeType,
         source_id: sourceId,
+        target_node_type: targetNodeType,
         target_id: targetId,
         edge_kind: 'continue'
       };
