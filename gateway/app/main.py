@@ -163,16 +163,25 @@ async def proxy_request(service: str, path: str, request: Request) -> Response:
         logger.error(f"❌ Unknown service: {service}")
         return JSONResponse(status_code=404, content={"detail": f"Unknown service: {service}"})
 
-    # 빈 경로 처리
-    if not path or path == "":
-        if service == "install":
-            normalized_path = "install"
-            logger.info(f"🔍 Install 서비스 빈 경로 감지 → /install으로 매핑")
-        else:
-            normalized_path = ""
-            logger.info(f"🔍 빈 경로 감지: service={service}, path='{path}' → 루트 경로로 전달")
-    else:
+    # 🔴 수정: boundary 서비스 특별 처리
+    # boundary 서비스는 cbam 서비스의 별칭이므로 경로를 그대로 전달
+    if service == "boundary":
+        # boundary/install → cbam-service/install
+        # boundary/product → cbam-service/product
+        # 등등...
         normalized_path = path
+        logger.info(f"🔍 Boundary 서비스 감지: {service}/{path} → CBAM 서비스로 라우팅")
+    else:
+        # 빈 경로 처리
+        if not path or path == "":
+            if service == "install":
+                normalized_path = "install"
+                logger.info(f"🔍 Install 서비스 빈 경로 감지 → /install으로 매핑")
+            else:
+                normalized_path = ""
+                logger.info(f"🔍 빈 경로 감지: service={service}, path='{path}' → 루트 경로로 전달")
+        else:
+            normalized_path = path
 
     target_url = f"{base_url.rstrip('/')}/{normalized_path}".rstrip('/')
     
@@ -187,7 +196,7 @@ async def proxy_request(service: str, path: str, request: Request) -> Response:
 
     timeout = httpx.Timeout(30.0, connect=10.0)
     
-    async with httpx.AsyncClient(timeout=timeout) as client:
+    async with httpx.AsyncClient(timeout=timeout, follow_redirects=False) as client:
         try:
             resp = await client.request(
                 method=method,
@@ -198,6 +207,14 @@ async def proxy_request(service: str, path: str, request: Request) -> Response:
             )
             
             logger.info(f"✅ 프록시 응답: {method} {target_url} -> {resp.status_code}")
+            
+            # 🔴 추가: 307 응답 처리
+            if resp.status_code == 307:
+                logger.warning(f"⚠️ 307 Temporary Redirect 감지: {target_url}")
+                logger.warning(f"   Location 헤더: {resp.headers.get('location', 'N/A')}")
+                
+                # 307 응답을 그대로 클라이언트에게 전달
+                # 클라이언트가 리다이렉트를 처리하도록 함
             
         except httpx.RequestError as e:
             logger.error(f"❌ Upstream request error: {e}")
@@ -252,6 +269,28 @@ async def proxy_request(service: str, path: str, request: Request) -> Response:
 @app.api_route("/api/v1/{service}/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
 async def proxy(service: str, path: str, request: Request):
     return await proxy_request(service, path, request)
+
+# 🔴 추가: 루트 경로 핸들러 (브라우저 접근 시)
+@app.get("/", summary="Gateway 루트")
+async def root():
+    return {
+        "message": "🚀 LCA Final Gateway API",
+        "description": "Microservices Gateway for LCA Final Project",
+        "version": "1.0.0",
+        "environment": "railway-production",
+        "status": "healthy",
+        "endpoints": {
+            "health": "/health",
+            "docs": "/docs",
+            "api": "/api/v1/{service}/{path}"
+        },
+        "services": {
+            "auth": "Authentication Service",
+            "cbam": "CBAM Calculation Service",
+            "boundary": "System Boundary Service"
+        },
+        "usage": "Use /api/v1/{service}/{path} to access microservices through Gateway"
+    }
 
 # 헬스 체크
 @app.get("/health", summary="Gateway 헬스 체크")
