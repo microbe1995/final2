@@ -147,13 +147,12 @@ axiosClient.interceptors.response.use(
 
 // API 엔드포인트 헬퍼 (Gateway를 통한 라우팅)
 export const apiEndpoints = {
-  // Gateway 엔드포인트
+  // Gateway 엔드포인트 (실제 사용되는 것만)
   gateway: {
     health: '/health',
     status: '/status',
     routing: '/routing',
     architecture: '/architecture',
-    templates: '/api/cbam/templates',
   },
   // Auth Service (Gateway를 통해)
   auth: {
@@ -162,24 +161,8 @@ export const apiEndpoints = {
     logout: '/api/auth/logout',
     refresh: '/api/auth/refresh',
   },
-  // Countries API (Gateway를 통해)
-  countries: {
-    search: '/api/v1/countries/search',
-    all: '/api/v1/countries',
-    byCode: '/api/v1/countries/code',
-    byUnlocode: '/api/v1/countries/unlocode',
-  },
-  // LCA Service (Gateway를 통해)
-  lca: {
-    projects: '/api/lci/projects',
-    calculations: '/api/lci/calculations',
-    templates: '/api/lci/templates',
-  },
   // CBAM Service (Gateway를 통해)
   cbam: {
-    reports: '/api/cbam/reports',
-    calculations: '/api/cbam/calculations',
-    templates: '/api/cbam/templates',
     install: {
       create: '/api/v1/boundary/install',
       list: '/api/v1/boundary/install',
@@ -189,26 +172,19 @@ export const apiEndpoints = {
       delete: (id: number) => `/api/v1/boundary/install/${id}`
     },
     product: {
-      create: '/product',
-      list: '/product',
-      names: '/product/names',
-      get: (id: number) => `/product/${id}`,
-      update: (id: number) => `/product/${id}`,
-      delete: (id: number) => `/product/${id}`
+      create: '/api/v1/boundary/product',
+      list: '/api/v1/boundary/product',
+      names: '/api/v1/boundary/product/names',
+      get: (id: number) => `/api/v1/boundary/product/${id}`,
+      update: (id: number) => `/api/v1/boundary/product/${id}`,
+      delete: (id: number) => `/api/v1/boundary/product/${id}`
     },
     process: {
-      create: '/process',
-      list: '/process',
-      get: (id: number) => `/process/${id}`,
-      update: (id: number) => `/process/${id}`,
-      delete: (id: number) => `/process/${id}`
-    },
-    processInput: {
-      create: '/api/v1/boundary/process-input',
-      list: '/api/v1/boundary/process-input',
-      get: (id: number) => `/api/v1/boundary/process-input/${id}`,
-      update: (id: number) => `/api/v1/boundary/process-input/${id}`,
-      delete: (id: number) => `/api/v1/boundary/process-input/${id}`
+      create: '/api/v1/boundary/process',
+      list: '/api/v1/boundary/process',
+      get: (id: number) => `/api/v1/boundary/process/${id}`,
+      update: (id: number) => `/api/v1/boundary/process/${id}`,
+      delete: (id: number) => `/api/v1/boundary/process/${id}`
     },
     // HS-CN 매핑 API
     mapping: {
@@ -237,56 +213,24 @@ export const apiEndpoints = {
       calculate: '/api/v1/boundary/calc/process/calculate',
       list: '/api/v1/boundary/process'
     },
-    product: {
-      list: '/product',
-      get: (id: number) => `/product/${id}`,
-      create: '/product',
-      update: (id: number) => `/product/${id}`,
-      delete: (id: number) => `/product/${id}`
-    },
     cbam: '/api/v1/boundary/calc/cbam',
     precursors: '/api/v1/boundary/calc/precursor/user',
     precursorsBatch: '/api/v1/boundary/calc/precursor/save-batch',
     stats: '/api/v1/boundary/calc/stats',
     history: '/api/v1/boundary/calc/history',
     
-    // 새로운 테이블 API 엔드포인트들 (단수형으로 통일)
-    install: {
-        create: '/api/v1/boundary/install',
-        list: '/api/v1/boundary/install',
-        get: (id: number) => `/api/v1/boundary/install/${id}`,
-        update: (id: number) => `/api/v1/boundary/install/${id}`,
-        delete: (id: number) => `/api/v1/boundary/install/${id}`,
-        names: '/api/v1/boundary/install/names'
-    },
-    boundary: {
-        create: '/api/v1/boundary/boundary',
-        list: '/api/v1/boundary/boundary'
-    },
-
-    operation: {
-        create: '/api/v1/boundary/operation',
-        list: '/api/v1/boundary/operation'
-    },
-    node: {
-        create: '/api/v1/boundary/node',
-        list: '/api/v1/boundary/node'
-    },
-    edge: {
-        create: '/api/v1/boundary/edge',
-        list: '/api/v1/boundary/edge',
-        get: (id: number) => `/api/v1/boundary/edge/${id}`,
-        delete: (id: number) => `/api/v1/boundary/edge/${id}`
-    },
+    // Process Chain 관련 API
     processchain: {
         chain: '/api/v1/boundary/processchain/chain',
         chainCreate: '/api/v1/boundary/processchain/chain',
         chainGet: (id: number) => `/api/v1/boundary/processchain/chain/${id}`,
         chainDelete: (id: number) => `/api/v1/boundary/processchain/chain/${id}`
     },
-    productionEmission: {
-        create: '/api/v1/boundary/production-emission',
-        list: '/api/v1/boundary/production-emission'
+    edge: {
+        create: '/api/v1/boundary/edge',
+        list: '/api/v1/boundary/edge',
+        get: (id: number) => `/api/v1/boundary/edge/${id}`,
+        delete: (id: number) => `/api/v1/boundary/edge/${id}`
     },
     matdir: {
         create: '/api/v1/boundary/matdir',
@@ -316,29 +260,12 @@ export const apiEndpoints = {
         autoFactor: '/api/v1/boundary/fueldir/auto-factor'
     },
   },
-  // Material Master API (matdir 서비스 사용) - 최상위로 이동
+  // Material Master API (matdir 서비스 사용)
   materialMaster: {
       list: '/api/v1/matdir/',
       search: (mat_name: string) => `/api/v1/matdir/search/${mat_name}`,
       getFactor: (mat_name: string) => `/api/v1/matdir/factor/${mat_name}`,
       autoFactor: '/api/v1/matdir/auto-factor'
-  },
-  // Data Upload (Gateway를 통해)
-  upload: {
-    data: '/api/datagather/upload',
-    validate: '/api/datagather/validate',
-  },
-  // Dashboard (Gateway를 통해)
-  dashboard: {
-    overview: '/api/dashboard/overview',
-    stats: '/api/dashboard/stats',
-  },
-  // Settings (Gateway를 통해)
-  settings: {
-    profile: '/api/settings/profile',
-    organization: '/api/settings/organization',
-    users: '/api/settings/users',
-    apiKeys: '/api/settings/api-keys',
   },
 } as const;
 
