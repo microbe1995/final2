@@ -4,6 +4,7 @@ import axios, {
   AxiosResponse,
   AxiosError,
 } from 'axios';
+import { env } from './env';
 
 // 요청 중복 방지를 위한 pending requests 관리
 const pendingRequests = new Map<string, AbortController>();
@@ -52,7 +53,7 @@ const retryRequest = async (
 
 // axios 인스턴스 생성
 const axiosClient: AxiosInstance = axios.create({
-  baseURL: '', // 상대 경로 사용 (Next.js rewrites 활용)
+  baseURL: env.NEXT_PUBLIC_API_BASE_URL, // 🔴 수정: env.ts에서 가져온 URL 사용
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
@@ -62,6 +63,16 @@ const axiosClient: AxiosInstance = axios.create({
 // 요청 인터셉터
 axiosClient.interceptors.request.use(
   config => {
+    // 🔴 디버깅: 요청 URL 로깅
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🚀 API 요청:', {
+        method: config.method?.toUpperCase(),
+        url: config.url,
+        baseURL: config.baseURL,
+        fullURL: config.baseURL && config.url ? config.baseURL + config.url : 'N/A'
+      });
+    }
+    
     // 요청 키 생성
     const requestKey = generateRequestKey(config);
 
@@ -78,8 +89,8 @@ axiosClient.interceptors.request.use(
     config.signal = controller.signal;
     pendingRequests.set(requestKey, controller);
 
-    // API 요청 검증
-    if (config.url && !isAPIRequest(config.baseURL + config.url)) {
+    // API 요청 검증 (baseURL이 설정된 경우에만)
+    if (config.baseURL && config.url && !isAPIRequest(config.baseURL + config.url)) {
       throw new Error(
         'Direct service access is not allowed. Use API routes only.'
       );
