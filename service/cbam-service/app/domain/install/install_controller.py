@@ -13,7 +13,8 @@ from app.domain.install.install_schema import (
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/install", tags=["Install"])
+# Gateway를 통해 접근하므로 prefix 제거 (경로 중복 방지)
+router = APIRouter(tags=["Install"])
 
 # 서비스 인스턴스는 요청 시마다 생성 (모듈 레벨 초기화 방지)
 def get_install_service():

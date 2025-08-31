@@ -1,5 +1,5 @@
 # ============================================================================
-# 🎯 MatDir Controller - 원료직접배출량 API 엔드포인트
+# 🏭 Material Directory Controller - 원료 디렉토리 API 엔드포인트
 # ============================================================================
 
 from fastapi import APIRouter, HTTPException
@@ -25,7 +25,8 @@ from app.domain.matdir.matdir_schema import (
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/boundary", tags=["material_master"])
+# Gateway를 통해 접근하므로 prefix 제거 (경로 중복 방지)
+router = APIRouter(tags=["Material Directory"])
 
 # 서비스 인스턴스 생성
 matdir_service = MatDirService()

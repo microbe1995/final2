@@ -1,5 +1,5 @@
 # ============================================================================
-# 🔗 ProductProcess Controller - 제품-공정 관계 API 엔드포인트
+# 🏭 Product Process Controller - 제품-공정 관계 API 엔드포인트
 # ============================================================================
 
 import logging
@@ -17,8 +17,8 @@ from app.domain.productprocess.productprocess_schema import (
 
 logger = logging.getLogger(__name__)
 
-# 라우터 생성
-router = APIRouter(prefix="/product-process", tags=["product-process"])
+# Gateway를 통해 접근하므로 prefix 제거 (경로 중복 방지)
+router = APIRouter(tags=["Product Process"])
 
 # 서비스 인스턴스 생성
 product_process_service = ProductProcessService()

@@ -1,5 +1,5 @@
 # ============================================================================
-# 🎯 FuelDir Controller - 연료직접배출량 API 엔드포인트
+# 🏭 Fuel Directory Controller - 연료 디렉토리 API 엔드포인트
 # ============================================================================
 
 from fastapi import APIRouter, HTTPException
@@ -22,7 +22,8 @@ from app.domain.fueldir.fueldir_schema import (
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/boundary", tags=["fueldir_em"])
+# Gateway를 통해 접근하므로 prefix 제거 (경로 중복 방지)
+router = APIRouter(tags=["Fuel Directory"])
 
 # 서비스 인스턴스 생성
 fueldir_service = FuelDirService()

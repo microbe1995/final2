@@ -1,5 +1,5 @@
 # ============================================================================
-# 🎯 Mapping Controller - HS-CN 매핑 API 엔드포인트
+# 🏭 Mapping Controller - 매핑 API 엔드포인트
 # ============================================================================
 
 from fastapi import APIRouter, HTTPException, Query
@@ -15,7 +15,8 @@ from app.domain.mapping.mapping_schema import (
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/boundary", tags=["HS-CN Mapping"])
+# Gateway를 통해 접근하므로 prefix 제거 (경로 중복 방지)
+router = APIRouter(tags=["Mapping"])
 
 # 서비스 인스턴스는 요청 시마다 생성 (모듈 레벨 초기화 방지)
 def get_mapping_service():

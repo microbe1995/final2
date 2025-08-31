@@ -1,5 +1,5 @@
 # ============================================================================
-# 🎯 Calculation Controller - CBAM 계산 API 엔드포인트
+# 🏭 Calculation Controller - 계산 API 엔드포인트
 # ============================================================================
 
 from fastapi import APIRouter, HTTPException
@@ -16,7 +16,8 @@ from app.domain.calculation.calculation_schema import (
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/calculation", tags=["Calculation"])
+# Gateway를 통해 접근하므로 prefix 제거 (경로 중복 방지)
+router = APIRouter(tags=["Calculation"])
 
 # 서비스 인스턴스 생성
 calculation_service = CalculationService()

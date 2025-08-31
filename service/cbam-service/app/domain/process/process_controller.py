@@ -1,7 +1,11 @@
-# 🔄 Process Controller - 공정 API 엔드포인트
+# ============================================================================
+# 🏭 Process Controller - 공정 API 엔드포인트
+# ============================================================================
+
 from fastapi import APIRouter, HTTPException
 import logging
 from typing import List
+
 from app.domain.process.process_service import ProcessService
 from app.domain.process.process_schema import (
     ProcessCreateRequest, ProcessResponse, ProcessUpdateRequest
@@ -9,7 +13,8 @@ from app.domain.process.process_schema import (
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/process", tags=["Process"])
+# Gateway를 통해 접근하므로 prefix 제거 (경로 중복 방지)
+router = APIRouter(tags=["Process"])
 
 def get_process_service():
     """Process 서비스 인스턴스 반환"""

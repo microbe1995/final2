@@ -1,5 +1,5 @@
 # ============================================================================
-# 🔄 ProcessChain Controller - 통합 공정 그룹 API 엔드포인트
+# 🏭 Process Chain Controller - 공정 체인 API 엔드포인트
 # ============================================================================
 
 from fastapi import APIRouter, HTTPException, Depends, status
@@ -18,8 +18,8 @@ from app.domain.processchain.processchain_schema import (
 
 logger = logging.getLogger(__name__)
 
-# 라우터 생성
-router = APIRouter(prefix="/boundary", tags=["ProcessChain"])
+# Gateway를 통해 접근하므로 prefix 제거 (경로 중복 방지)
+router = APIRouter(tags=["Process Chain"])
 
 # 서비스 인스턴스 생성
 processchain_service = ProcessChainService()
