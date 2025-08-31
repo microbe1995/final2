@@ -4,7 +4,6 @@ import axios, {
   AxiosResponse,
   AxiosError,
 } from 'axios';
-import { env } from './env';
 
 // 요청 중복 방지를 위한 pending requests 관리
 const pendingRequests = new Map<string, AbortController>();
@@ -211,10 +210,10 @@ export const apiEndpoints = {
     
     // Process Chain 관련 API
     processchain: {
-        chain: '/api/v1/boundary/processchain/chain',
-        chainCreate: '/api/v1/boundary/processchain/chain',
-        chainGet: (id: number) => `/api/v1/boundary/processchain/chain/${id}`,
-        chainDelete: (id: number) => `/api/v1/boundary/processchain/chain/${id}`
+        list: '/api/v1/boundary/processchain/chain',
+        create: '/api/v1/boundary/processchain/chain',
+        get: (id: number) => `/api/v1/boundary/processchain/chain/${id}`,
+        delete: (id: number) => `/api/v1/boundary/processchain/chain/${id}`
     },
     edge: {
         create: '/api/v1/boundary/edge',
@@ -249,13 +248,24 @@ export const apiEndpoints = {
         getFactor: (fuel_name: string) => `/api/v1/boundary/fuel-master/factor/${fuel_name}`,
         autoFactor: '/api/v1/boundary/fueldir/auto-factor'
     },
+    // Product-Process 관계 API
+    productProcess: {
+        create: '/api/v1/boundary/productprocess',
+        list: '/api/v1/boundary/productprocess',
+        get: (id: number) => `/api/v1/boundary/productprocess/${id}`,
+        update: (id: number) => `/api/v1/boundary/productprocess/${id}`,
+        delete: (id: number) => `/api/v1/boundary/productprocess/${id}`,
+        byProduct: (product_id: number) => `/api/v1/boundary/productprocess/product/${product_id}`,
+        byProcess: (process_id: number) => `/api/v1/boundary/productprocess/process/${process_id}`,
+        stats: '/api/v1/boundary/productprocess/stats'
+    }
   },
-  // Material Master API (matdir 서비스 사용)
+  // Material Master API (matdir 서비스 사용) - 경로 패턴 통일
   materialMaster: {
-      list: '/api/v1/matdir/',
-      search: (mat_name: string) => `/api/v1/matdir/search/${mat_name}`,
-      getFactor: (mat_name: string) => `/api/v1/matdir/factor/${mat_name}`,
-      autoFactor: '/api/v1/matdir/auto-factor'
+      list: '/api/v1/boundary/matdir',
+      search: (mat_name: string) => `/api/v1/boundary/matdir/search/${mat_name}`,
+      getFactor: (mat_name: string) => `/api/v1/boundary/matdir/factor/${mat_name}`,
+      autoFactor: '/api/v1/boundary/matdir/auto-factor'
   },
 } as const;
 
