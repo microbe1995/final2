@@ -85,6 +85,14 @@ const GatewayStatus: React.FC = () => {
     testGatewayConnection();
   }, []);
 
+  // Object.entries를 안전하게 사용하는 헬퍼 함수
+  const safeObjectEntries = <T extends Record<string, any>>(obj: T): [string, T[keyof T]][] => {
+    if (obj && typeof obj === 'object') {
+      return Object.keys(obj).map(key => [key, obj[key]]);
+    }
+    return [];
+  };
+
   return (
     <div className='p-6 bg-white rounded-lg shadow-md'>
       <div className='flex items-center justify-between mb-6'>
@@ -153,7 +161,7 @@ const GatewayStatus: React.FC = () => {
         <div className='mb-6'>
           <h3 className='text-lg font-semibold mb-4'>서비스 상태</h3>
           <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-            {Object.entries(serviceStatus).map(([serviceName, service]) => (
+            {safeObjectEntries(serviceStatus).map(([serviceName, service]) => (
               <div key={serviceName} className='p-4 border rounded-md'>
                 <div className='flex items-center justify-between mb-2'>
                   <span className='font-medium capitalize'>{serviceName}</span>

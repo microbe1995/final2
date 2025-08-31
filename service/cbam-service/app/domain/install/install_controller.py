@@ -13,7 +13,7 @@ from app.domain.install.install_schema import (
 
 logger = logging.getLogger(__name__)
 
-# Gateway를 통해 접근하므로 prefix 제거 (경로 중복 방지)
+# prefix가 /install로 설정되므로 루트 경로(/) 사용
 router = APIRouter(tags=["Install"])
 
 # 서비스 인스턴스는 요청 시마다 생성 (모듈 레벨 초기화 방지)
@@ -25,7 +25,6 @@ def get_install_service():
 # 🏭 Install 관련 엔드포인트
 # ============================================================================
 
-# 중요: prefix 없이 등록하므로 루트 경로(/) 사용
 # 실제 경로: /install (사업장 목록 조회)
 @router.get("/", response_model=List[InstallResponse])
 async def get_installs():
@@ -90,7 +89,7 @@ async def get_install(install_id: int):
         raise
     except Exception as e:
         logger.error(f"❌ 사업장 조회 실패: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"사업장 조회 중 오류가 발생했습니다: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"사업장 생성 중 오류가 발생했습니다: {str(e)}")
 
 # 실제 경로: /install/{install_id} (사업장 수정)
 @router.put("/{install_id}", response_model=InstallResponse)

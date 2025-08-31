@@ -1,6 +1,6 @@
 export const env = {
   NEXT_PUBLIC_API_BASE_URL:
-    process.env.NEXT_PUBLIC_API_BASE_URL || 'https://gateway-production-22ef.up.railway.app',
+    process.env.NEXT_PUBLIC_API_BASE_URL || 'https://gateway-production-da31.up.railway.app',
   NEXT_PUBLIC_ENV: process.env.NEXT_PUBLIC_ENV || 'development',
   NEXT_PUBLIC_APP_NAME: process.env.NEXT_PUBLIC_APP_NAME || 'greensteel',
   NEXT_PUBLIC_APP_VERSION: process.env.NEXT_PUBLIC_APP_VERSION || '1.0.0',

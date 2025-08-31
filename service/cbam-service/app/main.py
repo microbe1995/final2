@@ -223,6 +223,7 @@ async def log_requests(request: Request, call_next):
 
 # 모든 라우터를 루트 경로에 등록 (prefix 없음)
 app.include_router(calculation_router)      # /calculation 경로
+app.include_router(install_router, prefix="/install")  # /install 경로 (prefix 추가)
 app.include_router(product_router)          # /product 경로
 app.include_router(process_router)         # /process 경로
 app.include_router(edge_router)            # /edge 경로
@@ -231,9 +232,8 @@ app.include_router(matdir_router)          # /matdir 경로
 app.include_router(fueldir_router)         # /fueldir 경로
 app.include_router(processchain_router)    # /processchain 경로
 app.include_router(product_process_router) # /productprocess 경로
-app.include_router(install_router)         # /install 경로 (prefix 없음)
 
-logger.info("✅ 모든 라우터 등록 완료 (prefix 없음)")
+logger.info("✅ 모든 라우터 등록 완료 (install에 prefix 추가)")
 
 # ============================================================================
 # 🏥 헬스체크 엔드포인트
