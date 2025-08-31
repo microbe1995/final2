@@ -34,39 +34,42 @@ class ProductService:
     # ============================================================================
     
     async def create_product(self, request: ProductCreateRequest) -> ProductResponse:
-        """제품 생성"""
+        """제품 생성 (5개 핵심 필드만)"""
         try:
-            # 🔴 수정: 모든 필드가 제대로 전달되는지 확인
+            # 🔴 수정: 5개 핵심 필드만 처리
             product_data = {
                 "install_id": request.install_id,
-                "product_name": request.product_name,
-                "product_category": request.product_category,
+                "product_name": request.product_name or "",
+                "product_category": request.product_category or "",
                 "prostart_period": request.prostart_period,
-                "proend_period": request.proend_period,
-                "product_amount": request.product_amount,
-                "cncode_total": request.cncode_total,
-                "goods_name": request.goods_name,
-                "goods_engname": request.goods_engname,
-                "aggrgoods_name": request.aggrgoods_name,
-                "aggrgoods_engname": request.aggrgoods_engname,
-                "product_sell": request.product_sell,
-                "product_eusell": request.product_eusell
+                "proend_period": request.proend_period
             }
+            
+            # 🔴 추가: 필수 필드 검증
+            if not product_data["install_id"]:
+                raise ValueError("install_id는 필수입니다")
+            if not product_data["product_name"]:
+                raise ValueError("product_name은 필수입니다")
+            if not product_data["product_category"]:
+                raise ValueError("product_category는 필수입니다")
+            if not product_data["prostart_period"]:
+                raise ValueError("prostart_period는 필수입니다")
+            if not product_data["proend_period"]:
+                raise ValueError("proend_period는 필수입니다")
             
             # 🔴 추가: 디버깅을 위한 데이터 로깅
             logger.info(f"🔍 제품 생성 데이터: {product_data}")
             logger.info(f"🔍 필드 개수: {len(product_data)}")
             
-            # 🔴 추가: None 값 처리
+            # 🔴 추가: 각 필드의 타입과 값 확인
             for key, value in product_data.items():
-                if value is None:
-                    if key in ['product_amount', 'product_sell', 'product_eusell']:
-                        product_data[key] = 0.0  # 숫자 필드는 0으로 설정
-                    elif key in ['cncode_total', 'goods_name', 'goods_engname', 'aggrgoods_name', 'aggrgoods_engname']:
-                        product_data[key] = ''  # 문자열 필드는 빈 문자열로 설정
-                    logger.info(f"🔧 {key} 필드 None 값 처리: {value} → {product_data[key]}")
+                logger.info(f"🔍 {key}: {value} (타입: {type(value)})")
             
             logger.info(f"🔍 최종 제품 데이터: {product_data}")
+            logger.info(f"🔍 최종 데이터 타입: {type(product_data)}")
+            
+            # 🔴 추가: repository 호출 전 최종 확인
+            logger.info(f"🔍 Repository 호출: create_product({product_data})")
             
             saved_product = await self.product_repository.create_product(product_data)
             if saved_product:

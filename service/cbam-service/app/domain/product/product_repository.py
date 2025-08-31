@@ -123,37 +123,51 @@ class ProductRepository:
     # ============================================================================
 
     async def create_product(self, product_data: Dict[str, Any]) -> Dict[str, Any]:
-        """제품 생성"""
+        """제품 생성 (5개 핵심 필드만)"""
         await self._ensure_pool_initialized()
         try:
-            # 🔴 추가: 파라미터 검증
-            required_fields = [
-                'install_id', 'product_name', 'product_category', 'prostart_period', 
-                'proend_period', 'product_amount', 'cncode_total', 'goods_name', 
-                'goods_engname', 'aggrgoods_name', 'aggrgoods_engname', 'product_sell', 'product_eusell'
+            # 🔴 수정: 5개 핵심 필드만 처리
+            core_fields = [
+                'install_id', 'product_name', 'product_category', 'prostart_period', 'proend_period'
             ]
             
-            # 🔴 추가: 필수 필드 확인
-            for field in required_fields:
-                if field not in product_data:
-                    logger.error(f"❌ 필수 필드 누락: {field}")
-                    product_data[field] = None  # 기본값 설정
+            # 🔴 수정: 핵심 필드 검증
+            for field in core_fields:
+                if field not in product_data or not product_data[field]:
+                    raise ValueError(f"{field}는 필수입니다")
             
-            # 🔴 추가: 디버깅을 위한 파라미터 로깅
+            # 🔴 수정: 선택적 필드는 기본값으로 설정
+            optional_fields = {
+                'cncode_total': '',
+                'goods_name': '',
+                'goods_engname': '',
+                'aggrgoods_name': '',
+                'aggrgoods_engname': '',
+                'product_amount': 0.0,
+                'product_sell': 0.0,
+                'product_eusell': 0.0
+            }
+            
+            # 🔴 수정: 모든 필드에 기본값 설정
+            for field, default_value in optional_fields.items():
+                if field not in product_data or product_data[field] is None:
+                    product_data[field] = default_value
+            
+            # 🔴 수정: 파라미터 생성 (13개 필드)
             params = (
                 product_data.get('install_id'),
-                product_data.get('product_name'),
-                product_data.get('product_category'),
+                product_data.get('product_name', ''),
+                product_data.get('product_category', ''),
                 product_data.get('prostart_period'),
                 product_data.get('proend_period'),
-                product_data.get('product_amount', 0),
-                product_data.get('cncode_total'),
-                product_data.get('goods_name'),
-                product_data.get('goods_engname'),
-                product_data.get('aggrgoods_name'),
-                product_data.get('aggrgoods_engname'),
-                product_data.get('product_sell', 0),
-                product_data.get('product_eusell', 0)
+                product_data.get('cncode_total', ''),
+                product_data.get('goods_name', ''),
+                product_data.get('goods_engname', ''),
+                product_data.get('aggrgoods_name', ''),
+                product_data.get('aggrgoods_engname', ''),
+                product_data.get('product_amount', 0.0),
+                product_data.get('product_sell', 0.0),
+                product_data.get('product_eusell', 0.0)
             )
             
             logger.info(f"🔍 INSERT 쿼리 파라미터: {params}")
@@ -163,8 +177,8 @@ class ProductRepository:
                 result = await conn.fetchrow("""
                     INSERT INTO product (
                         install_id, product_name, product_category, prostart_period, proend_period,
-                        product_amount, cncode_total, goods_name, goods_engname, aggrgoods_name,
-                        aggrgoods_engname, product_sell, product_eusell
+                        cncode_total, goods_name, goods_engname, aggrgoods_name, aggrgoods_engname,
+                        product_amount, product_sell, product_eusell
                     )
                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
                     RETURNING *
