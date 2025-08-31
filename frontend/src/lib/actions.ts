@@ -3,7 +3,7 @@
 import type { ProjectMeta, AnalysisScope, LciItem } from '@/lib/types';
 
 // Base API configuration for microservice integration
-const API_BASE_URL = process.env.API_GATEWAY_URL || 'http://localhost:8080/api';
+const API_BASE_URL = process.env.API_GATEWAY_URL || 'https://gateway-production-22ef.up.railway.app/api';
 
 interface ApiResponse<T = any> {
   success: boolean;

@@ -54,8 +54,8 @@ const retryRequest = async (
 
 // axios 인스턴스 생성
 const axiosClient: AxiosInstance = axios.create({
-  // 🔴 수정: Vercel 프록시 제거 후 직접 Gateway URL 사용
-  baseURL: 'https://gateway-production-22ef.up.railway.app',
+  // 🔴 수정: 환경변수 기반 Gateway URL 사용
+  baseURL: process.env.NEXT_PUBLIC_API_BASE_URL || 'https://gateway-production-22ef.up.railway.app',
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
@@ -65,19 +65,9 @@ const axiosClient: AxiosInstance = axios.create({
 // 요청 인터셉터
 axiosClient.interceptors.request.use(
   config => {
-    // 🔴 디버깅: 요청 URL 로깅
+    // 🔴 수정: 개발 환경에서만 로깅
     if (process.env.NODE_ENV === 'development') {
       console.log('🚀 API 요청:', {
-        method: config.method?.toUpperCase(),
-        url: config.url,
-        baseURL: config.baseURL,
-        fullURL: config.baseURL && config.url ? config.baseURL + config.url : 'N/A'
-      });
-    }
-    
-    // 🔴 수정: 프로덕션에서는 최소한의 로깅만
-    if (process.env.NODE_ENV === 'development') {
-      console.log('🚀 API 요청 (Vercel):', {
         method: config.method?.toUpperCase(),
         url: config.url,
         baseURL: config.baseURL,
@@ -132,15 +122,17 @@ axiosClient.interceptors.request.use(
 // 응답 인터셉터
 axiosClient.interceptors.response.use(
   response => {
-    // 🔴 추가: 성공 응답 로깅
-    console.log('✅ API 응답 성공:', {
-      method: response.config.method?.toUpperCase(),
-      url: response.config.url,
-      status: response.status,
-      statusText: response.statusText,
-      dataLength: response.data?.length || 0,
-      headers: response.headers
-    });
+    // 🔴 수정: 개발 환경에서만 로깅
+    if (process.env.NODE_ENV === 'development') {
+      console.log('✅ API 응답 성공:', {
+        method: response.config.method?.toUpperCase(),
+        url: response.config.url,
+        status: response.status,
+        statusText: response.statusText,
+        dataLength: response.data?.length || 0,
+        headers: response.headers
+      });
+    }
     
     // 요청 완료 시 pending requests에서 제거
     const requestKey = generateRequestKey(response.config);
@@ -148,19 +140,21 @@ axiosClient.interceptors.response.use(
     return response;
   },
   async error => {
-    // 🔴 추가: 에러 응답 로깅
-    console.error('❌ API 응답 에러:', {
-      message: error.message,
-      status: error.response?.status,
-      statusText: error.response?.statusText,
-      data: error.response?.data,
-      config: {
-        method: error.config?.method?.toUpperCase(),
-        url: error.config?.url,
-        baseURL: error.config?.baseURL,
-        fullURL: error.config?.baseURL && error.config?.url ? error.config?.baseURL + error.config?.url : 'N/A'
-      }
-    });
+    // 🔴 수정: 개발 환경에서만 로깅
+    if (process.env.NODE_ENV === 'development') {
+      console.error('❌ API 응답 에러:', {
+        message: error.message,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        config: {
+          method: error.config?.method?.toUpperCase(),
+          url: error.config?.url,
+          baseURL: error.config?.baseURL,
+          fullURL: error.config?.baseURL && error.config?.url ? error.config?.baseURL + error.config?.url : 'N/A'
+        }
+      });
+    }
     
     // 요청 완료 시 pending requests에서 제거
     if (error.config) {

@@ -135,7 +135,8 @@ if not allowed_origins:
         "https://lca-final.vercel.app",  # Vercel 프로덕션 프론트엔드
         "https://greensteel.site",       # 커스텀 도메인 (있다면)
         "http://localhost:3000",         # 로컬 개발 환경
-        "*",                             # 🔴 추가: 모든 오리진 허용 (개발 중)
+        "https://gateway-production-22ef.up.railway.app",  # 🔴 추가: Gateway 자체 URL
+        # 🔴 수정: "*" 제거하고 명시적으로 허용
     ]
 
 # 🔴 수정: CORS 설정을 더 유연하게
@@ -183,14 +184,14 @@ async def handle_options(full_path: str, request: Request):
     # CORS preflight 응답
     response = Response()
     
-    # 🔴 수정: origin 기반 CORS 헤더 설정
-    if origin in allowed_origins or "*" in allowed_origins:
-        response.headers["Access-Control-Allow-Origin"] = origin if origin != "N/A" else "*"
+    # 🔴 수정: origin 기반 CORS 헤더 설정 (wildcard 제거)
+    if origin in allowed_origins:
+        response.headers["Access-Control-Allow-Origin"] = origin
         response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
         response.headers["Access-Control-Allow-Headers"] = "*"
         response.headers["Access-Control-Max-Age"] = "86400"
         
-        logger.info(f"🌐 응답: 200 (OPTIONS) - CORS 허용")
+        logger.info(f"🌐 응답: 200 (OPTIONS) - CORS 허용: {origin}")
         return response
     else:
         logger.warning(f"🚫 CORS origin 거부: {origin}")
@@ -306,6 +307,12 @@ async def proxy_request(service: str, path: str, request: Request) -> Response:
     # 응답 헤더 정리
     response_headers = {k: v for k, v in resp.headers.items() 
                        if k.lower() not in {"content-encoding", "transfer-encoding", "connection"}}
+    
+    # 🔴 추가: CORS 헤더 보존 및 추가
+    origin = request.headers.get('origin')
+    if origin and origin in allowed_origins:
+        response_headers["Access-Control-Allow-Origin"] = origin
+        response_headers["Access-Control-Allow-Credentials"] = "true"
     
     return Response(
         content=resp.content, 

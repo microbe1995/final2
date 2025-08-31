@@ -13,10 +13,12 @@ export class PushNotificationService {
 
   async initialize(): Promise<void> {
     try {
-      if ('serviceWorker' in navigator && 'PushManager' in window) {
+      // 🔴 수정: Service Worker 등록 비활성화 (CORS 문제 해결을 위해)
+      if (false && 'serviceWorker' in navigator && 'PushManager' in window) {
         this.swRegistration = await navigator.serviceWorker.register('/sw.js');
         // Service Worker 등록 성공
       }
+      console.log('🚫 Service Worker 등록 비활성화됨 (CORS 문제 해결 후 재활성화)');
     } catch (error) {
       // Service Worker 등록 실패
     }
