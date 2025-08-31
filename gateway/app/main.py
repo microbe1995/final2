@@ -235,6 +235,27 @@ async def proxy_request(service: str, path: str, request: Request) -> Response:
             # 기타 process 경로는 그대로 유지
             logger.info(f"🔍 process 기타 경로 유지: {path} → {normalized_path}")
 
+    # 🔴 추가: edge 경로도 슬래시 처리
+    elif service == "cbam" and (path == "edge" or path.startswith("edge/")):
+        # 🔴 수정: 동적 경로(/{id})에는 슬래시 추가하지 않음
+        path_parts = path.split('/')
+        if path == "edge":
+            # 루트 edge 경로만 슬래시 추가
+            normalized_path = path + '/'
+            logger.info(f"🔍 edge 루트 경로 슬래시 추가: {path} → {normalized_path}")
+        elif len(path_parts) == 2 and path_parts[0] == "edge" and path_parts[1] == "":
+            # edge/만 있는 경우 슬래시 추가
+            if not normalized_path.endswith('/'):
+                normalized_path = normalized_path + '/'
+            logger.info(f"🔍 edge 경로 슬래시 추가: {path} → {normalized_path}")
+        elif len(path_parts) == 2 and path_parts[0] == "edge" and path_parts[1].isdigit():
+            # edge/{id} 같은 동적 경로는 그대로 유지 (슬래시 제거)
+            normalized_path = path.rstrip('/')
+            logger.info(f"🔍 edge 동적 경로 슬래시 제거: {path} → {normalized_path}")
+        else:
+            # 기타 edge 경로는 그대로 유지
+            logger.info(f"🔍 edge 기타 경로 유지: {path} → {normalized_path}")
+
     target_url = f"{base_url.rstrip('/')}/{normalized_path}"
     
     # 라우팅 정보 로깅
@@ -250,6 +271,14 @@ async def proxy_request(service: str, path: str, request: Request) -> Response:
             logger.warning(f"⚠️ 경로 정규화 불일치: {target_url} vs {expected_url}")
             target_url = expected_url
             logger.info(f"🔧 경로 수정됨: {target_url}")
+    
+    # 🔴 추가: edge 경로 검증
+    elif service == "cbam" and path == "edge":
+        expected_url = f"{base_url.rstrip('/')}/{path}/"
+        if target_url != expected_url:
+            logger.warning(f"⚠️ Edge 경로 정규화 불일치: {target_url} vs {expected_url}")
+            target_url = expected_url
+            logger.info(f"🔧 Edge 경로 수정됨: {target_url}")
     
     method = request.method
     headers = dict(request.headers)
@@ -328,11 +357,22 @@ async def proxy_request(service: str, path: str, request: Request) -> Response:
             response_headers[header_name] = https_value
             logger.info(f"🔧 헤더 HTTP → HTTPS 변환: {header_name}: {header_value} → {https_value}")
     
-    # CORS 헤더 설정
+    # CORS 헤더 설정 (완전한 CORS 지원)
     origin = request.headers.get('origin')
     if origin and origin in allowed_origins:
         response_headers["Access-Control-Allow-Origin"] = origin
         response_headers["Access-Control-Allow-Credentials"] = "true"
+        response_headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
+        response_headers["Access-Control-Allow-Headers"] = "*"
+        response_headers["Access-Control-Expose-Headers"] = "*"
+        response_headers["Access-Control-Max-Age"] = "86400"
+    else:
+        # 🔴 추가: 허용되지 않은 오리진에 대해서도 기본 CORS 헤더 설정
+        response_headers["Access-Control-Allow-Origin"] = "*"
+        response_headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
+        response_headers["Access-Control-Allow-Headers"] = "*"
+        response_headers["Access-Control-Expose-Headers"] = "*"
+        response_headers["Access-Control-Max-Age"] = "86400"
     
     return Response(
         content=resp.content, 

@@ -62,9 +62,10 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
   const addProductNode = useCallback((product: Product, handleProductNodeClick: (product: Product) => void) => {
     const newNode: Node = {
       id: `product-${Date.now()}-${Math.random().toString(36).slice(2)}`,
-      type: 'custom',
+      type: 'product',  // 'product' 타입으로 설정
       position: { x: Math.random() * 400 + 100, y: Math.random() * 300 + 100 },
       data: {
+        id: product.id,  // 실제 제품 ID 추가
         label: product.product_name,
         description: `제품: ${product.product_name}`,
         variant: 'product',
@@ -99,6 +100,7 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
       type: 'process',
       position: { x: Math.random() * 400 + 100, y: Math.random() * 300 + 100 },
       data: {
+        id: process.id,  // 실제 공정 ID 추가
         label: process.process_name,
         description: `공정: ${process.process_name}`,
         variant: 'process',
@@ -143,17 +145,34 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
   // Edge 생성 처리 (안전한 상태 업데이트)
   const handleEdgeCreate = useCallback(async (params: Connection, updateProcessChainsAfterEdge: () => void) => {
     try {
+      // 노드 ID에서 숫자 부분만 추출 (예: "product-123-abc" → 123)
+      const extractNodeId = (nodeId: string): number => {
+        const match = nodeId.match(/(?:product|process|group)-(\d+)/);
+        return match ? parseInt(match[1]) : 0;
+      };
+      
+      const sourceId = extractNodeId(params.source!);
+      const targetId = extractNodeId(params.target!);
+      
+      if (sourceId === 0 || targetId === 0) {
+        console.error('유효하지 않은 노드 ID:', { source: params.source, target: params.target });
+        return;
+      }
+      
       // 백엔드에 Edge 생성 요청
       const edgeData = {
-        source_id: parseInt(params.source!),
-        target_id: parseInt(params.target!),
+        source_id: sourceId,
+        target_id: targetId,
         edge_kind: 'continue'
       };
+      
+      console.log('🔗 Edge 생성 요청:', edgeData);
       
       const response = await axiosClient.post(apiEndpoints.cbam.edge.create, edgeData);
       
       if (response.status === 201) {
         const newEdge = response.data;
+        console.log('✅ Edge 생성 성공:', newEdge);
         
         // ReactFlow 상태에 Edge 추가 (setEdges 사용)
         const edgeToAdd = {
@@ -175,8 +194,26 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
           updateProcessChainsAfterEdge();
         }
       }
-    } catch (error) {
-      console.error('Edge 생성 실패:', error);
+    } catch (error: any) {
+      // 🔴 개선: 더 자세한 에러 로깅
+      console.error('❌ Edge 생성 실패:', {
+        error: error,
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        params: params
+      });
+      
+      // 🔴 추가: 사용자에게 에러 알림 (Toast 등으로 표시 가능)
+      if (error.response?.status === 500) {
+        console.error('🔴 서버 내부 오류 - Edge 생성 실패');
+      } else if (error.response?.status === 400) {
+        console.error('🔴 잘못된 요청 - Edge 데이터 검증 실패');
+      } else if (error.code === 'NETWORK_ERROR') {
+        console.error('🔴 네트워크 오류 - 서버 연결 실패');
+      } else {
+        console.error('🔴 알 수 없는 오류:', error);
+      }
     }
   }, [setEdges]);
 
