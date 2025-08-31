@@ -129,6 +129,28 @@ async def delete_install(install_id: int):
         logger.error(f"❌ 사업장 삭제 실패: {str(e)}")
         raise HTTPException(status_code=500, detail=f"사업장 삭제 중 오류가 발생했습니다: {str(e)}")
 
+# 실제 경로: /install/debug/structure (데이터베이스 구조 분석)
+@router.get("/install/debug/structure")
+async def debug_database_structure():
+    """데이터베이스 구조 분석 (디버그용)"""
+    try:
+        logger.info("🔍 데이터베이스 구조 분석 요청")
+        install_service = get_install_service()
+        
+        # Repository에서 직접 구조 분석 실행
+        repository = install_service.install_repository
+        structure_info = await repository.test_database_structure()
+        
+        logger.info("✅ 데이터베이스 구조 분석 완료")
+        return {
+            "status": "success",
+            "message": "데이터베이스 구조 분석 완료",
+            "data": structure_info
+        }
+    except Exception as e:
+        logger.error(f"❌ 데이터베이스 구조 분석 실패: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"데이터베이스 구조 분석 중 오류가 발생했습니다: {str(e)}")
+
 # ============================================================================
 # 📦 Router Export
 # ============================================================================
