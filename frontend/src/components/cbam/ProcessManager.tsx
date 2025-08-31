@@ -181,7 +181,11 @@ function ProcessManagerInner() {
     await handleEdgeCreate(params, updateProcessChainsAfterEdge);
   }, [handleEdgeCreate, updateProcessChainsAfterEdge]);
 
-  const nodeTypes: NodeTypes = { custom: ProductNode, process: ProcessNode };
+  const nodeTypes: NodeTypes = { 
+    product: ProductNode,  // 🔴 수정: 'product' 타입 추가
+    process: ProcessNode,  // 🔴 수정: 'process' 타입으로 변경
+    group: ProductNode     // 🔴 추가: 그룹 노드도 ProductNode로 렌더링
+  };
 
   return (
     <div className="w-full h-full flex flex-col">

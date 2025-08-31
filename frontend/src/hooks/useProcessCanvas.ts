@@ -128,7 +128,7 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
   const addGroupNode = useCallback(() => {
     const newNode: Node<any> = {
       id: `group-${Date.now()}-${Math.random().toString(36).slice(2)}`,
-      type: 'group',
+      type: 'group',  // 🔴 수정: 'group' 타입으로 설정
       position: { x: Math.random() * 400 + 100, y: Math.random() * 300 + 100 },
       style: { width: 200, height: 100 },
       data: { label: '그룹' },
