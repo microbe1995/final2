@@ -224,17 +224,22 @@ async def log_requests(request: Request, call_next):
 # 중요: Gateway를 통해 접근하므로 prefix 없이 등록 (상대 경로 사용)
 
 # 모든 라우터를 명확한 prefix와 함께 등록 (일관된 패턴)
-# 중요: 각 도메인별로 명확한 경로 분리하여 충돌 방지
-app.include_router(install_router, prefix="/install")
+# 중요: 더 구체적인 경로를 먼저 등록하여 경로 충돌 방지
+# 1. 계산 및 분석 관련 (가장 구체적인 경로)
 app.include_router(calculation_router, prefix="/calculation")
-app.include_router(product_router, prefix="/product")
-app.include_router(process_router, prefix="/process")
-app.include_router(edge_router, prefix="/edge")
-app.include_router(mapping_router, prefix="/mapping")
-app.include_router(matdir_router, prefix="/matdir")
-app.include_router(fueldir_router, prefix="/fueldir")
 app.include_router(processchain_router, prefix="/processchain")
 app.include_router(product_process_router, prefix="/productprocess")
+
+# 2. 도메인별 관리 (중간 구체성)
+app.include_router(mapping_router, prefix="/mapping")
+app.include_router(edge_router, prefix="/edge")
+app.include_router(matdir_router, prefix="/matdir")
+app.include_router(fueldir_router, prefix="/fueldir")
+
+# 3. 핵심 도메인 (가장 일반적인 경로 - 마지막에 등록)
+app.include_router(product_router, prefix="/product")
+app.include_router(process_router, prefix="/process")
+app.include_router(install_router, prefix="/install")
 
 logger.info("✅ 모든 라우터 등록 완료 (각 도메인별 prefix로 명확한 경로 분리)")
 
