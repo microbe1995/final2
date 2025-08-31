@@ -254,6 +254,24 @@ logger.info("🔗 Install 라우터 경로: /install/* (Gateway: /api/v1/install
 # 🏥 헬스체크 엔드포인트
 # ============================================================================
 
+@app.get("/", tags=["root"])
+async def root():
+    """서비스 루트 경로 (Gateway 호환성)"""
+    return {
+        "status": "healthy",
+        "service": APP_NAME,
+        "version": APP_VERSION,
+        "message": "CBAM Service is running",
+        "timestamp": time.time(),
+        "endpoints": {
+            "health": "/health",
+            "docs": "/docs" if DEBUG_MODE else "disabled",
+            "install": "/install",
+            "product": "/product",
+            "process": "/process"
+        }
+    }
+
 @app.get("/health", tags=["health"])
 async def health_check():
     """서비스 상태 확인"""
