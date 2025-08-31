@@ -6,24 +6,17 @@ Railway DB의 install 테이블 구조 확인 스크립트
 
 import asyncio
 import asyncpg
-import os
-from dotenv import load_dotenv
 
 async def check_install_table_structure():
     """install 테이블 구조 확인"""
     
-    # 환경변수 로드
-    load_dotenv()
-    database_url = os.getenv('DATABASE_URL')
-    
-    if not database_url:
-        print("❌ DATABASE_URL 환경변수가 설정되지 않았습니다.")
-        return
+    # Railway DB 주소
+    database_url = "postgresql://postgres:eQGfytQNhXYAZxsJYlFhYagpJAgstrni@shortline.proxy.rlwy.net:46071/railway"
     
     try:
         # 데이터베이스 연결
         conn = await asyncpg.connect(database_url)
-        print("✅ 데이터베이스 연결 성공")
+        print("✅ Railway DB 연결 성공")
         
         # 1. install 테이블 존재 여부 확인
         table_exists = await conn.fetchval("""
