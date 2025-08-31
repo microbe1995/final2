@@ -54,8 +54,8 @@ const retryRequest = async (
 
 // axios 인스턴스 생성
 const axiosClient: AxiosInstance = axios.create({
-  // 🔴 수정: 환경변수 기반 Gateway URL 사용
-  baseURL: process.env.NEXT_PUBLIC_API_BASE_URL || 'https://gateway-production-22ef.up.railway.app',
+  // 🔴 수정: 상대 경로 사용 (Gateway를 통한 라우팅)
+  baseURL: '',
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
@@ -65,12 +65,11 @@ const axiosClient: AxiosInstance = axios.create({
 // 요청 인터셉터
 axiosClient.interceptors.request.use(
   config => {
-    // 🔴 수정: 개발 환경에서만 로깅
-    if (process.env.NODE_ENV === 'development') {
+    // 🔴 수정: 개발 환경에서만 로깅 (더 엄격한 조건)
+    if (process.env.NODE_ENV === 'development' && typeof window !== 'undefined') {
       console.log('🚀 API 요청:', {
         method: config.method?.toUpperCase(),
         url: config.url,
-        baseURL: config.baseURL,
         fullURL: config.baseURL && config.url ? config.baseURL + config.url : 'N/A'
       });
     }
@@ -122,15 +121,14 @@ axiosClient.interceptors.request.use(
 // 응답 인터셉터
 axiosClient.interceptors.response.use(
   response => {
-    // 🔴 수정: 개발 환경에서만 로깅
-    if (process.env.NODE_ENV === 'development') {
+    // 🔴 수정: 개발 환경에서만 로깅 (더 엄격한 조건)
+    if (process.env.NODE_ENV === 'development' && typeof window !== 'undefined') {
       console.log('✅ API 응답 성공:', {
         method: response.config.method?.toUpperCase(),
         url: response.config.url,
         status: response.status,
         statusText: response.statusText,
-        dataLength: response.data?.length || 0,
-        headers: response.headers
+        dataLength: response.data?.length || 0
       });
     }
     
@@ -140,8 +138,8 @@ axiosClient.interceptors.response.use(
     return response;
   },
   async error => {
-    // 🔴 수정: 개발 환경에서만 로깅
-    if (process.env.NODE_ENV === 'development') {
+    // 🔴 수정: 개발 환경에서만 로깅 (더 엄격한 조건)
+    if (process.env.NODE_ENV === 'development' && typeof window !== 'undefined') {
       console.error('❌ API 응답 에러:', {
         message: error.message,
         status: error.response?.status,
@@ -150,7 +148,6 @@ axiosClient.interceptors.response.use(
         config: {
           method: error.config?.method?.toUpperCase(),
           url: error.config?.url,
-          baseURL: error.config?.baseURL,
           fullURL: error.config?.baseURL && error.config?.url ? error.config?.baseURL + error.config?.url : 'N/A'
         }
       });
