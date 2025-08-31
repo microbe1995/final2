@@ -172,7 +172,13 @@ async def proxy_request(service: str, path: str, request: Request) -> Response:
     else:
         normalized_path = path
 
-    target_url = f"{base_url.rstrip('/')}/{normalized_path}".rstrip('/')
+    # 🔴 추가: install 경로에 슬래시 자동 추가 (CBAM 서비스 요구사항)
+    if service == "cbam" and (path == "install" or path.startswith("install/")):
+        if not normalized_path.endswith('/'):
+            normalized_path = normalized_path + '/'
+        logger.info(f"🔍 install 경로 슬래시 추가: {path} → {normalized_path}")
+
+    target_url = f"{base_url.rstrip('/')}/{normalized_path}"
     
     # 라우팅 정보 로깅
     logger.info(f"🔄 프록시 라우팅: {service} -> {target_url}")

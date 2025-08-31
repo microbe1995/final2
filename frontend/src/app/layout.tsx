@@ -2,9 +2,10 @@ import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import Script from 'next/script';
 import './globals.css';
-import PWAInstallBanner from '@/components/pwa/PWAInstallBanner';
 import OfflineIndicator from '@/components/common/OfflineIndicator';
-import PWAServiceWorker from '@/components/pwa/PWAServiceWorker';
+// 🔴 PWA 컴포넌트 import 제거
+// import PWAInstallBanner from '@/components/pwa/PWAInstallBanner';
+// import PWAServiceWorker from '@/components/pwa/PWAServiceWorker';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -62,38 +63,7 @@ export default function RootLayout({
   return (
     <html lang='ko' className='dark'>
       <head>
-        <link rel='manifest' href='/manifest.json' />
         <link rel='icon' href='/icon-192x192.svg' type='image/svg+xml' />
-        <link rel='apple-touch-icon' href='/apple-touch-icon.svg' />
-        <meta name='apple-mobile-web-app-capable' content='yes' />
-        <meta name='apple-mobile-web-app-status-bar-style' content='default' />
-        <meta name='apple-mobile-web-app-title' content='GreenSteel' />
-        <meta name='msapplication-TileColor' content='#3b82f6' />
-        <meta name='theme-color' content='#3b82f6' />
-        <meta name='application-name' content='GreenSteel' />
-        <meta name='msapplication-TileImage' content='/icon-192x192.svg' />
-
-        {/* PWA 관련 메타데이터 */}
-        <meta name='mobile-web-app-capable' content='yes' />
-        <meta name='apple-mobile-web-app-capable' content='yes' />
-        <meta
-          name='apple-mobile-web-app-status-bar-style'
-          content='black-translucent'
-        />
-        <meta name='apple-mobile-web-app-title' content='GreenSteel' />
-        <meta name='msapplication-TileColor' content='#3b82f6' />
-        <meta name='msapplication-TileImage' content='/icon-192x192.svg' />
-        <meta name='theme-color' content='#3b82f6' />
-        <meta name='msapplication-config' content='/browserconfig.xml' />
-
-        {/* iOS PWA 메타데이터 */}
-        <meta name='apple-touch-fullscreen' content='yes' />
-        <meta name='apple-mobile-web-app-orientations' content='portrait' />
-
-        {/* Android PWA 메타데이터 */}
-        <meta name='mobile-web-app-capable' content='yes' />
-        <meta name='theme-color' content='#3b82f6' />
-        <meta name='background-color' content='#0f172a' />
       </head>
       <body className={`${inter.className} antialiased`}>
         {/* Google tag (gtag.js) */}
@@ -116,10 +86,10 @@ export default function RootLayout({
           strategy='afterInteractive'
         />
 
-        {/* PWA Components */}
-        <PWAServiceWorker />
+        {/* 🔴 PWA Components 완전 제거 */}
+        {/* <PWAServiceWorker /> */}
         <OfflineIndicator />
-        <PWAInstallBanner />
+        {/* <PWAInstallBanner /> */}
 
         {children}
       </body>
