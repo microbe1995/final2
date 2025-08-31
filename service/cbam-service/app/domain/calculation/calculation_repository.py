@@ -513,47 +513,7 @@ class CalculationRepository:
             logger.error(f"❌ 통합 그룹 배출량 계산 실패: {str(e)}")
             raise e
 
-    # ============================================================================
-    # 🔗 ProductProcess 관련 Repository 메서드
-    # ============================================================================
 
-    async def create_product_process(self, product_process_data: Dict[str, Any]) -> Dict[str, Any]:
-        """데이터베이스에 제품-공정 관계 생성"""
-        await self._ensure_pool_initialized()
-            
-        try:
-            async with self.pool.acquire() as conn:
-                result = await conn.fetchrow("""
-                    INSERT INTO product_process (product_id, process_id)
-                    VALUES ($1, $2)
-                    ON CONFLICT (product_id, process_id) DO NOTHING
-                    RETURNING *
-                """, (product_process_data['product_id'], product_process_data['process_id']))
-                
-                if result:
-                    return dict(result)
-                else:
-                    raise Exception("제품-공정 관계 생성에 실패했습니다.")
-                    
-        except Exception as e:
-            logger.error(f"❌ 제품-공정 관계 생성 실패: {str(e)}")
-            raise e
-
-    async def delete_product_process(self, product_id: int, process_id: int) -> bool:
-        """데이터베이스에서 제품-공정 관계 삭제"""
-        await self._ensure_pool_initialized()
-            
-        try:
-            async with self.pool.acquire() as conn:
-                result = await conn.execute("""
-                    DELETE FROM product_process WHERE product_id = $1 AND process_id = $2
-                """, (product_id, process_id))
-                
-                return result != "DELETE 0"
-                
-        except Exception as e:
-            logger.error(f"❌ 제품-공정 관계 삭제 실패: {str(e)}")
-            raise e
 
     # ============================================================================
     # 📊 배출량 계산 관련 Repository 메서드

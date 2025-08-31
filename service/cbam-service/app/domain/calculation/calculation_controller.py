@@ -9,7 +9,6 @@ import time
 
 from app.domain.calculation.calculation_service import CalculationService
 from app.domain.calculation.calculation_schema import (
-    ProductProcessResponse, ProductProcessCreateRequest,
     ProcessAttrdirEmissionCreateRequest, ProcessAttrdirEmissionResponse, ProcessAttrdirEmissionUpdateRequest,
     ProcessEmissionCalculationRequest, ProcessEmissionCalculationResponse,
     ProductEmissionCalculationRequest, ProductEmissionCalculationResponse
@@ -24,37 +23,6 @@ calculation_service = CalculationService()
 
 
 
-# ============================================================================
-# 🔗 ProductProcess 관련 엔드포인트 (다대다 관계)
-# ============================================================================
-
-@router.post("/product-process", response_model=ProductProcessResponse)
-async def create_product_process(request: ProductProcessCreateRequest):
-    """제품-공정 관계 생성"""
-    try:
-        logger.info(f"🔄 제품-공정 관계 생성 요청: 제품 ID {request.product_id}, 공정 ID {request.process_id}")
-        result = await calculation_service.create_product_process(request)
-        logger.info(f"✅ 제품-공정 관계 생성 성공: ID {result.id}")
-        return result
-    except Exception as e:
-        logger.error(f"❌ 제품-공정 관계 생성 실패: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"제품-공정 관계 생성 중 오류가 발생했습니다: {str(e)}")
-
-@router.delete("/product-process/{product_id}/{process_id}")
-async def delete_product_process(product_id: int, process_id: int):
-    """제품-공정 관계 삭제"""
-    try:
-        logger.info(f"🗑️ 제품-공정 관계 삭제 요청: 제품 ID {product_id}, 공정 ID {process_id}")
-        success = await calculation_service.delete_product_process(product_id, process_id)
-        if not success:
-            raise HTTPException(status_code=404, detail="제품-공정 관계를 찾을 수 없습니다")
-        logger.info(f"✅ 제품-공정 관계 삭제 성공")
-        return {"message": "제품-공정 관계가 성공적으로 삭제되었습니다"}
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"❌ 제품-공정 관계 삭제 실패: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"제품-공정 관계 삭제 중 오류가 발생했습니다: {str(e)}")
 
 
 

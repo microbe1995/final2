@@ -7,7 +7,6 @@ from typing import List, Optional, Dict, Any
 from datetime import datetime
 from app.domain.calculation.calculation_repository import CalculationRepository
 from app.domain.calculation.calculation_schema import (
-    ProductProcessCreateRequest, ProductProcessResponse,
     ProcessAttrdirEmissionCreateRequest, ProcessAttrdirEmissionResponse, ProcessAttrdirEmissionUpdateRequest,
     ProcessEmissionCalculationRequest, ProcessEmissionCalculationResponse,
     ProductEmissionCalculationRequest, ProductEmissionCalculationResponse
@@ -31,9 +30,6 @@ class CalculationService:
             logger.warning(f"⚠️ Calculation 서비스 데이터베이스 초기화 실패 (서비스는 계속 실행): {e}")
             logger.info("ℹ️ 데이터베이스 연결은 필요할 때 자동으로 초기화됩니다.")
     
-
-
-
     
     async def delete_process(self, process_id: int) -> bool:
         """프로세스 삭제"""
@@ -48,35 +44,6 @@ class CalculationService:
             logger.error(f"Error deleting process {process_id}: {e}")
             raise e
 
-    # ============================================================================
-    # 🔗 ProductProcess 관련 메서드 (다대다 관계)
-    # ============================================================================
-    
-    async def create_product_process(self, request: ProductProcessCreateRequest) -> ProductProcessResponse:
-        """제품-공정 관계 생성"""
-        try:
-            product_process_data = {
-                "product_id": request.product_id,
-                "process_id": request.process_id
-            }
-            
-            saved_product_process = await self.calc_repository.create_product_process(product_process_data)
-            if saved_product_process:
-                return ProductProcessResponse(**saved_product_process)
-            else:
-                raise Exception("제품-공정 관계 저장에 실패했습니다.")
-        except Exception as e:
-            logger.error(f"Error creating product-process relationship: {e}")
-            raise e
-    
-    async def delete_product_process(self, product_id: int, process_id: int) -> bool:
-        """제품-공정 관계 삭제"""
-        try:
-            success = await self.calc_repository.delete_product_process(product_id, process_id)
-            return success
-        except Exception as e:
-            logger.error(f"Error deleting product-process relationship: {e}")
-            raise e
 
     # ============================================================================
     # 📊 배출량 계산 관련 메서드들
@@ -219,12 +186,3 @@ class CalculationService:
             logger.error(f"Error calculating product emission for product {request.product_id}: {e}")
             raise e
 
-
-
-
-
-    # ============================================================================
-    # 🔗 Edge 관련 서비스 메서드들
-    # ============================================================================
-
-    # Edge 관련 서비스 메서드들은 edge 도메인으로 분리됨

@@ -30,9 +30,10 @@ from app.domain.mapping.mapping_controller import router as mapping_router
 from app.domain.matdir.matdir_controller import router as matdir_router
 from app.domain.fueldir.fueldir_controller import router as fueldir_router
 from app.domain.processchain.processchain_controller import router as processchain_router
+from app.domain.productprocess.productprocess_controller import router as product_process_router
 
 # 엔티티 임포트 (순환 참조 방지를 위해 라우터 등록 전에 임포트)
-from app.domain.calculation.calculation_entity import ProductProcess
+from app.domain.productprocess.productprocess_entity import ProductProcess
 from app.domain.install.install_entity import Install
 from app.domain.product.product_entity import Product
 from app.domain.process.process_entity import Process
@@ -275,7 +276,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # 프로덕션에서는 특정 도메인만 허용
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
 
@@ -305,8 +306,8 @@ async def log_requests(request: Request, call_next):
 # ============================================================================
 
 # CBAM 도메인 라우터들 등록 (MSA 원칙: 각 서비스는 자체 경로 구조를 가짐)
+app.include_router(install_router)  # install_router를 가장 먼저 등록
 app.include_router(calculation_router)
-app.include_router(install_router)
 app.include_router(product_router)
 app.include_router(process_router)
 app.include_router(edge_router)
@@ -314,6 +315,7 @@ app.include_router(mapping_router)
 app.include_router(matdir_router)  # prefix 제거 - MSA 독립성 확보
 app.include_router(fueldir_router)
 app.include_router(processchain_router)
+app.include_router(product_process_router)  # 제품-공정 관계 라우터
 
 # ============================================================================
 # 🏥 헬스체크 엔드포인트
@@ -341,6 +343,19 @@ async def health_check():
         "database": db_status,
         "timestamp": time.time()
     }
+
+@app.get("/debug/routes", tags=["debug"])
+async def debug_routes():
+    """등록된 라우트 정보 확인 (디버그용)"""
+    routes = []
+    for route in app.routes:
+        if hasattr(route, 'path') and hasattr(route, 'methods'):
+            routes.append({
+                "path": route.path,
+                "methods": list(route.methods) if route.methods else [],
+                "name": getattr(route, 'name', 'unknown')
+            })
+    return {"routes": routes}
 # ============================================================================
 # 🚨 예외 처리 핸들러
 # ============================================================================

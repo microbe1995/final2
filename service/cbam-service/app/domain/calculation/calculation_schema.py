@@ -10,26 +10,6 @@ if TYPE_CHECKING:
     from app.domain.calculation.calculation_schema import ProcessResponse, ProductResponse
 
 
-
-# ============================================================================
-# 🔗 ProductProcess 관련 스키마
-# ============================================================================
-
-class ProductProcessCreateRequest(BaseModel):
-    """제품-공정 관계 생성 요청"""
-    product_id: int = Field(..., description="제품 ID")
-    process_id: int = Field(..., description="공정 ID")
-
-class ProductProcessResponse(BaseModel):
-    """제품-공정 관계 응답"""
-    id: int = Field(..., description="관계 ID")
-    product_id: int = Field(..., description="제품 ID")
-    process_id: int = Field(..., description="공정 ID")
-    created_at: Optional[datetime] = Field(None, description="생성일")
-    updated_at: Optional[datetime] = Field(None, description="수정일")
-
-
-
 # ============================================================================
 # 📊 ProcessAttrdirEmission 관련 스키마
 # ============================================================================
