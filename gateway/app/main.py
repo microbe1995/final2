@@ -135,6 +135,7 @@ if not allowed_origins:
         "https://lca-final.vercel.app",  # Vercel 프로덕션 프론트엔드
         "https://greensteel.site",       # 커스텀 도메인 (있다면)
         "http://localhost:3000",         # 로컬 개발 환경
+        "*",                             # 🔴 추가: 모든 오리진 허용 (개발 중)
     ]
 
 # 🔴 수정: CORS 설정을 더 유연하게
@@ -172,6 +173,21 @@ logger.info(f"   허용된 오리진: {allowed_origins}")
 logger.info(f"   자격증명 허용: {allow_credentials}")
 logger.info(f"   허용된 메서드: {allow_methods}")
 logger.info(f"   허용된 헤더: {allow_headers}")
+
+# OPTIONS 요청 처리 (CORS preflight)
+@app.options("/{full_path:path}")
+async def handle_options(full_path: str, request: Request):
+    logger.info(f"🌐 OPTIONS {full_path} origin={request.headers.get('origin', 'N/A')}")
+    
+    # CORS preflight 응답
+    response = Response()
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
+    response.headers["Access-Control-Allow-Headers"] = "*"
+    response.headers["Access-Control-Max-Age"] = "86400"
+    
+    logger.info(f"🌐 응답: 200 (OPTIONS)")
+    return response
 
 # 프록시 유틸리티
 async def proxy_request(service: str, path: str, request: Request) -> Response:
