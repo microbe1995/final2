@@ -66,19 +66,25 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
       position: { x: Math.random() * 400 + 100, y: Math.random() * 300 + 100 },
       data: {
         id: product.id,  // 실제 제품 ID 추가
-        label: product.product_name,
+        label: product.product_name,  // 🔴 수정: label을 올바르게 설정
         description: `제품: ${product.product_name}`,
-        variant: 'product',
-        productData: product,
+        variant: 'product',  // 🔴 수정: variant를 'product'로 명시적 설정
+        productData: product,  // 🔴 수정: productData를 올바르게 설정
         install_id: selectedInstall?.id,
         onClick: () => handleProductNodeClick(product),
+        // 🔴 추가: ProductNode가 기대하는 추가 데이터
+        size: 'md',
+        showHandles: true,
       },
     };
+
+    console.log('🔍 제품 노드 생성:', newNode); // 🔴 추가: 디버깅 로그
 
     // setNodes를 사용하여 안전하게 노드 추가
     setNodes(prev => {
       const newNodes = [...prev, newNode];
       prevNodesRef.current = newNodes;
+      console.log('🔍 노드 상태 업데이트:', newNodes); // 🔴 추가: 디버깅 로그
       return newNodes;
     });
   }, [setNodes, selectedInstall?.id]);
@@ -131,13 +137,22 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
       type: 'group',  // 🔴 수정: 'group' 타입으로 설정
       position: { x: Math.random() * 400 + 100, y: Math.random() * 300 + 100 },
       style: { width: 200, height: 100 },
-      data: { label: '그룹' },
+      data: { 
+        label: '그룹',  // 🔴 수정: label을 올바르게 설정
+        description: '그룹 노드',
+        variant: 'default',  // 🔴 추가: variant 설정
+        size: 'md',  // 🔴 추가: size 설정
+        showHandles: true,  // 🔴 추가: showHandles 설정
+      },
     };
+
+    console.log('🔍 그룹 노드 생성:', newNode); // 🔴 추가: 디버깅 로그
 
     // setNodes를 사용하여 안전하게 노드 추가
     setNodes(prev => {
       const newNodes = [...prev, newNode];
       prevNodesRef.current = newNodes;
+      console.log('🔍 노드 상태 업데이트:', newNodes); // 🔴 추가: 디버깅 로그
       return newNodes;
     });
   }, [setNodes]);
