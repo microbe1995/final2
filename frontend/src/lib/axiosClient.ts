@@ -237,6 +237,13 @@ export const apiEndpoints = {
       calculate: '/api/v1/boundary/calc/process/calculate',
       list: '/api/v1/boundary/process'
     },
+    product: {
+      list: '/api/v1/boundary/product',
+      get: (id: number) => `/api/v1/boundary/product/${id}`,
+      create: '/api/v1/boundary/product',
+      update: (id: number) => `/api/v1/boundary/product/${id}`,
+      delete: (id: number) => `/api/v1/boundary/product/${id}`
+    },
     cbam: '/api/v1/boundary/calc/cbam',
     precursors: '/api/v1/boundary/calc/precursor/user',
     precursorsBatch: '/api/v1/boundary/calc/precursor/save-batch',
