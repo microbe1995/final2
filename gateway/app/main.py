@@ -276,6 +276,13 @@ async def proxy_request(service: str, path: str, request: Request) -> Response:
     response_headers = {k: v for k, v in resp.headers.items() 
                        if k.lower() not in hop_by_hop_headers}
     
+    # 🔴 추가: HTTP → HTTPS 변환 (CSP 위반 방지)
+    for header_name, header_value in response_headers.items():
+        if isinstance(header_value, str) and 'http://' in header_value:
+            https_value = header_value.replace('http://', 'https://')
+            response_headers[header_name] = https_value
+            logger.info(f"🔧 헤더 HTTP → HTTPS 변환: {header_name}: {header_value} → {https_value}")
+    
     # CORS 헤더 설정
     origin = request.headers.get('origin')
     if origin and origin in allowed_origins:
