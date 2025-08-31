@@ -4,7 +4,7 @@
 
 from fastapi import APIRouter, HTTPException
 import logging
-from typing import List
+from typing import List, Optional
 
 from app.domain.product.product_service import ProductService
 from app.domain.product.product_schema import (
@@ -26,12 +26,25 @@ def get_product_service():
 # ============================================================================
 
 @router.get("/", response_model=List[ProductResponse])
-async def get_products():
-    """제품 목록 조회"""
+async def get_products(
+    install_id: Optional[int] = None,
+    product_name: Optional[str] = None,
+    product_category: Optional[str] = None
+):
+    """제품 목록 조회 (선택적 필터링)"""
     try:
-        logger.info("📋 제품 목록 조회 요청")
+        logger.info(f"📋 제품 목록 조회 요청 - install_id: {install_id}, product_name: {product_name}, category: {product_category}")
         product_service = get_product_service()
         products = await product_service.get_products()
+        
+        # 필터링 적용
+        if install_id is not None:
+            products = [p for p in products if p.install_id == install_id]
+        if product_name:
+            products = [p for p in products if product_name.lower() in p.product_name.lower()]
+        if product_category:
+            products = [p for p in products if p.product_category == product_category]
+        
         logger.info(f"✅ 제품 목록 조회 성공: {len(products)}개")
         return products
     except Exception as e:

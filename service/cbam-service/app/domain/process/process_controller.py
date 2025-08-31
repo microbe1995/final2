@@ -4,7 +4,7 @@
 
 from fastapi import APIRouter, HTTPException
 import logging
-from typing import List
+from typing import List, Optional
 
 from app.domain.process.process_service import ProcessService
 from app.domain.process.process_schema import (
@@ -21,12 +21,22 @@ def get_process_service():
     return ProcessService()
 
 @router.get("/", response_model=List[ProcessResponse])
-async def get_processes():
-    """프로세스 목록 조회"""
+async def get_processes(
+    process_name: Optional[str] = None,
+    product_id: Optional[int] = None
+):
+    """프로세스 목록 조회 (선택적 필터링)"""
     try:
-        logger.info("📋 프로세스 목록 조회 요청")
+        logger.info(f"📋 프로세스 목록 조회 요청 - process_name: {process_name}, product_id: {product_id}")
         process_service = get_process_service()
         processes = await process_service.get_processes()
+        
+        # 필터링 적용
+        if process_name:
+            processes = [p for p in processes if process_name.lower() in p.process_name.lower()]
+        if product_id is not None:
+            processes = [p for p in processes if p.products and any(prod.get('id') == product_id for prod in p.products)]
+        
         logger.info(f"✅ 프로세스 목록 조회 성공: {len(processes)}개")
         return processes
     except Exception as e:

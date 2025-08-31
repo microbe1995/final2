@@ -189,19 +189,19 @@ export const apiEndpoints = {
       delete: (id: number) => `/api/v1/boundary/install/${id}`
     },
     product: {
-      create: '/api/v1/boundary/product',
-      list: '/api/v1/boundary/product',
-      names: '/api/v1/boundary/product/names',
-      get: (id: number) => `/api/v1/boundary/product/${id}`,
-      update: (id: number) => `/api/v1/boundary/product/${id}`,
-      delete: (id: number) => `/api/v1/boundary/product/${id}`
+      create: '/product',
+      list: '/product',
+      names: '/product/names',
+      get: (id: number) => `/product/${id}`,
+      update: (id: number) => `/product/${id}`,
+      delete: (id: number) => `/product/${id}`
     },
     process: {
-      create: '/api/v1/boundary/process',
-      list: '/api/v1/boundary/process',
-      get: (id: number) => `/api/v1/boundary/process/${id}`,
-      update: (id: number) => `/api/v1/boundary/process/${id}`,
-      delete: (id: number) => `/api/v1/boundary/process/${id}`
+      create: '/process',
+      list: '/process',
+      get: (id: number) => `/process/${id}`,
+      update: (id: number) => `/process/${id}`,
+      delete: (id: number) => `/process/${id}`
     },
     processInput: {
       create: '/api/v1/boundary/process-input',
@@ -238,11 +238,11 @@ export const apiEndpoints = {
       list: '/api/v1/boundary/process'
     },
     product: {
-      list: '/api/v1/boundary/product',
-      get: (id: number) => `/api/v1/boundary/product/${id}`,
-      create: '/api/v1/boundary/product',
-      update: (id: number) => `/api/v1/boundary/product/${id}`,
-      delete: (id: number) => `/api/v1/boundary/product/${id}`
+      list: '/product',
+      get: (id: number) => `/product/${id}`,
+      create: '/product',
+      update: (id: number) => `/product/${id}`,
+      delete: (id: number) => `/product/${id}`
     },
     cbam: '/api/v1/boundary/calc/cbam',
     precursors: '/api/v1/boundary/calc/precursor/user',
