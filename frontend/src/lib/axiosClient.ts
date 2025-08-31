@@ -75,15 +75,15 @@ axiosClient.interceptors.request.use(
       });
     }
     
-    // 🔴 추가: Vercel 환경에서도 로깅 (프로덕션 디버깅)
-    console.log('🚀 API 요청 (Vercel):', {
-      method: config.method?.toUpperCase(),
-      url: config.url,
-      baseURL: config.baseURL,
-      fullURL: config.baseURL && config.url ? config.baseURL + config.url : 'N/A',
-      headers: config.headers,
-      timeout: config.timeout
-    });
+    // 🔴 수정: 프로덕션에서는 최소한의 로깅만
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🚀 API 요청 (Vercel):', {
+        method: config.method?.toUpperCase(),
+        url: config.url,
+        baseURL: config.baseURL,
+        fullURL: config.baseURL && config.url ? config.baseURL + config.url : 'N/A'
+      });
+    }
     
     // 요청 키 생성
     const requestKey = generateRequestKey(config);
@@ -101,12 +101,12 @@ axiosClient.interceptors.request.use(
     config.signal = controller.signal;
     pendingRequests.set(requestKey, controller);
 
-    // API 요청 검증 (개선된 로직)
-    if (config.url && !isAPIRequest(config.url)) {
-      throw new Error(
-        'Direct service access is not allowed. Use API routes only.'
-      );
-    }
+    // 🔴 수정: API 요청 검증 완화 (CORS 문제 해결을 위해)
+    // if (config.url && !isAPIRequest(config.url)) {
+    //   throw new Error(
+    //     'Direct service access is not allowed. Use API routes only.'
+    //   );
+    // }
 
     // CSRF 토큰 추가
     const csrfToken = getCSRFToken();

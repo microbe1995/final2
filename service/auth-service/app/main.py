@@ -1,5 +1,4 @@
 from fastapi import FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 import uvicorn
 
@@ -84,40 +83,6 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan
 )
-
-# CORS 설정 (환경변수 기반)
-import os
-from dotenv import load_dotenv
-
-# 환경 변수 로드 (.env는 로컬에서만 사용)
-if not os.getenv("RAILWAY_ENVIRONMENT"):
-    load_dotenv()
-
-# CORS 허용 오리진 설정
-cors_origins = []
-cors_url = os.getenv("CORS_URL", "")
-if cors_url:
-    # 쉼표로 구분된 여러 URL 지원
-    cors_origins = [origin.strip() for origin in cors_url.split(",") if origin.strip()]
-
-# 기본 허용 오리진 (환경변수가 없을 경우)
-# MSA 구조에서는 게이트웨이와 로컬 개발환경만 허용
-if not cors_origins:
-    cors_origins = [
-        "https://gateway-production-22ef.up.railway.app",  # Railway Gateway
-        "http://localhost:8080",  # 로컬 Gateway
-        "http://localhost:3000"   # 로컬 개발시에만 (프론트엔드 직접 접근)
-    ]
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=cors_origins,
-    allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
-    allow_headers=["*"],
-)
-
-auth_logger.info(f"🔧 CORS origins 설정: {cors_origins}")
 
 # 라우터 등록
 app.include_router(auth_router, prefix="/api/v1")

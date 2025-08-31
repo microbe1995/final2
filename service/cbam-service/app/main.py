@@ -186,19 +186,6 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# CORS 미들웨어 설정
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
-        "https://lca-final.vercel.app",  # Vercel 프론트엔드
-        "https://gateway-production-22ef.up.railway.app",  # Gateway
-        "http://localhost:3000",  # 로컬 개발 환경
-    ],
-    allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
-    allow_headers=["*"],
-)
-
 # ============================================================================
 # 📊 요청/응답 로깅 미들웨어
 # ============================================================================

@@ -1,6 +1,7 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
-from fastapi.middleware.cors import CORSMiddleware
+# 🔴 CORS 제거: Gateway에서만 CORS를 관리해야 함
+# from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
 
@@ -72,17 +73,17 @@ def create_app() -> FastAPI:
         redoc_url="/redoc" if not settings.is_production else None
     )
     
-    # CORS 미들웨어 설정
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=settings.origins_list,
-        allow_origin_regex=settings.ALLOWED_ORIGIN_REGEX,
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
-        expose_headers=["*"],
-        max_age=3600
-    )
+    # 🔴 CORS 제거: Gateway에서만 CORS를 관리해야 함
+    # app.add_middleware(
+    #     CORSMiddleware,
+    #     allow_origins=settings.origins_list,
+    #     allow_origin_regex=settings.ALLOWED_ORIGIN_REGEX,
+    #     allow_credentials=True,
+    #     allow_methods=["*"],
+    #     allow_headers=["*"],
+    #     expose_headers=["*"],
+    #     max_age=3600
+    # )
     
     # 로깅 미들웨어 추가
     app.add_middleware(LoggingMiddleware)
