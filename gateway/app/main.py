@@ -172,11 +172,26 @@ async def proxy_request(service: str, path: str, request: Request) -> Response:
     else:
         normalized_path = path
 
-    # 🔴 추가: install 경로에 슬래시 자동 추가 (CBAM 서비스 요구사항)
+    # 🔴 개선: install 경로에 슬래시 자동 추가 (CBAM 서비스 요구사항)
     if service == "cbam" and (path == "install" or path.startswith("install/")):
-        if not normalized_path.endswith('/'):
-            normalized_path = normalized_path + '/'
-        logger.info(f"🔍 install 경로 슬래시 추가: {path} → {normalized_path}")
+        # 🔴 수정: 동적 경로(/{id})에는 슬래시 추가하지 않음
+        path_parts = path.split('/')
+        if path == "install":
+            # 루트 install 경로만 슬래시 추가
+            normalized_path = path + '/'
+            logger.info(f"🔍 install 루트 경로 슬래시 추가: {path} → {normalized_path}")
+        elif len(path_parts) == 2 and path_parts[0] == "install" and path_parts[1] == "":
+            # install/만 있는 경우 슬래시 추가
+            if not normalized_path.endswith('/'):
+                normalized_path = normalized_path + '/'
+            logger.info(f"🔍 install 경로 슬래시 추가: {path} → {normalized_path}")
+        elif len(path_parts) == 2 and path_parts[0] == "install" and path_parts[1].isdigit():
+            # install/{id} 같은 동적 경로는 그대로 유지 (슬래시 제거)
+            normalized_path = path.rstrip('/')
+            logger.info(f"🔍 install 동적 경로 슬래시 제거: {path} → {normalized_path}")
+        else:
+            # 기타 install 경로는 그대로 유지
+            logger.info(f"🔍 install 기타 경로 유지: {path} → {normalized_path}")
     
     # 🔴 추가: 다른 주요 경로들도 슬래시 처리
     elif service == "cbam" and (path == "product" or path.startswith("product/")):

@@ -36,6 +36,7 @@ class ProductService:
     async def create_product(self, request: ProductCreateRequest) -> ProductResponse:
         """제품 생성"""
         try:
+            # 🔴 수정: 모든 필드가 제대로 전달되는지 확인
             product_data = {
                 "install_id": request.install_id,
                 "product_name": request.product_name,
@@ -52,13 +53,30 @@ class ProductService:
                 "product_eusell": request.product_eusell
             }
             
+            # 🔴 추가: 디버깅을 위한 데이터 로깅
+            logger.info(f"🔍 제품 생성 데이터: {product_data}")
+            logger.info(f"🔍 필드 개수: {len(product_data)}")
+            
+            # 🔴 추가: None 값 처리
+            for key, value in product_data.items():
+                if value is None:
+                    if key in ['product_amount', 'product_sell', 'product_eusell']:
+                        product_data[key] = 0.0  # 숫자 필드는 0으로 설정
+                    elif key in ['cncode_total', 'goods_name', 'goods_engname', 'aggrgoods_name', 'aggrgoods_engname']:
+                        product_data[key] = ''  # 문자열 필드는 빈 문자열로 설정
+                    logger.info(f"🔧 {key} 필드 None 값 처리: {value} → {product_data[key]}")
+            
+            logger.info(f"🔍 최종 제품 데이터: {product_data}")
+            
             saved_product = await self.product_repository.create_product(product_data)
             if saved_product:
+                logger.info(f"✅ 제품 생성 성공: {saved_product}")
                 return ProductResponse(**saved_product)
             else:
                 raise Exception("제품 저장에 실패했습니다.")
         except Exception as e:
-            logger.error(f"Error creating product: {e}")
+            logger.error(f"❌ 제품 생성 실패: {e}")
+            logger.error(f"❌ 요청 데이터: {request}")
             raise e
     
     async def get_products(self) -> List[ProductResponse]:

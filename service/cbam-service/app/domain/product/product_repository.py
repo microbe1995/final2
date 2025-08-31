@@ -126,6 +126,39 @@ class ProductRepository:
         """제품 생성"""
         await self._ensure_pool_initialized()
         try:
+            # 🔴 추가: 파라미터 검증
+            required_fields = [
+                'install_id', 'product_name', 'product_category', 'prostart_period', 
+                'proend_period', 'product_amount', 'cncode_total', 'goods_name', 
+                'goods_engname', 'aggrgoods_name', 'aggrgoods_engname', 'product_sell', 'product_eusell'
+            ]
+            
+            # 🔴 추가: 필수 필드 확인
+            for field in required_fields:
+                if field not in product_data:
+                    logger.error(f"❌ 필수 필드 누락: {field}")
+                    product_data[field] = None  # 기본값 설정
+            
+            # 🔴 추가: 디버깅을 위한 파라미터 로깅
+            params = (
+                product_data.get('install_id'),
+                product_data.get('product_name'),
+                product_data.get('product_category'),
+                product_data.get('prostart_period'),
+                product_data.get('proend_period'),
+                product_data.get('product_amount', 0),
+                product_data.get('cncode_total'),
+                product_data.get('goods_name'),
+                product_data.get('goods_engname'),
+                product_data.get('aggrgoods_name'),
+                product_data.get('aggrgoods_engname'),
+                product_data.get('product_sell', 0),
+                product_data.get('product_eusell', 0)
+            )
+            
+            logger.info(f"🔍 INSERT 쿼리 파라미터: {params}")
+            logger.info(f"🔍 파라미터 개수: {len(params)}")
+            
             async with self.pool.acquire() as conn:
                 result = await conn.fetchrow("""
                     INSERT INTO product (
@@ -135,26 +168,14 @@ class ProductRepository:
                     )
                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
                     RETURNING *
-                """, (
-                    product_data.get('install_id'),
-                    product_data.get('product_name'),
-                    product_data.get('product_category'),
-                    product_data.get('prostart_period'),
-                    product_data.get('proend_period'),
-                    product_data.get('product_amount', 0),
-                    product_data.get('cncode_total'),
-                    product_data.get('goods_name'),
-                    product_data.get('goods_engname'),
-                    product_data.get('aggrgoods_name'),
-                    product_data.get('aggrgoods_engname'),
-                    product_data.get('product_sell', 0),
-                    product_data.get('product_eusell', 0)
-                ))
+                """, params)
                 
+                logger.info(f"✅ 제품 생성 성공: {result}")
                 return dict(result)
                 
         except Exception as e:
             logger.error(f"❌ 제품 생성 실패: {str(e)}")
+            logger.error(f"❌ 전달된 데이터: {product_data}")
             raise e
 
     async def get_products(self) -> List[Dict[str, Any]]:
