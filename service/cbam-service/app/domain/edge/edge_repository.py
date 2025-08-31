@@ -113,11 +113,11 @@ class EdgeRepository:
                     INSERT INTO edge (source_id, target_id, edge_kind)
                     VALUES ($1, $2, $3)
                     RETURNING *
-                """, (
-                    edge_data.get('source_id'),
-                    edge_data.get('target_id'),
-                    edge_data.get('edge_kind')
-                ))
+                """, 
+                    edge_data.get('source_id'),  # 🔴 수정: 개별 인수로 전달
+                    edge_data.get('target_id'),  # 🔴 수정: 개별 인수로 전달
+                    edge_data.get('edge_kind')   # 🔴 수정: 개별 인수로 전달
+                )
                 
                 return dict(result)
                 
@@ -149,7 +149,7 @@ class EdgeRepository:
             async with self.pool.acquire() as conn:
                 result = await conn.fetchrow("""
                     SELECT * FROM edge WHERE id = $1
-                """, (edge_id,))
+                """, edge_id)  # 🔴 수정: 개별 인수로 전달
                 
                 return dict(result) if result else None
                 
@@ -168,12 +168,12 @@ class EdgeRepository:
                     SET source_id = $2, target_id = $3, edge_kind = $4, updated_at = NOW()
                     WHERE id = $1
                     RETURNING *
-                """, (
-                    edge_id,
-                    update_data.get('source_id'),
-                    update_data.get('target_id'),
-                    update_data.get('edge_kind')
-                ))
+                """, 
+                    edge_id,  # 🔴 수정: 개별 인수로 전달
+                    update_data.get('source_id'),  # 🔴 수정: 개별 인수로 전달
+                    update_data.get('target_id'),  # 🔴 수정: 개별 인수로 전달
+                    update_data.get('edge_kind')   # 🔴 수정: 개별 인수로 전달
+                )
                 
                 return dict(result) if result else None
                 
@@ -189,7 +189,7 @@ class EdgeRepository:
             async with self.pool.acquire() as conn:
                 result = await conn.execute("""
                     DELETE FROM edge WHERE id = $1
-                """, (edge_id,))
+                """, edge_id)  # 🔴 수정: 개별 인수로 전달
                 
                 return result != "DELETE 0"
                 
@@ -205,7 +205,7 @@ class EdgeRepository:
             async with self.pool.acquire() as conn:
                 results = await conn.fetch("""
                     SELECT * FROM edge WHERE edge_kind = $1 ORDER BY id
-                """, (edge_kind,))
+                """, edge_kind)  # 🔴 수정: 개별 인수로 전달
                 
                 return [dict(row) for row in results]
                 
@@ -223,7 +223,7 @@ class EdgeRepository:
                     SELECT * FROM edge 
                     WHERE source_id = $1 OR target_id = $1 
                     ORDER BY id
-                """, (node_id,))
+                """, node_id)  # 🔴 수정: 개별 인수로 전달
                 
                 return [dict(row) for row in results]
                 
