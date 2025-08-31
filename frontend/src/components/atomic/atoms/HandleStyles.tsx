@@ -28,32 +28,33 @@ const targetStyle: React.CSSProperties = {
 };
 
 /**
- * 각 방향에 핸들 하나씩만 배치 (4방향 연결 가능)
- * - Left: source (양방향 연결 가능)
- * - Right: source (양방향 연결 가능)
- * - Top: source (양방향 연결 가능)
- * - Bottom: source (양방향 연결 가능)
+ * 각 방향에 source 핸들 하나씩만 배치 (4방향 연결 가능)
+ * React Flow가 연결 시 자동으로 target으로 인식
+ * - Left: source
+ * - Right: source
+ * - Top: source
+ * - Bottom: source
  */
 export const renderFourDirectionHandles = (isConnectable = true) => {
   const handles = [
     {
       position: Position.Left,
-      type: 'source' as HandleType,  // 🔴 수정: source로 변경
+      type: 'source' as HandleType,
       id: 'left',
     },
     {
       position: Position.Right,
-      type: 'source' as HandleType,  // 🔴 수정: source로 변경
+      type: 'source' as HandleType,
       id: 'right',
     },
     {
       position: Position.Top,
-      type: 'source' as HandleType,  // 🔴 수정: source로 변경
+      type: 'source' as HandleType,
       id: 'top',
     },
     {
       position: Position.Bottom,
-      type: 'source' as HandleType,  // 🔴 수정: source로 변경
+      type: 'source' as HandleType,
       id: 'bottom',
     },
   ];
@@ -66,7 +67,7 @@ export const renderFourDirectionHandles = (isConnectable = true) => {
       position={position}
       isConnectable={isConnectable}
       className={cls}
-      style={sourceStyle}  // 🔴 수정: source 스타일로 통일
+      style={sourceStyle}
     />
   ));
 };

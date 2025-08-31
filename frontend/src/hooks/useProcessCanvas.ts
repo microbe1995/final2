@@ -166,12 +166,22 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
   // Edge 생성 처리 (안전한 상태 업데이트)
   const handleEdgeCreate = useCallback(async (params: Connection, updateProcessChainsAfterEdge: () => void) => {
     try {
+      console.log('🔗 Edge 연결 시도:', params);
+      
+      // source와 target이 모두 있는지 확인
+      if (!params.source || !params.target) {
+        console.log('❌ source 또는 target이 없음:', params);
+        return;
+      }
+      
       // 🔴 추가: 즉시 시각적 연결 제공 (사용자 경험 개선)
       const tempEdgeId = `temp-${Date.now()}-${Math.random().toString(36).slice(2)}`;
       const tempEdge = {
         id: tempEdgeId,
-        source: params.source!,
-        target: params.target!,
+        source: params.source,
+        target: params.target,
+        sourceHandle: params.sourceHandle,
+        targetHandle: params.targetHandle,
         type: 'custom',
         data: { isTemporary: true, edgeData: null },
         style: { strokeDasharray: '5,5', stroke: '#6b7280' } // 🔴 점선으로 임시 Edge 표시
@@ -208,10 +218,10 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
         return 'unknown';
       };
       
-      const sourceId = extractNodeId(params.source!);
-      const targetId = extractNodeId(params.target!);
-      const sourceNodeType = extractNodeType(params.source!);
-      const targetNodeType = extractNodeType(params.target!);
+      const sourceId = extractNodeId(params.source);
+      const targetId = extractNodeId(params.target);
+      const sourceNodeType = extractNodeType(params.source);
+      const targetNodeType = extractNodeType(params.target);
       
       if (sourceId === 0 || targetId === 0) {
         console.error('유효하지 않은 노드 ID:', { source: params.source, target: params.target });
@@ -243,8 +253,10 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
             edge.id === tempEdgeId 
               ? {
                   id: `e-${newEdge.id}`,
-                  source: params.source!,
-                  target: params.target!,
+                  source: params.source,
+                  target: params.target,
+                  sourceHandle: params.sourceHandle,
+                  targetHandle: params.targetHandle,
                   type: 'custom',
                   data: { edgeData: newEdge, isTemporary: false },
                   style: { stroke: '#3b82f6' } // 🔴 실선으로 실제 Edge 표시
@@ -270,8 +282,8 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
         params: params
       });
       
-      // 🔴 추가: 에러 발생 시 임시 Edge 제거
-      setEdges(prev => prev.filter(edge => edge.data?.isTemporary !== true));
+      // 🔴 수정: 에러 발생 시 해당 임시 Edge만 제거
+      setEdges(prev => prev.filter(edge => !edge.data?.isTemporary || edge.id !== `temp-${Date.now()}-${Math.random().toString(36).slice(2)}`));
       
       // 🔴 추가: 사용자에게 에러 알림 (Toast 등으로 표시 가능)
       if (error.response?.status === 500) {
