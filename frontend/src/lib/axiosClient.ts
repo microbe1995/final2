@@ -210,7 +210,7 @@ export const apiEndpoints = {
   // CBAM Service (Gateway를 통해)
   cbam: {
     install: {
-      // 🔴 수정: install 서비스를 직접 사용 (Gateway: /api/v1/install/{path} → CBAM: /install/{path})
+      // Gateway: /api/v1/install/{path} → CBAM: /install/{path}
       create: '/api/v1/install',
       list: '/api/v1/install',
       names: '/api/v1/install/names',
@@ -219,7 +219,7 @@ export const apiEndpoints = {
       delete: (id: number) => `/api/v1/install/${id}`
     },
     product: {
-      // 🔴 수정: product 서비스를 직접 사용
+      // Gateway: /api/v1/product/{path} → CBAM: /product/{path}
       create: '/api/v1/product',
       list: '/api/v1/product',
       names: '/api/v1/product/names',
@@ -228,7 +228,7 @@ export const apiEndpoints = {
       delete: (id: number) => `/api/v1/product/${id}`
     },
     process: {
-      // 🔴 수정: process 서비스를 직접 사용
+      // Gateway: /api/v1/process/{path} → CBAM: /process/{path}
       create: '/api/v1/process',
       list: '/api/v1/process',
       get: (id: number) => `/api/v1/process/${id}`,
@@ -237,7 +237,7 @@ export const apiEndpoints = {
     },
     // HS-CN 매핑 API
     mapping: {
-      // 🔴 수정: mapping 서비스를 직접 사용
+      // Gateway: /api/v1/mapping/{path} → CBAM: /mapping/{path}
       lookup: (hs_code: string) => `/api/v1/mapping/cncode/lookup/${hs_code}`,
       list: '/api/v1/mapping',
       get: (id: number) => `/api/v1/mapping/${id}`,
@@ -247,14 +247,17 @@ export const apiEndpoints = {
       search: {
         hs: (hs_code: string) => `/api/v1/mapping/search/hs/${hs_code}`,
         cn: (cn_code: string) => `/api/v1/mapping/search/cn/${cn_code}`,
-        goods: (goods_name: string) => `/api/v1/mapping/search/goods/`
-      }
+        goods: (goods_name: string) => `/api/v1/mapping/search/goods/${goods_name}`
+      },
+      stats: '/api/v1/mapping/stats',
+      batch: '/api/v1/mapping/batch'
     },
     // CBAM 계산 API
     cbam: '/api/v1/calculation/emission/process/calculate',
     
     // Process Chain 관련 API
     processchain: {
+      // Gateway: /api/v1/processchain/{path} → CBAM: /processchain/{path}
       list: '/api/v1/processchain/chain',
       create: '/api/v1/processchain/chain',
       get: (id: number) => `/api/v1/processchain/chain/${id}`,
@@ -264,6 +267,7 @@ export const apiEndpoints = {
     },
     
     edge: {
+      // Gateway: /api/v1/edge/{path} → CBAM: /edge/{path}
       create: '/api/v1/edge',
       list: '/api/v1/edge',
       get: (id: number) => `/api/v1/edge/${id}`,
@@ -271,6 +275,7 @@ export const apiEndpoints = {
     },
     
     matdir: {
+      // Gateway: /api/v1/matdir/{path} → CBAM: /matdir/{path}
       create: '/api/v1/matdir',
       list: '/api/v1/matdir',
       get: (id: number) => `/api/v1/matdir/${id}`,
@@ -282,6 +287,7 @@ export const apiEndpoints = {
     },
     
     fueldir: {
+      // Gateway: /api/v1/fueldir/{path} → CBAM: /fueldir/{path}
       create: '/api/v1/fueldir',
       list: '/api/v1/fueldir',
       get: (id: number) => `/api/v1/fueldir/${id}`,
@@ -294,6 +300,7 @@ export const apiEndpoints = {
     
     // Fuel Master API
     fuelMaster: {
+      // Gateway: /api/v1/fueldir/fuel-master/{path} → CBAM: /fueldir/fuel-master/{path}
       list: '/api/v1/fueldir/fuel-master',
       search: (fuel_name: string) => `/api/v1/fueldir/fuel-master/search/${fuel_name}`,
       getFactor: (fuel_name: string) => `/api/v1/fueldir/fuel-master/factor/${fuel_name}`,
@@ -302,6 +309,7 @@ export const apiEndpoints = {
     
     // Product-Process 관계 API
     productProcess: {
+      // Gateway: /api/v1/productprocess/{path} → CBAM: /productprocess/{path}
       create: '/api/v1/productprocess',
       list: '/api/v1/productprocess',
       get: (id: number) => `/api/v1/productprocess/${id}`,
@@ -318,6 +326,7 @@ export const apiEndpoints = {
     // Precursor 관련 API
     precursors: '/api/v1/calculation/emission/process/attrdir/all',
     precursorsBatch: '/api/v1/calculation/emission/process/attrdir/batch',
+
     precursor: '/api/v1/calculation/emission/process/attrdir',
     history: '/api/v1/calculation/emission/process/attrdir/all',
     
@@ -354,12 +363,59 @@ export const apiEndpoints = {
       }
     }
   },
+  // 최상위 calculation 속성 추가 (기존 코드와의 호환성을 위해)
+  calculation: {
+    // Material 계산 API
+    material: '/api/v1/calculation/emission/process/attrdir',
+    // Fuel 계산 API
+    fueldir: {
+      calculate: '/api/v1/calculation/emission/process/attrdir',
+      create: '/api/v1/calculation/emission/process/attrdir'
+    },
+    // Material 계산 API
+    matdir: {
+      calculate: '/api/v1/calculation/emission/process/attrdir',
+      create: '/api/v1/calculation/emission/process/attrdir'
+    },
+    // Process 배출량 계산 API
+    process: {
+      calculate: '/api/v1/calculation/emission/process/calculate'
+    },
+    // Precursor 관련 API
+    precursors: '/api/v1/calculation/emission/process/attrdir/all',
+    precursorsBatch: '/api/v1/calculation/emission/process/attrdir/batch',
+    precursor: '/api/v1/calculation/emission/process/attrdir',
+    history: '/api/v1/calculation/emission/process/attrdir/all',
+    // CBAM 계산 API
+    cbam: '/api/v1/calculation/emission/process/calculate',
+    // 통계 API
+    stats: '/api/v1/calculation/emission/process/attrdir/all',
+    // 전기 API
+    electricity: '/api/v1/calculation/emission/process/attrdir',
+    // Edge 관련 API
+    edge: {
+      create: '/api/v1/edge',
+      list: '/api/v1/edge',
+      get: (id: number) => `/api/v1/edge/${id}`,
+      delete: (id: number) => `/api/v1/edge/${id}`
+    },
+    // Process Chain 관련 API
+    processchain: {
+      list: '/api/v1/processchain/chain',
+      create: '/api/v1/processchain/chain',
+      get: (id: number) => `/api/v1/processchain/chain/${id}`,
+      delete: (id: number) => `/api/v1/processchain/chain/${id}`,
+      chain: '/api/v1/processchain/chain',
+      test: '/api/v1/processchain/test'
+    }
+  },
   // Material Master API (matdir 서비스 사용) - 경로 패턴 통일
   materialMaster: {
-      list: '/api/v1/boundary/matdir',
-      search: (mat_name: string) => `/api/v1/boundary/matdir/search/${mat_name}`,
-      getFactor: (mat_name: string) => `/api/v1/boundary/matdir/factor/${mat_name}`,
-      autoFactor: '/api/v1/boundary/matdir/auto-factor'
+      // Gateway: /api/v1/matdir/material-master/{path} → CBAM: /matdir/material-master/{path}
+      list: '/api/v1/matdir/material-master',
+      search: (mat_name: string) => `/api/v1/matdir/material-master/search/${mat_name}`,
+      getFactor: (mat_name: string) => `/api/v1/matdir/material-master/factor/${mat_name}`,
+      autoFactor: '/api/v1/matdir/material-master/auto-factor'
   },
 } as const;
 

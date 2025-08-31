@@ -12,7 +12,7 @@ export const useFuelMasterAPI = () => {
     setError(null);
 
     try {
-      const response = await axiosClient.get(apiEndpoints.calculation.fuelMaster.list);
+      const response = await axiosClient.get(apiEndpoints.cbam.fuelMaster.list);
       return response.data;
     } catch (err: any) {
       const errorMessage = err.response?.data?.detail || err.message || '연료 마스터 데이터 조회 중 오류가 발생했습니다.';
@@ -35,7 +35,7 @@ export const useFuelMasterAPI = () => {
 
     try {
       const response = await axiosClient.get(
-        apiEndpoints.calculation.fuelMaster.search(searchTerm)
+        apiEndpoints.cbam.fuelMaster.search(searchTerm)
       );
       return response.data;
     } catch (err: any) {
@@ -59,7 +59,7 @@ export const useFuelMasterAPI = () => {
 
     try {
       const response = await axiosClient.get(
-        apiEndpoints.calculation.fuelMaster.getFactor(fuelName)
+        apiEndpoints.cbam.fuelMaster.getFactor(fuelName)
       );
       return response.data;
     } catch (err: any) {
@@ -79,7 +79,7 @@ export const useFuelMasterAPI = () => {
 
     try {
       const response = await axiosClient.post(
-        apiEndpoints.calculation.fuelMaster.autoFactor,
+        apiEndpoints.cbam.fuelMaster.autoFactor,
         fuelDirData
       );
       return response.data;
