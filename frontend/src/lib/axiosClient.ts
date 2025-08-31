@@ -17,7 +17,9 @@ const generateRequestKey = (config: AxiosRequestConfig): string => {
 
 // API 요청인지 확인하는 함수
 const isAPIRequest = (url: string): boolean => {
-  return url.startsWith('/api/') || url.startsWith('/health');
+  // 상대 경로나 전체 URL 모두 처리
+  const path = url.startsWith('http') ? new URL(url).pathname : url;
+  return path.startsWith('/api/') || path.startsWith('/health');
 };
 
 // CSRF 토큰 가져오기
@@ -89,8 +91,8 @@ axiosClient.interceptors.request.use(
     config.signal = controller.signal;
     pendingRequests.set(requestKey, controller);
 
-    // API 요청 검증 (baseURL이 설정된 경우에만)
-    if (config.baseURL && config.url && !isAPIRequest(config.baseURL + config.url)) {
+    // API 요청 검증 (개선된 로직)
+    if (config.url && !isAPIRequest(config.url)) {
       throw new Error(
         'Direct service access is not allowed. Use API routes only.'
       );
