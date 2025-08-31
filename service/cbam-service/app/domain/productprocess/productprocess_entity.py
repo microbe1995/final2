@@ -3,13 +3,12 @@
 # ============================================================================
 
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
-from sqlalchemy.orm import DeclarativeBase, relationship
+from sqlalchemy.orm import relationship
 from datetime import datetime
 from typing import Dict, Any
 
-# SQLAlchemy 2.0 호환 Base 클래스
-class Base(DeclarativeBase):
-    pass
+# 공통 Base 클래스 사용 (다른 엔티티들과 동일하게)
+from app.domain.calculation.calculation_entity import Base
 
 class ProductProcess(Base):
     """제품-공정 중간 테이블 엔티티 (다대다 관계 해소)"""

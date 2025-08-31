@@ -8,7 +8,7 @@ from datetime import datetime
 from typing import Dict, Any, List
 from decimal import Decimal
 
-# 공통 Base 클래스만 import (Process는 문자열로 참조하여 순환 참조 방지)
+# 공통 Base 클래스만 import (Product와 Process는 문자열로 참조하여 순환 참조 방지)
 from app.domain.calculation.calculation_entity import Base
 
 # ============================================================================
