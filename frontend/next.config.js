@@ -2,7 +2,7 @@ const withPWA = require('next-pwa')({
   dest: 'public',
   register: true,
   skipWaiting: true,
-  disable: process.env.NODE_ENV === 'development', // 개발 환경에서만 PWA 비활성화
+  disable: true, // 🔴 임시로 PWA 완전 비활성화 (CORS 문제 해결 후 재활성화)
   buildExcludes: [
     /middleware-manifest\.json$/,
     /app-build-manifest\.json$/,        // PWA에서 문제되는 파일 제외
@@ -13,35 +13,36 @@ const withPWA = require('next-pwa')({
     '!workbox-*.js',
     '!sw.js'
   ],
-  runtimeCaching: [
-    {
-      urlPattern: /^https:\/\/gateway-production-22ef\.up\.railway\.app/,
-      handler: 'NetworkFirst',
-      options: {
-        cacheName: 'gateway-api-cache-v2',  // 캐시 버전 업데이트
-        expiration: {
-          maxEntries: 100,
-          maxAgeSeconds: 60 * 60 * 24, // 24시간
-        },
-        cacheableResponse: {
-          statuses: [0, 200],
-        },
-      },
-    },
-    {
-      urlPattern: /^https:\/\/www\.greensteel\.site/,
-      handler: 'NetworkFirst',
-      options: {
-        cacheName: 'greensteel-api-cache-v2',  // 캐시 버전 업데이트
-        expiration: {
-          maxEntries: 100,
-          maxAgeSeconds: 60 * 60 * 24, // 24시간
-        },
-        cacheableResponse: {
-          statuses: [0, 200],
-        },
-      },
-    },
+    runtimeCaching: [
+    // 🔴 API 캐싱 제거 (CORS 문제 해결 후 재활성화)
+    // {
+    //   urlPattern: /^https:\/\/gateway-production-22ef\.up\.railway\.app/,
+    //   handler: 'NetworkFirst',
+    //   options: {
+    //     cacheName: 'gateway-api-cache-v2',
+    //     expiration: {
+    //       maxEntries: 100,
+    //       maxAgeSeconds: 60 * 60 * 24,
+    //     },
+    //     cacheableResponse: {
+    //       statuses: [0, 200],
+    //     },
+    //   },
+    // },
+    // {
+    //   urlPattern: /^https:\/\/www\.greensteel\.site/,
+    //   handler: 'NetworkFirst',
+    //   options: {
+    //     cacheName: 'greensteel-api-cache-v2',
+    //     expiration: {
+    //       maxEntries: 100,
+    //       maxAgeSeconds: 60 * 60 * 24,
+    //     },
+    //     cacheableResponse: {
+    //       statuses: [0, 200],
+    //       },
+    //     },
+    //   },
     {
       urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp|avif)$/,
       handler: 'CacheFirst',
@@ -112,26 +113,11 @@ const nextConfig = {
       },
     ];
   },
-  // API 프록시 설정 - https 강제
-  async rewrites() {
-    const GATEWAY_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://gateway-production-22ef.up.railway.app';
-    
-    // https 강제 확인
-    if (!GATEWAY_URL.startsWith('https://')) {
-      console.warn('⚠️ Gateway URL이 https가 아닙니다. 보안상 https를 권장합니다.');
-    }
-    
-    return [
-      {
-        source: '/api/v1/:path*',
-        destination: `${GATEWAY_URL}/api/v1/:path*`,
-      },
-      {
-        source: '/api/:path*',
-        destination: `${GATEWAY_URL}/api/:path*`,
-      },
-    ];
-  },
+  // 🔴 API 프록시 설정 제거 (Vercel에서 처리)
+  // async rewrites() {
+  //   // Vercel에서 API 프록시 처리
+  //   return [];
+  // },
 };
 
 module.exports = withPWA(nextConfig);

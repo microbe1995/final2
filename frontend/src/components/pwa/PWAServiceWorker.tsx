@@ -4,7 +4,8 @@ import { useEffect } from 'react';
 
 export default function PWAServiceWorker() {
   useEffect(() => {
-    if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+    // 🔴 임시로 PWA Service Worker 비활성화 (CORS 문제 해결 후 재활성화)
+    if (false && typeof window !== 'undefined' && 'serviceWorker' in navigator) {
       // 서비스 워커 등록
       const registerSW = async () => {
         try {
