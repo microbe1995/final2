@@ -20,7 +20,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# CBAM 도메인 라우터
+# 🔴 핵심 CBAM 도메인 라우터만 임포트 (실제 사용되는 기능)
 from app.domain.calculation.calculation_controller import router as calculation_router
 from app.domain.install.install_controller import router as install_router
 from app.domain.product.product_controller import router as product_router
@@ -31,15 +31,6 @@ from app.domain.matdir.matdir_controller import router as matdir_router
 from app.domain.fueldir.fueldir_controller import router as fueldir_router
 from app.domain.processchain.processchain_controller import router as processchain_router
 from app.domain.productprocess.productprocess_controller import router as product_process_router
-
-# 엔티티 임포트 (순환 참조 방지를 위해 라우터 등록 전에 임포트)
-from app.domain.productprocess.productprocess_entity import ProductProcess
-from app.domain.install.install_entity import Install
-from app.domain.product.product_entity import Product
-from app.domain.process.process_entity import Process
-from app.domain.matdir.matdir_entity import MatDir
-from app.domain.fueldir.fueldir_entity import FuelDir
-from app.domain.processchain.processchain_entity import ProcessChain, ProcessChainLink
 
 # ============================================================================
 # 🔧 설정 및 초기화
@@ -167,87 +158,9 @@ async def lifespan(app: FastAPI):
     # ReactFlow 기반 서비스 초기화
     logger.info("✅ ReactFlow 기반 서비스 초기화")
     
-    # 각 Repository의 데이터베이스 연결 풀 초기화 (선택적)
-    try:
-        from app.domain.calculation.calculation_repository import CalculationRepository
-        calc_repo = CalculationRepository()
-        await calc_repo.initialize()
-        logger.info("✅ CalculationRepository 데이터베이스 연결 초기화 완료")
-    except Exception as e:
-        logger.warning(f"⚠️ CalculationRepository 초기화 실패 (서비스는 계속 실행): {e}")
-        logger.info("ℹ️ 데이터베이스 연결은 필요할 때 자동으로 초기화됩니다.")
-    
-    try:
-        from app.domain.install.install_repository import InstallRepository
-        install_repo = InstallRepository()
-        await install_repo.initialize()
-        logger.info("✅ InstallRepository 데이터베이스 연결 초기화 완료")
-    except Exception as e:
-        logger.warning(f"⚠️ InstallRepository 초기화 실패 (서비스는 계속 실행): {e}")
-        logger.info("ℹ️ 데이터베이스 연결은 필요할 때 자동으로 초기화됩니다.")
-    
-    try:
-        from app.domain.product.product_repository import ProductRepository
-        product_repo = ProductRepository()
-        await product_repo.initialize()
-        logger.info("✅ ProductRepository 데이터베이스 연결 초기화 완료")
-    except Exception as e:
-        logger.warning(f"⚠️ ProductRepository 초기화 실패 (서비스는 계속 실행): {e}")
-        logger.info("ℹ️ 데이터베이스 연결은 필요할 때 자동으로 초기화됩니다.")
-
-    try:
-        from app.domain.process.process_repository import ProcessRepository
-        process_repo = ProcessRepository()
-        await process_repo.initialize()
-        logger.info("✅ ProcessRepository 데이터베이스 연결 초기화 완료")
-    except Exception as e:
-        logger.warning(f"⚠️ ProcessRepository 초기화 실패 (서비스는 계속 실행): {e}")
-        logger.info("ℹ️ 데이터베이스 연결은 필요할 때 자동으로 초기화됩니다.")
-    
-    try:
-        from app.domain.edge.edge_repository import EdgeRepository
-        edge_repo = EdgeRepository()
-        await edge_repo.initialize()
-        logger.info("✅ EdgeRepository 데이터베이스 연결 초기화 완료")
-    except Exception as e:
-        logger.warning(f"⚠️ EdgeRepository 초기화 실패 (서비스는 계속 실행): {e}")
-        logger.info("ℹ️ 데이터베이스 연결은 필요할 때 자동으로 초기화됩니다.")
-    
-    try:
-        from app.domain.mapping.mapping_repository import HSCNMappingRepository
-        mapping_repo = HSCNMappingRepository()
-        await mapping_repo.initialize()
-        logger.info("✅ MappingRepository 데이터베이스 연결 초기화 완료")
-    except Exception as e:
-        logger.warning(f"⚠️ MappingRepository 초기화 실패 (서비스는 계속 실행): {e}")
-        logger.info("ℹ️ 데이터베이스 연결은 필요할 때 자동으로 초기화됩니다.")
-    
-    try:
-        from app.domain.matdir.matdir_repository import MatDirRepository
-        matdir_repo = MatDirRepository()
-        await matdir_repo.initialize()
-        logger.info("✅ MatDirRepository 데이터베이스 연결 초기화 완료")
-    except Exception as e:
-        logger.warning(f"⚠️ MatDirRepository 초기화 실패 (서비스는 계속 실행): {e}")
-        logger.info("ℹ️ 데이터베이스 연결은 필요할 때 자동으로 초기화됩니다.")
-    
-    try:
-        from app.domain.fueldir.fueldir_repository import FuelDirRepository
-        fueldir_repo = FuelDirRepository()
-        await fueldir_repo.initialize()
-        logger.info("✅ FuelDirRepository 데이터베이스 연결 초기화 완료")
-    except Exception as e:
-        logger.warning(f"⚠️ FuelDirRepository 초기화 실패 (서비스는 계속 실행): {e}")
-        logger.info("ℹ️ 데이터베이스 연결은 필요할 때 자동으로 초기화됩니다.")
-    
-    try:
-        from app.domain.processchain.processchain_repository import ProcessChainRepository
-        processchain_repo = ProcessChainRepository()
-        await processchain_repo.initialize()
-        logger.info("✅ ProcessChainRepository 데이터베이스 연결 초기화 완료")
-    except Exception as e:
-        logger.warning(f"⚠️ ProcessChainRepository 초기화 실패 (서비스는 계속 실행): {e}")
-        logger.info("ℹ️ 데이터베이스 연결은 필요할 때 자동으로 초기화됩니다.")
+    # 🔴 Repository 초기화 제거 - 각 도메인에서 필요할 때 자동으로 초기화됨
+    # 각 Repository는 _ensure_pool_initialized()로 자동 초기화
+    logger.info("ℹ️ Repository는 필요할 때 자동으로 초기화됩니다.")
     
     yield
     
@@ -305,10 +218,10 @@ async def log_requests(request: Request, call_next):
 # 🎯 라우터 등록
 # ============================================================================
 
-# CBAM 도메인 라우터들 등록 (MSA 원칙: 각 서비스는 자체 경로 구조를 가짐)
-# 중요: 명확한 경로 구조를 위해 prefix를 사용하여 등록
+# CBAM 도메인 라우터들 등록 (MSA 원칙: Gateway가 경로를 관리)
+# 중요: Gateway를 통해 접근하므로 prefix 없이 등록 (상대 경로 사용)
 
-# 1단계: 정적 경로만 가진 라우터들 (prefix 없음)
+# 모든 라우터를 루트 경로에 등록 (prefix 없음)
 app.include_router(calculation_router)      # /calculation 경로
 app.include_router(product_router)          # /product 경로
 app.include_router(process_router)         # /process 경로
@@ -318,11 +231,9 @@ app.include_router(matdir_router)          # /matdir 경로
 app.include_router(fueldir_router)         # /fueldir 경로
 app.include_router(processchain_router)    # /processchain 경로
 app.include_router(product_process_router) # /productprocess 경로
+app.include_router(install_router)         # /install 경로 (prefix 없음)
 
-# 2단계: install_router를 별도 경로로 등록 (prefix 사용)
-app.include_router(install_router, prefix="/install")  # /install 경로로 명확하게 등록
-
-logger.info("✅ 모든 라우터 등록 완료")
+logger.info("✅ 모든 라우터 등록 완료 (prefix 없음)")
 
 # ============================================================================
 # 🏥 헬스체크 엔드포인트
@@ -331,23 +242,12 @@ logger.info("✅ 모든 라우터 등록 완료")
 @app.get("/health", tags=["health"])
 async def health_check():
     """서비스 상태 확인"""
-    # 데이터베이스 연결 상태 확인
-    db_status = "unknown"
-    try:
-        from app.domain.calculation.calculation_service import CalculationService
-        calc_service = CalculationService()
-        if calc_service.calc_repository.pool:
-            db_status = "connected"
-        else:
-            db_status = "not_initialized"
-    except Exception as e:
-        db_status = f"error: {str(e)}"
-    
+    # 🔴 데이터베이스 연결 상태 확인 제거 - 메인 라우터 역할에 맞지 않음
+    # 각 Repository가 자체적으로 연결 상태를 관리함
     return {
         "status": "healthy",
         "service": APP_NAME,
         "version": APP_VERSION,
-        "database": db_status,
         "timestamp": time.time()
     }
 
@@ -372,12 +272,6 @@ async def debug_routes():
             else:
                 route_info["dynamic"] = False
                 route_info["path_params"] = []
-            
-            # 실제 접근 가능한 경로 정보 추가
-            if route.path == "/":
-                route_info["full_path"] = route.path
-            else:
-                route_info["full_path"] = route.path
             
             routes.append(route_info)
     
@@ -410,8 +304,9 @@ async def debug_routes():
         "static_routes": [r for r in routes if not r["dynamic"]],
         "dynamic_routes": [r for r in routes if r["dynamic"]],
         "all_routes": routes,
-        "install_routes": [r for r in routes if r["path"].startswith("/install") or r["path"] == ""]
+        "install_routes": [r for r in routes if r["path"].startswith("/install")]
     }
+
 # ============================================================================
 # 🚨 예외 처리 핸들러
 # ============================================================================
