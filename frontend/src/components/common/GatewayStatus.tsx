@@ -139,7 +139,7 @@ const GatewayStatus: React.FC = () => {
           Gateway는 모든 API 요청을 적절한 마이크로서비스로 라우팅합니다.
         </p>
         <p className='text-sm text-gray-600'>
-          <strong>예시:</strong> /api/v1/boundary/install → CBAM Service
+          <strong>예시:</strong> /api/v1/cbam/install → CBAM Service
         </p>
       </div>
     </div>

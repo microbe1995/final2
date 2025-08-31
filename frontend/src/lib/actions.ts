@@ -57,18 +57,18 @@ async function apiCall<T = any>(
 
 // Project Management Service Actions
 export async function createProject(projectData: Partial<ProjectMeta>) {
-  return await apiCall('/api/v1/boundary/projects', 'POST', projectData);
+  return await apiCall('/api/v1/cbam/projects', 'POST', projectData);
 }
 
 export async function getProject(projectId: string) {
-  return await apiCall(`/api/v1/boundary/projects/${projectId}`, 'GET');
+  return await apiCall(`/api/v1/cbam/projects/${projectId}`, 'GET');
 }
 
 export async function updateProject(
   projectId: string,
   projectData: Partial<ProjectMeta>
 ) {
-  return await apiCall(`/api/v1/boundary/projects/${projectId}`, 'PUT', projectData);
+  return await apiCall(`/api/v1/cbam/projects/${projectId}`, 'PUT', projectData);
 }
 
 // Scope Service Actions
@@ -104,8 +104,8 @@ export async function saveScope(
 
   // Call multiple microservices
   const [projectResult, scopeResult] = await Promise.all([
-    apiCall(`/api/v1/boundary/projects/${projectId}/meta`, 'PUT', projectMeta),
-    apiCall(`/api/v1/boundary/projects/${projectId}/scope`, 'PUT', analysisScope),
+    apiCall(`/api/v1/cbam/projects/${projectId}/meta`, 'PUT', projectMeta),
+    apiCall(`/api/v1/cbam/projects/${projectId}/scope`, 'PUT', analysisScope),
   ]);
 
   if (!projectResult.success || !scopeResult.success) {
@@ -124,15 +124,15 @@ export async function saveScope(
 
 // LCI Service Actions
 export async function saveLci(projectId: string, items: LciItem[]) {
-  return await apiCall(`/api/v1/boundary/projects/${projectId}/lci`, 'PUT', { items });
+  return await apiCall(`/api/v1/cbam/projects/${projectId}/lci`, 'PUT', { items });
 }
 
 export async function getLciData(projectId: string) {
-  return await apiCall(`/api/v1/boundary/projects/${projectId}/lci`, 'GET');
+  return await apiCall(`/api/v1/cbam/projects/${projectId}`, 'GET');
 }
 
 export async function validateLciData(projectId: string) {
-  return await apiCall(`/api/v1/boundary/projects/${projectId}/lci/validate`, 'POST');
+  return await apiCall(`/api/v1/cbam/projects/${projectId}/lci/validate`, 'POST');
 }
 
 // LCIA Service Actions
@@ -141,7 +141,7 @@ export async function startLciaRun(
   config: { method: string; categories: string[] }
 ) {
 
-  const result = await apiCall(`/api/v1/boundary/projects/${projectId}/lcia/run`, 'POST', {
+  const result = await apiCall(`/api/v1/cbam/projects/${projectId}/lcia/run`, 'POST', {
     methodSet: config.method,
     categories: config.categories,
     timestamp: new Date().toISOString(),
@@ -160,13 +160,13 @@ export async function startLciaRun(
 
 export async function getLciaResults(projectId: string, runId?: string) {
   const endpoint = runId
-    ? `/api/v1/boundary/projects/${projectId}/lcia/results/${runId}`
-    : `/api/v1/boundary/projects/${projectId}/lcia/results/latest`;
+    ? `/api/v1/cbam/projects/${projectId}/lcia/results/${runId}`
+    : `/api/v1/cbam/projects/${projectId}/lcia/results/latest`;
   return await apiCall(endpoint, 'GET');
 }
 
 export async function getLciaHistory(projectId: string) {
-  return await apiCall(`/api/v1/boundary/projects/${projectId}/lcia/history`, 'GET');
+  return await apiCall(`/api/v1/cbam/projects/${projectId}/lcia/history`, 'GET');
 }
 
 // Report Service Actions
@@ -184,7 +184,7 @@ export async function requestReport(
 > {
 
   const result = await apiCall(
-    `/api/v1/boundary/projects/${projectId}/report/generate`,
+    `/api/v1/cbam/projects/${projectId}/report/generate`,
     'POST',
     {
       format,
@@ -207,7 +207,7 @@ export async function requestReport(
 }
 
 export async function getReportStatus(reportId: string) {
-  return await apiCall(`/api/v1/boundary/reports/${reportId}/status`, 'GET');
+  return await apiCall(`/api/v1/cbam/reports/${reportId}/status`, 'GET');
 }
 
 // File Upload Service Actions
@@ -219,7 +219,7 @@ export async function uploadProcessDiagram(projectId: string, file: File) {
   formData.append('projectId', projectId);
   formData.append('type', 'process-diagram');
 
-  return await apiCall(`/api/v1/boundary/files/upload/process-diagram`, 'POST', {
+  return await apiCall(`/api/v1/cbam/files/upload/process-diagram`, 'POST', {
     fileName: file.name,
     fileSize: file.size,
     mimeType: file.type,
@@ -229,9 +229,9 @@ export async function uploadProcessDiagram(projectId: string, file: File) {
 
 // Data Quality Service Actions
 export async function validateDataQuality(projectId: string) {
-  return await apiCall(`/api/v1/boundary/projects/${projectId}/quality/validate`, 'POST');
+  return await apiCall(`/api/v1/cbam/projects/${projectId}/quality/validate`, 'POST');
 }
 
 export async function getDataQualityReport(projectId: string) {
-  return await apiCall(`/api/v1/boundary/projects/${projectId}/quality/report`, 'GET');
+  return await apiCall(`/api/v1/cbam/projects/${projectId}/quality/report`, 'GET');
 }

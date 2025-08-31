@@ -185,7 +185,7 @@ export const useProcessManager = () => {
       setIsDetectingChains(true);
       setDetectionStatus('🔍 연결된 공정들을 탐지 중...');
       
-      const response = await axiosClient.post('/api/v1/boundary/sourcestream/auto-detect-and-calculate', {
+      const response = await axiosClient.post('/api/v1/cbam/sourcestream/auto-detect-and-calculate', {
         max_chain_length: 10,
         include_inactive: false,
         recalculate_existing: false

@@ -40,19 +40,20 @@ logger.info(f"   RAILWAY_ENVIRONMENT: {os.getenv('RAILWAY_ENVIRONMENT', 'Not Set
 SERVICE_MAP = {
     "auth": AUTH_SERVICE_URL,
     # CBAM 서비스 (통합 서비스) - 모든 도메인을 처리
-    "cal-boundary": CAL_BOUNDARY_URL,
-    "cal_boundary": CAL_BOUNDARY_URL,
-    "boundary": CAL_BOUNDARY_URL,
-    "countries": CAL_BOUNDARY_URL,
-    "matdir": CAL_BOUNDARY_URL,
-    "processchain": CAL_BOUNDARY_URL,
-    "product": CAL_BOUNDARY_URL,
-    "process": CAL_BOUNDARY_URL,
-    "edge": CAL_BOUNDARY_URL,
-    "mapping": CAL_BOUNDARY_URL,
-    "fueldir": CAL_BOUNDARY_URL,
-    "productprocess": CAL_BOUNDARY_URL,
-    "calculation": CAL_BOUNDARY_URL,
+    "cbam": CAL_BOUNDARY_URL,                    # 🔴 메인 서비스명으로 통일
+    "cal-boundary": CAL_BOUNDARY_URL,            # 🔴 기존 호환성 유지
+    "cal_boundary": CAL_BOUNDARY_URL,            # 🔴 언더스코어 버전 호환성
+    # CBAM 서비스의 세부 도메인들 (직접 접근 가능)
+    "install": CAL_BOUNDARY_URL,                 # 🔴 install 도메인
+    "product": CAL_BOUNDARY_URL,                 # 🔴 product 도메인
+    "process": CAL_BOUNDARY_URL,                 # 🔴 process 도메인
+    "calculation": CAL_BOUNDARY_URL,             # 🔴 calculation 도메인
+    "mapping": CAL_BOUNDARY_URL,                 # 🔴 mapping 도메인
+    "matdir": CAL_BOUNDARY_URL,                  # 🔴 matdir 도메인
+    "fueldir": CAL_BOUNDARY_URL,                 # 🔴 fueldir 도메인
+    "processchain": CAL_BOUNDARY_URL,            # 🔴 processchain 도메인
+    "productprocess": CAL_BOUNDARY_URL,          # 🔴 productprocess 도메인
+    "edge": CAL_BOUNDARY_URL,                    # 🔴 edge 도메인
 }
 
 @asynccontextmanager
@@ -163,25 +164,13 @@ async def proxy_request(service: str, path: str, request: Request) -> Response:
         logger.error(f"❌ Unknown service: {service}")
         return JSONResponse(status_code=404, content={"detail": f"Unknown service: {service}"})
 
-    # 🔴 수정: boundary 서비스 특별 처리
-    # boundary 서비스는 cbam 서비스의 별칭이므로 경로를 그대로 전달
-    if service == "boundary":
-        # boundary/install → cbam-service/install
-        # boundary/product → cbam-service/product
-        # 등등...
-        normalized_path = path
-        logger.info(f"🔍 Boundary 서비스 감지: {service}/{path} → CBAM 서비스로 라우팅")
+    # 🔴 수정: 모든 서비스에 대해 일관된 경로 처리
+    # 빈 경로 처리
+    if not path or path == "":
+        normalized_path = ""
+        logger.info(f"🔍 빈 경로 감지: service={service}, path='{path}' → 루트 경로로 전달")
     else:
-        # 빈 경로 처리
-        if not path or path == "":
-            if service == "install":
-                normalized_path = "install"
-                logger.info(f"🔍 Install 서비스 빈 경로 감지 → /install으로 매핑")
-            else:
-                normalized_path = ""
-                logger.info(f"🔍 빈 경로 감지: service={service}, path='{path}' → 루트 경로로 전달")
-        else:
-            normalized_path = path
+        normalized_path = path
 
     target_url = f"{base_url.rstrip('/')}/{normalized_path}".rstrip('/')
     
@@ -287,7 +276,7 @@ async def root():
         "services": {
             "auth": "Authentication Service",
             "cbam": "CBAM Calculation Service",
-            "boundary": "System Boundary Service"
+            "cal-boundary": "CBAM Calculation Service (Legacy)"
         },
         "usage": "Use /api/v1/{service}/{path} to access microservices through Gateway"
     }

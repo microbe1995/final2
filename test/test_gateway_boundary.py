@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Gateway Boundary 서비스 테스트 스크립트
-- Gateway를 통해 boundary/install API가 제대로 작동하는지 테스트
+Gateway CBAM 서비스 테스트 스크립트
+- Gateway를 통해 cbam/install API가 제대로 작동하는지 테스트
 - 307 리다이렉트 문제가 해결되었는지 확인
 """
 
@@ -11,12 +11,12 @@ import json
 import time
 from typing import Dict, Any, Optional
 
-class GatewayBoundaryTester:
+class GatewayCbamTester:
     def __init__(self, gateway_url: str = "https://gateway-production-22ef.up.railway.app"):
         self.gateway_url = gateway_url.rstrip('/')
         self.session = requests.Session()
         self.session.headers.update({
-            'User-Agent': 'GatewayBoundaryTester/1.0',
+            'User-Agent': 'GatewayCbamTester/1.0',
             'Accept': 'application/json',
             'Content-Type': 'application/json'
         })
@@ -41,16 +41,16 @@ class GatewayBoundaryTester:
             print(f"❌ Gateway 헬스 체크 오류: {e}")
             return False
     
-    def test_boundary_install_list(self) -> bool:
-        """Boundary 서비스의 install 목록 조회 테스트"""
+    def test_cbam_install_list(self) -> bool:
+        """CBAM 서비스의 install 목록 조회 테스트"""
         try:
-            print("\n🔍 Boundary Install 목록 조회 테스트...")
+            print("\n🔍 CBAM Install 목록 조회 테스트...")
             
             # 테스트할 엔드포인트들
             endpoints = [
-                "/api/v1/boundary/install",
-                "/api/v1/boundary/install/",
-                "/api/v1/boundary/install/names"
+                "/api/v1/cbam/install",
+                "/api/v1/cbam/install/",
+                "/api/v1/cbam/install/names"
             ]
             
             for endpoint in endpoints:
@@ -92,7 +92,7 @@ class GatewayBoundaryTester:
             return True
             
         except Exception as e:
-            print(f"❌ Boundary Install 테스트 오류: {e}")
+            print(f"❌ CBAM Install 테스트 오류: {e}")
             return False
     
     def test_direct_cbam_service(self) -> bool:
@@ -153,8 +153,8 @@ class GatewayBoundaryTester:
                 print(f"      ⚠️  예상치 못한 응답: {response.status_code}")
             
             # 빈 경로 테스트
-            print("   📡 빈 경로 테스트: /api/v1/boundary")
-            response = self.session.get(f"{self.gateway_url}/api/v1/boundary", timeout=10)
+                    print("   📡 빈 경로 테스트: /api/v1/cbam")
+        response = self.session.get(f"{self.gateway_url}/api/v1/cbam", timeout=10)
             print(f"      상태코드: {response.status_code}")
             
             print()
