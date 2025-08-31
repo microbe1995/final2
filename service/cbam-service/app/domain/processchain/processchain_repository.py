@@ -128,7 +128,7 @@ class ProcessChainRepository:
         await self._ensure_initialized()
         
         try:
-            async with self.get_db() as db:
+            async with await self.get_db() as db:
                 result = await db.execute(
                     select(ProcessChain).where(ProcessChain.is_active == True)
                 )
@@ -143,7 +143,7 @@ class ProcessChainRepository:
         await self._ensure_initialized()
         
         try:
-            async with self.get_db() as db:
+            async with await self.get_db() as db:
                 result = await db.execute(
                     select(ProcessChain).where(ProcessChain.id == chain_id)
                 )
@@ -159,7 +159,7 @@ class ProcessChainRepository:
                 chain.updated_at = datetime.utcnow()
                 await db.commit()
                 await db.refresh(chain)
-                logger.info(f"✅ 통합 공정 그룹 수정 성공: ID {chain_id}")
+                logger.info(f"✅ 통합 공정 그룹 수정 성패: ID {chain_id}")
                 return chain
         except Exception as e:
             logger.error(f"❌ 통합 공정 그룹 수정 실패: {e}")
@@ -170,7 +170,7 @@ class ProcessChainRepository:
         await self._ensure_initialized()
         
         try:
-            async with self.get_db() as db:
+            async with await self.get_db() as db:
                 result = await db.execute(
                     select(ProcessChain).where(ProcessChain.id == chain_id)
                 )
@@ -196,7 +196,7 @@ class ProcessChainRepository:
         await self._ensure_initialized()
         
         try:
-            async with self.get_db() as db:
+            async with await self.get_db() as db:
                 link = ProcessChainLink(**link_data)
                 db.add(link)
                 await db.commit()
@@ -212,7 +212,7 @@ class ProcessChainRepository:
         await self._ensure_initialized()
         
         try:
-            async with self.get_db() as db:
+            async with await self.get_db() as db:
                 result = await db.execute(
                     select(ProcessChainLink)
                     .where(ProcessChainLink.chain_id == chain_id)

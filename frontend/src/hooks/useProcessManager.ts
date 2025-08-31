@@ -81,9 +81,10 @@ export const useProcessManager = () => {
   // 선택된 사업장의 제품 목록 불러오기
   const fetchProductsByInstall = useCallback(async (installId: number) => {
     try {
-      const response = await axiosClient.get(apiEndpoints.cbam.product.list);
-      const filteredProducts = response.data.filter((product: Product) => product.install_id === installId);
-      setProducts(filteredProducts);
+      // install_id로 필터링하여 특정 사업장의 제품만 가져오기
+      const response = await axiosClient.get(`${apiEndpoints.cbam.product.list}?install_id=${installId}`);
+      setProducts(response.data);
+      console.log(`✅ 사업장 ${installId}의 제품 ${response.data.length}개 로드됨:`, response.data);
     } catch (error) {
       if (process.env.NODE_ENV === 'development') {
         console.error('제품 목록 조회 실패:', error);
@@ -256,12 +257,14 @@ export const useProcessManager = () => {
   // 사업장 선택 시 제품과 공정 목록 업데이트
   useEffect(() => {
     if (selectedInstall) {
+      console.log(`🔄 사업장 선택됨: ${selectedInstall.install_name} (ID: ${selectedInstall.id})`);
       fetchProductsByInstall(selectedInstall.id);
     }
   }, [selectedInstall, fetchProductsByInstall]);
 
   useEffect(() => {
     if (selectedInstall && products.length > 0) {
+      console.log(`🔄 제품 ${products.length}개 로드됨, 공정 목록 로드 시작`);
       const timer = setTimeout(() => {
         fetchProcessesByInstall(selectedInstall.id);
         fetchAllProcessesByInstall(selectedInstall.id);
