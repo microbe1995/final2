@@ -166,44 +166,86 @@ async def lifespan(app: FastAPI):
     # ReactFlow 기반 서비스 초기화
     logger.info("✅ ReactFlow 기반 서비스 초기화")
     
-    # CalculationService 데이터베이스 연결 초기화 (선택적)
+    # 각 Repository의 데이터베이스 연결 풀 초기화 (선택적)
     try:
-        from app.domain.calculation.calculation_service import CalculationService
-        calc_service = CalculationService()
-        await calc_service.initialize()
-        logger.info("✅ CalculationService 데이터베이스 연결 초기화 완료")
+        from app.domain.calculation.calculation_repository import CalculationRepository
+        calc_repo = CalculationRepository()
+        await calc_repo.initialize()
+        logger.info("✅ CalculationRepository 데이터베이스 연결 초기화 완료")
     except Exception as e:
-        logger.warning(f"⚠️ CalculationService 초기화 실패 (서비스는 계속 실행): {e}")
+        logger.warning(f"⚠️ CalculationRepository 초기화 실패 (서비스는 계속 실행): {e}")
         logger.info("ℹ️ 데이터베이스 연결은 필요할 때 자동으로 초기화됩니다.")
     
-    # InstallService 데이터베이스 연결 초기화 (선택적)
     try:
-        from app.domain.install.install_service import InstallService
-        install_service = InstallService()
-        await install_service.initialize()
-        logger.info("✅ InstallService 데이터베이스 연결 초기화 완료")
+        from app.domain.install.install_repository import InstallRepository
+        install_repo = InstallRepository()
+        await install_repo.initialize()
+        logger.info("✅ InstallRepository 데이터베이스 연결 초기화 완료")
     except Exception as e:
-        logger.warning(f"⚠️ InstallService 초기화 실패 (서비스는 계속 실행): {e}")
+        logger.warning(f"⚠️ InstallRepository 초기화 실패 (서비스는 계속 실행): {e}")
         logger.info("ℹ️ 데이터베이스 연결은 필요할 때 자동으로 초기화됩니다.")
     
-    # ProductService 데이터베이스 연결 초기화 (선택적)
     try:
-        from app.domain.product.product_service import ProductService
-        product_service = ProductService()
-        await product_service.initialize()
-        logger.info("✅ ProductService 데이터베이스 연결 초기화 완료")
+        from app.domain.product.product_repository import ProductRepository
+        product_repo = ProductRepository()
+        await product_repo.initialize()
+        logger.info("✅ ProductRepository 데이터베이스 연결 초기화 완료")
     except Exception as e:
-        logger.warning(f"⚠️ ProductService 초기화 실패 (서비스는 계속 실행): {e}")
+        logger.warning(f"⚠️ ProductRepository 초기화 실패 (서비스는 계속 실행): {e}")
         logger.info("ℹ️ 데이터베이스 연결은 필요할 때 자동으로 초기화됩니다.")
 
-    # ProcessService 데이터베이스 연결 초기화 (선택적)
     try:
-        from app.domain.process.process_service import ProcessService
-        process_service = ProcessService()
-        await process_service.initialize()
-        logger.info("✅ ProcessService 데이터베이스 연결 초기화 완료")
+        from app.domain.process.process_repository import ProcessRepository
+        process_repo = ProcessRepository()
+        await process_repo.initialize()
+        logger.info("✅ ProcessRepository 데이터베이스 연결 초기화 완료")
     except Exception as e:
-        logger.warning(f"⚠️ ProcessService 초기화 실패 (서비스는 계속 실행): {e}")
+        logger.warning(f"⚠️ ProcessRepository 초기화 실패 (서비스는 계속 실행): {e}")
+        logger.info("ℹ️ 데이터베이스 연결은 필요할 때 자동으로 초기화됩니다.")
+    
+    try:
+        from app.domain.edge.edge_repository import EdgeRepository
+        edge_repo = EdgeRepository()
+        await edge_repo.initialize()
+        logger.info("✅ EdgeRepository 데이터베이스 연결 초기화 완료")
+    except Exception as e:
+        logger.warning(f"⚠️ EdgeRepository 초기화 실패 (서비스는 계속 실행): {e}")
+        logger.info("ℹ️ 데이터베이스 연결은 필요할 때 자동으로 초기화됩니다.")
+    
+    try:
+        from app.domain.mapping.mapping_repository import HSCNMappingRepository
+        mapping_repo = HSCNMappingRepository()
+        await mapping_repo.initialize()
+        logger.info("✅ MappingRepository 데이터베이스 연결 초기화 완료")
+    except Exception as e:
+        logger.warning(f"⚠️ MappingRepository 초기화 실패 (서비스는 계속 실행): {e}")
+        logger.info("ℹ️ 데이터베이스 연결은 필요할 때 자동으로 초기화됩니다.")
+    
+    try:
+        from app.domain.matdir.matdir_repository import MatDirRepository
+        matdir_repo = MatDirRepository()
+        await matdir_repo.initialize()
+        logger.info("✅ MatDirRepository 데이터베이스 연결 초기화 완료")
+    except Exception as e:
+        logger.warning(f"⚠️ MatDirRepository 초기화 실패 (서비스는 계속 실행): {e}")
+        logger.info("ℹ️ 데이터베이스 연결은 필요할 때 자동으로 초기화됩니다.")
+    
+    try:
+        from app.domain.fueldir.fueldir_repository import FuelDirRepository
+        fueldir_repo = FuelDirRepository()
+        await fueldir_repo.initialize()
+        logger.info("✅ FuelDirRepository 데이터베이스 연결 초기화 완료")
+    except Exception as e:
+        logger.warning(f"⚠️ FuelDirRepository 초기화 실패 (서비스는 계속 실행): {e}")
+        logger.info("ℹ️ 데이터베이스 연결은 필요할 때 자동으로 초기화됩니다.")
+    
+    try:
+        from app.domain.processchain.processchain_repository import ProcessChainRepository
+        processchain_repo = ProcessChainRepository()
+        await processchain_repo.initialize()
+        logger.info("✅ ProcessChainRepository 데이터베이스 연결 초기화 완료")
+    except Exception as e:
+        logger.warning(f"⚠️ ProcessChainRepository 초기화 실패 (서비스는 계속 실행): {e}")
         logger.info("ℹ️ 데이터베이스 연결은 필요할 때 자동으로 초기화됩니다.")
     
     yield

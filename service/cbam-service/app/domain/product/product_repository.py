@@ -23,12 +23,19 @@ class ProductRepository:
         
         # asyncpg 연결 풀 초기화
         self.pool = None
+        self._initialization_attempted = False
     
     async def initialize(self):
         """데이터베이스 연결 풀 초기화"""
+        if self._initialization_attempted:
+            return  # 이미 초기화 시도했으면 다시 시도하지 않음
+            
         if not self.database_url:
             logger.warning("DATABASE_URL이 없어 데이터베이스 초기화를 건너뜁니다.")
+            self._initialization_attempted = True
             return
+        
+        self._initialization_attempted = True
         
         try:
             # asyncpg 연결 풀 생성
@@ -54,6 +61,14 @@ class ProductRepository:
             logger.error(f"❌ Product 데이터베이스 연결 실패: {str(e)}")
             logger.warning("데이터베이스 연결 실패로 인해 일부 기능이 제한됩니다.")
             self.pool = None
+    
+    async def _ensure_pool_initialized(self):
+        """연결 풀이 초기화되었는지 확인하고, 필요시 초기화"""
+        if not self.pool and not self._initialization_attempted:
+            await self.initialize()
+        
+        if not self.pool:
+            raise Exception("데이터베이스 연결 풀이 초기화되지 않았습니다.")
     
     async def _create_product_table_async(self):
         """Product 테이블 생성 (비동기)"""
@@ -109,11 +124,7 @@ class ProductRepository:
 
     async def create_product(self, product_data: Dict[str, Any]) -> Dict[str, Any]:
         """제품 생성"""
-        if not self.pool:
-            await self.initialize()
-            if not self.pool:
-                raise Exception("데이터베이스 연결 풀을 초기화할 수 없습니다.")
-        
+        await self._ensure_pool_initialized()
         try:
             async with self.pool.acquire() as conn:
                 result = await conn.fetchrow("""
@@ -148,11 +159,7 @@ class ProductRepository:
 
     async def get_products(self) -> List[Dict[str, Any]]:
         """모든 제품 조회"""
-        if not self.pool:
-            await self.initialize()
-            if not self.pool:
-                raise Exception("데이터베이스 연결 풀을 초기화할 수 없습니다.")
-        
+        await self._ensure_pool_initialized()
         try:
             async with self.pool.acquire() as conn:
                 results = await conn.fetch("""
@@ -177,11 +184,7 @@ class ProductRepository:
 
     async def get_product(self, product_id: int) -> Optional[Dict[str, Any]]:
         """특정 제품 조회"""
-        if not self.pool:
-            await self.initialize()
-            if not self.pool:
-                raise Exception("데이터베이스 연결 풀을 초기화할 수 없습니다.")
-        
+        await self._ensure_pool_initialized()
         try:
             async with self.pool.acquire() as conn:
                 result = await conn.fetchrow("""
@@ -205,11 +208,7 @@ class ProductRepository:
 
     async def update_product(self, product_id: int, update_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """제품 업데이트"""
-        if not self.pool:
-            await self.initialize()
-            if not self.pool:
-                raise Exception("데이터베이스 연결 풀을 초기화할 수 없습니다.")
-        
+        await self._ensure_pool_initialized()
         try:
             async with self.pool.acquire() as conn:
                 # 동적으로 업데이트할 필드들 구성
@@ -256,11 +255,7 @@ class ProductRepository:
 
     async def delete_product(self, product_id: int) -> bool:
         """제품 삭제"""
-        if not self.pool:
-            await self.initialize()
-            if not self.pool:
-                raise Exception("데이터베이스 연결 풀을 초기화할 수 없습니다.")
-        
+        await self._ensure_pool_initialized()
         try:
             async with self.pool.acquire() as conn:
                 result = await conn.execute("""
@@ -275,11 +270,7 @@ class ProductRepository:
 
     async def get_products_by_install(self, install_id: int) -> List[Dict[str, Any]]:
         """사업장별 제품 목록 조회"""
-        if not self.pool:
-            await self.initialize()
-            if not self.pool:
-                raise Exception("데이터베이스 연결 풀을 초기화할 수 없습니다.")
-        
+        await self._ensure_pool_initialized()
         try:
             async with self.pool.acquire() as conn:
                 results = await conn.fetch("""
@@ -304,11 +295,7 @@ class ProductRepository:
 
     async def get_product_names(self) -> List[Dict[str, Any]]:
         """제품명 목록 조회 (드롭다운용)"""
-        if not self.pool:
-            await self.initialize()
-            if not self.pool:
-                raise Exception("데이터베이스 연결 풀을 초기화할 수 없습니다.")
-        
+        await self._ensure_pool_initialized()
         try:
             async with self.pool.acquire() as conn:
                 results = await conn.fetch("""
@@ -325,11 +312,7 @@ class ProductRepository:
 
     async def search_products(self, search_term: str) -> List[Dict[str, Any]]:
         """제품 검색"""
-        if not self.pool:
-            await self.initialize()
-            if not self.pool:
-                raise Exception("데이터베이스 연결 풀을 초기화할 수 없습니다.")
-        
+        await self._ensure_pool_initialized()
         try:
             async with self.pool.acquire() as conn:
                 results = await conn.fetch("""

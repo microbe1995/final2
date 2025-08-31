@@ -11,8 +11,6 @@ import os
 from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-# Edge 관련 import 제거 - edge 도메인으로 분리됨
-
 logger = logging.getLogger(__name__)
 
 class CalculationRepository:
@@ -27,13 +25,20 @@ class CalculationRepository:
         
         # asyncpg 연결 풀 초기화
         self.pool = None
+        self._initialization_attempted = False
         # 초기화는 서비스 시작 시 별도로 호출해야 함
     
     async def initialize(self):
         """데이터베이스 연결 풀 초기화"""
+        if self._initialization_attempted:
+            return  # 이미 초기화 시도했으면 다시 시도하지 않음
+            
         if not self.database_url:
             logger.warning("DATABASE_URL이 없어 데이터베이스 초기화를 건너뜁니다.")
+            self._initialization_attempted = True
             return
+        
+        self._initialization_attempted = True
         
         try:
             # asyncpg 연결 풀 생성
@@ -62,9 +67,14 @@ class CalculationRepository:
             logger.warning("데이터베이스 연결 실패로 인해 일부 기능이 제한됩니다.")
             self.pool = None
     
-    # 동기 메서드는 제거됨
-
-
+    async def _ensure_pool_initialized(self):
+        """연결 풀이 초기화되었는지 확인하고, 필요시 초기화"""
+        if not self.pool and not self._initialization_attempted:
+            await self.initialize()
+        
+        if not self.pool:
+            raise Exception("데이터베이스 연결 풀이 초기화되지 않았습니다.")
+    
 
     async def _create_tables_async(self):
         """테이블 생성 (비동기)"""
@@ -263,20 +273,9 @@ class CalculationRepository:
             logger.error(f"❌ 트리거 생성 실패: {str(e)}")
             logger.warning("⚠️ 트리거 생성 실패로 인해 일부 기능이 제한될 수 있습니다.")
 
-
-
-
-
-
-    
-
-
     async def get_processes_by_product(self, product_id: int) -> List[Dict[str, Any]]:
         """제품별 프로세스 목록 조회"""
-        if not self.pool:
-            await self.initialize()
-            if not self.pool:
-                raise Exception("데이터베이스 연결 풀을 초기화할 수 없습니다.")
+        await self._ensure_pool_initialized()
         
         try:
             async with self.pool.acquire() as conn:
@@ -310,8 +309,7 @@ class CalculationRepository:
     
     async def create_product_process(self, product_process_data: Dict[str, Any]) -> Dict[str, Any]:
         """제품-공정 관계 생성"""
-        if not self.database_url:
-            raise Exception("데이터베이스가 연결되지 않았습니다.")
+        await self._ensure_pool_initialized()
         try:
             return await self._create_product_process_db(product_process_data)
         except Exception as e:
@@ -320,8 +318,7 @@ class CalculationRepository:
     
     async def delete_product_process(self, product_id: int, process_id: int) -> bool:
         """제품-공정 관계 삭제"""
-        if not self.database_url:
-            raise Exception("데이터베이스가 연결되지 않았습니다.")
+        await self._ensure_pool_initialized()
         try:
             return await self._delete_product_process_db(product_id, process_id)
         except Exception as e:
@@ -336,10 +333,7 @@ class CalculationRepository:
 
     async def get_process_chains_by_process_ids(self, process_ids: List[int]) -> List[Dict]:
         """공정 ID들로 통합 그룹 조회"""
-        if not self.pool:
-            await self.initialize()
-            if not self.pool:
-                raise Exception("데이터베이스 연결 풀을 초기화할 수 없습니다.")
+        await self._ensure_pool_initialized()
             
         try:
             async with self.pool.acquire() as conn:
@@ -388,10 +382,7 @@ class CalculationRepository:
 
     async def create_process_chain(self, chain_data: Dict) -> Dict:
         """통합 공정 그룹 생성"""
-        if not self.pool:
-            await self.initialize()
-            if not self.pool:
-                raise Exception("데이터베이스 연결 풀을 초기화할 수 없습니다.")
+        await self._ensure_pool_initialized()
             
         try:
             async with self.pool.acquire() as conn:
@@ -418,10 +409,7 @@ class CalculationRepository:
 
     async def create_process_chain_link(self, link_data: Dict):
         """통합 그룹에 공정 연결"""
-        if not self.pool:
-            await self.initialize()
-            if not self.pool:
-                raise Exception("데이터베이스 연결 풀을 초기화할 수 없습니다.")
+        await self._ensure_pool_initialized()
             
         try:
             async with self.pool.acquire() as conn:
@@ -444,10 +432,7 @@ class CalculationRepository:
 
     async def add_processes_to_chain(self, chain_id: int, process_ids: List[int]):
         """기존 그룹에 새로운 공정들 추가"""
-        if not self.pool:
-            await self.initialize()
-            if not self.pool:
-                raise Exception("데이터베이스 연결 풀을 초기화할 수 없습니다.")
+        await self._ensure_pool_initialized()
             
         try:
             async with self.pool.acquire() as conn:
@@ -479,10 +464,7 @@ class CalculationRepository:
 
     async def update_chain_length(self, chain_id: int):
         """그룹 길이 업데이트"""
-        if not self.pool:
-            await self.initialize()
-            if not self.pool:
-                raise Exception("데이터베이스 연결 풀을 초기화할 수 없습니다.")
+        await self._ensure_pool_initialized()
             
         try:
             async with self.pool.acquire() as conn:
@@ -512,10 +494,7 @@ class CalculationRepository:
 
     async def calculate_chain_integrated_emissions(self, chain_id: int) -> float:
         """통합 그룹의 총 배출량 계산"""
-        if not self.pool:
-            await self.initialize()
-            if not self.pool:
-                raise Exception("데이터베이스 연결 풀을 초기화되지 않았습니다.")
+        await self._ensure_pool_initialized()
             
         try:
             async with self.pool.acquire() as conn:
@@ -534,19 +513,13 @@ class CalculationRepository:
             logger.error(f"❌ 통합 그룹 배출량 계산 실패: {str(e)}")
             raise e
 
-
-
-
     # ============================================================================
     # 🔗 ProductProcess 관련 Repository 메서드
     # ============================================================================
 
     async def create_product_process(self, product_process_data: Dict[str, Any]) -> Dict[str, Any]:
         """데이터베이스에 제품-공정 관계 생성"""
-        if not self.pool:
-            await self.initialize()
-            if not self.pool:
-                raise Exception("데이터베이스 연결 풀을 초기화할 수 없습니다.")
+        await self._ensure_pool_initialized()
             
         try:
             async with self.pool.acquire() as conn:
@@ -568,10 +541,7 @@ class CalculationRepository:
 
     async def delete_product_process(self, product_id: int, process_id: int) -> bool:
         """데이터베이스에서 제품-공정 관계 삭제"""
-        if not self.pool:
-            await self.initialize()
-            if not self.pool:
-                raise Exception("데이터베이스 연결 풀을 초기화할 수 없습니다.")
+        await self._ensure_pool_initialized()
             
         try:
             async with self.pool.acquire() as conn:
@@ -591,10 +561,7 @@ class CalculationRepository:
 
     async def calculate_process_attrdir_emission(self, process_id: int) -> Dict[str, Any]:
         """공정별 직접귀속배출량 계산 및 저장"""
-        if not self.pool:
-            await self.initialize()
-            if not self.pool:
-                raise Exception("데이터베이스 연결 풀을 초기화할 수 없습니다.")
+        await self._ensure_pool_initialized()
             
         try:
             async with self.pool.acquire() as conn:
@@ -648,10 +615,7 @@ class CalculationRepository:
 
     async def get_process_attrdir_emission(self, process_id: int) -> Optional[Dict[str, Any]]:
         """공정별 직접귀속배출량 조회"""
-        if not self.pool:
-            await self.initialize()
-            if not self.pool:
-                raise Exception("데이터베이스 연결 풀을 초기화할 수 없습니다.")
+        await self._ensure_pool_initialized()
             
         try:
             async with self.pool.acquire() as conn:
@@ -667,10 +631,7 @@ class CalculationRepository:
 
     async def get_all_process_attrdir_emissions(self) -> List[Dict[str, Any]]:
         """모든 공정별 직접귀속배출량 조회"""
-        if not self.pool:
-            await self.initialize()
-            if not self.pool:
-                raise Exception("데이터베이스 연결 풀을 초기화할 수 없습니다.")
+        await self._ensure_pool_initialized()
             
         try:
             async with self.pool.acquire() as conn:
@@ -686,10 +647,7 @@ class CalculationRepository:
 
     async def calculate_product_total_emission(self, product_id: int) -> Dict[str, Any]:
         """제품별 총 배출량 계산"""
-        if not self.pool:
-            await self.initialize()
-            if not self.pool:
-                raise Exception("데이터베이스 연결 풀을 초기화할 수 없습니다.")
+        await self._ensure_pool_initialized()
             
         try:
             async with self.pool.acquire() as conn:

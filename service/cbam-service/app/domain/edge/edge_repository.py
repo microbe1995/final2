@@ -15,32 +15,65 @@ class EdgeRepository:
     """엣지 데이터 접근 클래스"""
     
     def __init__(self):
+        self.database_url = os.getenv('DATABASE_URL')
+        if not self.database_url:
+            logger.warning("DATABASE_URL 환경변수가 설정되지 않았습니다. 데이터베이스 기능이 제한됩니다.")
+            return
+        
         self.pool = None
+        self._initialization_attempted = False
         logger.info("✅ Edge Repository 초기화 완료")
     
     async def initialize(self):
         """데이터베이스 연결 풀 초기화"""
-        try:
-            database_url = os.getenv('DATABASE_URL')
-            if not database_url:
-                raise Exception("DATABASE_URL 환경변수가 설정되지 않았습니다.")
+        if self._initialization_attempted:
+            return  # 이미 초기화 시도했으면 다시 시도하지 않음
             
-            self.pool = await asyncpg.create_pool(database_url)
+        if not self.database_url:
+            logger.warning("DATABASE_URL이 없어 데이터베이스 초기화를 건너뜁니다.")
+            self._initialization_attempted = True
+            return
+        
+        self._initialization_attempted = True
+        
+        try:
+            self.pool = await asyncpg.create_pool(
+                self.database_url,
+                min_size=1,
+                max_size=10,
+                command_timeout=30,
+                server_settings={
+                    'application_name': 'cbam-service-edge'
+                }
+            )
             logger.info("✅ Edge Repository 데이터베이스 연결 풀 초기화 완료")
             
             # 테이블 생성
-            await self._create_edge_table_async()
+            try:
+                await self._create_edge_table_async()
+            except Exception as e:
+                logger.warning(f"⚠️ Edge 테이블 생성 실패 (기본 기능은 정상): {e}")
             
         except Exception as e:
             logger.error(f"❌ Edge Repository 초기화 실패: {str(e)}")
-            raise e
+            logger.warning("데이터베이스 연결 실패로 인해 일부 기능이 제한됩니다.")
+            self.pool = None
+    
+    async def _ensure_pool_initialized(self):
+        """연결 풀이 초기화되었는지 확인하고, 필요시 초기화"""
+        if not self.pool and not self._initialization_attempted:
+            await self.initialize()
+        
+        if not self.pool:
+            raise Exception("데이터베이스 연결 풀이 초기화되지 않았습니다.")
     
     async def _create_edge_table_async(self):
         """Edge 테이블 생성 (비동기)"""
+        if not self.pool:
+            logger.warning("데이터베이스 연결 풀이 초기화되지 않았습니다.")
+            return
+        
         try:
-            if not self.pool:
-                raise Exception("데이터베이스 연결 풀을 초기화할 수 없습니다.")
-            
             async with self.pool.acquire() as conn:
                 await conn.execute("""
                     CREATE TABLE IF NOT EXISTS edge (
@@ -68,15 +101,12 @@ class EdgeRepository:
                 
         except Exception as e:
             logger.error(f"❌ Edge 테이블 생성 실패: {str(e)}")
-            raise e
+            logger.warning("⚠️ 테이블 생성 실패로 인해 일부 기능이 제한될 수 있습니다.")
     
     async def create_edge(self, edge_data: Dict[str, Any]) -> Dict[str, Any]:
         """엣지 생성"""
-        if not self.pool:
-            await self.initialize()
-            if not self.pool:
-                raise Exception("데이터베이스 연결 풀을 초기화할 수 없습니다.")
-            
+        await self._ensure_pool_initialized()
+        
         try:
             async with self.pool.acquire() as conn:
                 result = await conn.fetchrow("""
@@ -97,11 +127,8 @@ class EdgeRepository:
     
     async def get_edges(self) -> List[Dict[str, Any]]:
         """모든 엣지 조회"""
-        if not self.pool:
-            await self.initialize()
-            if not self.pool:
-                raise Exception("데이터베이스 연결 풀을 초기화할 수 없습니다.")
-            
+        await self._ensure_pool_initialized()
+        
         try:
             async with self.pool.acquire() as conn:
                 results = await conn.fetch("""
@@ -116,11 +143,8 @@ class EdgeRepository:
     
     async def get_edge(self, edge_id: int) -> Optional[Dict[str, Any]]:
         """특정 엣지 조회"""
-        if not self.pool:
-            await self.initialize()
-            if not self.pool:
-                raise Exception("데이터베이스 연결 풀을 초기화할 수 없습니다.")
-            
+        await self._ensure_pool_initialized()
+        
         try:
             async with self.pool.acquire() as conn:
                 result = await conn.fetchrow("""
@@ -135,11 +159,8 @@ class EdgeRepository:
     
     async def update_edge(self, edge_id: int, update_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """엣지 업데이트"""
-        if not self.pool:
-            await self.initialize()
-            if not self.pool:
-                raise Exception("데이터베이스 연결 풀을 초기화할 수 없습니다.")
-            
+        await self._ensure_pool_initialized()
+        
         try:
             async with self.pool.acquire() as conn:
                 result = await conn.fetchrow("""
@@ -162,11 +183,8 @@ class EdgeRepository:
     
     async def delete_edge(self, edge_id: int) -> bool:
         """엣지 삭제"""
-        if not self.pool:
-            await self.initialize()
-            if not self.pool:
-                raise Exception("데이터베이스 연결 풀을 초기화할 수 없습니다.")
-            
+        await self._ensure_pool_initialized()
+        
         try:
             async with self.pool.acquire() as conn:
                 result = await conn.execute("""
@@ -181,11 +199,8 @@ class EdgeRepository:
     
     async def get_edges_by_type(self, edge_kind: str) -> List[Dict[str, Any]]:
         """타입별 엣지 조회"""
-        if not self.pool:
-            await self.initialize()
-            if not self.pool:
-                raise Exception("데이터베이스 연결 풀을 초기화할 수 없습니다.")
-            
+        await self._ensure_pool_initialized()
+        
         try:
             async with self.pool.acquire() as conn:
                 results = await conn.fetch("""
@@ -200,11 +215,8 @@ class EdgeRepository:
     
     async def get_edges_by_node(self, node_id: int) -> List[Dict[str, Any]]:
         """노드와 연결된 엣지 조회"""
-        if not self.pool:
-            await self.initialize()
-            if not self.pool:
-                raise Exception("데이터베이스 연결 풀을 초기화할 수 없습니다.")
-            
+        await self._ensure_pool_initialized()
+        
         try:
             async with self.pool.acquire() as conn:
                 results = await conn.fetch("""

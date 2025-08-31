@@ -17,12 +17,19 @@ class ProcessRepository:
             logger.warning("DATABASE_URL 환경변수가 설정되지 않았습니다. 데이터베이스 기능이 제한됩니다.")
             return
         self.pool = None
+        self._initialization_attempted = False
     
     async def initialize(self):
         """데이터베이스 연결 풀 초기화"""
+        if self._initialization_attempted:
+            return  # 이미 초기화 시도했으면 다시 시도하지 않음
+            
         if not self.database_url:
             logger.warning("DATABASE_URL이 없어 데이터베이스 초기화를 건너뜁니다.")
+            self._initialization_attempted = True
             return
+        
+        self._initialization_attempted = True
         
         try:
             self.pool = await asyncpg.create_pool(
@@ -41,6 +48,14 @@ class ProcessRepository:
             logger.error(f"❌ Process 데이터베이스 연결 실패: {str(e)}")
             logger.warning("데이터베이스 연결 실패로 인해 일부 기능이 제한됩니다.")
             self.pool = None
+    
+    async def _ensure_pool_initialized(self):
+        """연결 풀이 초기화되었는지 확인하고, 필요시 초기화"""
+        if not self.pool and not self._initialization_attempted:
+            await self.initialize()
+        
+        if not self.pool:
+            raise Exception("데이터베이스 연결 풀이 초기화되지 않았습니다.")
     
     async def _create_process_table_async(self):
         """Process 테이블 생성 (비동기)"""
@@ -81,8 +96,7 @@ class ProcessRepository:
     
     async def create_process(self, process_data: Dict[str, Any]) -> Dict[str, Any]:
         """공정 생성"""
-        if not self.database_url:
-            raise Exception("데이터베이스가 연결되지 않았습니다.")
+        await self._ensure_pool_initialized()
         try:
             return await self._create_process_db(process_data)
         except Exception as e:
@@ -91,8 +105,7 @@ class ProcessRepository:
     
     async def get_processes(self) -> List[Dict[str, Any]]:
         """공정 목록 조회"""
-        if not self.database_url:
-            raise Exception("데이터베이스가 연결되지 않았습니다.")
+        await self._ensure_pool_initialized()
         try:
             return await self._get_processes_db()
         except Exception as e:
@@ -101,8 +114,7 @@ class ProcessRepository:
     
     async def get_process(self, process_id: int) -> Optional[Dict[str, Any]]:
         """특정 공정 조회"""
-        if not self.database_url:
-            raise Exception("데이터베이스가 연결되지 않았습니다.")
+        await self._ensure_pool_initialized()
         try:
             return await self._get_process_db(process_id)
         except Exception as e:
@@ -111,8 +123,7 @@ class ProcessRepository:
     
     async def update_process(self, process_id: int, update_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """공정 수정"""
-        if not self.database_url:
-            raise Exception("데이터베이스가 연결되지 않았습니다.")
+        await self._ensure_pool_initialized()
         try:
             return await self._update_process_db(process_id, update_data)
         except Exception as e:
@@ -121,8 +132,7 @@ class ProcessRepository:
     
     async def delete_process(self, process_id: int) -> bool:
         """공정 삭제"""
-        if not self.database_url:
-            raise Exception("데이터베이스가 연결되지 않았습니다.")
+        await self._ensure_pool_initialized()
         
         try:
             return await self._delete_process_db(process_id)

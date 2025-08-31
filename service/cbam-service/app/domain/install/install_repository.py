@@ -23,12 +23,19 @@ class InstallRepository:
         
         # asyncpg 연결 풀 초기화
         self.pool = None
+        self._initialization_attempted = False
     
     async def initialize(self):
         """데이터베이스 연결 풀 초기화"""
+        if self._initialization_attempted:
+            return  # 이미 초기화 시도했으면 다시 시도하지 않음
+            
         if not self.database_url:
             logger.warning("DATABASE_URL이 없어 데이터베이스 초기화를 건너뜁니다.")
+            self._initialization_attempted = True
             return
+        
+        self._initialization_attempted = True
         
         try:
             # asyncpg 연결 풀 생성
@@ -55,6 +62,14 @@ class InstallRepository:
             logger.warning("데이터베이스 연결 실패로 인해 일부 기능이 제한됩니다.")
             self.pool = None
     
+    async def _ensure_pool_initialized(self):
+        """연결 풀이 초기화되었는지 확인하고, 필요시 초기화"""
+        if not self.pool and not self._initialization_attempted:
+            await self.initialize()
+        
+        if not self.pool:
+            raise Exception("데이터베이스 연결 풀이 초기화되지 않았습니다.")
+
     async def _create_install_table_async(self):
         """Install 테이블 생성 (비동기)"""
         if not self.pool:
@@ -98,8 +113,7 @@ class InstallRepository:
 
     async def create_install(self, install_data: Dict[str, Any]) -> Dict[str, Any]:
         """사업장 생성"""
-        if not self.database_url:
-            raise Exception("데이터베이스가 연결되지 않았습니다.")
+        await self._ensure_pool_initialized()
         try:
             return await self._create_install_db(install_data)
         except Exception as e:
@@ -108,8 +122,7 @@ class InstallRepository:
     
     async def get_installs(self) -> List[Dict[str, Any]]:
         """사업장 목록 조회"""
-        if not self.database_url:
-            raise Exception("데이터베이스가 연결되지 않았습니다.")
+        await self._ensure_pool_initialized()
         try:
             return await self._get_installs_db()
         except Exception as e:
@@ -118,8 +131,7 @@ class InstallRepository:
     
     async def get_install_names(self) -> List[Dict[str, Any]]:
         """사업장명 목록 조회 (드롭다운용)"""
-        if not self.database_url:
-            raise Exception("데이터베이스가 연결되지 않았습니다.")
+        await self._ensure_pool_initialized()
         try:
             return await self._get_install_names_db()
         except Exception as e:
@@ -128,8 +140,7 @@ class InstallRepository:
     
     async def get_install(self, install_id: int) -> Optional[Dict[str, Any]]:
         """특정 사업장 조회"""
-        if not self.database_url:
-            raise Exception("데이터베이스가 연결되지 않았습니다.")
+        await self._ensure_pool_initialized()
         try:
             return await self._get_install_db(install_id)
         except Exception as e:
@@ -138,8 +149,7 @@ class InstallRepository:
     
     async def update_install(self, install_id: int, update_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """사업장 수정"""
-        if not self.database_url:
-            raise Exception("데이터베이스가 연결되지 않았습니다.")
+        await self._ensure_pool_initialized()
         try:
             return await self._update_install_db(install_id, update_data)
         except Exception as e:
@@ -148,6 +158,7 @@ class InstallRepository:
     
     async def delete_install(self, install_id: int) -> bool:
         """사업장 삭제"""
+        await self._ensure_pool_initialized()
         try:
             return await self._delete_install_db(install_id)
         except Exception as e:
