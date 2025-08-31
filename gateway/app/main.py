@@ -195,15 +195,45 @@ async def proxy_request(service: str, path: str, request: Request) -> Response:
     
     # 🔴 추가: 다른 주요 경로들도 슬래시 처리
     elif service == "cbam" and (path == "product" or path.startswith("product/")):
-        if not normalized_path.endswith('/'):
-            normalized_path = normalized_path + '/'
-        logger.info(f"🔍 product 경로 슬래시 추가: {path} → {normalized_path}")
+        # 🔴 수정: 동적 경로(/{id})에는 슬래시 추가하지 않음
+        path_parts = path.split('/')
+        if path == "product":
+            # 루트 product 경로만 슬래시 추가
+            normalized_path = path + '/'
+            logger.info(f"🔍 product 루트 경로 슬래시 추가: {path} → {normalized_path}")
+        elif len(path_parts) == 2 and path_parts[0] == "product" and path_parts[1] == "":
+            # product/만 있는 경우 슬래시 추가
+            if not normalized_path.endswith('/'):
+                normalized_path = normalized_path + '/'
+            logger.info(f"🔍 product 경로 슬래시 추가: {path} → {normalized_path}")
+        elif len(path_parts) == 2 and path_parts[0] == "product" and path_parts[1].isdigit():
+            # product/{id} 같은 동적 경로는 그대로 유지 (슬래시 제거)
+            normalized_path = path.rstrip('/')
+            logger.info(f"🔍 product 동적 경로 슬래시 제거: {path} → {normalized_path}")
+        else:
+            # 기타 product 경로는 그대로 유지
+            logger.info(f"🔍 product 기타 경로 유지: {path} → {normalized_path}")
     
     # 🔴 추가: process 경로도 슬래시 처리
     elif service == "cbam" and (path == "process" or path.startswith("process/")):
-        if not normalized_path.endswith('/'):
-            normalized_path = normalized_path + '/'
-        logger.info(f"🔍 process 경로 슬래시 추가: {path} → {normalized_path}")
+        # 🔴 수정: 동적 경로(/{id})에는 슬래시 추가하지 않음
+        path_parts = path.split('/')
+        if path == "process":
+            # 루트 process 경로만 슬래시 추가
+            normalized_path = path + '/'
+            logger.info(f"🔍 process 루트 경로 슬래시 추가: {path} → {normalized_path}")
+        elif len(path_parts) == 2 and path_parts[0] == "process" and path_parts[1] == "":
+            # process/만 있는 경우 슬래시 추가
+            if not normalized_path.endswith('/'):
+                normalized_path = normalized_path + '/'
+            logger.info(f"🔍 process 경로 슬래시 추가: {path} → {normalized_path}")
+        elif len(path_parts) == 2 and path_parts[0] == "process" and path_parts[1].isdigit():
+            # process/{id} 같은 동적 경로는 그대로 유지 (슬래시 제거)
+            normalized_path = path.rstrip('/')
+            logger.info(f"🔍 process 동적 경로 슬래시 제거: {path} → {normalized_path}")
+        else:
+            # 기타 process 경로는 그대로 유지
+            logger.info(f"🔍 process 기타 경로 유지: {path} → {normalized_path}")
 
     target_url = f"{base_url.rstrip('/')}/{normalized_path}"
     
