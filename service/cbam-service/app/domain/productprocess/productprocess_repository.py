@@ -119,7 +119,7 @@ class ProductProcessRepository:
         try:
             async with self.pool.acquire() as conn:
                 result = await conn.fetchrow("""
-                    SELECT pp.*, p.name as product_name, proc.name as process_name
+                    SELECT pp.*, p.product_name, proc.process_name
                     FROM product_process pp
                     LEFT JOIN product p ON pp.product_id = p.id
                     LEFT JOIN process proc ON pp.process_id = proc.id
@@ -141,7 +141,7 @@ class ProductProcessRepository:
         try:
             async with self.pool.acquire() as conn:
                 results = await conn.fetch("""
-                    SELECT pp.*, p.name as product_name, proc.name as process_name
+                    SELECT pp.*, p.product_name, proc.process_name
                     FROM product_process pp
                     LEFT JOIN product p ON pp.product_id = p.id
                     LEFT JOIN process proc ON pp.process_id = proc.id
@@ -162,7 +162,7 @@ class ProductProcessRepository:
         try:
             async with self.pool.acquire() as conn:
                 results = await conn.fetch("""
-                    SELECT pp.*, p.name as product_name, proc.name as process_name
+                    SELECT pp.*, p.product_name, proc.process_name
                     FROM product_process pp
                     LEFT JOIN product p ON pp.product_id = p.id
                     LEFT JOIN process proc ON pp.process_id = proc.id
@@ -183,7 +183,7 @@ class ProductProcessRepository:
         try:
             async with self.pool.acquire() as conn:
                 results = await conn.fetch("""
-                    SELECT pp.*, p.name as product_name, proc.name as process_name
+                    SELECT pp.*, p.product_name, proc.process_name
                     FROM product_process pp
                     LEFT JOIN product p ON pp.product_id = p.id
                     LEFT JOIN process proc ON pp.process_id = proc.id
@@ -220,7 +220,7 @@ class ProductProcessRepository:
                 where_clause = " AND ".join(where_conditions) if where_conditions else "1=1"
                 
                 query = f"""
-                    SELECT pp.*, p.name as product_name, proc.name as process_name
+                    SELECT pp.*, p.product_name, proc.process_name
                     FROM product_process pp
                     LEFT JOIN product p ON pp.product_id = p.id
                     LEFT JOIN process proc ON pp.process_id = proc.id

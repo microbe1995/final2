@@ -3,13 +3,14 @@
 # ============================================================================
 
 from sqlalchemy import Column, Integer, String, Numeric, DateTime, Text, BigInteger, Date, ForeignKey
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import DeclarativeBase, relationship
 from datetime import datetime
 from typing import Dict, Any, List
 from decimal import Decimal
 
-Base = declarative_base()
+# SQLAlchemy 2.0 호환 Base 클래스
+class Base(DeclarativeBase):
+    pass
 
 # ============================================================================
 # 📊 ProcessAttrdirEmission 엔티티 (공정별 직접귀속배출량)
@@ -25,9 +26,9 @@ class ProcessAttrdirEmission(Base):
     total_matdir_emission = Column(Numeric(15, 6), nullable=False, default=0, comment="총 원료직접배출량")
     total_fueldir_emission = Column(Numeric(15, 6), nullable=False, default=0, comment="총 연료직접배출량")
     attrdir_em = Column(Numeric(15, 6), nullable=False, default=0, comment="직접귀속배출량 (원료+연료)")
-    calculation_date = Column(DateTime, default=datetime.utcnow, comment="계산 일시")
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    calculation_date = Column(DateTime, default=datetime.now, comment="계산 일시")
+    created_at = Column(DateTime, default=datetime.now)
+    updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
     
     def to_dict(self) -> Dict[str, Any]:
         """엔티티를 딕셔너리로 변환"""
@@ -50,7 +51,7 @@ class ProcessAttrdirEmission(Base):
             total_matdir_emission=data.get("total_matdir_emission", 0.0),
             total_fueldir_emission=data.get("total_fueldir_emission", 0.0),
             attrdir_em=data.get("attrdir_em", 0.0),
-            calculation_date=datetime.fromisoformat(data.get("calculation_date")) if data.get("calculation_date") else datetime.utcnow()
+            calculation_date=datetime.fromisoformat(data.get("calculation_date")) if data.get("calculation_date") else datetime.now()
         )
     
     def __repr__(self):

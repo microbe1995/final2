@@ -3,12 +3,13 @@
 # ============================================================================
 
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import DeclarativeBase, relationship
 from datetime import datetime
 from typing import Dict, Any
 
-Base = declarative_base()
+# SQLAlchemy 2.0 호환 Base 클래스
+class Base(DeclarativeBase):
+    pass
 
 class ProductProcess(Base):
     """제품-공정 중간 테이블 엔티티 (다대다 관계 해소)"""
@@ -18,12 +19,12 @@ class ProductProcess(Base):
     id = Column(Integer, primary_key=True, index=True)
     product_id = Column(Integer, ForeignKey("product.id"), nullable=False, index=True)  # 제품 ID
     process_id = Column(Integer, ForeignKey("process.id"), nullable=False, index=True)  # 공정 ID
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.now)
+    updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
     
-    # 관계 설정
-    product = relationship("Product", back_populates="product_processes")
-    process = relationship("Process", back_populates="product_processes", foreign_keys=[process_id])
+    # 관계 설정 (순환참조 방지를 위해 문자열로 참조)
+    product = relationship("Product", back_populates="product_processes", lazy="selectin")
+    process = relationship("Process", back_populates="product_processes", lazy="selectin")
     
     def to_dict(self) -> Dict[str, Any]:
         """엔티티를 딕셔너리로 변환"""

@@ -398,8 +398,8 @@ class CalculationRepository:
                     chain_data['end_process_id'],
                     chain_data['chain_length'],
                     chain_data['is_active'],
-                    datetime.utcnow(),
-                    datetime.utcnow()
+                    datetime.now(),
+                    datetime.now()
                 ))
                 
                 return dict(chain)
@@ -422,8 +422,8 @@ class CalculationRepository:
                     link_data['process_id'],
                     link_data['sequence_order'],
                     link_data['is_continue_edge'],
-                    datetime.utcnow(),
-                    datetime.utcnow()
+                    datetime.now(),
+                    datetime.now()
                 ))
                 
         except Exception as e:
@@ -475,7 +475,7 @@ class CalculationRepository:
                     ),
                     updated_at = $2
                     WHERE id = $3
-                """, (chain_id, datetime.utcnow(), chain_id))
+                """, (chain_id, datetime.now(), chain_id))
                 
         except Exception as e:
             logger.error(f"❌ 그룹 길이 업데이트 실패: {e}")
