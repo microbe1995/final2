@@ -42,29 +42,32 @@ export const renderFourDirectionHandles = (isConnectable = true, nodeId?: string
     return null;
   }
   
+  // 🔴 추가: 노드 ID에서 안전한 핸들 ID 생성
+  const safeNodeId = nodeId.replace(/[^a-zA-Z0-9-]/g, '-');
+  
   const handles = [
     {
       position: Position.Left,
       type: 'source' as HandleType,
-      id: `${nodeId}-left`,
+      id: `${safeNodeId}-left`,
       style: sourceStyle,
     },
     {
       position: Position.Right,
       type: 'source' as HandleType,
-      id: `${nodeId}-right`,
+      id: `${safeNodeId}-right`,
       style: sourceStyle,
     },
     {
       position: Position.Top,
       type: 'source' as HandleType,
-      id: `${nodeId}-top`,
+      id: `${safeNodeId}-top`,
       style: sourceStyle,
     },
     {
       position: Position.Bottom,
       type: 'source' as HandleType,
-      id: `${nodeId}-bottom`,
+      id: `${safeNodeId}-bottom`,
       style: sourceStyle,
     },
   ];

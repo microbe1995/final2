@@ -192,24 +192,33 @@ function ProcessManagerInner() {
       return false;
     }
     
-    // 핸들 ID 검증
+    // 핸들 ID 검증 (더 유연하게)
     if (!connection.sourceHandle || !connection.targetHandle) {
       console.log('❌ 핸들 ID 누락:', { sourceHandle: connection.sourceHandle, targetHandle: connection.targetHandle });
       return false;
     }
     
-    // 핸들 ID가 노드 ID를 포함하는지 확인
-    if (!connection.sourceHandle.includes(connection.source)) {
+    // 🔴 수정: 핸들 ID 검증을 더 유연하게 변경
+    // 노드 ID에서 안전한 형태로 변환하여 비교
+    const getSafeNodeId = (nodeId: string) => nodeId.replace(/[^a-zA-Z0-9-]/g, '-');
+    const safeSourceId = getSafeNodeId(connection.source);
+    const safeTargetId = getSafeNodeId(connection.target);
+    
+    // sourceHandle 검증
+    if (!connection.sourceHandle.includes(safeSourceId) && !connection.sourceHandle.includes(connection.source)) {
       console.log('❌ sourceHandle ID 불일치:', { 
         source: connection.source, 
+        safeSourceId,
         sourceHandle: connection.sourceHandle 
       });
       return false;
     }
     
-    if (!connection.targetHandle.includes(connection.target)) {
+    // targetHandle 검증
+    if (!connection.targetHandle.includes(safeTargetId) && !connection.targetHandle.includes(connection.target)) {
       console.log('❌ targetHandle ID 불일치:', { 
         target: connection.target, 
+        safeTargetId,
         targetHandle: connection.targetHandle 
       });
       return false;
