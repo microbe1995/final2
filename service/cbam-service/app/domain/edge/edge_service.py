@@ -344,7 +344,8 @@ class EdgeService:
             
         except Exception as e:
             logger.error(f"엣지 생성 실패: {e}")
-            await self.db_session.rollback()
+            if hasattr(self.db_session, 'rollback'):
+                await self.db_session.rollback()
             return None
     
     async def get_edges(self) -> List[Edge]:

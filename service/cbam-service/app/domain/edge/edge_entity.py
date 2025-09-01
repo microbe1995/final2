@@ -14,7 +14,7 @@ class Edge(Base):
     
     __tablename__ = "edge"
     
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     source_node_type = Column(Text, nullable=False, index=True)  # 소스 노드 타입
     source_id = Column(Integer, nullable=False, index=True)  # 소스 노드 ID
     target_node_type = Column(Text, nullable=False, index=True)  # 타겟 노드 타입
