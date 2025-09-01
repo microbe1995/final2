@@ -285,7 +285,7 @@ class CalculationRepository:
                     JOIN product_process pp ON p.id = pp.process_id
                     WHERE pp.product_id = $1
                     ORDER BY p.id
-                """, (product_id,))
+                """, product_id)
                 
                 processes = []
                 for row in results:
@@ -352,7 +352,7 @@ class CalculationRepository:
                     INNER JOIN process_chain_link pcl ON pc.id = pcl.chain_id
                     WHERE pcl.process_id = ANY($1)
                     ORDER BY pc.id
-                """, (process_ids,))
+                """, process_ids)
                 
                 # 각 그룹에 포함된 공정 목록도 함께 조회
                 chain_list = []
@@ -366,7 +366,7 @@ class CalculationRepository:
                         FROM process_chain_link
                         WHERE chain_id = $1
                         ORDER BY sequence_order
-                    """, (chain_dict['id'],))
+                    """, chain_dict['id'])
                     
                     chain_dict['processes'] = [link['process_id'] for link in process_links]
                     chain_list.append(chain_dict)
@@ -441,7 +441,7 @@ class CalculationRepository:
                     SELECT COALESCE(MAX(sequence_order), 0) as max_order
                     FROM process_chain_link
                     WHERE chain_id = $1
-                """, (chain_id,))
+                """, chain_id)
                 
                 max_order = result['max_order'] if result else 0
                 
@@ -475,7 +475,7 @@ class CalculationRepository:
                     ),
                     updated_at = $2
                     WHERE id = $3
-                """, (chain_id, datetime.now(), chain_id))
+                """, chain_id, datetime.now(), chain_id)
                 
         except Exception as e:
             logger.error(f"❌ 그룹 길이 업데이트 실패: {e}")
@@ -504,7 +504,7 @@ class CalculationRepository:
                     FROM process_attrdir_emission pae
                     INNER JOIN process_chain_link pcl ON pae.process_id = pcl.process_id
                     WHERE pcl.chain_id = $1
-                """, (chain_id,))
+                """, chain_id)
                 
                 total_emission = result['total_emission'] if result else 0
                 
@@ -528,24 +528,24 @@ class CalculationRepository:
                 # 1. 공정 정보 조회
                 process_result = await conn.fetchrow("""
                     SELECT id, process_name FROM process WHERE id = $1
-                """, (process_id,))
+                """, process_id)
                 
                 if not process_result:
                     raise Exception(f"공정 ID {process_id}를 찾을 수 없습니다.")
                 
                 # 2. 원료별 직접배출량 계산 (matdir 테이블 기반)
                 matdir_emission = await conn.fetchrow("""
-                    SELECT COALESCE(SUM(emission_amount), 0) as total_matdir_emission
+                    SELECT COALESCE(SUM(matdir_em), 0) as total_matdir_emission
                     FROM matdir
                     WHERE process_id = $1
-                """, (process_id,))
+                """, process_id)
                 
                 # 3. 연료별 직접배출량 계산 (fueldir 테이블 기반)
                 fueldir_emission = await conn.fetchrow("""
-                    SELECT COALESCE(SUM(emission_amount), 0) as total_fueldir_emission
+                    SELECT COALESCE(SUM(fueldir_em), 0) as total_fueldir_emission
                     FROM fueldir
                     WHERE process_id = $1
-                """, (process_id,))
+                """, process_id)
                 
                 # 4. 총 직접귀속배출량 계산
                 total_matdir = float(matdir_emission['total_matdir_emission']) if matdir_emission else 0.0
@@ -565,7 +565,7 @@ class CalculationRepository:
                         calculation_date = NOW(),
                         updated_at = NOW()
                     RETURNING *
-                """, (process_id, total_matdir, total_fueldir, attrdir_em))
+                """, process_id, total_matdir, total_fueldir, attrdir_em)
                 
                 return dict(result)
                 
@@ -581,7 +581,7 @@ class CalculationRepository:
             async with self.pool.acquire() as conn:
                 result = await conn.fetchrow("""
                     SELECT * FROM process_attrdir_emission WHERE process_id = $1
-                """, (process_id,))
+                """, process_id)
                 
                 return dict(result) if result else None
                 
@@ -614,7 +614,7 @@ class CalculationRepository:
                 # 1. 제품 정보 조회
                 product_result = await conn.fetchrow("""
                     SELECT id, product_name FROM product WHERE id = $1
-                """, (product_id,))
+                """, product_id)
                 
                 if not product_result:
                     raise Exception(f"제품 ID {product_id}를 찾을 수 없습니다.")
@@ -632,7 +632,7 @@ class CalculationRepository:
                     LEFT JOIN process_attrdir_emission pae ON p.id = pae.process_id
                     WHERE pp.product_id = $1
                     ORDER BY p.id
-                """, (product_id,))
+                """, product_id)
                 
                 # 3. 총 배출량 계산
                 total_emission = 0.0
