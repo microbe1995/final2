@@ -31,35 +31,9 @@ import {
 import '@xyflow/react/dist/style.css';
 
 /* ============================================================================
-   커스텀 Edge
+   커스텀 Edge 타입 정의
 ============================================================================ */
-interface CustomEdgeProps {
-  id: string;
-  sourceX: number;
-  sourceY: number;
-  targetX: number;
-  targetY: number;
-  selected?: boolean;
-}
-
-const CustomEdge: React.FC<CustomEdgeProps> = ({ id, sourceX, sourceY, targetX, targetY, selected }) => {
-  const [edgePath] = React.useMemo(() => {
-    const cx = (sourceX + targetX) / 2;
-    return [`M ${sourceX} ${sourceY} Q ${cx} ${sourceY} ${targetX} ${targetY}`];
-  }, [sourceX, sourceY, targetX, targetY]);
-
-  return (
-    <path
-      id={id}
-      className="react-flow__edge-path"
-      d={edgePath}
-      stroke={selected ? '#3b82f6' : '#6b7280'}
-      strokeWidth={selected ? 3 : 2}
-      fill="none"
-    />
-  );
-};
-
+import CustomEdge from '@/components/atomic/atoms/CustomEdge';
 const edgeTypes: EdgeTypes = { custom: CustomEdge };
 
 /* ============================================================================
@@ -182,20 +156,20 @@ function ProcessManagerInner() {
     await handleEdgeCreate(params, updateProcessChainsAfterEdge);
   }, [handleEdgeCreate, updateProcessChainsAfterEdge]);
 
-  // 🔴 추가: 단순화된 커스텀 연결 검증 로직
-  const isValidConnection = useCallback((connection: Connection) => {
+  // 🔧 통합된 연결 검증 로직
+  const validateConnection = useCallback((connection: Connection) => {
     console.log('🔍 연결 검증 시작:', connection);
     
     // 같은 노드 간 연결 방지
     if (connection.source === connection.target) {
       console.log('❌ 같은 노드 간 연결 시도:', connection.source);
-      return false;
+      return { valid: false, reason: 'same_node' };
     }
     
-    // 핸들 ID 존재 여부만 확인 (React Flow가 자동으로 처리)
+    // 핸들 ID 존재 여부 확인
     if (!connection.sourceHandle || !connection.targetHandle) {
       console.log('❌ 핸들 ID 누락:', { sourceHandle: connection.sourceHandle, targetHandle: connection.targetHandle });
-      return false;
+      return { valid: false, reason: 'missing_handles' };
     }
     
     // 이미 존재하는 연결 확인
@@ -206,19 +180,18 @@ function ProcessManagerInner() {
     
     if (existingEdge) {
       console.log('❌ 이미 존재하는 연결:', existingEdge);
-      return false;
+      return { valid: false, reason: 'duplicate_edge' };
     }
     
     console.log('✅ 연결 검증 통과');
-    return true;
+    return { valid: true };
   }, [edges]);
 
-  // 🔴 추가: 연결 시작 이벤트
+  // 🔧 단순화된 연결 이벤트 핸들러
   const handleConnectStart = useCallback((event: any, params: any) => {
     console.log('🔗 연결 시작:', params);
   }, []);
 
-  // 🔴 추가: 연결 종료 이벤트
   const handleConnectEnd = useCallback((event: any) => {
     console.log('🔗 연결 종료:', event);
   }, []);
@@ -301,14 +274,15 @@ function ProcessManagerInner() {
             console.log('🔗 연결 시작:', params);
             handleConnectStart(event, params);
           }}
-          onConnect={(params) => {
-            console.log('🔗 연결 완료:', params);
-            if (isValidConnection(params)) {
-              handleConnect(params);
-            } else {
-              console.log('❌ 연결 검증 실패:', params);
-            }
-          }}
+                  onConnect={(params) => {
+          console.log('🔗 연결 완료:', params);
+          const validation = validateConnection(params);
+          if (validation.valid) {
+            handleConnect(params);
+          } else {
+            console.log(`❌ 연결 검증 실패: ${validation.reason}`, params);
+          }
+        }}
           onConnectEnd={handleConnectEnd}
         >
           <Background color="#334155" gap={24} size={1} />

@@ -172,110 +172,79 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
     });
   }, [setNodes]);
 
-  // Edge 생성 처리 (안전한 상태 업데이트)
+  // 🔧 단순화된 Edge 생성 처리 (검증은 ProcessManager에서 수행)
   const handleEdgeCreate = useCallback(async (params: Connection, updateProcessChainsAfterEdge: () => void) => {
+    let tempEdgeId: string | null = null;
+    
     try {
       console.log('🔗 Edge 연결 시도:', params);
       
-      // source와 target이 모두 있는지 확인
+      // 기본 파라미터 검증
       if (!params.source || !params.target) {
         console.log('❌ source 또는 target이 없음:', params);
         return;
       }
       
-        // 🔴 수정: 개선된 핸들 자동 변환 로직
-  let finalParams = { ...params };
-  
-  // sourceHandle이 없거나 targetHandle이 없는 경우 자동으로 생성
-  if (!params.sourceHandle || !params.targetHandle) {
-    console.log('🔧 핸들 자동 변환 시작:', params);
-    
-    // 노드에서 사용 가능한 핸들 찾기
-    const sourceNode = nodes.find(node => node.id === params.source);
-    const targetNode = nodes.find(node => node.id === params.target);
-    
-    if (sourceNode && targetNode) {
-      // sourceHandle이 없는 경우, source 노드의 핸들 중 하나 선택
-      if (!params.sourceHandle) {
-        const sourceHandleId = `${sourceNode.id}-left`;
-        finalParams.sourceHandle = sourceHandleId;
-        console.log('🔧 sourceHandle 자동 설정:', sourceHandleId);
+      // 핸들 자동 변환 로직 (검증은 이미 ProcessManager에서 완료됨)
+      let finalParams = { ...params };
+      
+      if (!params.sourceHandle || !params.targetHandle) {
+        console.log('🔧 핸들 자동 변환 시작:', params);
+        
+        const sourceNode = nodes.find(node => node.id === params.source);
+        const targetNode = nodes.find(node => node.id === params.target);
+        
+        if (sourceNode && targetNode) {
+          if (!params.sourceHandle) {
+            finalParams.sourceHandle = `${sourceNode.id}-left`;
+            console.log('🔧 sourceHandle 자동 설정:', finalParams.sourceHandle);
+          }
+          
+          if (!params.targetHandle) {
+            finalParams.targetHandle = `${targetNode.id}-right`;
+            console.log('🔧 targetHandle 자동 설정:', finalParams.targetHandle);
+          }
+        }
       }
       
-      // targetHandle이 없는 경우, target 노드의 핸들 중 하나 선택
-      if (!params.targetHandle) {
-        const targetHandleId = `${targetNode.id}-right`;
-        finalParams.targetHandle = targetHandleId;
-        console.log('🔧 targetHandle 자동 설정:', targetHandleId);
+      // 핸들 ID 검증 및 수정
+      if (finalParams.sourceHandle && finalParams.targetHandle) {
+        const getSafeNodeId = (nodeId: string) => nodeId.replace(/[^a-zA-Z0-9-]/g, '-');
+        
+        if (!finalParams.sourceHandle.includes(params.source) && !finalParams.sourceHandle.includes(getSafeNodeId(params.source))) {
+          const position = finalParams.sourceHandle.split('-').pop();
+          const safeSourceId = getSafeNodeId(params.source);
+          finalParams.sourceHandle = `${safeSourceId}-${position}`;
+          console.log('🔧 sourceHandle ID 수정:', finalParams.sourceHandle);
+        }
+        
+        if (!finalParams.targetHandle.includes(params.target) && !finalParams.targetHandle.includes(getSafeNodeId(params.target))) {
+          const position = finalParams.targetHandle.split('-').pop();
+          const safeTargetId = getSafeNodeId(params.target);
+          finalParams.targetHandle = `${safeTargetId}-${position}`;
+          console.log('🔧 targetHandle ID 수정:', finalParams.targetHandle);
+        }
       }
-    }
-  }
-  
-  // 🔴 추가: 핸들 ID 검증 및 수정
-  if (finalParams.sourceHandle && finalParams.targetHandle) {
-    // 안전한 노드 ID 생성 함수
-    const getSafeNodeId = (nodeId: string) => nodeId.replace(/[^a-zA-Z0-9-]/g, '-');
-    
-    // sourceHandle이 노드 ID를 포함하지 않는 경우 수정
-    if (!finalParams.sourceHandle.includes(params.source) && !finalParams.sourceHandle.includes(getSafeNodeId(params.source))) {
-      const position = finalParams.sourceHandle.split('-').pop(); // 'top', 'bottom', 'left', 'right'
-      const safeSourceId = getSafeNodeId(params.source);
-      finalParams.sourceHandle = `${safeSourceId}-${position}`;
-      console.log('🔧 sourceHandle ID 수정:', finalParams.sourceHandle);
-    }
-    
-    // targetHandle이 노드 ID를 포함하지 않는 경우 수정
-    if (!finalParams.targetHandle.includes(params.target) && !finalParams.targetHandle.includes(getSafeNodeId(params.target))) {
-      const position = finalParams.targetHandle.split('-').pop(); // 'top', 'bottom', 'left', 'right'
-      const safeTargetId = getSafeNodeId(params.target);
-      finalParams.targetHandle = `${safeTargetId}-${position}`;
-      console.log('🔧 targetHandle ID 수정:', finalParams.targetHandle);
-    }
-  }
-  
-  // 핸들이 여전히 없는 경우 연결 불가
-  if (!finalParams.sourceHandle || !finalParams.targetHandle) {
-    console.log('❌ 핸들 자동 변환 실패 - 연결 불가:', finalParams);
-    return;
-  }
       
-      // 🔴 추가: 같은 노드 간 연결 방지
-      if (params.source === params.target) {
-        console.log('❌ 같은 노드 간 연결은 불가능:', { source: params.source, target: params.target });
+      if (!finalParams.sourceHandle || !finalParams.targetHandle) {
+        console.log('❌ 핸들 자동 변환 실패 - 연결 불가:', finalParams);
         return;
       }
       
-      // 🔴 추가: 이미 존재하는 연결 확인
-      const existingEdge = edges.find(edge => 
-        (edge.source === params.source && edge.target === params.target) ||
-        (edge.source === params.target && edge.target === params.source)
-      );
-      
-      if (existingEdge) {
-        console.log('❌ 이미 존재하는 연결:', existingEdge);
-        return;
-      }
-      
-      // 🔴 추가: 즉시 시각적 연결 제공 (사용자 경험 개선)
-      const tempEdgeId = `temp-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      // 🔧 단순화된 임시 Edge 생성
+      tempEdgeId = `temp-${Date.now()}`;
       const tempEdge = {
         id: tempEdgeId,
-        source: params.source,
-        target: params.target,
-        sourceHandle: params.sourceHandle,
-        targetHandle: params.targetHandle,
+        source: finalParams.source,
+        target: finalParams.target,
+        sourceHandle: finalParams.sourceHandle,
+        targetHandle: finalParams.targetHandle,
         type: 'custom',
-        data: { isTemporary: true, edgeData: null },
-        style: { strokeDasharray: '5,5', stroke: '#6b7280' } // 🔴 점선으로 임시 Edge 표시
+        data: { isTemporary: true },
+        style: { strokeDasharray: '5,5', stroke: '#6b7280' }
       };
       
-      // 임시 Edge를 즉시 화면에 추가
-      setEdges(prev => {
-        const newEdges = [...prev, tempEdge];
-        prevEdgesRef.current = newEdges;
-        return newEdges;
-      });
-      
+      setEdges(prev => [...prev, tempEdge]);
       console.log('🔗 임시 Edge 추가됨:', tempEdgeId);
       
       // 노드 ID에서 숫자 부분만 추출 (예: "product-123-abc" → 123)
@@ -316,7 +285,6 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
       
       if (sourceId === 0 || targetId === 0) {
         console.error('유효하지 않은 노드 ID:', { source: params.source, target: params.target });
-        // 🔴 추가: 임시 Edge 제거
         setEdges(prev => prev.filter(edge => edge.id !== tempEdgeId));
         return;
       }
@@ -338,25 +306,21 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
         const newEdge = response.data;
         console.log('✅ Edge 생성 성공:', newEdge);
         
-        // 🔴 수정: 임시 Edge를 실제 Edge로 교체
-        setEdges(prev => {
-          const newEdges = prev.map(edge => 
-            edge.id === tempEdgeId 
-              ? {
-                  id: `e-${newEdge.id}`,
-                  source: params.source,
-                  target: params.target,
-                  sourceHandle: params.sourceHandle,
-                  targetHandle: params.targetHandle,
-                  type: 'custom',
-                  data: { edgeData: newEdge, isTemporary: false },
-                  style: { stroke: '#3b82f6' } // 🔴 실선으로 실제 Edge 표시
-                }
-              : edge
-          );
-          prevEdgesRef.current = newEdges;
-          return newEdges;
-        });
+        // 🔧 임시 Edge를 실제 Edge로 교체
+        setEdges(prev => prev.map(edge => 
+          edge.id === tempEdgeId 
+            ? {
+                id: `e-${newEdge.id}`,
+                source: finalParams.source,
+                target: finalParams.target,
+                sourceHandle: finalParams.sourceHandle,
+                targetHandle: finalParams.targetHandle,
+                type: 'custom',
+                data: { edgeData: newEdge, isTemporary: false },
+                style: { stroke: '#3b82f6' }
+              }
+            : edge
+        ));
         
         // 콜백 실행
         if (updateProcessChainsAfterEdge) {
@@ -373,8 +337,10 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
         params: params
       });
       
-      // 🔴 수정: 에러 발생 시 해당 임시 Edge만 제거
-      setEdges(prev => prev.filter(edge => !edge.data?.isTemporary || edge.id !== `temp-${Date.now()}-${Math.random().toString(36).slice(2)}`));
+      // 🔧 에러 발생 시 임시 Edge 제거
+      if (tempEdgeId) {
+        setEdges(prev => prev.filter(edge => edge.id !== tempEdgeId));
+      }
       
       // 🔴 추가: 사용자에게 에러 알림 (Toast 등으로 표시 가능)
       if (error.response?.status === 500) {
