@@ -28,6 +28,13 @@ class MatDirService:
     async def create_matdir(self, request: MatDirCreateRequest) -> MatDirResponse:
         """원료직접배출량 데이터 생성"""
         try:
+            # 데이터베이스 연결 상태 테스트
+            logger.info("🔍 데이터베이스 연결 상태 테스트 시작")
+            connection_ok = await self.matdir_repository.test_connection()
+            if not connection_ok:
+                raise Exception("데이터베이스 연결에 실패했습니다.")
+            logger.info("✅ 데이터베이스 연결 상태 정상")
+            
             # oxyfactor 기본값 설정
             oxyfactor = request.oxyfactor if request.oxyfactor is not None else Decimal('1.0000')
             

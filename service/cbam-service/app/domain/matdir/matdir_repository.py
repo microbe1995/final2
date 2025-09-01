@@ -60,11 +60,17 @@ class MatDirRepository:
     
     async def _ensure_pool_initialized(self):
         """연결 풀이 초기화되었는지 확인하고, 필요시 초기화"""
+        logger.info(f"🔍 연결 풀 상태 확인: pool={self.pool}, attempted={self._initialization_attempted}")
+        
         if not self.pool and not self._initialization_attempted:
+            logger.info("🔄 연결 풀 초기화 시작")
             await self.initialize()
         
         if not self.pool:
+            logger.error("❌ 연결 풀이 초기화되지 않았습니다.")
             raise Exception("데이터베이스 연결 풀이 초기화되지 않았습니다.")
+        
+        logger.info("✅ 연결 풀 정상 상태 확인")
     
     async def _create_matdir_table_async(self):
         """matdir 테이블 생성 (비동기)"""
@@ -118,6 +124,21 @@ class MatDirRepository:
             logger.error(f"❌ matdir 테이블 생성 실패: {str(e)}")
             logger.warning("⚠️ 테이블 생성 실패로 인해 일부 기능이 제한될 수 있습니다.")
 
+    async def test_connection(self) -> bool:
+        """데이터베이스 연결 상태 테스트"""
+        try:
+            await self._ensure_pool_initialized()
+            
+            async with self.pool.acquire() as conn:
+                # 간단한 쿼리로 연결 테스트
+                result = await conn.fetchval("SELECT 1")
+                logger.info(f"✅ 데이터베이스 연결 테스트 성공: {result}")
+                return True
+                
+        except Exception as e:
+            logger.error(f"❌ 데이터베이스 연결 테스트 실패: {str(e)}")
+            return False
+
     # ============================================================================
     # 📋 기존 MatDir CRUD 메서드들
     # ============================================================================
@@ -157,19 +178,33 @@ class MatDirRepository:
                     logger.info(f"🔍 UPDATE 쿼리 파라미터: oxyfactor={oxyfactor}, matdir_em={matdir_data['matdir_em']}")
                     logger.info("🔍 UPDATE 쿼리 실행 시작")
                     
-                    result = await conn.fetchrow("""
-                        UPDATE matdir 
-                        SET mat_factor = $1, mat_amount = $2, oxyfactor = $3, matdir_em = $4, updated_at = NOW()
-                        WHERE process_id = $5 AND mat_name = $6
-                        RETURNING *
-                    """, (
+                    # 파라미터 값을 개별적으로 로깅
+                    logger.info(f"🔍 파라미터 1 (mat_factor): {matdir_data['mat_factor']} (타입: {type(matdir_data['mat_factor'])})")
+                    logger.info(f"🔍 파라미터 2 (mat_amount): {matdir_data['mat_amount']} (타입: {type(matdir_data['mat_amount'])})")
+                    logger.info(f"🔍 파라미터 3 (oxyfactor): {oxyfactor} (타입: {type(oxyfactor)})")
+                    logger.info(f"🔍 파라미터 4 (matdir_em): {matdir_data['matdir_em']} (타입: {type(matdir_data['matdir_em'])})")
+                    logger.info(f"🔍 파라미터 5 (process_id): {matdir_data['process_id']} (타입: {type(matdir_data['process_id'])})")
+                    logger.info(f"🔍 파라미터 6 (mat_name): {matdir_data['mat_name']} (타입: {type(matdir_data['mat_name'])})")
+                    
+                    # 파라미터 튜플을 명시적으로 생성
+                    params = (
                         matdir_data['mat_factor'],
                         matdir_data['mat_amount'],
                         oxyfactor,
                         matdir_data['matdir_em'],
                         matdir_data['process_id'],
                         matdir_data['mat_name']
-                    ))
+                    )
+                    
+                    logger.info(f"🔍 최종 파라미터 튜플: {params}")
+                    logger.info(f"🔍 파라미터 개수: {len(params)}")
+                    
+                    result = await conn.fetchrow("""
+                        UPDATE matdir 
+                        SET mat_factor = $1, mat_amount = $2, oxyfactor = $3, matdir_em = $4, updated_at = NOW()
+                        WHERE process_id = $5 AND mat_name = $6
+                        RETURNING *
+                    """, params)
                     logger.info(f"🔍 UPDATE 쿼리 실행 완료: {result}")
                 else:
                     # 새로운 데이터 삽입
@@ -183,18 +218,32 @@ class MatDirRepository:
                     logger.info(f"🔍 INSERT 쿼리 파라미터: oxyfactor={oxyfactor}, matdir_em={matdir_data['matdir_em']}")
                     logger.info("🔍 INSERT 쿼리 실행 시작")
                     
-                    result = await conn.fetchrow("""
-                        INSERT INTO matdir (process_id, mat_name, mat_factor, mat_amount, oxyfactor, matdir_em)
-                        VALUES ($1, $2, $3, $4, $5, $6)
-                        RETURNING *
-                    """, (
+                    # 파라미터 값을 개별적으로 로깅
+                    logger.info(f"🔍 파라미터 1 (process_id): {matdir_data['process_id']} (타입: {type(matdir_data['process_id'])})")
+                    logger.info(f"🔍 파라미터 2 (mat_name): {matdir_data['mat_name']} (타입: {type(matdir_data['mat_name'])})")
+                    logger.info(f"🔍 파라미터 3 (mat_factor): {matdir_data['mat_factor']} (타입: {type(matdir_data['mat_factor'])})")
+                    logger.info(f"🔍 파라미터 4 (mat_amount): {matdir_data['mat_amount']} (타입: {type(matdir_data['mat_amount'])})")
+                    logger.info(f"🔍 파라미터 5 (oxyfactor): {oxyfactor} (타입: {type(oxyfactor)})")
+                    logger.info(f"🔍 파라미터 6 (matdir_em): {matdir_data['matdir_em']} (타입: {type(matdir_data['matdir_em'])})")
+                    
+                    # 파라미터 튜플을 명시적으로 생성
+                    params = (
                         matdir_data['process_id'],
                         matdir_data['mat_name'],
                         matdir_data['mat_factor'],
                         matdir_data['mat_amount'],
                         oxyfactor,
                         matdir_data['matdir_em']
-                    ))
+                    )
+                    
+                    logger.info(f"🔍 최종 파라미터 튜플: {params}")
+                    logger.info(f"🔍 파라미터 개수: {len(params)}")
+                    
+                    result = await conn.fetchrow("""
+                        INSERT INTO matdir (process_id, mat_name, mat_factor, mat_amount, oxyfactor, matdir_em)
+                        VALUES ($1, $2, $3, $4, $5, $6)
+                        RETURNING *
+                    """, params)
                     logger.info(f"🔍 INSERT 쿼리 실행 완료: {result}")
                 
                 action = "업데이트" if existing_record else "생성"
