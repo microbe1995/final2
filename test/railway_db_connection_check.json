@@ -1,0 +1,78 @@
+{
+  "check_date": "2025-09-01T22:40:58.961187",
+  "database_url": "shortline.proxy.rlwy.net:46071/railway",
+  "connection_status": "success",
+  "database_info": {
+    "current_database": "railway",
+    "current_user": "postgres",
+    "postgresql_version": "PostgreSQL 16.10 (Debian 16.10-1.pgdg13+1) on x86_64-pc-linux-gnu, compiled by gcc (Debian 14.2.0-19) 14.2.0, 64-bit"
+  },
+  "tables": [
+    {
+      "name": "companies",
+      "type": "BASE TABLE"
+    },
+    {
+      "name": "countries",
+      "type": "BASE TABLE"
+    },
+    {
+      "name": "edge",
+      "type": "BASE TABLE"
+    },
+    {
+      "name": "fuel_master",
+      "type": "BASE TABLE"
+    },
+    {
+      "name": "fueldir",
+      "type": "BASE TABLE"
+    },
+    {
+      "name": "hs_cn_mapping",
+      "type": "BASE TABLE"
+    },
+    {
+      "name": "install",
+      "type": "BASE TABLE"
+    },
+    {
+      "name": "matdir",
+      "type": "BASE TABLE"
+    },
+    {
+      "name": "material_master",
+      "type": "BASE TABLE"
+    },
+    {
+      "name": "process",
+      "type": "BASE TABLE"
+    },
+    {
+      "name": "process_attrdir_emission",
+      "type": "BASE TABLE"
+    },
+    {
+      "name": "process_chain",
+      "type": "BASE TABLE"
+    },
+    {
+      "name": "process_chain_link",
+      "type": "BASE TABLE"
+    },
+    {
+      "name": "product",
+      "type": "BASE TABLE"
+    },
+    {
+      "name": "product_process",
+      "type": "BASE TABLE"
+    },
+    {
+      "name": "users",
+      "type": "BASE TABLE"
+    }
+  ],
+  "process_chain_link_exists": true,
+  "edge_exists": true
+}

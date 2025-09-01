@@ -42,8 +42,8 @@ async def create_edge(
             logger.error("❌ Edge 생성 결과가 None입니다")
             raise HTTPException(status_code=500, detail="Edge 생성에 실패했습니다")
         
-        logger.info(f"✅ 엣지 생성 성공: ID {result.id}")
-        return result
+        logger.info(f"✅ 엣지 생성 성공: ID {result['id']}")
+        return EdgeResponse(**result)
     except Exception as e:
         logger.error(f"❌ 엣지 생성 실패: {str(e)}")
         raise HTTPException(status_code=500, detail=f"엣지 생성 중 오류가 발생했습니다: {str(e)}")
@@ -57,7 +57,7 @@ async def get_edges():
         await edge_service.initialize()
         edges = await edge_service.get_edges()
         logger.info(f"✅ 엣지 목록 조회 성공: {len(edges)}개")
-        return edges
+        return [EdgeResponse(**edge) for edge in edges]
     except Exception as e:
         logger.error(f"❌ 엣지 목록 조회 실패: {str(e)}")
         raise HTTPException(status_code=500, detail=f"엣지 목록 조회 중 오류가 발생했습니다: {str(e)}")
@@ -76,7 +76,7 @@ async def get_edge(
             raise HTTPException(status_code=404, detail="엣지를 찾을 수 없습니다")
         
         logger.info(f"✅ 엣지 조회 성공: ID {edge_id}")
-        return edge
+        return EdgeResponse(**edge)
     except HTTPException:
         raise
     except Exception as e:
@@ -98,7 +98,7 @@ async def update_edge(
             raise HTTPException(status_code=404, detail="엣지를 찾을 수 없습니다")
         
         logger.info(f"✅ 엣지 수정 성공: ID {edge_id}")
-        return result
+        return EdgeResponse(**result)
     except HTTPException:
         raise
     except Exception as e:

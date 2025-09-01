@@ -264,7 +264,12 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
       // 노드 ID에서 숫자 부분만 추출 (예: "product-123-abc" → 123)
       const extractNodeId = (nodeId: string): number => {
         const match = nodeId.match(/(?:product|process|group)-(\d+)/);
-        const extractedId = match ? parseInt(match[1]) : 0;
+        if (!match) {
+          console.error('❌ 노드 ID 형식이 올바르지 않음:', nodeId);
+          return 0;
+        }
+        
+        const extractedId = parseInt(match[1]);
         
         // 🔴 추가: int32 범위 검증
         if (extractedId > 2147483647 || extractedId < -2147483648) {
@@ -280,6 +285,8 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
         if (nodeId.startsWith('product-')) return 'product';
         if (nodeId.startsWith('process-')) return 'process';
         if (nodeId.startsWith('group-')) return 'group';
+        
+        console.error('❌ 알 수 없는 노드 타입:', nodeId);
         return 'unknown';
       };
       
@@ -297,9 +304,30 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
         targetNodeType
       });
       
-      if (sourceId === 0 || targetId === 0) {
-        console.error('유효하지 않은 노드 ID:', { source: params.source, target: params.target });
+      // 🔴 추가: 노드 타입 검증
+      if (sourceNodeType === 'unknown' || targetNodeType === 'unknown') {
+        console.error('❌ 유효하지 않은 노드 타입:', { sourceNodeType, targetNodeType });
         setEdges(prev => prev.filter(edge => edge.id !== tempEdgeId));
+        
+        // 🔴 추가: 사용자에게 오류 알림
+        alert('연결할 수 없는 노드 타입입니다. 노드를 다시 선택해주세요.');
+        return;
+      }
+      
+      if (sourceId === 0 || targetId === 0) {
+        console.error('❌ 유효하지 않은 노드 ID:', { source: params.source, target: params.target });
+        setEdges(prev => prev.filter(edge => edge.id !== tempEdgeId));
+        
+        // 🔴 추가: 사용자에게 오류 알림
+        alert('연결할 수 없는 노드입니다. 노드를 다시 선택해주세요.');
+        return;
+      }
+      
+      // 🔴 추가: Edge 생성 전 최종 검증
+      if (sourceId === targetId) {
+        console.error('❌ 자기 자신과는 연결할 수 없습니다.');
+        setEdges(prev => prev.filter(edge => edge.id !== tempEdgeId));
+        alert('자기 자신과는 연결할 수 없습니다.');
         return;
       }
       
@@ -356,16 +384,25 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
         setEdges(prev => prev.filter(edge => edge.id !== tempEdgeId));
       }
       
-      // 🔴 추가: 사용자에게 에러 알림 (Toast 등으로 표시 가능)
+      // 🔴 추가: 사용자에게 에러 알림
+      let errorMessage = 'Edge 생성에 실패했습니다.';
+      
       if (error.response?.status === 500) {
         console.error('🔴 서버 내부 오류 - Edge 생성 실패');
+        errorMessage = '서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
       } else if (error.response?.status === 400) {
         console.error('🔴 잘못된 요청 - Edge 데이터 검증 실패');
+        errorMessage = '잘못된 연결 정보입니다. 노드를 다시 선택해주세요.';
       } else if (error.code === 'NETWORK_ERROR') {
         console.error('🔴 네트워크 오류 - 서버 연결 실패');
+        errorMessage = '네트워크 연결을 확인해주세요.';
       } else {
         console.error('🔴 알 수 없는 오류:', error);
+        errorMessage = '알 수 없는 오류가 발생했습니다.';
       }
+      
+      // 🔴 추가: 사용자에게 에러 메시지 표시
+      alert(errorMessage);
     }
   }, [setEdges, edges]);
 

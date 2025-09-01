@@ -1,0 +1,50 @@
+{
+  "check_date": "2025-09-01T22:43:38.257592",
+  "table": "process_chain_link",
+  "columns": [
+    {
+      "name": "id",
+      "type": "integer",
+      "nullable": "NO"
+    },
+    {
+      "name": "chain_id",
+      "type": "integer",
+      "nullable": "NO"
+    },
+    {
+      "name": "process_id",
+      "type": "integer",
+      "nullable": "NO"
+    },
+    {
+      "name": "sequence_order",
+      "type": "integer",
+      "nullable": "NO"
+    },
+    {
+      "name": "is_continue_edge",
+      "type": "boolean",
+      "nullable": "NO"
+    },
+    {
+      "name": "created_at",
+      "type": "timestamp without time zone",
+      "nullable": "YES"
+    },
+    {
+      "name": "updated_at",
+      "type": "timestamp without time zone",
+      "nullable": "YES"
+    }
+  ],
+  "is_continue_edge_exists": true,
+  "total_records": 2,
+  "sample_data": [
+    {
+      "id": 1,
+      "chain_id": 1,
+      "process_id": 156,
+      "sequence_order": 1,
+      "is_continue_edge": true,
+      "created_at": 
