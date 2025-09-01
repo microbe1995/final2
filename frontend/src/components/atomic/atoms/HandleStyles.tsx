@@ -36,31 +36,35 @@ const targetStyle: React.CSSProperties = {
  * - Bottom: source (연결 시 자동으로 target으로 변환 가능)
  */
 export const renderFourDirectionHandles = (isConnectable = true, nodeId?: string) => {
-  const handlePrefix = nodeId ? `${nodeId}-` : '';
+  // 🔴 수정: 노드 ID가 반드시 필요하도록 강제
+  if (!nodeId) {
+    console.warn('⚠️ renderFourDirectionHandles: nodeId가 제공되지 않았습니다.');
+    return null;
+  }
   
   const handles = [
     {
       position: Position.Left,
       type: 'source' as HandleType,
-      id: `${handlePrefix}left`,
+      id: `${nodeId}-left`,
       style: sourceStyle,
     },
     {
       position: Position.Right,
       type: 'source' as HandleType,
-      id: `${handlePrefix}right`,
+      id: `${nodeId}-right`,
       style: sourceStyle,
     },
     {
       position: Position.Top,
       type: 'source' as HandleType,
-      id: `${handlePrefix}top`,
+      id: `${nodeId}-top`,
       style: sourceStyle,
     },
     {
       position: Position.Bottom,
       type: 'source' as HandleType,
-      id: `${handlePrefix}bottom`,
+      id: `${nodeId}-bottom`,
       style: sourceStyle,
     },
   ];

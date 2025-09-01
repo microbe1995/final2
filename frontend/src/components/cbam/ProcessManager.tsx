@@ -182,10 +182,36 @@ function ProcessManagerInner() {
     await handleEdgeCreate(params, updateProcessChainsAfterEdge);
   }, [handleEdgeCreate, updateProcessChainsAfterEdge]);
 
-  // 🔴 추가: 커스텀 연결 검증 로직
+  // 🔴 추가: 개선된 커스텀 연결 검증 로직
   const isValidConnection = useCallback((connection: Connection) => {
+    console.log('🔍 연결 검증 시작:', connection);
+    
     // 같은 노드 간 연결 방지
     if (connection.source === connection.target) {
+      console.log('❌ 같은 노드 간 연결 시도:', connection.source);
+      return false;
+    }
+    
+    // 핸들 ID 검증
+    if (!connection.sourceHandle || !connection.targetHandle) {
+      console.log('❌ 핸들 ID 누락:', { sourceHandle: connection.sourceHandle, targetHandle: connection.targetHandle });
+      return false;
+    }
+    
+    // 핸들 ID가 노드 ID를 포함하는지 확인
+    if (!connection.sourceHandle.includes(connection.source)) {
+      console.log('❌ sourceHandle ID 불일치:', { 
+        source: connection.source, 
+        sourceHandle: connection.sourceHandle 
+      });
+      return false;
+    }
+    
+    if (!connection.targetHandle.includes(connection.target)) {
+      console.log('❌ targetHandle ID 불일치:', { 
+        target: connection.target, 
+        targetHandle: connection.targetHandle 
+      });
       return false;
     }
     
@@ -196,9 +222,11 @@ function ProcessManagerInner() {
     );
     
     if (existingEdge) {
+      console.log('❌ 이미 존재하는 연결:', existingEdge);
       return false;
     }
     
+    console.log('✅ 연결 검증 통과');
     return true;
   }, [edges]);
 

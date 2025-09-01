@@ -174,7 +174,7 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
         return;
       }
       
-        // 🔴 수정: 단순화된 핸들 자동 변환 로직
+        // 🔴 수정: 개선된 핸들 자동 변환 로직
   let finalParams = { ...params };
   
   // sourceHandle이 없거나 targetHandle이 없는 경우 자동으로 생성
@@ -199,6 +199,23 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
         finalParams.targetHandle = targetHandleId;
         console.log('🔧 targetHandle 자동 설정:', targetHandleId);
       }
+    }
+  }
+  
+  // 🔴 추가: 핸들 ID 검증 및 수정
+  if (finalParams.sourceHandle && finalParams.targetHandle) {
+    // sourceHandle이 노드 ID를 포함하지 않는 경우 수정
+    if (!finalParams.sourceHandle.includes(params.source)) {
+      const position = finalParams.sourceHandle.split('-').pop(); // 'top', 'bottom', 'left', 'right'
+      finalParams.sourceHandle = `${params.source}-${position}`;
+      console.log('🔧 sourceHandle ID 수정:', finalParams.sourceHandle);
+    }
+    
+    // targetHandle이 노드 ID를 포함하지 않는 경우 수정
+    if (!finalParams.targetHandle.includes(params.target)) {
+      const position = finalParams.targetHandle.split('-').pop(); // 'top', 'bottom', 'left', 'right'
+      finalParams.targetHandle = `${params.target}-${position}`;
+      console.log('🔧 targetHandle ID 수정:', finalParams.targetHandle);
     }
   }
   
