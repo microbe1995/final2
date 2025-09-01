@@ -8,8 +8,6 @@ interface CustomEdgeProps {
   sourceY: number;
   targetX: number;
   targetY: number;
-  sourceHandle?: string;
-  targetHandle?: string;
   selected?: boolean;
   data?: any;
 }
@@ -20,13 +18,11 @@ const CustomEdge: React.FC<CustomEdgeProps> = ({
   sourceY, 
   targetX, 
   targetY, 
-  sourceHandle,
-  targetHandle,
   selected,
   data
 }) => {
   const [edgePath] = React.useMemo(() => {
-    // 4방향 연결을 위한 더 부드러운 곡선 생성
+    // React Flow 공식 문서에 따른 부드러운 곡선 생성
     const centerX = (sourceX + targetX) / 2;
     const centerY = (sourceY + targetY) / 2;
     
@@ -42,20 +38,18 @@ const CustomEdge: React.FC<CustomEdgeProps> = ({
   const isTemporary = data?.isTemporary || false;
 
   return (
-    <>
-      <path 
-        id={id} 
-        className="react-flow__edge-path" 
-        d={edgePath} 
-        stroke={selected ? '#3b82f6' : isTemporary ? '#6b7280' : '#3b82f6'} 
-        strokeWidth={selected ? 3 : isTemporary ? 2 : 2} 
-        strokeDasharray={isTemporary ? '5,5' : 'none'}
-        fill="none" 
-        style={{
-          transition: 'stroke 0.2s ease-in-out, stroke-width 0.2s ease-in-out'
-        }}
-      />
-    </>
+    <path 
+      id={id} 
+      className="react-flow__edge-path" 
+      d={edgePath} 
+      stroke={selected ? '#3b82f6' : isTemporary ? '#6b7280' : '#3b82f6'} 
+      strokeWidth={selected ? 3 : isTemporary ? 2 : 2} 
+      strokeDasharray={isTemporary ? '5,5' : 'none'}
+      fill="none" 
+      style={{
+        transition: 'stroke 0.2s ease-in-out, stroke-width 0.2s ease-in-out'
+      }}
+    />
   );
 };
 
