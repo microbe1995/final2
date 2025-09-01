@@ -61,8 +61,9 @@ export const renderFourDirectionHandles = (isConnectable = true, nodeId?: string
         if (connection.source === connection.target) {
           return false;
         }
-        // 같은 핸들 간 연결 방지
-        if (connection.sourceHandle === connection.targetHandle) {
+        // 같은 핸들 간 연결 방지 (핸들이 있는 경우에만)
+        if (connection.sourceHandle && connection.targetHandle && 
+            connection.sourceHandle === connection.targetHandle) {
           return false;
         }
         return true;
