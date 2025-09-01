@@ -162,14 +162,25 @@ export default function InputManager({ selectedProcess, onClose }: InputManagerP
     
     if (name.trim().length >= 1) {
       try {
+         console.log('🔍 Material Master 검색 시작:', name);
+        console.log('🔍 API 엔드포인트:', apiEndpoints.materialMaster.search(name));
+        
         // Material Master에서 원료명 검색
         const response = await axiosClient.get(apiEndpoints.materialMaster.search(name));
+        console.log('✅ Material Master 검색 응답:', response.data);
+        
         if (response.data && Array.isArray(response.data)) {
           setMaterialSuggestions(response.data);
           setShowMaterialSuggestions(true);
+          console.log('✅ Material Master 검색 결과:', response.data.length, '개');
+        } else {
+          console.warn('⚠️ Material Master 검색 결과가 배열이 아님:', response.data);
+          setMaterialSuggestions([]);
+          setShowMaterialSuggestions(false);
         }
-      } catch (err) {
-        console.error('원료 검색 실패:', err);
+      } catch (err: any) {
+        console.error('❌ 원료 검색 실패:', err);
+        console.error('❌ 에러 상세:', err.response?.data || err.message);
         setMaterialSuggestions([]);
         setShowMaterialSuggestions(false);
       }
@@ -183,16 +194,24 @@ export default function InputManager({ selectedProcess, onClose }: InputManagerP
     if (matdirForm.name && matdirForm.factor === 0) {
       setMaterialAutoFactorStatus('🔍 배출계수 조회 중...');
       try {
+        console.log('🔍 Material Master 배출계수 조회 시작:', matdirForm.name);
+        console.log('🔍 API 엔드포인트:', apiEndpoints.materialMaster.getFactor(matdirForm.name));
+        
         const response = await axiosClient.get(apiEndpoints.materialMaster.getFactor(matdirForm.name));
+        console.log('✅ Material Master 배출계수 조회 응답:', response.data);
+        
         if (response.data && response.data.found && response.data.mat_factor !== null) {
           const factor = response.data.mat_factor;
           setMatdirForm(prev => ({ ...prev, factor }));
           setMaterialAutoFactorStatus(`✅ 자동 조회: ${matdirForm.name} (배출계수: ${factor})`);
+          console.log('✅ 배출계수 자동 설정 성공:', factor);
         } else {
           setMaterialAutoFactorStatus(`⚠️ 배출계수를 찾을 수 없음: ${matdirForm.name}`);
+          console.warn('⚠️ 배출계수를 찾을 수 없음:', response.data);
         }
-      } catch (err) {
-        console.error('배출계수 조회 실패:', err);
+      } catch (err: any) {
+        console.error('❌ 배출계수 조회 실패:', err);
+        console.error('❌ 에러 상세:', err.response?.data || err.message);
         setMaterialAutoFactorStatus(`❌ 배출계수 조회 실패: ${matdirForm.name}`);
       }
     }

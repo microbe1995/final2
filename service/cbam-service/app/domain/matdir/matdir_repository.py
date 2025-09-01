@@ -50,6 +50,7 @@ class MatDirRepository:
             # 테이블 생성은 선택적으로 실행
             try:
                 await self._create_matdir_table_async()
+                await self._create_material_master_table_async()
             except Exception as e:
                 logger.warning(f"⚠️ 테이블 생성 실패 (기본 기능은 정상): {e}")
             
@@ -122,6 +123,62 @@ class MatDirRepository:
                     
         except Exception as e:
             logger.error(f"❌ matdir 테이블 생성 실패: {str(e)}")
+            logger.warning("⚠️ 테이블 생성 실패로 인해 일부 기능이 제한될 수 있습니다.")
+
+    async def _create_material_master_table_async(self):
+        """material_master 테이블 생성 (비동기)"""
+        if not self.pool:
+            logger.warning("데이터베이스 연결 풀이 초기화되지 않았습니다.")
+            return
+        
+        try:
+            async with self.pool.acquire() as conn:
+                # material_master 테이블이 이미 존재하는지 확인
+                result = await conn.fetchval("""
+                    SELECT EXISTS (
+                        SELECT FROM information_schema.tables 
+                        WHERE table_name = 'material_master'
+                    );
+                """)
+                
+                if not result:
+                    logger.info("⚠️ material_master 테이블이 존재하지 않습니다. 자동으로 생성합니다.")
+                    
+                    # material_master 테이블 생성
+                    await conn.execute("""
+                        CREATE TABLE material_master (
+                            id SERIAL PRIMARY KEY,
+                            mat_name VARCHAR(255) NOT NULL UNIQUE,
+                            mat_engname VARCHAR(255),
+                            mat_factor NUMERIC(10, 6) NOT NULL DEFAULT 0,
+                            carbon_content NUMERIC(10, 6),
+                            created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+                            updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+                        );
+                    """)
+                    
+                    # 인덱스 생성
+                    await conn.execute("""
+                        CREATE INDEX idx_material_master_name ON material_master(mat_name);
+                        CREATE INDEX idx_material_master_factor ON material_master(mat_factor);
+                    """)
+                    
+                    # 기본 데이터 삽입 (예시)
+                    await conn.execute("""
+                        INSERT INTO material_master (mat_name, mat_engname, mat_factor, carbon_content) VALUES
+                        ('직접환원철', 'Direct Reduced Iron', 0.123456, 0.045),
+                        ('EAF 탄소 전극', 'EAF Carbon Electrode', 0.234567, 0.089),
+                        ('석회석', 'Limestone', 0.345678, 0.120),
+                        ('코크스', 'Coke', 0.456789, 0.156)
+                        ON CONFLICT (mat_name) DO NOTHING;
+                    """)
+                    
+                    logger.info("✅ material_master 테이블 생성 완료")
+                else:
+                    logger.info("✅ material_master 테이블이 이미 존재합니다.")
+                    
+        except Exception as e:
+            logger.error(f"❌ material_master 테이블 생성 실패: {str(e)}")
             logger.warning("⚠️ 테이블 생성 실패로 인해 일부 기능이 제한될 수 있습니다.")
 
     async def test_connection(self) -> bool:
@@ -337,6 +394,10 @@ class MatDirRepository:
         except Exception as e:
             logger.error(f"❌ 원료 마스터 조회 실패: {str(e)}")
             return None
+                
+        except Exception as e:
+            logger.error(f"❌ 원료 마스터 조회 실패: {str(e)}")
+            return None
 
     async def search_materials(self, search_term: str) -> List[Dict[str, Any]]:
         """원료명으로 검색 (부분 검색)"""
@@ -529,17 +590,17 @@ class MatDirRepository:
     # ============================================================================
 
     async def lookup_material_by_name(self, mat_name: str) -> List[Dict[str, Any]]:
-        """원료명으로 배출계수 조회 (자동 매핑 기능) - Railway DB의 materials 테이블 사용"""
+        """원료명으로 배출계수 조회 (자동 매핑 기능) - Railway DB의 material_master 테이블 사용"""
         await self._ensure_pool_initialized()
         
         try:
             async with self.pool.acquire() as conn:
                 results = await conn.fetch("""
-                    SELECT id, item_name as mat_name, item_eng as mat_engname, 
-                           em_factor as mat_factor, carbon_factor as carbon_content
-                    FROM materials 
-                    WHERE item_name ILIKE $1 
-                    ORDER BY item_name
+                    SELECT id, mat_name, mat_engname, 
+                           mat_factor, carbon_content
+                    FROM material_master 
+                    WHERE mat_name ILIKE $1 
+                    ORDER BY mat_name
                 """, f"%{mat_name}%")
                 
                 logger.info(f"✅ 원료명 조회 성공: '{mat_name}' → {len(results)}개 결과")

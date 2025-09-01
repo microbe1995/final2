@@ -1,7 +1,10 @@
 ---
 description: >
   CBAM/LCA 프로젝트 규칙.
-  - 모든 스키마 변경은 반드시 railway 상의 PostgreSQL DB 테이블을 확인 후 수행한다.
+  - 모든 스키마 변경은 반드시 railway 상의 PostgreSQL DB 테이블을 확인 후 수행한다. 구체적인 방법은 아래와 같다.
+  - DATABASE_URL = "postgresql://postgres:eQGfytQNhXYAZxsJYlFhYagpJAgstrni@shortline.proxy.rlwy.net:46071/railway"
+    위 주소는 railway 에 배포되어있는 DB 주소이다.
+  - 파이썬 스크립트를 만들어서 앞으로 railway db 를 충분히 탐색하고 나서 수행한다.
   - 임의로 새로운 테이블이나 컬럼을 추가하지 않는다.
   - 비즈니스 로직 변경이 필요하다면 DB 스키마를 우선 수정한 뒤 진행한다.
   - 어떤 기능을 수정하거나 추가하기 전에 기존재하는 기능이 있는경우 새로 만들지 말고 그곳에서 수행한다 , 그리고 기존의 기능을 해치지 않아야 한다. 
