@@ -62,27 +62,34 @@ export default function FuelDirManager({ selectedProcess, onClose }: FuelDirMana
     }
   }, [searchFuels]);
 
-  // 연료 선택 시 자동으로 배출계수 설정
+  // 연료 선택 시 배출계수만 자동 매핑
   const handleFuelSelect = useCallback((fuel: FuelMaster) => {
-    setFuelDirForm(prev => ({
-      ...prev,
-      fuel_name: fuel.fuel_name,
-      fuel_factor: fuel.fuel_factor
-    }));
+    // 연료명은 자동으로 설정하지 않음 (사용자가 자유롭게 입력할 수 있도록)
     setFuelSuggestions([]);
     setShowSuggestions(false);
-    setAutoFactorStatus(`✅ ${fuel.fuel_name} 배출계수 자동 설정: ${fuel.fuel_factor}`);
+    
+    // 배출계수만 자동 매핑
+    setFuelDirForm(prev => ({ ...prev, fuel_factor: fuel.fuel_factor || 0 }));
+    setAutoFactorStatus(`✅ 자동 설정: ${fuel.fuel_name} (배출계수: ${fuel.fuel_factor || 0})`);
   }, []);
 
-  // 연료명 입력 완료 시 자동으로 배출계수 조회
+  // 연료명 입력 완료 시 배출계수 자동 조회
   const handleFuelNameBlur = useCallback(async () => {
-    if (fuelDirForm.fuel_name.trim() && fuelDirForm.fuel_factor === 0) {
-      const factorResponse = await getFuelFactor(fuelDirForm.fuel_name);
-      if (factorResponse && factorResponse.found) {
-        setFuelDirForm(prev => ({ ...prev, fuel_factor: factorResponse.fuel_factor || 0 }));
-        setAutoFactorStatus(`✅ ${fuelDirForm.fuel_name} 배출계수 자동 설정: ${factorResponse.fuel_factor}`);
-      } else {
-        setAutoFactorStatus(`⚠️ ${fuelDirForm.fuel_name}의 배출계수를 찾을 수 없습니다. 수동으로 입력해주세요.`);
+    if (fuelDirForm.fuel_name && fuelDirForm.fuel_factor === 0) {
+      setAutoFactorStatus('🔍 배출계수 조회 중...');
+      try {
+        const factorResponse = await getFuelFactor(fuelDirForm.fuel_name);
+        
+        if (factorResponse && factorResponse.found && factorResponse.fuel_factor !== null) {
+          const factor = factorResponse.fuel_factor;
+          setFuelDirForm(prev => ({ ...prev, fuel_factor: factor }));
+          setAutoFactorStatus(`✅ 자동 조회: ${fuelDirForm.fuel_name} (배출계수: ${factor})`);
+        } else {
+          setAutoFactorStatus(`⚠️ 배출계수를 찾을 수 없음: ${fuelDirForm.fuel_name}`);
+        }
+      } catch (err) {
+        console.error('배출계수 조회 실패:', err);
+        setAutoFactorStatus(`❌ 배출계수 조회 실패: ${fuelDirForm.fuel_name}`);
       }
     }
   }, [fuelDirForm.fuel_name, fuelDirForm.fuel_factor, getFuelFactor]);
@@ -230,7 +237,10 @@ export default function FuelDirManager({ selectedProcess, onClose }: FuelDirMana
             <div className="space-y-4">
               {/* 투입된 연료명 */}
               <div className="relative">
-                <label className="block text-sm font-medium text-gray-300 mb-2">투입된 연료명</label>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  투입된 연료명
+                  <span className="text-xs text-gray-400 ml-2">(자유 입력 가능)</span>
+                </label>
                 <input
                   type="text"
                   value={fuelDirForm.fuel_name}
@@ -240,48 +250,42 @@ export default function FuelDirManager({ selectedProcess, onClose }: FuelDirMana
                   placeholder="예: 원유, 휘발유, 등유"
                 />
                 
+                {/* 자동 배출계수 상태 표시 */}
+                {autoFactorStatus && (
+                  <div className={`mt-1 text-xs ${
+                    autoFactorStatus.includes('✅') ? 'text-green-400' : 
+                    autoFactorStatus.includes('⚠️') ? 'text-yellow-400' : 
+                    'text-blue-400'
+                  }`}>
+                    {autoFactorStatus}
+                  </div>
+                )}
+
                 {/* 연료 제안 드롭다운 */}
                 {showSuggestions && fuelSuggestions.length > 0 && (
-                  <div className="absolute z-10 w-full mt-1 bg-gray-600 border border-gray-500 rounded-md shadow-lg max-h-48 overflow-y-auto">
-                    {fuelSuggestions.map((fuel) => (
-                      <div
+                  <div className="absolute z-10 w-full mt-1 bg-gray-700 border border-gray-600 rounded-md shadow-lg max-h-40 overflow-y-auto">
+                    {fuelSuggestions.map((fuel, index) => (
+                      <button
                         key={fuel.id}
                         onClick={() => handleFuelSelect(fuel)}
-                        className="px-3 py-2 hover:bg-gray-500 cursor-pointer text-white text-sm"
+                        className="w-full px-3 py-2 text-left text-white hover:bg-gray-600 focus:bg-gray-600 focus:outline-none"
                       >
                         <div className="font-medium">{fuel.fuel_name}</div>
-                        <div className="text-gray-300 text-xs">{fuel.fuel_engname}</div>
-                      </div>
+                        <div className="text-xs text-gray-400">배출계수 자동 설정</div>
+                      </button>
                     ))}
                   </div>
                 )}
               </div>
 
-              {/* 자동 배출계수 상태 표시 */}
-              {autoFactorStatus && (
-                <div className={`text-sm p-2 rounded-md ${
-                  autoFactorStatus.includes('✅') 
-                    ? 'bg-green-500/20 text-green-300 border border-green-500/30' 
-                    : 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30'
-                }`}>
-                  {autoFactorStatus}
-                </div>
-              )}
-
-              {/* 배출계수 */}
+              {/* 배출계수 (읽기 전용) */}
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
-                  배출계수 {autoFactorStatus.includes('✅') && '(자동 설정됨)'}
+                  배출계수 {fuelDirForm.fuel_factor > 0 && <span className="text-green-400">(자동 설정됨)</span>}
                 </label>
-                <input
-                  type="number"
-                  step="0.000001"
-                  min="0"
-                  value={fuelDirForm.fuel_factor}
-                  onChange={(e) => setFuelDirForm(prev => ({ ...prev, fuel_factor: parseFloat(e.target.value) || 0 }))}
-                  className="w-full px-3 py-2 bg-gray-600 border border-gray-500 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="0.000000"
-                />
+                <div className="w-full px-3 py-2 bg-gray-600 border border-gray-500 rounded-md text-white">
+                  {fuelDirForm.fuel_factor > 0 ? fuelDirForm.fuel_factor : '연료를 선택해주세요'}
+                </div>
               </div>
 
               {/* 투입된 연료량 */}
@@ -293,7 +297,7 @@ export default function FuelDirManager({ selectedProcess, onClose }: FuelDirMana
                   min="0"
                   value={fuelDirForm.fuel_amount}
                   onChange={(e) => setFuelDirForm(prev => ({ ...prev, fuel_amount: parseFloat(e.target.value) || 0 }))}
-                  className="w-full px-3 py-2 bg-yellow-500/20 border border-yellow-500/30 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                  className="w-full px-3 py-2 bg-gray-600 border border-gray-500 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="0.000000"
                 />
               </div>
@@ -307,59 +311,32 @@ export default function FuelDirManager({ selectedProcess, onClose }: FuelDirMana
                   min="0"
                   value={fuelDirForm.fuel_oxyfactor}
                   onChange={(e) => setFuelDirForm(prev => ({ ...prev, fuel_oxyfactor: parseFloat(e.target.value) || 1.0000 }))}
-                  className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 bg-gray-600 border border-gray-500 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="1.0000"
                 />
               </div>
 
-              {/* 버튼들 */}
-              <div className="flex gap-2">
-                <button
-                  onClick={calculateFuelDirEmission}
-                  disabled={isCalculatingFuelDir}
-                  className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-md transition-colors disabled:opacity-50"
-                >
-                  {isCalculatingFuelDir ? '계산 중...' : '확인'}
-                </button>
-                <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md transition-colors">
-                  수정
-                </button>
-              </div>
-            </div>
-
-            {/* 직접 배출량 표시 */}
-            <div className="mt-6 pt-4 border-t border-gray-600">
-              <div className="flex items-center justify-between">
-                <label className="text-sm font-medium text-gray-300">직접 배출량</label>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    readOnly
-                    value={fuelDirResults.reduce((sum, result) => {
-                      const emission = typeof result.fueldir_em === 'number' ? result.fueldir_em : 0;
-                      return sum + emission;
-                    }, 0).toFixed(6)}
-                    className="w-32 px-3 py-2 bg-gray-600 border border-gray-500 rounded-md text-white text-right"
-                  />
-                  <button
-                    onClick={saveFuelDirData}
-                    disabled={fuelDirResults.length === 0}
-                    className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-md transition-colors disabled:opacity-50"
-                  >
-                    저장
-                  </button>
-                </div>
-              </div>
+              {/* 계산 버튼 */}
+              <button
+                onClick={calculateFuelDirEmission}
+                disabled={isCalculatingFuelDir}
+                className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white font-medium py-2 px-4 rounded-md transition-colors"
+              >
+                {isCalculatingFuelDir ? '계산 중...' : '🧮 연료직접배출량 계산'}
+              </button>
             </div>
           </div>
 
-          {/* 오른쪽: 계산 결과 */}
+          {/* 오른쪽: 결과 목록 */}
           <div className="bg-gray-700 rounded-lg p-4">
-            <h4 className="text-lg font-medium text-white mb-4">계산 결과</h4>
-            
+            <div className="flex justify-between items-center mb-4">
+              <h4 className="text-lg font-medium text-white">계산 결과</h4>
+              <span className="text-sm text-gray-400">{fuelDirResults.length}개</span>
+            </div>
+
             {fuelDirResults.length === 0 ? (
-              <div className="text-center py-8 text-gray-400">
-                <p>연료 정보를 입력하고 &quot;확인&quot; 버튼을 눌러 계산을 시작하세요.</p>
+              <div className="text-center text-gray-400 py-8">
+                계산된 결과가 없습니다.
               </div>
             ) : (
               <div className="space-y-3 max-h-96 overflow-y-auto">
@@ -378,8 +355,8 @@ export default function FuelDirManager({ selectedProcess, onClose }: FuelDirMana
                       <div>배출계수: {result.fuel_factor}</div>
                       <div>연료량: {result.fuel_amount}</div>
                       <div>산화계수: {result.fuel_oxyfactor}</div>
-                      <div className="text-green-400 font-medium">
-                        연료직접배출량: {typeof result.fueldir_em === 'number' ? result.fueldir_em.toFixed(6) : '0.000000'} tCO2e
+                      <div className="font-medium text-green-400">
+                        연료직접배출량: {result.fueldir_em}
                       </div>
                       <div className="text-xs text-gray-400 mt-2">
                         {result.calculation_formula}
@@ -388,6 +365,15 @@ export default function FuelDirManager({ selectedProcess, onClose }: FuelDirMana
                   </div>
                 ))}
               </div>
+            )}
+
+            {fuelDirResults.length > 0 && (
+              <button
+                onClick={saveFuelDirData}
+                className="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md transition-colors mt-4"
+              >
+                💾 연료직접배출량 데이터 저장
+              </button>
             )}
           </div>
         </div>
