@@ -333,7 +333,7 @@ export default function FuelDirManager({ selectedProcess, onClose }: FuelDirMana
     try {
       const isMatDir = editingResult.id.toString().startsWith('matdir_');
       const endpoint = isMatDir ? apiEndpoints.cbam.matdir.update : apiEndpoints.cbam.fueldir.update;
-      const actualId = isMatDir ? editingResult.id.toString().replace('matdir_', '') : editingResult.id;
+      const actualId = isMatDir ? parseInt(editingResult.id.toString().replace('matdir_', '')) : editingResult.id;
       
       if (isMatDir) {
         // matdir의 경우 필드명 변경
