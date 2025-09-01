@@ -34,8 +34,7 @@ from app.domain.fueldir.fueldir_controller import router as fueldir_router
 from app.domain.processchain.processchain_controller import router as processchain_router
 from app.domain.productprocess.productprocess_controller import router as product_process_router
 
-# 🔴 전역 get_async_db 함수를 다른 모듈에서 사용할 수 있도록 export
-__all__ = ["get_async_db"]
+# get_async_db 함수는 database_base.py에서 관리
 
 # ============================================================================
 # 🔧 설정 및 초기화
@@ -59,12 +58,7 @@ DEBUG_MODE = os.getenv("DEBUG_MODE", "false").lower() == "true"
 async_engine = None
 async_session_factory = None
 
-# 전역 세션 생성 함수 (다른 모듈에서 사용)
-async def get_async_db() -> AsyncSession:
-    """FastAPI 의존성 주입용 비동기 데이터베이스 세션 생성"""
-    if async_session_factory is None:
-        raise RuntimeError("데이터베이스가 초기화되지 않았습니다")
-    return async_session_factory()
+# get_async_db 함수는 database_base.py에서 관리 (순환 참조 방지)
 
 # ============================================================================
 # 🔄 애플리케이션 생명주기 관리

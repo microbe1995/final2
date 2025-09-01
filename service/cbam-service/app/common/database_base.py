@@ -212,7 +212,11 @@ def create_async_database_engine(database_url: Optional[str] = None):
             echo=False
         )
 
-# get_async_db 함수는 main.py에서 관리 (순환 참조 방지)
+def get_async_db() -> AsyncSession:
+    """FastAPI 의존성 주입용 비동기 데이터베이스 세션 생성"""
+    engine = create_async_database_engine()
+    AsyncSessionLocal = async_sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    return AsyncSessionLocal()
 
 # ============================================================================
 # 🗄️ 데이터베이스 기본 엔티티
@@ -257,6 +261,7 @@ __all__ = [
     "get_database_session",
     "get_db_session",
     "get_db",
+    "get_async_db",
     "create_database_engine",
     "create_async_database_engine",
     "DatabaseBase",

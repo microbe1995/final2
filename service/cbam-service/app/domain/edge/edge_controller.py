@@ -11,7 +11,7 @@ from app.domain.edge.edge_service import EdgeService
 from app.domain.edge.edge_schema import (
     EdgeCreateRequest, EdgeResponse, EdgeUpdateRequest
 )
-from app.main import get_async_db
+from app.common.database_base import get_async_db
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import Depends, status
 from typing import Dict, Any
