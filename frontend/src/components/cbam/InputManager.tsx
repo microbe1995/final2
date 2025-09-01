@@ -31,7 +31,7 @@ interface InputResult {
   updated_at?: string;
 }
 
-export default function InputManager({ selectedProcess, onClose }: InputManagerProps) {
+export default function InputManager({ selectedProcess, onClose, onDataSaved }: InputManagerProps) {
   // Fuel Master API Hook
   const { searchFuels, getFuelFactor } = useFuelMasterAPI();
 
@@ -545,7 +545,7 @@ export default function InputManager({ selectedProcess, onClose }: InputManagerP
       console.error('❌ 데이터 저장 실패:', error);
       alert(`데이터 저장에 실패했습니다: ${error.response?.data?.detail || error.message}`);
     }
-  }, [selectedProcess, inputResults, loadAllExistingData, onDataSaved]);
+  }, [selectedProcess, inputResults, loadAllExistingData]);
 
   // 날짜 포맷팅 함수
   const formatDate = (dateString?: string) => {

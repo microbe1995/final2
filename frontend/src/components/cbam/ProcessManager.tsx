@@ -336,7 +336,7 @@ function ProcessManagerInner() {
            }}
            onConnectEnd={handleConnectEnd}
            isValidConnection={(connection) => {
-             const validation = validateConnection(connection);
+             const validation = validateConnection(connection as Connection);
              return validation.valid;
            }}
          >
