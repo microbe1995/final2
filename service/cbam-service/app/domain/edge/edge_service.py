@@ -3,95 +3,150 @@
 # ============================================================================
 
 import logging
+import os
 from typing import Dict, List, Any, Optional, Tuple
 from decimal import Decimal
 from datetime import datetime, timezone
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import text, select, update
-from sqlalchemy.orm import selectinload
-
-from app.domain.edge.edge_entity import Edge
-from app.domain.process.process_entity import Process
-from app.domain.product.product_entity import Product
-from app.domain.calculation.calculation_entity import ProcessAttrdirEmission
+import asyncpg
 
 logger = logging.getLogger(__name__)
 
 class EdgeService:
-    """엣지 기반 배출량 전파 서비스"""
+    """엣지 기반 배출량 전파 서비스 (asyncpg 패턴)"""
     
-    def __init__(self, db_session: AsyncSession = None):
-        self.db_session = db_session
+    def __init__(self):
+        self.database_url = os.getenv('DATABASE_URL')
+        if not self.database_url:
+            logger.warning("DATABASE_URL 환경변수가 설정되지 않았습니다. 데이터베이스 기능이 제한됩니다.")
+            return
+        
+        self.pool = None
+        self._initialization_attempted = False
+        logger.info("✅ Edge Service 초기화 완료")
+    
+    async def initialize(self):
+        """데이터베이스 연결 풀 초기화"""
+        if self._initialization_attempted:
+            return  # 이미 초기화 시도했으면 다시 시도하지 않음
+            
+        if not self.database_url:
+            logger.warning("DATABASE_URL이 없어 데이터베이스 초기화를 건너뜁니다.")
+            self._initialization_attempted = True
+            return
+        
+        self._initialization_attempted = True
+        
+        try:
+            self.pool = await asyncpg.create_pool(
+                self.database_url,
+                min_size=1,
+                max_size=10,
+                command_timeout=30,
+                server_settings={
+                    'application_name': 'cbam-service-edge'
+                }
+            )
+            logger.info("✅ Edge Service 데이터베이스 연결 풀 초기화 완료")
+            
+        except Exception as e:
+            logger.error(f"❌ Edge Service 초기화 실패: {str(e)}")
+            logger.warning("데이터베이스 연결 실패로 인해 일부 기능이 제한됩니다.")
+            self.pool = None
+    
+    async def _ensure_pool_initialized(self):
+        """연결 풀이 초기화되었는지 확인하고, 필요시 초기화"""
+        if not self.pool and not self._initialization_attempted:
+            await self.initialize()
+        
+        if not self.pool:
+            raise Exception("데이터베이스 연결 풀이 초기화되지 않았습니다.")
     
     async def get_process_emission_data(self, process_id: int) -> Optional[Dict[str, Any]]:
         """공정의 배출량 데이터를 조회합니다."""
+        await self._ensure_pool_initialized()
         try:
-            query = select(ProcessAttrdirEmission).where(
-                ProcessAttrdirEmission.process_id == process_id
-            )
-            result = await self.db_session.execute(query)
-            emission_data = result.scalar_one_or_none()
-            
-            if emission_data:
-                return {
-                    'process_id': emission_data.process_id,
-                    'attrdir_em': float(emission_data.attrdir_em) if emission_data.attrdir_em else 0.0,
-                    'cumulative_emission': float(emission_data.cumulative_emission) if emission_data.cumulative_emission else 0.0,
-                    'total_matdir_emission': float(emission_data.total_matdir_emission) if emission_data.total_matdir_emission else 0.0,
-                    'total_fueldir_emission': float(emission_data.total_fueldir_emission) if emission_data.total_fueldir_emission else 0.0
-                }
-            return None
-            
+            async with self.pool.acquire() as conn:
+                query = """
+                    SELECT 
+                        process_id,
+                        attrdir_em,
+                        cumulative_emission,
+                        total_matdir_emission,
+                        total_fueldir_emission
+                    FROM process_attrdir_emission 
+                    WHERE process_id = $1
+                """
+                row = await conn.fetchrow(query, process_id)
+                
+                if row:
+                    return {
+                        'process_id': row['process_id'],
+                        'attrdir_em': float(row['attrdir_em']) if row['attrdir_em'] else 0.0,
+                        'cumulative_emission': float(row['cumulative_emission']) if row['cumulative_emission'] else 0.0,
+                        'total_matdir_emission': float(row['total_matdir_emission']) if row['total_matdir_emission'] else 0.0,
+                        'total_fueldir_emission': float(row['total_fueldir_emission']) if row['total_fueldir_emission'] else 0.0
+                    }
+                return None
+                
         except Exception as e:
             logger.error(f"공정 {process_id} 배출량 데이터 조회 실패: {e}")
             return None
     
     async def get_continue_edges(self, source_process_id: int) -> List[Dict[str, Any]]:
         """특정 공정에서 나가는 continue 엣지들을 조회합니다."""
+        await self._ensure_pool_initialized()
         try:
-            query = select(Edge).where(
-                Edge.source_node_type == 'process',
-                Edge.source_id == source_process_id,
-                Edge.edge_kind == 'continue'
-            )
-            result = await self.db_session.execute(query)
-            edges = result.scalars().all()
-            
-            return [
-                {
-                    'id': edge.id,
-                    'source_node_type': edge.source_node_type,
-                    'source_id': edge.source_id,
-                    'target_node_type': edge.target_node_type,
-                    'target_id': edge.target_id,
-                    'edge_kind': edge.edge_kind
-                }
-                for edge in edges
-            ]
-            
+            async with self.pool.acquire() as conn:
+                query = """
+                    SELECT 
+                        id,
+                        source_node_type,
+                        source_id,
+                        target_node_type,
+                        target_id,
+                        edge_kind
+                    FROM edge 
+                    WHERE source_node_type = 'process' 
+                    AND source_id = $1 
+                    AND edge_kind = 'continue'
+                """
+                rows = await conn.fetch(query, source_process_id)
+                
+                return [
+                    {
+                        'id': row['id'],
+                        'source_node_type': row['source_node_type'],
+                        'source_id': row['source_id'],
+                        'target_node_type': row['target_node_type'],
+                        'target_id': row['target_id'],
+                        'edge_kind': row['edge_kind']
+                    }
+                    for row in rows
+                ]
+                
         except Exception as e:
             logger.error(f"공정 {source_process_id}의 continue 엣지 조회 실패: {e}")
             return []
     
     async def update_process_cumulative_emission(self, process_id: int, cumulative_emission: float) -> bool:
         """공정의 누적 배출량을 업데이트합니다."""
+        await self._ensure_pool_initialized()
         try:
-            update_query = update(ProcessAttrdirEmission).where(
-                ProcessAttrdirEmission.process_id == process_id
-            ).values(
-                cumulative_emission=Decimal(str(cumulative_emission)),
-                updated_at=text('NOW()')
-            )
-            
-            result = await self.db_session.execute(update_query)
-            await self.db_session.commit()
-            
-            logger.info(f"공정 {process_id} 누적 배출량 업데이트: {cumulative_emission}")
-            return True
-            
+            async with self.pool.acquire() as conn:
+                query = """
+                    UPDATE process_attrdir_emission 
+                    SET 
+                        cumulative_emission = $2,
+                        updated_at = NOW()
+                    WHERE process_id = $1
+                """
+                await conn.execute(query, process_id, cumulative_emission)
+                
+                logger.info(f"공정 {process_id} 누적 배출량 업데이트: {cumulative_emission}")
+                return True
+                
         except Exception as e:
             logger.error(f"공정 {process_id} 누적 배출량 업데이트 실패: {e}")
-            await self.db_session.rollback()
             return False
     
     async def propagate_emissions_continue(self, source_process_id: int, target_process_id: int) -> bool:

@@ -11,8 +11,6 @@ from app.domain.edge.edge_service import EdgeService
 from app.domain.edge.edge_schema import (
     EdgeCreateRequest, EdgeResponse, EdgeUpdateRequest
 )
-from app.common.database_base import get_async_db
-from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import Depends, status
 from typing import Dict, Any
 from datetime import datetime
@@ -30,13 +28,13 @@ router = APIRouter(tags=["Edge"])
 
 @router.post("/", response_model=EdgeResponse, status_code=201)
 async def create_edge(
-    edge_data: EdgeCreateRequest,
-    db: AsyncSession = Depends(get_async_db)
+    edge_data: EdgeCreateRequest
 ):
     """엣지 생성"""
     try:
         logger.info(f"🔗 엣지 생성 요청: {edge_data.source_id} -> {edge_data.target_id} ({edge_data.edge_kind})")
-        edge_service = EdgeService(db)
+        edge_service = EdgeService()
+        await edge_service.initialize()
         result = await edge_service.create_edge(edge_data)
         
         # result가 None인지 확인
@@ -51,11 +49,12 @@ async def create_edge(
         raise HTTPException(status_code=500, detail=f"엣지 생성 중 오류가 발생했습니다: {str(e)}")
 
 @router.get("/", response_model=List[EdgeResponse])
-async def get_edges(db: AsyncSession = Depends(get_async_db)):
+async def get_edges():
     """모든 엣지 목록 조회"""
     try:
         logger.info("📋 엣지 목록 조회 요청")
-        edge_service = EdgeService(db)
+        edge_service = EdgeService()
+        await edge_service.initialize()
         edges = await edge_service.get_edges()
         logger.info(f"✅ 엣지 목록 조회 성공: {len(edges)}개")
         return edges
@@ -65,13 +64,13 @@ async def get_edges(db: AsyncSession = Depends(get_async_db)):
 
 @router.get("/{edge_id}", response_model=EdgeResponse)
 async def get_edge(
-    edge_id: int,
-    db: AsyncSession = Depends(get_async_db)
+    edge_id: int
 ):
     """특정 엣지 조회"""
     try:
         logger.info(f"📋 엣지 조회 요청: ID {edge_id}")
-        edge_service = EdgeService(db)
+        edge_service = EdgeService()
+        await edge_service.initialize()
         edge = await edge_service.get_edge(edge_id)
         if not edge:
             raise HTTPException(status_code=404, detail="엣지를 찾을 수 없습니다")
@@ -87,13 +86,13 @@ async def get_edge(
 @router.put("/{edge_id}", response_model=EdgeResponse)
 async def update_edge(
     edge_id: int, 
-    edge_data: EdgeUpdateRequest,
-    db: AsyncSession = Depends(get_async_db)
+    edge_data: EdgeUpdateRequest
 ):
     """엣지 수정"""
     try:
         logger.info(f"📝 엣지 수정 요청: ID {edge_id}")
-        edge_service = EdgeService(db)
+        edge_service = EdgeService()
+        await edge_service.initialize()
         result = await edge_service.update_edge(edge_id, edge_data)
         if not result:
             raise HTTPException(status_code=404, detail="엣지를 찾을 수 없습니다")
@@ -108,13 +107,13 @@ async def update_edge(
 
 @router.delete("/{edge_id}")
 async def delete_edge(
-    edge_id: int,
-    db: AsyncSession = Depends(get_async_db)
+    edge_id: int
 ):
     """엣지 삭제"""
     try:
         logger.info(f"🗑️ 엣지 삭제 요청: ID {edge_id}")
-        edge_service = EdgeService(db)
+        edge_service = EdgeService()
+        await edge_service.initialize()
         success = await edge_service.delete_edge(edge_id)
         if not success:
             raise HTTPException(status_code=404, detail="엣지를 찾을 수 없습니다")
@@ -133,8 +132,7 @@ async def delete_edge(
 
 @router.post("/propagate-emissions/{chain_id}")
 async def propagate_emissions(
-    chain_id: int,
-    db: AsyncSession = Depends(get_async_db)
+    chain_id: int
 ) -> Dict[str, Any]:
     """
     공정 체인에 대해 배출량 누적 전달을 실행합니다.
@@ -142,7 +140,8 @@ async def propagate_emissions(
     규칙 1번: 공정→공정 배출량 누적 전달 (edge_kind = "continue")
     """
     try:
-        edge_service = EdgeService(db)
+        edge_service = EdgeService()
+        await edge_service.initialize()
         
         # 배출량 누적 전달 실행
         result = await edge_service.propagate_emissions_chain(chain_id)
@@ -171,14 +170,14 @@ async def propagate_emissions(
 
 @router.get("/chain-emission-summary/{chain_id}")
 async def get_chain_emission_summary(
-    chain_id: int,
-    db: AsyncSession = Depends(get_async_db)
+    chain_id: int
 ) -> Dict[str, Any]:
     """
     공정 체인의 배출량 요약 정보를 조회합니다.
     """
     try:
-        edge_service = EdgeService(db)
+        edge_service = EdgeService()
+        await edge_service.initialize()
         
         # 배출량 요약 조회
         result = await edge_service.get_process_chain_emission_summary(chain_id)
@@ -208,8 +207,7 @@ async def get_chain_emission_summary(
 @router.post("/propagate-emissions-continue")
 async def propagate_emissions_continue(
     source_process_id: int,
-    target_process_id: int,
-    db: AsyncSession = Depends(get_async_db)
+    target_process_id: int
 ) -> Dict[str, Any]:
     """
     두 공정 간의 배출량 누적 전달을 실행합니다.
@@ -217,7 +215,8 @@ async def propagate_emissions_continue(
     규칙 1번: 공정→공정 배출량 누적 전달 (edge_kind = "continue")
     """
     try:
-        edge_service = EdgeService(db)
+        edge_service = EdgeService()
+        await edge_service.initialize()
         
         # 배출량 누적 전달 실행
         success = await edge_service.propagate_emissions_continue(source_process_id, target_process_id)
@@ -250,14 +249,14 @@ async def propagate_emissions_continue(
 
 @router.get("/process-emission/{process_id}")
 async def get_process_emission(
-    process_id: int,
-    db: AsyncSession = Depends(get_async_db)
+    process_id: int
 ) -> Dict[str, Any]:
     """
     특정 공정의 배출량 정보를 조회합니다.
     """
     try:
-        edge_service = EdgeService(db)
+        edge_service = EdgeService()
+        await edge_service.initialize()
         
         # 공정 배출량 데이터 조회
         emission_data = await edge_service.get_process_emission_data(process_id)
@@ -286,14 +285,14 @@ async def get_process_emission(
 
 @router.get("/continue-edges/{process_id}")
 async def get_continue_edges(
-    process_id: int,
-    db: AsyncSession = Depends(get_async_db)
+    process_id: int
 ) -> Dict[str, Any]:
     """
     특정 공정에서 나가는 continue 엣지들을 조회합니다.
     """
     try:
-        edge_service = EdgeService(db)
+        edge_service = EdgeService()
+        await edge_service.initialize()
         
         # continue 엣지 조회
         edges = await edge_service.get_continue_edges(process_id)
