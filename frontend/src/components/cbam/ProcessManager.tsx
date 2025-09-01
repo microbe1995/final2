@@ -156,7 +156,7 @@ function ProcessManagerInner() {
     await handleEdgeCreate(params, updateProcessChainsAfterEdge);
   }, [handleEdgeCreate, updateProcessChainsAfterEdge]);
 
-  // 🔧 수정된 연결 검증 로직 - React Flow의 실제 핸들 ID 형식에 맞춤
+  // 🔧 React Flow 공식 문서에 따른 올바른 연결 검증 로직
   const validateConnection = useCallback((connection: Connection) => {
     console.log('🔍 연결 검증 시작:', connection);
     
@@ -166,14 +166,9 @@ function ProcessManagerInner() {
       return { valid: false, reason: 'same_node' };
     }
     
-    // 핸들 ID 존재 여부 확인
-    if (!connection.sourceHandle || !connection.targetHandle) {
-      console.log('❌ 핸들 ID 누락:', { sourceHandle: connection.sourceHandle, targetHandle: connection.targetHandle });
-      return { valid: false, reason: 'missing_handles' };
-    }
-    
-    // 🔧 핸들 ID 형식 검증 제거 - React Flow가 제공하는 ID를 그대로 사용
-    console.log('🔧 핸들 ID 확인:', { 
+    // ConnectionMode.Loose에서는 핸들 ID가 선택적이므로 검증하지 않음
+    // React Flow가 자체적으로 핸들을 관리함
+    console.log('🔧 핸들 ID 확인 (선택적):', { 
       sourceHandle: connection.sourceHandle, 
       targetHandle: connection.targetHandle
     });

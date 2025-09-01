@@ -28,48 +28,40 @@ const targetStyle: React.CSSProperties = {
 };
 
 /**
- * 4방향 핸들 배치 - 모든 핸들을 source로 설정하고 연결 시 자동 변환
- * React Flow의 연결 시 자동으로 target으로 인식되도록 구현
+ * 4방향 핸들 배치 - React Flow 공식 문서에 따른 올바른 구현
+ * React Flow가 자체적으로 핸들 ID를 생성하고 관리하도록 함
  * - Left: source (연결 시 자동으로 target으로 변환 가능)
  * - Right: source (연결 시 자동으로 target으로 변환 가능)
  * - Top: source (연결 시 자동으로 target으로 변환 가능)
  * - Bottom: source (연결 시 자동으로 target으로 변환 가능)
  */
 export const renderFourDirectionHandles = (isConnectable = true, nodeId?: string) => {
-  // 🔧 수정: 명시적인 핸들 ID 생성
-  const nodeIdStr = nodeId || 'node';
-  
   const handles = [
     {
-      id: `${nodeIdStr}-left`,
       position: Position.Left,
       type: 'source' as HandleType,
       style: sourceStyle,
     },
     {
-      id: `${nodeIdStr}-right`,
       position: Position.Right,
       type: 'source' as HandleType,
       style: sourceStyle,
     },
     {
-      id: `${nodeIdStr}-top`,
       position: Position.Top,
       type: 'source' as HandleType,
       style: sourceStyle,
     },
     {
-      id: `${nodeIdStr}-bottom`,
       position: Position.Bottom,
       type: 'source' as HandleType,
       style: sourceStyle,
     },
   ];
 
-  return handles.map(({ id, position, type, style }) => (
+  return handles.map(({ position, type, style }, index) => (
     <Handle
-      key={id}
-      id={id}
+      key={`${nodeId || 'node'}-${position}-${index}`}
       type={type}
       position={position}
       isConnectable={isConnectable}

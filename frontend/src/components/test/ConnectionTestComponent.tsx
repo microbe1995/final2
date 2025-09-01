@@ -68,7 +68,7 @@ export default function ConnectionTestComponent() {
   const [edges, setEdges] = useState<Edge[]>([]);
   const [testResults, setTestResults] = useState<string[]>([]);
 
-  // 연결 검증 로직 (실제 ProcessManager와 동일)
+  // 연결 검증 로직 (React Flow 공식 문서에 따른 올바른 구현)
   const validateConnection = useCallback((connection: Connection) => {
     console.log('🔍 연결 검증 시작:', connection);
     
@@ -78,22 +78,12 @@ export default function ConnectionTestComponent() {
       return { valid: false, reason: 'same_node' };
     }
     
-    // 핸들 ID 존재 여부 확인
-    if (!connection.sourceHandle || !connection.targetHandle) {
-      console.log('❌ 핸들 ID 누락:', { sourceHandle: connection.sourceHandle, targetHandle: connection.targetHandle });
-      return { valid: false, reason: 'missing_handles' };
-    }
-    
-    // 핸들 ID 형식 확인 (새로운 형식: nodeId-direction)
-    const handleIdPattern = /^[^-]+-(left|right|top|bottom)$/;
-    if (!handleIdPattern.test(connection.sourceHandle) || !handleIdPattern.test(connection.targetHandle)) {
-      console.log('❌ 핸들 ID 형식 불일치:', { 
-        sourceHandle: connection.sourceHandle, 
-        targetHandle: connection.targetHandle,
-        expectedPattern: 'nodeId-(left|right|top|bottom)'
-      });
-      return { valid: false, reason: 'invalid_handle_format' };
-    }
+    // ConnectionMode.Loose에서는 핸들 ID가 선택적이므로 검증하지 않음
+    // React Flow가 자체적으로 핸들을 관리함
+    console.log('🔧 핸들 ID 확인 (선택적):', { 
+      sourceHandle: connection.sourceHandle, 
+      targetHandle: connection.targetHandle
+    });
     
     // 이미 존재하는 연결 확인
     const existingEdge = edges.find(edge => 
