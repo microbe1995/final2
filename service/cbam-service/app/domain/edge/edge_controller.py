@@ -11,7 +11,7 @@ from app.domain.edge.edge_service import EdgeService
 from app.domain.edge.edge_schema import (
     EdgeCreateRequest, EdgeResponse, EdgeUpdateRequest
 )
-from app.common.database_base import get_db
+from app.common.database_base import get_async_db
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import Depends, status
 from typing import Dict, Any
@@ -31,7 +31,7 @@ router = APIRouter(tags=["Edge"])
 @router.post("/", response_model=EdgeResponse, status_code=201)
 async def create_edge(
     edge_data: EdgeCreateRequest,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_async_db)
 ):
     """엣지 생성"""
     try:
@@ -51,7 +51,7 @@ async def create_edge(
         raise HTTPException(status_code=500, detail=f"엣지 생성 중 오류가 발생했습니다: {str(e)}")
 
 @router.get("/", response_model=List[EdgeResponse])
-async def get_edges(db: AsyncSession = Depends(get_db)):
+async def get_edges(db: AsyncSession = Depends(get_async_db)):
     """모든 엣지 목록 조회"""
     try:
         logger.info("📋 엣지 목록 조회 요청")
@@ -66,7 +66,7 @@ async def get_edges(db: AsyncSession = Depends(get_db)):
 @router.get("/{edge_id}", response_model=EdgeResponse)
 async def get_edge(
     edge_id: int,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_async_db)
 ):
     """특정 엣지 조회"""
     try:
@@ -88,7 +88,7 @@ async def get_edge(
 async def update_edge(
     edge_id: int, 
     edge_data: EdgeUpdateRequest,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_async_db)
 ):
     """엣지 수정"""
     try:
@@ -109,7 +109,7 @@ async def update_edge(
 @router.delete("/{edge_id}")
 async def delete_edge(
     edge_id: int,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_async_db)
 ):
     """엣지 삭제"""
     try:
@@ -134,7 +134,7 @@ async def delete_edge(
 @router.post("/propagate-emissions/{chain_id}")
 async def propagate_emissions(
     chain_id: int,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_async_db)
 ) -> Dict[str, Any]:
     """
     공정 체인에 대해 배출량 누적 전달을 실행합니다.
@@ -172,7 +172,7 @@ async def propagate_emissions(
 @router.get("/chain-emission-summary/{chain_id}")
 async def get_chain_emission_summary(
     chain_id: int,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_async_db)
 ) -> Dict[str, Any]:
     """
     공정 체인의 배출량 요약 정보를 조회합니다.
@@ -209,7 +209,7 @@ async def get_chain_emission_summary(
 async def propagate_emissions_continue(
     source_process_id: int,
     target_process_id: int,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_async_db)
 ) -> Dict[str, Any]:
     """
     두 공정 간의 배출량 누적 전달을 실행합니다.
@@ -251,7 +251,7 @@ async def propagate_emissions_continue(
 @router.get("/process-emission/{process_id}")
 async def get_process_emission(
     process_id: int,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_async_db)
 ) -> Dict[str, Any]:
     """
     특정 공정의 배출량 정보를 조회합니다.
@@ -287,7 +287,7 @@ async def get_process_emission(
 @router.get("/continue-edges/{process_id}")
 async def get_continue_edges(
     process_id: int,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_async_db)
 ) -> Dict[str, Any]:
     """
     특정 공정에서 나가는 continue 엣지들을 조회합니다.

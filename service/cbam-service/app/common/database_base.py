@@ -15,6 +15,7 @@ import logging
 from typing import Any, Optional
 from sqlalchemy import Column, Integer, String, Numeric, DateTime, Text, Boolean, JSON, create_engine, text
 from sqlalchemy.orm import Mapped, mapped_column, sessionmaker, Session, DeclarativeBase
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from sqlalchemy.exc import OperationalError, ProgrammingError
 from datetime import datetime, timezone
 from typing import Dict, Any
@@ -145,8 +146,14 @@ def get_db_session() -> Session:
     return get_database_session()
 
 def get_db() -> Session:
-    """FastAPI 의존성 주입용 데이터베이스 세션 생성"""
+    """FastAPI 의존성 주입용 동기 데이터베이스 세션 생성"""
     return get_database_session()
+
+def get_async_db() -> AsyncSession:
+    """FastAPI 의존성 주입용 비동기 데이터베이스 세션 생성"""
+    engine = create_database_engine()
+    AsyncSessionLocal = async_sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    return AsyncSessionLocal()
 
 # ============================================================================
 # 🗄️ 데이터베이스 기본 엔티티
@@ -191,6 +198,7 @@ __all__ = [
     "get_database_session",
     "get_db_session",
     "get_db",
+    "get_async_db",
     "create_database_engine",
     "DatabaseBase",
     "TimestampMixin",
