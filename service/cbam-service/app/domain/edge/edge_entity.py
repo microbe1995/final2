@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, Text, DateTime, Index
 from sqlalchemy.orm import relationship
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, Any
 
 from app.common.database_base import Base
@@ -20,8 +20,8 @@ class Edge(Base):
     target_node_type = Column(Text, nullable=False, index=True)  # 타겟 노드 타입
     target_id = Column(Integer, nullable=False, index=True)  # 타겟 노드 ID
     edge_kind = Column(Text, nullable=False)  # 엣지 종류 (consume/produce/continue)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     
     def to_dict(self) -> Dict[str, Any]:
         """엔티티를 딕셔너리로 변환"""
