@@ -5,7 +5,7 @@
 import logging
 from typing import Dict, List, Any, Optional, Tuple
 from decimal import Decimal
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text, select, update
 from sqlalchemy.orm import selectinload
@@ -415,7 +415,7 @@ class EdgeService:
             if edge_data.edge_kind is not None:
                 existing_edge.edge_kind = edge_data.edge_kind
             
-            existing_edge.updated_at = datetime.utcnow()
+            existing_edge.updated_at = datetime.now(timezone.utc)
             
             # 데이터베이스에 저장
             await self.db_session.commit()
