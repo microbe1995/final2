@@ -55,6 +55,18 @@ export const renderFourDirectionHandles = (isConnectable = true, nodeId?: string
       style={handleStyle}
       // ✅ 추가: 연결 검증 및 이벤트 핸들러
       onConnect={(params) => console.log('🔗 핸들 연결됨:', params)}
+      // ✅ 추가: React Flow 공식 문서 권장 연결 검증
+      isValidConnection={(connection) => {
+        // 같은 노드 간 연결 방지
+        if (connection.source === connection.target) {
+          return false;
+        }
+        // 같은 핸들 간 연결 방지
+        if (connection.sourceHandle === connection.targetHandle) {
+          return false;
+        }
+        return true;
+      }}
     />
   ));
 };

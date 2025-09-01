@@ -189,6 +189,11 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
       if (!params.sourceHandle || !params.targetHandle) {
         console.log('⚠️ 핸들 ID 없음 (Loose 모드에서는 허용):', params);
         // 핸들 ID가 없어도 연결은 허용하지만, 로깅은 함
+      } else {
+        console.log('✅ 핸들 ID 확인됨:', {
+          sourceHandle: params.sourceHandle,
+          targetHandle: params.targetHandle
+        });
       }
       
       console.log('🔧 4방향 연결 핸들 ID:', {

@@ -270,36 +270,36 @@ function ProcessManagerInner() {
              }
            }}
            onConnectEnd={handleConnectEnd}
-           isValidConnection={(connection) => {
-             // React Flow 공식 문서: 연결 검증 로직
-             console.log('🔍 React Flow 연결 검증:', connection);
-             
-             // 같은 노드 간 연결 방지
-             if (connection.source === connection.target) {
-               console.log('❌ 같은 노드 간 연결 시도');
-               return false;
-             }
-             
-             // 같은 핸들 간 연결 방지
-             if (connection.sourceHandle && connection.targetHandle && 
-                 connection.sourceHandle === connection.targetHandle) {
-               console.log('❌ 같은 핸들 간 연결 시도');
-               return false;
-             }
-             
-             // 이미 존재하는 연결 확인 (정확히 같은 방향만 체크)
-             const existingEdge = edges.find(edge => 
-               edge.source === connection.source && edge.target === connection.target
-             );
-             
-             if (existingEdge) {
-               console.log('❌ 이미 존재하는 연결');
-               return false;
-             }
-             
-             console.log('✅ React Flow 연결 검증 통과');
-             return true;
-           }}
+                       isValidConnection={(connection) => {
+              // React Flow 공식 문서: 연결 검증 로직
+              console.log('🔍 React Flow 연결 검증:', connection);
+              
+              // 같은 노드 간 연결 방지
+              if (connection.source === connection.target) {
+                console.log('❌ 같은 노드 간 연결 시도');
+                return false;
+              }
+              
+              // 같은 핸들 간 연결 방지 (핸들이 있는 경우에만)
+              if (connection.sourceHandle && connection.targetHandle && 
+                  connection.sourceHandle === connection.targetHandle) {
+                console.log('❌ 같은 핸들 간 연결 시도');
+                return false;
+              }
+              
+              // 이미 존재하는 연결 확인 (정확히 같은 방향만 체크)
+              const existingEdge = edges.find(edge => 
+                edge.source === connection.source && edge.target === connection.target
+              );
+              
+              if (existingEdge) {
+                console.log('❌ 이미 존재하는 연결');
+                return false;
+              }
+              
+              console.log('✅ React Flow 연결 검증 통과');
+              return true;
+            }}
          >
           <Background color="#334155" gap={24} size={1} />
           <Controls className="!bg-gray-800 !border !border-gray-700 !text-gray-200 !rounded-md" position="bottom-left" />
