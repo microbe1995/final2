@@ -204,7 +204,7 @@ class MatDirRepository:
                         SET mat_factor = $1, mat_amount = $2, oxyfactor = $3, matdir_em = $4, updated_at = NOW()
                         WHERE process_id = $5 AND mat_name = $6
                         RETURNING *
-                    """, params)
+                    """, *params)
                     logger.info(f"🔍 UPDATE 쿼리 실행 완료: {result}")
                 else:
                     # 새로운 데이터 삽입
@@ -243,7 +243,7 @@ class MatDirRepository:
                         INSERT INTO matdir (process_id, mat_name, mat_factor, mat_amount, oxyfactor, matdir_em)
                         VALUES ($1, $2, $3, $4, $5, $6)
                         RETURNING *
-                    """, params)
+                    """, *params)
                     logger.info(f"🔍 INSERT 쿼리 실행 완료: {result}")
                 
                 action = "업데이트" if existing_record else "생성"
