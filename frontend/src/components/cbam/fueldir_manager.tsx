@@ -333,7 +333,7 @@ export default function FuelDirManager({ selectedProcess, onClose }: FuelDirMana
     try {
       const isMatDir = editingResult.id.toString().startsWith('matdir_');
       const endpoint = isMatDir ? apiEndpoints.cbam.matdir.update : apiEndpoints.cbam.fueldir.update;
-      const actualId = isMatDir ? parseInt(editingResult.id.toString().replace('matdir_', '')) : editingResult.id;
+      const actualId = isMatDir ? parseInt(editingResult.id.toString().replace('matdir_', '')) : Number(editingResult.id);
       
       if (isMatDir) {
         // matdir의 경우 필드명 변경
@@ -389,7 +389,7 @@ export default function FuelDirManager({ selectedProcess, onClose }: FuelDirMana
     try {
       const isMatDir = result.id.toString().startsWith('matdir_');
       const endpoint = isMatDir ? apiEndpoints.cbam.matdir.delete : apiEndpoints.cbam.fueldir.delete;
-      const actualId = isMatDir ? result.id.toString().replace('matdir_', '') : result.id;
+      const actualId = isMatDir ? parseInt(result.id.toString().replace('matdir_', '')) : Number(result.id);
       
       await axiosClient.delete(endpoint(actualId));
       
