@@ -143,6 +143,10 @@ def get_db_session() -> Session:
     """데이터베이스 세션 생성 (기존 호환성 유지)"""
     return get_database_session()
 
+def get_db() -> Session:
+    """FastAPI 의존성 주입용 데이터베이스 세션 생성"""
+    return get_database_session()
+
 # ============================================================================
 # 🗄️ 데이터베이스 기본 엔티티
 # ============================================================================
@@ -185,6 +189,7 @@ __all__ = [
     "Base",
     "get_database_session",
     "get_db_session",
+    "get_db",
     "create_database_engine",
     "DatabaseBase",
     "TimestampMixin",

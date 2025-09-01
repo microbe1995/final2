@@ -8,8 +8,8 @@ import aiohttp
 import json
 from datetime import datetime
 
-# API 기본 URL (로컬 테스트용)
-BASE_URL = "http://localhost:8000"
+# API 기본 URL (Railway 배포 환경)
+BASE_URL = "https://lcafinal-production.up.railway.app"
 
 async def test_api_endpoints():
     """새로 추가된 API 엔드포인트들을 테스트합니다."""
@@ -136,14 +136,9 @@ async def test_api_endpoints():
     print("\n🎯 API 테스트 완료!")
 
 if __name__ == "__main__":
-    print("⚠️ 주의: 이 스크립트를 실행하기 전에 CBAM 서비스가 실행 중이어야 합니다.")
-    print("📍 서비스 실행 명령어: uvicorn app.main:app --reload --host 0.0.0.0 --port 8000")
+    print("🚀 Railway 배포된 CBAM 서비스 API 테스트 시작")
+    print(f"📍 테스트 대상: {BASE_URL}")
     print("=" * 60)
     
-    # 사용자 확인
-    user_input = input("서비스가 실행 중입니까? (y/N): ").strip().lower()
-    
-    if user_input == 'y':
-        asyncio.run(test_api_endpoints())
-    else:
-        print("ℹ️ 서비스를 먼저 실행한 후 다시 시도해주세요.")
+    # 바로 테스트 실행
+    asyncio.run(test_api_endpoints())
