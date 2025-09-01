@@ -1,0 +1,56 @@
+{
+  "check_date": "2025-09-01T23:08:22.572258",
+  "database_url": "shortline.proxy.rlwy.net:46071/railway",
+  "edge_table_exists": true,
+  "table_structure": [
+    {
+      "name": "id",
+      "type": "integer",
+      "nullable": "NO"
+    },
+    {
+      "name": "source_node_type",
+      "type": "USER-DEFINED",
+      "nullable": "NO"
+    },
+    {
+      "name": "source_id",
+      "type": "integer",
+      "nullable": "NO"
+    },
+    {
+      "name": "target_node_type",
+      "type": "USER-DEFINED",
+      "nullable": "NO"
+    },
+    {
+      "name": "target_id",
+      "type": "integer",
+      "nullable": "NO"
+    },
+    {
+      "name": "edge_kind",
+      "type": "USER-DEFINED",
+      "nullable": "NO"
+    },
+    {
+      "name": "created_at",
+      "type": "timestamp without time zone",
+      "nullable": "YES"
+    },
+    {
+      "name": "updated_at",
+      "type": "timestamp without time zone",
+      "nullable": "YES"
+    }
+  ],
+  "total_records": 48,
+  "sample_data": [
+    {
+      "id": 21,
+      "source_node_type": "product",
+      "source_id": 65512,
+      "target_node_type": "product",
+      "target_id": 445177,
+      "edge_kind": "continue",
+      "created_at": 

@@ -14,15 +14,16 @@ import os
 import logging
 from typing import Any, Optional
 from sqlalchemy import Column, Integer, String, Numeric, DateTime, Text, Boolean, JSON, create_engine, text
-from sqlalchemy.orm import Mapped, mapped_column, sessionmaker, Session
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import Mapped, mapped_column, sessionmaker, Session, DeclarativeBase
 from sqlalchemy.exc import OperationalError, ProgrammingError
 from datetime import datetime
 from typing import Dict, Any
 
 logger = logging.getLogger(__name__)
 
-Base = declarative_base()
+class Base(DeclarativeBase):
+    """SQLAlchemy 2.0 호환 Base 클래스"""
+    pass
 
 # ============================================================================
 # 🗄️ 데이터베이스 연결 관리
