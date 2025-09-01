@@ -60,11 +60,17 @@ class FuelDirRepository:
     
     async def _ensure_pool_initialized(self):
         """연결 풀이 초기화되었는지 확인하고, 필요시 초기화"""
+        logger.info(f"🔍 연결 풀 상태 확인: pool={self.pool}, attempted={self._initialization_attempted}")
+        
         if not self.pool and not self._initialization_attempted:
+            logger.info("🔄 연결 풀 초기화 시작")
             await self.initialize()
         
         if not self.pool:
+            logger.error("❌ 연결 풀이 초기화되지 않았습니다.")
             raise Exception("데이터베이스 연결 풀이 초기화되지 않았습니다.")
+        
+        logger.info("✅ 연결 풀 정상 상태 확인")
     
     async def _create_fueldir_table_async(self):
         """fueldir 테이블 생성 (비동기)"""
@@ -127,43 +133,103 @@ class FuelDirRepository:
         await self._ensure_pool_initialized()
         
         try:
+            # 디버깅을 위한 데이터 로깅
+            logger.info(f"🔍 create_fueldir 입력 데이터: {fueldir_data}")
+            logger.info(f"🔍 fuel_oxyfactor 값: {fueldir_data.get('fuel_oxyfactor')}")
+            logger.info(f"🔍 fueldir_em 값: {fueldir_data.get('fueldir_em')}")
+            logger.info(f"🔍 process_id 타입: {type(fueldir_data.get('process_id'))}, 값: {fueldir_data.get('process_id')}")
+            logger.info(f"🔍 fuel_name 타입: {type(fueldir_data.get('fuel_name'))}, 값: {fueldir_data.get('fuel_name')}")
+            logger.info(f"🔍 fuel_factor 타입: {type(fueldir_data.get('fuel_factor'))}, 값: {fueldir_data.get('fuel_factor')}")
+            logger.info(f"🔍 fuel_amount 타입: {type(fueldir_data.get('fuel_amount'))}, 값: {fueldir_data.get('fuel_amount')}")
+            
             async with self.pool.acquire() as conn:
                 # 중복 데이터 확인
+                logger.info("🔍 중복 데이터 확인 쿼리 실행 시작")
                 existing_record = await conn.fetchrow("""
                     SELECT id FROM fueldir 
                     WHERE process_id = $1 AND fuel_name = $2
                 """, fueldir_data['process_id'], fueldir_data['fuel_name'])
+                logger.info(f"🔍 중복 데이터 확인 결과: {existing_record}")
                 
                 if existing_record:
                     # 중복 데이터가 있으면 업데이트
                     logger.info(f"🔄 중복 데이터 발견, 업데이트: process_id={fueldir_data['process_id']}, fuel_name={fueldir_data['fuel_name']}")
+                    
+                    # fuel_oxyfactor 기본값 설정 (fueldir_em은 계산된 값이므로 기본값 불필요)
+                    fuel_oxyfactor = fueldir_data.get('fuel_oxyfactor')
+                    if fuel_oxyfactor is None:
+                        fuel_oxyfactor = Decimal('1.0000')
+                    
+                    logger.info(f"🔍 UPDATE 쿼리 파라미터: fuel_oxyfactor={fuel_oxyfactor}, fueldir_em={fueldir_data['fueldir_em']}")
+                    logger.info("🔍 UPDATE 쿼리 실행 시작")
+                    
+                    # 파라미터 값을 개별적으로 로깅
+                    logger.info(f"🔍 파라미터 1 (fuel_factor): {fueldir_data['fuel_factor']} (타입: {type(fueldir_data['fuel_factor'])})")
+                    logger.info(f"🔍 파라미터 2 (fuel_amount): {fueldir_data['fuel_amount']} (타입: {type(fueldir_data['fuel_amount'])})")
+                    logger.info(f"🔍 파라미터 3 (fuel_oxyfactor): {fuel_oxyfactor} (타입: {type(fuel_oxyfactor)})")
+                    logger.info(f"🔍 파라미터 4 (fueldir_em): {fueldir_data['fueldir_em']} (타입: {type(fueldir_data['fueldir_em'])})")
+                    logger.info(f"🔍 파라미터 5 (process_id): {fueldir_data['process_id']} (타입: {type(fueldir_data['process_id'])})")
+                    logger.info(f"🔍 파라미터 6 (fuel_name): {fueldir_data['fuel_name']} (타입: {type(fueldir_data['fuel_name'])})")
+                    
+                    # 파라미터 튜플을 명시적으로 생성
+                    params = (
+                        fueldir_data['fuel_factor'],
+                        fueldir_data['fuel_amount'],
+                        fuel_oxyfactor,
+                        fueldir_data['fueldir_em'],
+                        fueldir_data['process_id'],
+                        fueldir_data['fuel_name']
+                    )
+                    
+                    logger.info(f"🔍 최종 파라미터 튜플: {params}")
+                    logger.info(f"🔍 파라미터 개수: {len(params)}")
+                    
                     result = await conn.fetchrow("""
                         UPDATE fueldir 
                         SET fuel_factor = $1, fuel_amount = $2, fuel_oxyfactor = $3, fueldir_em = $4, updated_at = NOW()
                         WHERE process_id = $5 AND fuel_name = $6
                         RETURNING *
-                    """, (
-                        fueldir_data['fuel_factor'],
-                        fueldir_data['fuel_amount'],
-                        fueldir_data.get('fuel_oxyfactor', 1.0000),
-                        fueldir_data.get('fueldir_em', 0),
-                        fueldir_data['process_id'],
-                        fueldir_data['fuel_name']
-                    ))
+                    """, *params)
+                    logger.info(f"🔍 UPDATE 쿼리 실행 완료: {result}")
                 else:
                     # 새로운 데이터 삽입
-                    result = await conn.fetchrow("""
-                        INSERT INTO fueldir (process_id, fuel_name, fuel_factor, fuel_amount, fuel_oxyfactor, fueldir_em)
-                        VALUES ($1, $2, $3, $4, $5, $6)
-                        RETURNING *
-                    """, (
+                    logger.info(f"🆕 새로운 데이터 삽입: process_id={fueldir_data['process_id']}, fuel_name={fueldir_data['fuel_name']}")
+                    
+                    # fuel_oxyfactor 기본값 설정 (fueldir_em은 계산된 값이므로 기본값 불필요)
+                    fuel_oxyfactor = fueldir_data.get('fuel_oxyfactor')
+                    if fuel_oxyfactor is None:
+                        fuel_oxyfactor = Decimal('1.0000')
+                    
+                    logger.info(f"🔍 INSERT 쿼리 파라미터: fuel_oxyfactor={fuel_oxyfactor}, fueldir_em={fueldir_data['fueldir_em']}")
+                    logger.info("🔍 INSERT 쿼리 실행 시작")
+                    
+                    # 파라미터 값을 개별적으로 로깅
+                    logger.info(f"🔍 파라미터 1 (process_id): {fueldir_data['process_id']} (타입: {type(fueldir_data['process_id'])})")
+                    logger.info(f"🔍 파라미터 2 (fuel_name): {fueldir_data['fuel_name']} (타입: {type(fueldir_data['fuel_name'])})")
+                    logger.info(f"🔍 파라미터 3 (fuel_factor): {fueldir_data['fuel_factor']} (타입: {type(fueldir_data['fuel_factor'])})")
+                    logger.info(f"🔍 파라미터 4 (fuel_amount): {fueldir_data['fuel_amount']} (타입: {type(fueldir_data['fuel_amount'])})")
+                    logger.info(f"🔍 파라미터 5 (fuel_oxyfactor): {fuel_oxyfactor} (타입: {type(fuel_oxyfactor)})")
+                    logger.info(f"🔍 파라미터 6 (fueldir_em): {fueldir_data['fueldir_em']} (타입: {type(fueldir_data['fueldir_em'])})")
+                    
+                    # 파라미터 튜플을 명시적으로 생성
+                    params = (
                         fueldir_data['process_id'],
                         fueldir_data['fuel_name'],
                         fueldir_data['fuel_factor'],
                         fueldir_data['fuel_amount'],
-                        fueldir_data.get('fuel_oxyfactor', 1.0000),
-                        fueldir_data.get('fueldir_em', 0)
-                    ))
+                        fuel_oxyfactor,
+                        fueldir_data['fueldir_em']
+                    )
+                    
+                    logger.info(f"🔍 최종 파라미터 튜플: {params}")
+                    logger.info(f"🔍 파라미터 개수: {len(params)}")
+                    
+                    result = await conn.fetchrow("""
+                        INSERT INTO fueldir (process_id, fuel_name, fuel_factor, fuel_amount, fuel_oxyfactor, fueldir_em)
+                        VALUES ($1, $2, $3, $4, $5, $6)
+                        RETURNING *
+                    """, *params)
+                    logger.info(f"🔍 INSERT 쿼리 실행 완료: {result}")
                 
                 action = "업데이트" if existing_record else "생성"
                 logger.info(f"✅ FuelDir {action} 성공: ID {result['id']}")
@@ -171,6 +237,8 @@ class FuelDirRepository:
                 
         except Exception as e:
             logger.error(f"❌ FuelDir 생성/업데이트 실패: {str(e)}")
+            logger.error(f"❌ 에러 타입: {type(e)}")
+            logger.error(f"❌ 에러 상세: {e}")
             raise
 
     async def get_fueldirs(self, skip: int = 0, limit: int = 100) -> List[Dict[str, Any]]:
@@ -326,8 +394,8 @@ class FuelDirRepository:
                 results = await conn.fetch("""
                     SELECT * FROM fueldir 
                     ORDER BY created_at DESC 
-                    LIMIT $1 OFFSET $2
-                """, limit, skip)
+                    OFFSET $1 LIMIT $2
+                """, skip, limit)
                 
                 return [dict(row) for row in results]
                 
@@ -378,18 +446,35 @@ class FuelDirRepository:
             
         try:
             async with self.pool.acquire() as conn:
-                # 업데이트할 필드들만 동적으로 생성
-                set_clause = ", ".join([f"{key} = ${i+1}" for i, key in enumerate(fueldir_data.keys())])
-                values = list(fueldir_data.values()) + [fueldir_id]
+                # None 값과 잘못된 데이터 필터링
+                filtered_data = {k: v for k, v in fueldir_data.items() if v is not None}
+                
+                if not filtered_data:
+                    raise Exception("업데이트할 데이터가 없습니다.")
+                
+                # 업데이트할 필드들만 동적으로 생성 (파라미터 수 정확하게 맞춤)
+                set_fields = list(filtered_data.keys())
+                set_clause = ", ".join([f"{field} = ${i+1}" for i, field in enumerate(set_fields)])
+                values = list(filtered_data.values())
+                
+                # updated_at과 WHERE 절을 위한 추가 파라미터
+                updated_at_param = len(values) + 1
+                where_param = len(values) + 2
                 
                 query = f"""
                     UPDATE fueldir 
-                    SET {set_clause}, updated_at = NOW()
-                    WHERE id = ${len(fueldir_data) + 1} 
+                    SET {set_clause}, updated_at = ${updated_at_param}
+                    WHERE id = ${where_param} 
                     RETURNING *
                 """
                 
-                result = await conn.fetchrow(query, *values)
+                # updated_at과 fueldir_id를 values에 추가
+                final_values = values + [datetime.now(), fueldir_id]
+                
+                logger.info(f"🔍 UPDATE 쿼리: {query}")
+                logger.info(f"🔍 UPDATE 파라미터: {final_values}")
+                
+                result = await conn.fetchrow(query, *final_values)
                 
                 return dict(result) if result else None
                 
@@ -414,25 +499,15 @@ class FuelDirRepository:
             logger.error(f"❌ FuelDir 삭제 실패: {str(e)}")
             raise
 
+    def calculate_fueldir_emission(self, fuel_amount: Decimal, fuel_factor: Decimal, fuel_oxyfactor: Decimal = Decimal('1.0000')) -> Decimal:
+        """연료직접배출량 계산: fueldir_em = fuel_amount * fuel_factor * fuel_oxyfactor"""
+        return fuel_amount * fuel_factor * fuel_oxyfactor
+
     async def get_total_fueldir_emission_by_process(self, process_id: int) -> Decimal:
         """특정 공정의 총 연료직접배출량 계산"""
-        await self._ensure_pool_initialized()
-        
-        try:
-            async with self.pool.acquire() as conn:
-                result = await conn.fetchrow("""
-                    SELECT COALESCE(SUM(fueldir_em), 0) as total_emission
-                    FROM fueldir 
-                    WHERE process_id = $1
-                """, process_id)
-                
-                total_emission = Decimal(str(result['total_emission'])) if result and result['total_emission'] else Decimal('0')
-                logger.info(f"✅ 공정별 총 연료직접배출량 계산 성공: Process ID {process_id}, 총 배출량: {total_emission}")
-                return total_emission
-                
-        except Exception as e:
-            logger.error(f"❌ 공정별 총 연료직접배출량 계산 중 오류: {e}")
-            return Decimal('0')
+        fueldirs = await self.get_fueldirs_by_process(process_id)
+        total_emission = sum(Decimal(str(fueldir['fueldir_em'])) for fueldir in fueldirs if fueldir['fueldir_em'])
+        return total_emission
 
     async def get_fueldir_summary(self) -> Dict[str, Any]:
         """연료직접배출량 통계 요약"""
@@ -463,4 +538,6 @@ class FuelDirRepository:
                     
         except Exception as e:
             logger.error(f"❌ 연료직접배출량 통계 요약 생성 중 오류: {e}")
+            logger.error(f"❌ 에러 타입: {type(e)}")
+            logger.error(f"❌ 에러 상세: {e}")
             return {}
