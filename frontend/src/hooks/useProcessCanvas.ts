@@ -62,12 +62,15 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
   const addProductNode = useCallback((product: Product, handleProductNodeClick: (product: Product) => void) => {
     // 🔴 수정: 더 작은 ID 생성 (int32 범위 내)
     const nodeId = Math.floor(Math.random() * 1000000) + 1; // 1 ~ 1,000,000
+    const actualNodeId = `product-${nodeId}-${Math.random().toString(36).slice(2)}`;
+    
     const newNode: Node = {
-      id: `product-${nodeId}-${Math.random().toString(36).slice(2)}`,
+      id: actualNodeId,
       type: 'product',  // 'product' 타입으로 설정
       position: { x: Math.random() * 400 + 100, y: Math.random() * 300 + 100 },
       data: {
         id: product.id,  // 실제 제품 ID 추가
+        nodeId: actualNodeId,  // 🔴 추가: 실제 노드 ID를 data에 저장
         label: product.product_name,  // 🔴 수정: label을 올바르게 설정
         description: `제품: ${product.product_name}`,
         variant: 'product',  // 🔴 수정: variant를 'product'로 명시적 설정
@@ -105,12 +108,15 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
     
     // 🔴 수정: 더 작은 ID 생성 (int32 범위 내)
     const nodeId = Math.floor(Math.random() * 1000000) + 1; // 1 ~ 1,000,000
+    const actualNodeId = `process-${nodeId}-${Math.random().toString(36).slice(2)}`;
+    
     const newNode: Node = {
-      id: `process-${nodeId}-${Math.random().toString(36).slice(2)}`,
+      id: actualNodeId,
       type: 'process',
       position: { x: Math.random() * 400 + 100, y: Math.random() * 300 + 100 },
       data: {
         id: process.id,  // 실제 공정 ID 추가
+        nodeId: actualNodeId,  // 🔴 추가: 실제 노드 ID를 data에 저장
         label: process.process_name,
         description: `공정: ${process.process_name}`,
         variant: 'process',
@@ -138,12 +144,15 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
   const addGroupNode = useCallback(() => {
     // 🔴 수정: 더 작은 ID 생성 (int32 범위 내)
     const nodeId = Math.floor(Math.random() * 1000000) + 1; // 1 ~ 1,000,000
+    const actualNodeId = `group-${nodeId}-${Math.random().toString(36).slice(2)}`;
+    
     const newNode: Node<any> = {
-      id: `group-${nodeId}-${Math.random().toString(36).slice(2)}`,
+      id: actualNodeId,
       type: 'group',  // 🔴 수정: 'group' 타입으로 설정
       position: { x: Math.random() * 400 + 100, y: Math.random() * 300 + 100 },
       style: { width: 200, height: 100 },
       data: { 
+        nodeId: actualNodeId,  // 🔴 추가: 실제 노드 ID를 data에 저장
         label: '그룹',  // 🔴 수정: label을 올바르게 설정
         description: '그룹 노드',
         variant: 'default',  // 🔴 추가: variant 설정
