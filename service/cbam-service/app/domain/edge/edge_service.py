@@ -14,23 +14,14 @@ logger = logging.getLogger(__name__)
 class EdgeService:
     """엣지 기반 배출량 전파 서비스 (Repository 패턴)"""
     
-    def __init__(self):
-        self.edge_repository = EdgeRepository()
+    def __init__(self, db):
+        self.repository = EdgeRepository(db)
         logger.info("✅ Edge Service 초기화 완료")
-    
-    async def initialize(self):
-        """데이터베이스 연결 초기화"""
-        try:
-            await self.edge_repository.initialize()
-            logger.info("✅ Edge Service 데이터베이스 연결 초기화 완료")
-        except Exception as e:
-            logger.warning(f"⚠️ Edge Service 데이터베이스 초기화 실패 (서비스는 계속 실행): {e}")
-            logger.info("ℹ️ 데이터베이스 연결은 필요할 때 자동으로 초기화됩니다.")
     
     async def get_process_emission_data(self, process_id: int) -> Optional[Dict[str, Any]]:
         """공정의 배출량 데이터를 조회합니다."""
         try:
-            return await self.edge_repository.get_process_emission_data(process_id)
+            return await self.repository.get_process_emission_data(process_id)
         except Exception as e:
             logger.error(f"공정 {process_id} 배출량 데이터 조회 실패: {e}")
             return None
@@ -38,7 +29,7 @@ class EdgeService:
     async def get_continue_edges(self, source_process_id: int) -> List[Dict[str, Any]]:
         """특정 공정에서 나가는 continue 엣지들을 조회합니다."""
         try:
-            return await self.edge_repository.get_continue_edges(source_process_id)
+            return await self.repository.get_continue_edges(source_process_id)
         except Exception as e:
             logger.error(f"공정 {source_process_id}의 continue 엣지 조회 실패: {e}")
             return []
@@ -46,7 +37,7 @@ class EdgeService:
     async def update_process_cumulative_emission(self, process_id: int, cumulative_emission: float) -> bool:
         """공정의 누적 배출량을 업데이트합니다."""
         try:
-            return await self.edge_repository.update_process_cumulative_emission(process_id, cumulative_emission)
+            return await self.repository.update_process_cumulative_emission(process_id, cumulative_emission)
         except Exception as e:
             logger.error(f"공정 {process_id} 누적 배출량 업데이트 실패: {e}")
             return False
@@ -108,7 +99,7 @@ class EdgeService:
             logger.info(f"🔗 공정 {source_process_id} → 제품 {target_product_id} 배출량 전달 시작")
             
             # 1. 제품에 연결된 모든 공정들의 배출량 조회
-            connected_processes = await self.edge_repository.get_processes_connected_to_product(target_product_id)
+            connected_processes = await self.repository.get_processes_connected_to_product(target_product_id)
             
             if not connected_processes:
                 logger.error(f"제품 {target_product_id}에 연결된 공정이 없습니다.")
@@ -124,7 +115,7 @@ class EdgeService:
                     logger.warning(f"공정 {process_data['process_id']}의 배출량 데이터를 찾을 수 없습니다.")
             
             # 3. 제품의 배출량 업데이트
-            success = await self.edge_repository.update_product_emission(target_product_id, total_emission)
+            success = await self.repository.update_product_emission(target_product_id, total_emission)
             
             if success:
                 logger.info(f"✅ 제품 {target_product_id} 배출량 업데이트 완료: {total_emission}")
@@ -148,7 +139,7 @@ class EdgeService:
             logger.info(f"🔗 제품 {source_product_id} → 공정 {target_process_id} 배출량 전달 시작")
             
             # 1. 제품 데이터 조회
-            product_data = await self.edge_repository.get_product_data(source_product_id)
+            product_data = await self.repository.get_product_data(source_product_id)
             if not product_data:
                 logger.error(f"제품 {source_product_id} 데이터를 찾을 수 없습니다.")
                 return False
@@ -165,7 +156,7 @@ class EdgeService:
                 return True  # 에러가 아닌 정상 상황
             
             # 3. 해당 제품을 소비하는 모든 공정 조회
-            consuming_processes = await self.edge_repository.get_processes_consuming_product(source_product_id)
+            consuming_processes = await self.repository.get_processes_consuming_product(source_product_id)
             
             if not consuming_processes:
                 logger.error(f"제품 {source_product_id}를 소비하는 공정이 없습니다.")
@@ -193,7 +184,7 @@ class EdgeService:
             distributed_emission = product_emission * distribution_ratio
             
             # 7. 타겟 공정의 원료 투입량 업데이트
-            success = await self.edge_repository.update_process_material_amount(
+            success = await self.repository.update_process_material_amount(
                 target_process_id, source_product_id, distributed_amount
             )
             
@@ -389,7 +380,7 @@ class EdgeService:
             }
             
             # Repository를 통해 엣지 생성
-            result = await self.edge_repository.create_edge(edge_dict)
+            result = await self.repository.create_edge(edge_dict)
             
             if result:
                 logger.info(f"✅ 엣지 생성 완료: ID {result['id']}")
@@ -416,10 +407,10 @@ class EdgeService:
             logger.error(f"스택 트레이스: {traceback.format_exc()}")
             raise e
     
-    async def get_edges(self) -> List[Dict[str, Any]]:
+    async def get_edges(self, skip: int = 0, limit: int = 100) -> List[Dict[str, Any]]:
         """모든 엣지 조회 (Repository 패턴)"""
         try:
-            return await self.edge_repository.get_edges()
+            return await self.repository.get_edges(skip, limit)
         except Exception as e:
             logger.error(f"엣지 조회 실패: {e}")
             return []
@@ -427,7 +418,7 @@ class EdgeService:
     async def get_edge(self, edge_id: int) -> Optional[Dict[str, Any]]:
         """특정 엣지 조회 (Repository 패턴)"""
         try:
-            return await self.edge_repository.get_edge(edge_id)
+            return await self.repository.get_edge(edge_id)
         except Exception as e:
             logger.error(f"엣지 {edge_id} 조회 실패: {e}")
             return None
@@ -451,7 +442,7 @@ class EdgeService:
                 update_data['edge_kind'] = edge_data.edge_kind
             
             # Repository를 통해 엣지 수정
-            result = await self.edge_repository.update_edge(edge_id, update_data)
+            result = await self.repository.update_edge(edge_id, update_data)
             
             if result:
                 logger.info(f"✅ 엣지 {edge_id} 수정 완료")
@@ -468,7 +459,126 @@ class EdgeService:
         """엣지 삭제 (Repository 패턴)"""
         try:
             logger.info(f"엣지 {edge_id} 삭제")
-            return await self.edge_repository.delete_edge(edge_id)
+            return await self.repository.delete_edge(edge_id)
         except Exception as e:
             logger.error(f"엣지 {edge_id} 삭제 실패: {e}")
             raise e
+    
+    # ============================================================================
+    # 🔍 검색 및 필터링 메서드들
+    # ============================================================================
+    
+    async def get_edges_by_type(self, edge_kind: str) -> List[Dict[str, Any]]:
+        """타입별 엣지 조회"""
+        try:
+            return await self.repository.get_edges_by_type(edge_kind)
+        except Exception as e:
+            logger.error(f"타입별 엣지 조회 실패: {e}")
+            return []
+    
+    async def get_edges_by_node(self, node_id: int) -> List[Dict[str, Any]]:
+        """노드와 연결된 엣지 조회"""
+        try:
+            return await self.repository.get_edges_by_node(node_id)
+        except Exception as e:
+            logger.error(f"노드별 엣지 조회 실패: {e}")
+            return []
+    
+    # ============================================================================
+    # 🔄 전체 그래프 배출량 전파 메서드들
+    # ============================================================================
+    
+    async def propagate_emissions_full_graph(self) -> Dict[str, Any]:
+        """전체 그래프에 대해 배출량 전파를 실행합니다."""
+        try:
+            logger.info("🔄 전체 그래프 배출량 전파 시작")
+            
+            # 모든 엣지를 조회
+            all_edges = await self.repository.get_edges()
+            
+            if not all_edges:
+                logger.info("전체 그래프에 엣지가 없습니다.")
+                return {'success': True, 'message': '전체 그래프에 엣지가 없습니다.'}
+            
+            # 엣지 종류별로 분류
+            continue_edges = [edge for edge in all_edges if edge['edge_kind'] == 'continue']
+            produce_edges = [edge for edge in all_edges if edge['edge_kind'] == 'produce']
+            consume_edges = [edge for edge in all_edges if edge['edge_kind'] == 'consume']
+            
+            logger.info(f"전체 그래프 엣지 분류: continue={len(continue_edges)}, produce={len(produce_edges)}, consume={len(consume_edges)}")
+            
+            # 1. continue 엣지들 처리 (공정→공정)
+            for edge in continue_edges:
+                success = await self.propagate_emissions_continue(edge['source_id'], edge['target_id'])
+                if not success:
+                    logger.warning(f"continue 엣지 {edge['id']} 처리 실패")
+            
+            # 2. produce 엣지들 처리 (공정→제품)
+            for edge in produce_edges:
+                success = await self.propagate_emissions_produce(edge['source_id'], edge['target_id'])
+                if not success:
+                    logger.warning(f"produce 엣지 {edge['id']} 처리 실패")
+            
+            # 3. consume 엣지들 처리 (제품→공정)
+            for edge in consume_edges:
+                success = await self.propagate_emissions_consume(edge['source_id'], edge['target_id'])
+                if not success:
+                    logger.warning(f"consume 엣지 {edge['id']} 처리 실패")
+            
+            logger.info("✅ 전체 그래프 배출량 전파 완료")
+            return {
+                'success': True,
+                'message': '전체 그래프 배출량 전파 완료',
+                'processed_edges': {
+                    'continue': len(continue_edges),
+                    'produce': len(produce_edges),
+                    'consume': len(consume_edges)
+                }
+            }
+            
+        except Exception as e:
+            logger.error(f"전체 그래프 배출량 전파 실패: {e}")
+            return {
+                'success': False,
+                'error': str(e),
+                'message': '전체 그래프 배출량 전파 실패'
+            }
+    
+    async def propagate_emissions_chain(self, chain_id: int) -> Dict[str, Any]:
+        """공정 체인에 대해 배출량 누적 전달을 실행합니다."""
+        try:
+            logger.info(f"🔄 공정 체인 {chain_id} 배출량 전파 시작")
+            
+            # 체인에 포함된 엣지들을 조회 (실제로는 체인 ID로 조회해야 하지만, 임시로 모든 continue 엣지 사용)
+            continue_edges = await self.repository.get_edges_by_type('continue')
+            
+            if not continue_edges:
+                return {
+                    'success': False,
+                    'error': 'continue 엣지가 없습니다.'
+                }
+            
+            # 체인 내의 엣지들을 순서대로 처리
+            processed_count = 0
+            for edge in continue_edges:
+                success = await self.propagate_emissions_continue(edge['source_id'], edge['target_id'])
+                if success:
+                    processed_count += 1
+                else:
+                    logger.warning(f"체인 내 엣지 {edge['id']} 처리 실패")
+            
+            logger.info(f"✅ 공정 체인 {chain_id} 배출량 전파 완료: {processed_count}/{len(continue_edges)}개 엣지 처리")
+            return {
+                'success': True,
+                'message': f'공정 체인 {chain_id} 배출량 전파 완료',
+                'processed_edges': processed_count,
+                'total_edges': len(continue_edges)
+            }
+            
+        except Exception as e:
+            logger.error(f"공정 체인 {chain_id} 배출량 전파 실패: {e}")
+            return {
+                'success': False,
+                'error': str(e),
+                'message': f'공정 체인 {chain_id} 배출량 전파 실패'
+            }

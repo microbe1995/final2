@@ -11,7 +11,7 @@ import InputManager from '@/components/cbam/InputManager';
 import { InstallSelector } from '@/components/cbam/InstallSelector';
 import { ProductSelector } from '@/components/cbam/ProductSelector';
 import { ProcessSelector, ProductProcessModal } from '@/components/cbam/ProcessSelector';
-import { IntegratedGroupsPanel } from '@/components/cbam/IntegratedGroupsPanel';
+
 
 import { useProcessManager, Process, Install, Product } from '@/hooks/useProcessManager';
 import { useProcessCanvas } from '@/hooks/useProcessCanvas';
@@ -407,7 +407,7 @@ function ProcessManagerInner() {
         />
       )}
 
-      {/* 통합 공정 그룹 모달은 IntegratedGroupsPanel에서 관리 */}
+
     </div>
   );
 }
