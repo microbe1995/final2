@@ -366,7 +366,7 @@ class EdgeService:
         except Exception as e:
             logger.error(f"엣지 생성 실패: {e}")
             logger.error(f"오류 타입: {type(e)}")
-            import traceback42  
+            import traceback
             logger.error(f"스택 트레이스: {traceback.format_exc()}")
             if hasattr(self.db_session, 'rollback'):
                 await self.db_session.rollback()
