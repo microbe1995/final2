@@ -79,13 +79,10 @@ export default function MatDirManager({ selectedProcess, onClose }: MatDirManage
   // ============================================================================
   
   const handleMaterialSelect = useCallback(async (selectedName: string) => {
-    setMatDirForm(prev => ({ 
-      ...prev, 
-      mat_name: selectedName
-    }));
+    // 원료명은 자동으로 설정하지 않음 (사용자가 자유롭게 입력할 수 있도록)
     setShowSuggestions(false);
     
-    // 배출계수 자동 매핑
+    // 배출계수만 자동 매핑
     try {
       setAutoFactorStatus('🔍 배출계수 조회 중...');
       const autoFactor = await autoMapMaterialFactor(selectedName);
@@ -278,7 +275,10 @@ export default function MatDirManager({ selectedProcess, onClose }: MatDirManage
             <div className="space-y-4">
               {/* 투입된 원료명 */}
               <div className="relative">
-                <label className="block text-sm font-medium text-gray-300 mb-2">투입된 원료명</label>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  투입된 원료명
+                  <span className="text-xs text-gray-400 ml-2">(자유 입력 가능)</span>
+                </label>
                 <input
                   type="text"
                   value={matDirForm.mat_name}
@@ -309,6 +309,7 @@ export default function MatDirManager({ selectedProcess, onClose }: MatDirManage
                         className="w-full px-3 py-2 text-left text-white hover:bg-gray-600 focus:bg-gray-600 focus:outline-none"
                       >
                         <div className="font-medium">{suggestion}</div>
+                        <div className="text-xs text-gray-400">배출계수 자동 설정</div>
                       </button>
                     ))}
                   </div>
