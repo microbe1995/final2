@@ -15,12 +15,11 @@ class EdgeRepository:
     
     def __init__(self):
         self.database_url = os.getenv('DATABASE_URL')
-        if not self.database_url:
-            logger.warning("DATABASE_URL 환경변수가 설정되지 않았습니다. 데이터베이스 기능이 제한됩니다.")
-            return
-        
         self.pool = None
         self._initialization_attempted = False
+        
+        if not self.database_url:
+            logger.warning("DATABASE_URL 환경변수가 설정되지 않았습니다. 데이터베이스 기능이 제한됩니다.")
     
     async def initialize(self):
         """데이터베이스 연결 풀 초기화"""
@@ -125,14 +124,14 @@ class EdgeRepository:
                     RETURNING id, source_node_type, source_id, target_node_type, target_id, edge_kind, created_at, updated_at
                 """
                 
-                now = datetime.now(timezone.utc)
+                now = datetime.utcnow()
                 row = await conn.fetchrow(
                     query,
-                    edge_data.source_node_type,
-                    edge_data.source_id,
-                    edge_data.target_node_type,
-                    edge_data.target_id,
-                    edge_data.edge_kind,
+                    edge_data['source_node_type'],
+                    edge_data['source_id'],
+                    edge_data['target_node_type'],
+                    edge_data['target_id'],
+                    edge_data['edge_kind'],
                     now
                 )
                 
@@ -251,7 +250,7 @@ class EdgeRepository:
                 
                 # updated_at 필드 추가
                 update_fields.append(f"updated_at = ${param_count}")
-                params.append(datetime.now(timezone.utc))
+                params.append(datetime.utcnow())
                 param_count += 1
                 
                 # ID 파라미터 추가

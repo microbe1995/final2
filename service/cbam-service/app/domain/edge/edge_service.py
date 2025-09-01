@@ -282,14 +282,17 @@ class EdgeService:
         try:
             logger.info(f"엣지 생성 시작: {edge_data}")
             
-            # Repository를 통해 엣지 생성
-            result = await self.edge_repository.create_edge({
+            # Pydantic 모델을 딕셔너리로 변환
+            edge_dict = {
                 'source_node_type': edge_data.source_node_type,
                 'source_id': edge_data.source_id,
                 'target_node_type': edge_data.target_node_type,
                 'target_id': edge_data.target_id,
                 'edge_kind': edge_data.edge_kind
-            })
+            }
+            
+            # Repository를 통해 엣지 생성
+            result = await self.edge_repository.create_edge(edge_dict)
             
             if result:
                 logger.info(f"✅ 엣지 생성 완료: ID {result['id']}")
