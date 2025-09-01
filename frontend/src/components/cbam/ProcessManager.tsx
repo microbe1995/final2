@@ -263,7 +263,7 @@ function ProcessManagerInner() {
           onConnectEnd={handleConnectEnd}
           nodeTypes={nodeTypes}
           edgeTypes={edgeTypes}
-          connectionMode={ConnectionMode.Strict}
+          connectionMode={ConnectionMode.Loose}
           defaultEdgeOptions={{ type: 'custom', markerEnd: { type: MarkerType.ArrowClosed } }}
           deleteKeyCode="Delete"
           className="bg-gray-900"

@@ -174,6 +174,12 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
         return;
       }
       
+      // 🔴 추가: sourceHandle과 targetHandle이 모두 있는지 확인
+      if (!params.sourceHandle || !params.targetHandle) {
+        console.log('❌ sourceHandle 또는 targetHandle이 없음:', params);
+        return;
+      }
+      
       // 🔴 추가: 같은 노드 간 연결 방지
       if (params.source === params.target) {
         console.log('❌ 같은 노드 간 연결은 불가능:', { source: params.source, target: params.target });
