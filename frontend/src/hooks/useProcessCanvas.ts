@@ -185,49 +185,18 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
         return;
       }
       
-      // 핸들 자동 변환 로직 (검증은 이미 ProcessManager에서 완료됨)
+      // 🔧 수정: React Flow의 핸들 ID를 그대로 사용
       let finalParams = { ...params };
       
-      if (!params.sourceHandle || !params.targetHandle) {
-        console.log('🔧 핸들 자동 변환 시작:', params);
-        
-        const sourceNode = nodes.find(node => node.id === params.source);
-        const targetNode = nodes.find(node => node.id === params.target);
-        
-        if (sourceNode && targetNode) {
-          if (!params.sourceHandle) {
-            finalParams.sourceHandle = `${sourceNode.id}-left`;
-            console.log('🔧 sourceHandle 자동 설정:', finalParams.sourceHandle);
-          }
-          
-          if (!params.targetHandle) {
-            finalParams.targetHandle = `${targetNode.id}-right`;
-            console.log('🔧 targetHandle 자동 설정:', finalParams.targetHandle);
-          }
-        }
-      }
+      // React Flow가 이미 핸들 ID를 제공했으므로 그대로 사용
+      console.log('🔧 React Flow에서 제공된 핸들 ID:', {
+        sourceHandle: params.sourceHandle,
+        targetHandle: params.targetHandle
+      });
       
-      // 핸들 ID 검증 및 수정
-      if (finalParams.sourceHandle && finalParams.targetHandle) {
-        const getSafeNodeId = (nodeId: string) => nodeId.replace(/[^a-zA-Z0-9-]/g, '-');
-        
-        if (!finalParams.sourceHandle.includes(params.source) && !finalParams.sourceHandle.includes(getSafeNodeId(params.source))) {
-          const position = finalParams.sourceHandle.split('-').pop();
-          const safeSourceId = getSafeNodeId(params.source);
-          finalParams.sourceHandle = `${safeSourceId}-${position}`;
-          console.log('🔧 sourceHandle ID 수정:', finalParams.sourceHandle);
-        }
-        
-        if (!finalParams.targetHandle.includes(params.target) && !finalParams.targetHandle.includes(getSafeNodeId(params.target))) {
-          const position = finalParams.targetHandle.split('-').pop();
-          const safeTargetId = getSafeNodeId(params.target);
-          finalParams.targetHandle = `${safeTargetId}-${position}`;
-          console.log('🔧 targetHandle ID 수정:', finalParams.targetHandle);
-        }
-      }
-      
+      // 🔧 핸들 ID 존재 여부 확인
       if (!finalParams.sourceHandle || !finalParams.targetHandle) {
-        console.log('❌ 핸들 자동 변환 실패 - 연결 불가:', finalParams);
+        console.log('❌ 핸들 ID 누락 - 연결 불가:', finalParams);
         return;
       }
       

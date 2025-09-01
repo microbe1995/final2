@@ -36,46 +36,33 @@ const targetStyle: React.CSSProperties = {
  * - Bottom: source (연결 시 자동으로 target으로 변환 가능)
  */
 export const renderFourDirectionHandles = (isConnectable = true, nodeId?: string) => {
-  // 🔴 수정: 노드 ID가 반드시 필요하도록 강제
-  if (!nodeId) {
-    console.warn('⚠️ renderFourDirectionHandles: nodeId가 제공되지 않았습니다.');
-    return null;
-  }
-  
-  // 🔴 추가: 노드 ID에서 안전한 핸들 ID 생성
-  const safeNodeId = nodeId.replace(/[^a-zA-Z0-9-]/g, '-');
-  
+  // 🔧 수정: React Flow가 자체적으로 핸들 ID를 생성하도록 함
   const handles = [
     {
       position: Position.Left,
       type: 'source' as HandleType,
-      id: `${safeNodeId}-left`,
       style: sourceStyle,
     },
     {
       position: Position.Right,
       type: 'source' as HandleType,
-      id: `${safeNodeId}-right`,
       style: sourceStyle,
     },
     {
       position: Position.Top,
       type: 'source' as HandleType,
-      id: `${safeNodeId}-top`,
       style: sourceStyle,
     },
     {
       position: Position.Bottom,
       type: 'source' as HandleType,
-      id: `${safeNodeId}-bottom`,
       style: sourceStyle,
     },
   ];
 
-  return handles.map(({ position, type, id, style }) => (
+  return handles.map(({ position, type, style }, index) => (
     <Handle
-      key={id}
-      id={id}
+      key={`${nodeId || 'node'}-${position}-${index}`}
       type={type}
       position={position}
       isConnectable={isConnectable}
