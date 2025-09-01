@@ -348,7 +348,7 @@ class CalculationService:
             visited = set()
             path = []
             
-            def dfs(current_id: int, target: int) -> bool:
+            async def dfs(current_id: int, target: int) -> bool:
                 if current_id == target:
                     return True
                 if current_id in visited:
@@ -361,13 +361,13 @@ class CalculationService:
                 outgoing_edges = await self.calc_repository.get_outgoing_continue_edges(current_id)
                 
                 for edge in outgoing_edges:
-                    if dfs(edge['target_id'], target):
+                    if await dfs(edge['target_id'], target):
                         return True
                 
                 path.pop()
                 return False
             
-            return dfs(target_id, source_id)
+            return await dfs(target_id, source_id)
             
         except Exception as e:
             logger.warning(f"⚠️ 순환 참조 검증 중 오류: {str(e)}")
