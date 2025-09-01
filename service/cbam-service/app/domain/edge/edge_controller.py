@@ -22,18 +22,21 @@ logger = logging.getLogger(__name__)
 # Gateway를 통해 접근하므로 prefix 제거 (경로 중복 방지)
 router = APIRouter(tags=["Edge"])
 
-# 서비스 인스턴스 생성 (기존 CRUD용)
-edge_service = EdgeService()
+# 서비스 인스턴스는 각 엔드포인트에서 생성 (db_session 의존성 주입)
 
 # ============================================================================
 # 🔗 Edge 관련 엔드포인트
 # ============================================================================
 
 @router.post("/", response_model=EdgeResponse, status_code=201)
-async def create_edge(edge_data: EdgeCreateRequest):
+async def create_edge(
+    edge_data: EdgeCreateRequest,
+    db: AsyncSession = Depends(get_db)
+):
     """엣지 생성"""
     try:
         logger.info(f"🔗 엣지 생성 요청: {edge_data.source_id} -> {edge_data.target_id} ({edge_data.edge_kind})")
+        edge_service = EdgeService(db)
         result = await edge_service.create_edge(edge_data)
         logger.info(f"✅ 엣지 생성 성공: ID {result.id}")
         return result
@@ -42,10 +45,11 @@ async def create_edge(edge_data: EdgeCreateRequest):
         raise HTTPException(status_code=500, detail=f"엣지 생성 중 오류가 발생했습니다: {str(e)}")
 
 @router.get("/", response_model=List[EdgeResponse])
-async def get_edges():
+async def get_edges(db: AsyncSession = Depends(get_db)):
     """모든 엣지 목록 조회"""
     try:
         logger.info("📋 엣지 목록 조회 요청")
+        edge_service = EdgeService(db)
         edges = await edge_service.get_edges()
         logger.info(f"✅ 엣지 목록 조회 성공: {len(edges)}개")
         return edges
@@ -54,10 +58,14 @@ async def get_edges():
         raise HTTPException(status_code=500, detail=f"엣지 목록 조회 중 오류가 발생했습니다: {str(e)}")
 
 @router.get("/{edge_id}", response_model=EdgeResponse)
-async def get_edge(edge_id: int):
+async def get_edge(
+    edge_id: int,
+    db: AsyncSession = Depends(get_db)
+):
     """특정 엣지 조회"""
     try:
         logger.info(f"📋 엣지 조회 요청: ID {edge_id}")
+        edge_service = EdgeService(db)
         edge = await edge_service.get_edge(edge_id)
         if not edge:
             raise HTTPException(status_code=404, detail="엣지를 찾을 수 없습니다")
@@ -71,10 +79,15 @@ async def get_edge(edge_id: int):
         raise HTTPException(status_code=500, detail=f"엣지 조회 중 오류가 발생했습니다: {str(e)}")
 
 @router.put("/{edge_id}", response_model=EdgeResponse)
-async def update_edge(edge_id: int, edge_data: EdgeUpdateRequest):
+async def update_edge(
+    edge_id: int, 
+    edge_data: EdgeUpdateRequest,
+    db: AsyncSession = Depends(get_db)
+):
     """엣지 수정"""
     try:
         logger.info(f"📝 엣지 수정 요청: ID {edge_id}")
+        edge_service = EdgeService(db)
         result = await edge_service.update_edge(edge_id, edge_data)
         if not result:
             raise HTTPException(status_code=404, detail="엣지를 찾을 수 없습니다")
@@ -88,10 +101,14 @@ async def update_edge(edge_id: int, edge_data: EdgeUpdateRequest):
         raise HTTPException(status_code=500, detail=f"엣지 수정 중 오류가 발생했습니다: {str(e)}")
 
 @router.delete("/{edge_id}")
-async def delete_edge(edge_id: int):
+async def delete_edge(
+    edge_id: int,
+    db: AsyncSession = Depends(get_db)
+):
     """엣지 삭제"""
     try:
         logger.info(f"🗑️ 엣지 삭제 요청: ID {edge_id}")
+        edge_service = EdgeService(db)
         success = await edge_service.delete_edge(edge_id)
         if not success:
             raise HTTPException(status_code=404, detail="엣지를 찾을 수 없습니다")
