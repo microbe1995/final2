@@ -26,6 +26,7 @@ class ProductCreateRequest(BaseModel):
     aggrgoods_engname: Optional[str] = Field(None, description="품목군영문명")
     product_sell: Optional[float] = Field(0.0, description="제품 판매량")
     product_eusell: Optional[float] = Field(0.0, description="제품 EU 판매량")
+    attr_em: Optional[float] = Field(0.0, description="제품 배출량")
 
 class ProductResponse(BaseModel):
     """제품 응답"""
@@ -43,6 +44,7 @@ class ProductResponse(BaseModel):
     aggrgoods_engname: Optional[str] = Field(None, description="품목군영문명")
     product_sell: Optional[float] = Field(None, description="제품 판매량")
     product_eusell: Optional[float] = Field(None, description="제품 EU 판매량")
+    attr_em: Optional[float] = Field(None, description="제품 배출량")
     created_at: Optional[datetime] = Field(None, description="생성일")
     updated_at: Optional[datetime] = Field(None, description="수정일")
     # 다대다 관계를 위한 공정 정보
@@ -63,6 +65,7 @@ class ProductUpdateRequest(BaseModel):
     aggrgoods_engname: Optional[str] = Field(None, description="품목군영문명")
     product_sell: Optional[float] = Field(None, description="제품 판매량")
     product_eusell: Optional[float] = Field(None, description="제품 EU 판매량")
+    attr_em: Optional[float] = Field(None, description="제품 배출량")
 
     class Config:
         from_attributes = True

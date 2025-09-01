@@ -420,7 +420,7 @@ class EdgeRepository:
             
             async with self.pool.acquire() as conn:
                 query = """
-                    SELECT id, product_name, amount, sell_amount, eusell_amount, attr_em
+                    SELECT id, product_name, product_amount, product_sell, product_eusell, attr_em
                     FROM product
                     WHERE id = $1
                 """
@@ -431,9 +431,9 @@ class EdgeRepository:
                     return {
                         'id': row['id'],
                         'product_name': row['product_name'],
-                        'amount': float(row['amount']) if row['amount'] else 0.0,
-                        'sell_amount': float(row['sell_amount']) if row['sell_amount'] else 0.0,
-                        'eusell_amount': float(row['eusell_amount']) if row['eusell_amount'] else 0.0,
+                        'product_amount': float(row['product_amount']) if row['product_amount'] else 0.0,
+                        'product_sell': float(row['product_sell']) if row['product_sell'] else 0.0,
+                        'product_eusell': float(row['product_eusell']) if row['product_eusell'] else 0.0,
                         'attr_em': float(row['attr_em']) if row['attr_em'] else 0.0
                     }
                 return None

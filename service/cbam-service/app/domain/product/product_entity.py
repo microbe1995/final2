@@ -29,6 +29,7 @@ class Product(Base):
     aggrgoods_engname = Column(Text)  # 품목군영문명
     product_sell = Column(Numeric(15, 6), default=0)  # 제품 판매량
     product_eusell = Column(Numeric(15, 6), default=0)  # 제품 EU 판매량
+    attr_em = Column(Numeric(15, 6), default=0)  # 제품 배출량
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     
@@ -58,6 +59,7 @@ class Product(Base):
             "aggrgoods_engname": self.aggrgoods_engname,
             "product_sell": float(self.product_sell) if self.product_sell else 0.0,
             "product_eusell": float(self.product_eusell) if self.product_eusell else 0.0,
+            "attr_em": float(self.attr_em) if self.attr_em else 0.0,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None
         }
@@ -81,6 +83,7 @@ class Product(Base):
             aggrgoods_engname=data.get("aggrgoods_engname"),
             product_sell=data.get("product_sell", 0.0),
             product_eusell=data.get("product_eusell", 0.0),
+            attr_em=data.get("attr_em", 0.0),
             created_at=datetime.now(timezone.utc)
         )
     

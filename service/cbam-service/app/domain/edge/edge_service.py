@@ -177,14 +177,14 @@ class EdgeService:
             
             # 4. 배출량 계산 (제품 배출량 * 소비 비율)
             product_emission = product_data['attr_em']
-            process_emission = product_emission * (consumption_amount / product_data['amount']) if product_data['amount'] > 0 else 0.0
+            process_emission = product_emission * (consumption_amount / product_data['product_amount']) if product_data['product_amount'] > 0 else 0.0
             
             # 5. 공정의 자체 배출량에 추가
             total_process_emission = process_data['attrdir_em'] + process_emission
             
             logger.info(f"🧮 제품→공정 배출량 계산:")
             logger.info(f"  제품 {source_product_id} 배출량: {product_emission}")
-            logger.info(f"  제품 {source_product_id} 총량: {product_data['amount']}")
+            logger.info(f"  제품 {source_product_id} 총량: {product_data['product_amount']}")
             logger.info(f"  공정 {target_process_id} 소비량: {consumption_amount}")
             logger.info(f"  공정 {target_process_id} 기존 배출량: {process_data['attrdir_em']}")
             logger.info(f"  공정 {target_process_id} 추가 배출량: {process_emission}")
@@ -259,13 +259,6 @@ class EdgeService:
                 'error': str(e),
                 'message': '전체 그래프 배출량 전파 실패'
             }
-
-            
-            return result
-            
-        except Exception as e:
-            logger.error(f"전체 그래프 배출량 전파 실패: {e}")
-            return {'success': False, 'error': str(e)}
     
     async def _detect_cycles(self, edges: List[Dict[str, Any]]) -> bool:
         """순환 참조(사이클)를 감지합니다."""
@@ -448,26 +441,6 @@ class EdgeService:
             import traceback
             logger.error(f"스택 트레이스: {traceback.format_exc()}")
             raise e
-            
-            if result:
-                logger.info(f"✅ 엣지 {edge_id} 수정 완료")
-                return result
-            else:
-                logger.warning(f"엣지 {edge_id} 수정 실패: 해당 엣지를 찾을 수 없습니다.")
-                return None
-                
-        except Exception as e:
-            logger.error(f"엣지 {edge_id} 수정 실패: {e}")
-            raise e
-    
-    async def delete_edge(self, edge_id: int) -> bool:
-        """엣지 삭제 (Repository 패턴)"""
-        try:
-            logger.info(f"엣지 {edge_id} 삭제")
-            return await self.repository.delete_edge(edge_id)
-        except Exception as e:
-            logger.error(f"엣지 {edge_id} 삭제 실패: {e}")
-            raise e
     
     # ============================================================================
     # 🔍 검색 및 필터링 메서드들
@@ -494,62 +467,6 @@ class EdgeService:
     # ============================================================================
     # 🔄 전체 그래프 배출량 전파 메서드들
     # ============================================================================
-    
-    async def propagate_emissions_full_graph(self) -> Dict[str, Any]:
-        """전체 그래프에 대해 배출량 전파를 실행합니다."""
-        try:
-            logger.info("🔄 전체 그래프 배출량 전파 시작")
-            
-            # 모든 엣지를 조회
-            all_edges = await self.repository.get_edges()
-            
-            if not all_edges:
-                logger.info("전체 그래프에 엣지가 없습니다.")
-                return {'success': True, 'message': '전체 그래프에 엣지가 없습니다.'}
-            
-            # 엣지 종류별로 분류
-            continue_edges = [edge for edge in all_edges if edge['edge_kind'] == 'continue']
-            produce_edges = [edge for edge in all_edges if edge['edge_kind'] == 'produce']
-            consume_edges = [edge for edge in all_edges if edge['edge_kind'] == 'consume']
-            
-            logger.info(f"전체 그래프 엣지 분류: continue={len(continue_edges)}, produce={len(produce_edges)}, consume={len(consume_edges)}")
-            
-            # 1. continue 엣지들 처리 (공정→공정)
-            for edge in continue_edges:
-                success = await self.propagate_emissions_continue(edge['source_id'], edge['target_id'])
-                if not success:
-                    logger.warning(f"continue 엣지 {edge['id']} 처리 실패")
-            
-            # 2. produce 엣지들 처리 (공정→제품)
-            for edge in produce_edges:
-                success = await self.propagate_emissions_produce(edge['source_id'], edge['target_id'])
-                if not success:
-                    logger.warning(f"produce 엣지 {edge['id']} 처리 실패")
-            
-            # 3. consume 엣지들 처리 (제품→공정)
-            for edge in consume_edges:
-                success = await self.propagate_emissions_consume(edge['source_id'], edge['target_id'])
-                if not success:
-                    logger.warning(f"consume 엣지 {edge['id']} 처리 실패")
-            
-            logger.info("✅ 전체 그래프 배출량 전파 완료")
-            return {
-                'success': True,
-                'message': '전체 그래프 배출량 전파 완료',
-                'processed_edges': {
-                    'continue': len(continue_edges),
-                    'produce': len(produce_edges),
-                    'consume': len(consume_edges)
-                }
-            }
-            
-        except Exception as e:
-            logger.error(f"전체 그래프 배출량 전파 실패: {e}")
-            return {
-                'success': False,
-                'error': str(e),
-                'message': '전체 그래프 배출량 전파 실패'
-            }
     
     async def propagate_emissions_chain(self, chain_id: int) -> Dict[str, Any]:
         """공정 체인에 대해 배출량 누적 전달을 실행합니다."""
@@ -589,61 +506,3 @@ class EdgeService:
                 'error': str(e),
                 'message': f'공정 체인 {chain_id} 배출량 전파 실패'
             }
-    
-    async def propagate_emissions_consume(self, source_product_id: int, target_process_id: int) -> bool:
-        """
-        규칙 3: 제품→공정 배출량 전달 (edge_kind = "consume")
-        process.attr_em = sum(consumed_products.attr_em * consumption_ratio)
-        """
-        try:
-            logger.info(f"🔗 제품 {source_product_id} → 공정 {target_process_id} 배출량 전달 시작")
-            
-            # 1. 제품의 배출량 조회
-            product_data = await self.repository.get_product_data(source_product_id)
-            if not product_data:
-                logger.error(f"제품 {source_product_id}의 데이터를 찾을 수 없습니다.")
-                return False
-            
-            # 2. 공정의 현재 배출량 데이터 조회
-            process_data = await self.repository.get_process_emission_data(target_process_id)
-            if not process_data:
-                logger.error(f"공정 {target_process_id}의 배출량 데이터를 찾을 수 없습니다.")
-                return False
-            
-            # 3. 제품 소비량 조회 (product_process 테이블에서)
-            consumption_data = await self.repository.get_processes_consuming_product(source_product_id)
-            consumption_amount = 0.0
-            
-            for consume_data in consumption_data:
-                if consume_data['process_id'] == target_process_id:
-                    consumption_amount = float(consume_data['consumption_amount']) if consume_data['consumption_amount'] else 0.0
-                    break
-            
-            # 4. 배출량 계산 (제품 배출량 * 소비 비율)
-            product_emission = product_data['attr_em']
-            process_emission = product_emission * (consumption_amount / product_data['amount']) if product_data['amount'] > 0 else 0.0
-            
-            # 5. 공정의 자체 배출량에 추가
-            total_process_emission = process_data['attrdir_em'] + process_emission
-            
-            logger.info(f"🧮 제품→공정 배출량 계산:")
-            logger.info(f"  제품 {source_product_id} 배출량: {product_emission}")
-            logger.info(f"  제품 {source_product_id} 총량: {product_data['amount']}")
-            logger.info(f"  공정 {target_process_id} 소비량: {consumption_amount}")
-            logger.info(f"  공정 {target_process_id} 기존 배출량: {process_data['attrdir_em']}")
-            logger.info(f"  공정 {target_process_id} 추가 배출량: {process_emission}")
-            logger.info(f"  공정 {target_process_id} 최종 배출량: {total_process_emission}")
-            
-            # 6. 공정의 배출량 업데이트
-            success = await self.repository.update_process_cumulative_emission(target_process_id, total_process_emission)
-            
-            if success:
-                logger.info(f"✅ 제품 {source_product_id} → 공정 {target_process_id} 배출량 전달 완료")
-                return True
-            else:
-                logger.error(f"❌ 공정 {target_process_id} 배출량 업데이트 실패")
-                return False
-                
-        except Exception as e:
-            logger.error(f"제품 {source_product_id} → 공정 {target_process_id} 배출량 전달 실패: {e}")
-            return False
