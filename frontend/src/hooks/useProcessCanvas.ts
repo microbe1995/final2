@@ -185,10 +185,10 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
         return;
       }
       
-      // 핸들 ID 검증 (ConnectionMode.Strict에서는 필수)
+      // Loose 모드에서는 핸들 ID가 없어도 연결 가능하지만, 있으면 더 정확한 연결
       if (!params.sourceHandle || !params.targetHandle) {
-        console.log('❌ 핸들 ID 누락 (Strict 모드에서는 필수):', params);
-        return;
+        console.log('⚠️ 핸들 ID 없음 (Loose 모드에서는 허용):', params);
+        // 핸들 ID가 없어도 계속 진행
       }
       
       console.log('🔧 4방향 연결 핸들 ID:', {
