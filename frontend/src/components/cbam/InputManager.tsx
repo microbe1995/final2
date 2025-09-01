@@ -61,6 +61,11 @@ export default function InputManager({ selectedProcess, onClose }: InputManagerP
   const [fuelSuggestions, setFuelSuggestions] = useState<FuelMaster[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [autoFactorStatus, setAutoFactorStatus] = useState<string>('');
+  
+  // Material Master 자동 배출계수 관련 상태
+  const [materialSuggestions, setMaterialSuggestions] = useState<any[]>([]);
+  const [showMaterialSuggestions, setShowMaterialSuggestions] = useState(false);
+  const [materialAutoFactorStatus, setMaterialAutoFactorStatus] = useState<string>('');
 
   // 수정 모드 상태
   const [editingResult, setEditingResult] = useState<InputResult | null>(null);
@@ -154,21 +159,55 @@ export default function InputManager({ selectedProcess, onClose }: InputManagerP
 
   const handleMatdirNameChange = useCallback(async (name: string) => {
     setMatdirForm(prev => ({ ...prev, name }));
+    
+    if (name.trim().length >= 1) {
+      try {
+        // Material Master에서 원료명 검색
+        const response = await axiosClient.get(apiEndpoints.materialMaster.search(name));
+        if (response.data && Array.isArray(response.data)) {
+          setMaterialSuggestions(response.data);
+          setShowMaterialSuggestions(true);
+        }
+      } catch (err) {
+        console.error('원료 검색 실패:', err);
+        setMaterialSuggestions([]);
+        setShowMaterialSuggestions(false);
+      }
+    } else {
+      setMaterialSuggestions([]);
+      setShowMaterialSuggestions(false);
+    }
   }, []);
 
   const handleMatdirNameBlur = useCallback(async () => {
     if (matdirForm.name && matdirForm.factor === 0) {
+      setMaterialAutoFactorStatus('🔍 배출계수 조회 중...');
       try {
         const response = await axiosClient.get(apiEndpoints.materialMaster.getFactor(matdirForm.name));
         if (response.data && response.data.found && response.data.mat_factor !== null) {
           const factor = response.data.mat_factor;
           setMatdirForm(prev => ({ ...prev, factor }));
+          setMaterialAutoFactorStatus(`✅ 자동 조회: ${matdirForm.name} (배출계수: ${factor})`);
+        } else {
+          setMaterialAutoFactorStatus(`⚠️ 배출계수를 찾을 수 없음: ${matdirForm.name}`);
         }
       } catch (err) {
         console.error('배출계수 조회 실패:', err);
+        setMaterialAutoFactorStatus(`❌ 배출계수 조회 실패: ${matdirForm.name}`);
       }
     }
   }, [matdirForm.name, matdirForm.factor]);
+
+  const handleMaterialSelect = useCallback((material: any) => {
+    setMaterialSuggestions([]);
+    setShowMaterialSuggestions(false);
+    setMatdirForm(prev => ({ 
+      ...prev, 
+      name: material.mat_name || material.name,
+      factor: material.mat_factor || 0 
+    }));
+    setMaterialAutoFactorStatus(`✅ 자동 설정: ${material.mat_name || material.name} (배출계수: ${material.mat_factor || 0})`);
+  }, []);
 
   const calculateMatdirEmission = useCallback(async () => {
     if (!matdirForm.name || matdirForm.factor <= 0 || matdirForm.amount <= 0) {
@@ -209,6 +248,7 @@ export default function InputManager({ selectedProcess, onClose }: InputManagerP
         amount: 0,
         oxyfactor: 1.0000
       });
+      setMaterialAutoFactorStatus('');
 
     } catch (error: any) {
       console.error('❌ 원료직접배출량 계산 실패:', error);
@@ -551,7 +591,7 @@ export default function InputManager({ selectedProcess, onClose }: InputManagerP
             {activeTab === 'matdir' ? (
               // 원료직접배출량 입력 폼
               <div className="space-y-4">
-                <div>
+                <div className="relative">
                   <label className="block text-sm font-medium text-gray-300 mb-2">
                     투입된 원료명
                     <span className="text-xs text-gray-400 ml-2">(자유 입력 가능)</span>
@@ -564,10 +604,37 @@ export default function InputManager({ selectedProcess, onClose }: InputManagerP
                     className="w-full px-3 py-2 bg-yellow-500/20 border border-yellow-500/30 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-yellow-500"
                     placeholder="예: 직접환원철, EAF 탄소 전극"
                   />
+                  
+                  {materialAutoFactorStatus && (
+                    <div className={`mt-1 text-xs ${
+                      materialAutoFactorStatus.includes('✅') ? 'text-green-400' : 
+                      materialAutoFactorStatus.includes('⚠️') ? 'text-yellow-400' : 
+                      'text-blue-400'
+                    }`}>
+                      {materialAutoFactorStatus}
+                    </div>
+                  )}
+
+                  {showMaterialSuggestions && materialSuggestions.length > 0 && (
+                    <div className="absolute z-10 w-full mt-1 bg-gray-700 border border-gray-600 rounded-md shadow-lg max-h-40 overflow-y-auto">
+                      {materialSuggestions.map((material, index) => (
+                        <button
+                          key={material.id || index}
+                          onClick={() => handleMaterialSelect(material)}
+                          className="w-full px-3 py-2 text-left text-white hover:bg-gray-600 focus:bg-gray-600 focus:outline-none"
+                        >
+                          <div className="font-medium">{material.mat_name || material.name}</div>
+                          <div className="text-xs text-gray-400">배출계수 자동 설정</div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">배출계수</label>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    배출계수 {matdirForm.factor > 0 && <span className="text-green-400">(자동 설정됨)</span>}
+                  </label>
                   <input
                     type="number"
                     step="0.000001"
