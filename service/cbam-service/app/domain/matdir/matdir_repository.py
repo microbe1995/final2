@@ -153,8 +153,8 @@ class MatDirRepository:
                 else:
                     # 새로운 데이터 삽입
                     result = await conn.fetchrow("""
-                        INSERT INTO matdir (process_id, mat_name, mat_factor, mat_amount, oxyfactor, matdir_em)
-                        VALUES ($1, $2, $3, $4, $5, $6)
+                        INSERT INTO matdir (process_id, mat_name, mat_factor, mat_amount, oxyfactor, matdir_em, created_at, updated_at)
+                        VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
                         RETURNING *
                     """, (
                         matdir_data['process_id'],
