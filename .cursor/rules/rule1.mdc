@@ -1,0 +1,11 @@
+---
+description: >
+  CBAM/LCA 프로젝트 규칙.
+  - 모든 스키마 변경은 반드시 railway 상의 PostgreSQL DB 테이블을 확인 후 수행한다.
+  - 임의로 새로운 테이블이나 컬럼을 추가하지 않는다.
+  - 비즈니스 로직 변경이 필요하다면 DB 스키마를 우선 수정한 뒤 진행한다.
+globs:
+  - "**/*.py"
+  - "**/*.ts"
+alwaysApply: true
+---

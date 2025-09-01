@@ -138,7 +138,7 @@ export default function MatDirManager({ selectedProcess, onClose }: MatDirManage
 
     setIsCalculatingMatDir(true);
     try {
-      const response = await axiosClient.post(apiEndpoints.cbam.calculation.matdir.calculate, {
+      const response = await axiosClient.post(apiEndpoints.cbam.matdir.calculate, {
         mat_amount: matDirForm.mat_amount,
         mat_factor: matDirForm.mat_factor,
         oxyfactor: matDirForm.oxyfactor
@@ -202,7 +202,7 @@ export default function MatDirManager({ selectedProcess, onClose }: MatDirManage
         
         console.log(`📤 저장 요청 ${index + 1}:`, requestData);
         
-        return axiosClient.post(apiEndpoints.cbam.calculation.matdir.create, requestData);
+        return axiosClient.post(apiEndpoints.cbam.matdir.create, requestData);
       });
 
       const responses = await Promise.all(savePromises);
@@ -212,7 +212,7 @@ export default function MatDirManager({ selectedProcess, onClose }: MatDirManage
       try {
         console.log('🔄 자동 집계 시작: 공정 ID', selectedProcess.id);
         const aggregationResponse = await axiosClient.post(
-          `/api/v1/cbam/calculation/emission/process/attrdir`
+          apiEndpoints.cbam.calculation.process.attrdir(selectedProcess.id)
         );
         console.log('✅ 자동 집계 성공:', aggregationResponse.data);
       } catch (aggregationError: any) {

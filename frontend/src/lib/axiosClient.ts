@@ -287,7 +287,7 @@ export const apiEndpoints = {
       update: (id: number) => `/api/v1/cbam/matdir/${id}`,
       delete: (id: number) => `/api/v1/cbam/matdir/${id}`,
       byProcess: (process_id: number) => `/api/v1/cbam/matdir/process/${process_id}`,
-      calculate: '/api/v1/cbam/calculation/emission/process/attrdir',
+      calculate: '/api/v1/cbam/matdir/calculate',
       totalByProcess: (process_id: number) => `/api/v1/cbam/matdir/process/${process_id}/total`
     },
     
@@ -299,7 +299,7 @@ export const apiEndpoints = {
       update: (id: number) => `/api/v1/cbam/fueldir/${id}`,
       delete: (id: number) => `/api/v1/cbam/fueldir/${id}`,
       byProcess: (process_id: number) => `/api/v1/cbam/fueldir/process/${process_id}`,
-      calculate: '/api/v1/cbam/calculation/emission/process/attrdir',
+      calculate: '/api/v1/cbam/fueldir/calculate',
       totalByProcess: (process_id: number) => `/api/v1/cbam/fueldir/process/${process_id}/total`
     },
     
@@ -325,41 +325,13 @@ export const apiEndpoints = {
       stats: '/api/v1/cbam/productprocess/stats'
     },
     
-    // Material 계산 API
-    material: '/api/v1/cbam/calculation/emission/process/attrdir',
-    
-    // Precursor 관련 API
-    precursors: '/api/v1/cbam/calculation/emission/process/attrdir/all',
-    precursorsBatch: '/api/v1/cbam/calculation/emission/process/attrdir/batch',
-    precursor: '/api/v1/cbam/calculation/emission/process/attrdir',
-    history: '/api/v1/cbam/calculation/emission/process/attrdir/all',
-    
     // Calculation 관련 API
     calculation: {
-      // Material 계산 API
-      matdir: {
-        calculate: '/api/v1/cbam/calculation/emission/process/attrdir',
-        create: '/api/v1/cbam/calculation/emission/process/attrdir',
-        get: (process_id: number) => `/api/v1/cbam/calculation/emission/process/attrdir/${process_id}`,
-        update: (process_id: number) => `/api/v1/cbam/calculation/emission/process/attrdir/${process_id}`,
-        delete: (process_id: number) => `/api/v1/cbam/calculation/emission/process/attrdir/${process_id}`,
-        all: '/api/v1/cbam/calculation/emission/process/attrdir/all',
-        batch: '/api/v1/cbam/calculation/emission/process/attrdir/batch'
-      },
-      // Fuel 계산 API
-      fueldir: {
-        calculate: '/api/v1/cbam/calculation/emission/process/attrdir',
-        create: '/api/v1/cbam/calculation/emission/process/attrdir',
-        get: (process_id: number) => `/api/v1/cbam/calculation/emission/process/attrdir/${process_id}`,
-        update: (process_id: number) => `/api/v1/cbam/calculation/emission/process/attrdir/${process_id}`,
-        delete: (process_id: number) => `/api/v1/cbam/calculation/emission/process/attrdir/${process_id}`,
-        all: '/api/v1/cbam/calculation/emission/process/attrdir/all',
-        batch: '/api/v1/cbam/calculation/emission/process/attrdir/batch'
-      },
-      // Process 배출량 계산 API
+      // Process 배출량 계산 API (직접귀속배출량)
       process: {
         calculate: '/api/v1/cbam/calculation/emission/process/calculate',
-        attrdir: '/api/v1/cbam/calculation/emission/process/attrdir'
+        attrdir: (process_id: number) => `/api/v1/cbam/calculation/emission/process/${process_id}/attrdir`,
+        attrdirAll: '/api/v1/cbam/calculation/emission/process/attrdir/all'
       },
       // Product 배출량 계산 API
       product: {
