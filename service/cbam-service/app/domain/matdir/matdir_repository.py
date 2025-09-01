@@ -51,7 +51,7 @@ class MatDirRepository:
             try:
                 await self._create_matdir_table_async()
             except Exception as e:
-                logger.warning(f"⚠️ MatDir 테이블 생성 실패 (기본 기능은 정상): {e}")
+                logger.warning(f"⚠️ 테이블 생성 실패 (기본 기능은 정상): {e}")
             
         except Exception as e:
             logger.error(f"❌ MatDir 데이터베이스 연결 실패: {str(e)}")
@@ -425,145 +425,24 @@ class MatDirRepository:
             raise
 
     # ============================================================================
-    # 🔍 원료-배출계수 매핑 관련 메서드들 (@mapping/ 패턴과 동일)
-    # ============================================================================
-
-    async def create_material_mapping(self, mapping_data) -> Optional[Dict[str, Any]]:
-        """원료-배출계수 매핑 생성"""
-        await self._ensure_pool_initialized()
-        
-        try:
-            async with self.pool.acquire() as conn:
-                result = await conn.fetchrow("""
-                    INSERT INTO material_master (mat_name, mat_factor, carbon_content, mat_engname, created_at, updated_at)
-                    VALUES ($1, $2, $3, $4, NOW(), NOW())
-                    RETURNING *
-                """, (
-                    mapping_data.mat_name,
-                    mapping_data.mat_factor,
-                    mapping_data.carbon_content,
-                    mapping_data.mat_engname
-                ))
-                
-                return dict(result) if result else None
-                
-        except Exception as e:
-            logger.error(f"❌ 원료-배출계수 매핑 생성 실패: {str(e)}")
-            raise
-
-    async def get_all_material_mappings(self, skip: int = 0, limit: int = 100) -> List[Dict[str, Any]]:
-        """모든 원료-배출계수 매핑 조회"""
-        await self._ensure_pool_initialized()
-        
-        try:
-            async with self.pool.acquire() as conn:
-                results = await conn.fetch("""
-                    SELECT * FROM material_master 
-                    ORDER BY created_at DESC 
-                    LIMIT $1 OFFSET $2
-                """, limit, skip)
-                
-                return [dict(row) for row in results]
-                
-        except Exception as e:
-            logger.error(f"❌ 모든 원료-배출계수 매핑 조회 실패: {str(e)}")
-            raise
-
-    async def get_material_mapping(self, mapping_id: int) -> Optional[Dict[str, Any]]:
-        """특정 원료-배출계수 매핑 조회"""
-        await self._ensure_pool_initialized()
-        
-        try:
-            async with self.pool.acquire() as conn:
-                result = await conn.fetchrow("""
-                    SELECT * FROM material_master WHERE id = $1
-                """, mapping_id)
-                
-                return dict(result) if result else None
-                
-        except Exception as e:
-            logger.error(f"❌ 원료-배출계수 매핑 조회 실패: {str(e)}")
-            raise
-
-    async def update_material_mapping(self, mapping_id: int, mapping_data) -> Optional[Dict[str, Any]]:
-        """원료-배출계수 매핑 수정"""
-        await self._ensure_pool_initialized()
-        
-        try:
-            async with self.pool.acquire() as conn:
-                # 업데이트할 필드들만 동적으로 생성
-                update_fields = []
-                values = []
-                
-                if mapping_data.mat_name is not None:
-                    update_fields.append("mat_name = $1")
-                    values.append(mapping_data.mat_name)
-                
-                if mapping_data.mat_factor is not None:
-                    update_fields.append("mat_factor = $2")
-                    values.append(mapping_data.mat_factor)
-                
-                if mapping_data.carbon_content is not None:
-                    update_fields.append("carbon_content = $3")
-                    values.append(mapping_data.carbon_content)
-                
-                if mapping_data.mat_engname is not None:
-                    update_fields.append("mat_engname = $4")
-                    values.append(mapping_data.mat_engname)
-                
-                if not update_fields:
-                    return await self.get_material_mapping(mapping_id)
-                
-                set_clause = ", ".join(update_fields)
-                values.append(mapping_id)
-                
-                query = f"""
-                    UPDATE material_master 
-                    SET {set_clause}, updated_at = NOW()
-                    WHERE id = ${len(values)} 
-                    RETURNING *
-                """
-                
-                result = await conn.fetchrow(query, *values)
-                
-                return dict(result) if result else None
-                
-        except Exception as e:
-            logger.error(f"❌ 원료-배출계수 매핑 수정 실패: {str(e)}")
-            raise
-
-    async def delete_material_mapping(self, mapping_id: int) -> bool:
-        """원료-배출계수 매핑 삭제"""
-        await self._ensure_pool_initialized()
-        
-        try:
-            async with self.pool.acquire() as conn:
-                result = await conn.execute("""
-                    DELETE FROM material_master WHERE id = $1
-                """, mapping_id)
-                
-                return result != "DELETE 0"
-                
-        except Exception as e:
-            logger.error(f"❌ 원료-배출계수 매핑 삭제 실패: {str(e)}")
-            raise
-
-    # ============================================================================
-    # 🔍 원료명 조회 관련 메서드들 (@mapping/ 패턴과 동일)
+    # 🔍 원료명 조회 관련 메서드들 (Railway DB의 materials 테이블 사용)
     # ============================================================================
 
     async def lookup_material_by_name(self, mat_name: str) -> List[Dict[str, Any]]:
-        """원료명으로 배출계수 조회 (자동 매핑 기능)"""
+        """원료명으로 배출계수 조회 (자동 매핑 기능) - Railway DB의 materials 테이블 사용"""
         await self._ensure_pool_initialized()
         
         try:
             async with self.pool.acquire() as conn:
                 results = await conn.fetch("""
-                    SELECT * FROM material_master 
-                    WHERE mat_name ILIKE $1 
-                    ORDER BY mat_name
+                    SELECT id, item_name as mat_name, item_eng as mat_engname, 
+                           em_factor as mat_factor, carbon_factor as carbon_content
+                    FROM materials 
+                    WHERE item_name ILIKE $1 
+                    ORDER BY item_name
                 """, f"%{mat_name}%")
                 
+                logger.info(f"✅ 원료명 조회 성공: '{mat_name}' → {len(results)}개 결과")
                 return [dict(row) for row in results]
                 
         except Exception as e:

@@ -9,14 +9,7 @@ from decimal import Decimal
 from app.domain.matdir.matdir_repository import MatDirRepository
 from app.domain.matdir.matdir_schema import (
     MatDirCreateRequest, MatDirResponse, MatDirUpdateRequest, 
-    MatDirCalculationRequest, MatDirCalculationResponse,
-    # 🔍 새로운 매핑 관련 스키마들
-    MaterialMappingResponse,
-    MaterialMappingCreateRequest,
-    MaterialMappingUpdateRequest,
-    MaterialMappingFullResponse,
-    MaterialNameLookupRequest,
-    MaterialNameLookupResponse
+    MatDirCalculationRequest, MatDirCalculationResponse
 )
 
 logger = logging.getLogger(__name__)
@@ -174,104 +167,78 @@ class MatDirService:
             raise e
 
     # ============================================================================
-    # 🔍 원료-배출계수 매핑 관련 메서드들 (@mapping/ 패턴과 동일)
+    # 🔍 원료명 조회 관련 메서드들 (Railway DB의 materials 테이블 사용)
     # ============================================================================
 
-    async def create_material_mapping(self, mapping_data: MaterialMappingCreateRequest) -> MaterialMappingFullResponse:
-        """원료-배출계수 매핑 생성"""
-        try:
-            mapping = await self.matdir_repository.create_material_mapping(mapping_data)
-            if mapping:
-                return MaterialMappingFullResponse(**mapping)
-            else:
-                raise Exception("원료-배출계수 매핑 생성에 실패했습니다.")
-        except Exception as e:
-            logger.error(f"Error creating material mapping: {e}")
-            raise e
-
-    async def get_all_material_mappings(self, skip: int = 0, limit: int = 100) -> List[MaterialMappingFullResponse]:
-        """모든 원료-배출계수 매핑 조회"""
-        try:
-            mappings = await self.matdir_repository.get_all_material_mappings(skip, limit)
-            return [MaterialMappingFullResponse(**mapping) for mapping in mappings]
-        except Exception as e:
-            logger.error(f"Error getting all material mappings: {e}")
-            raise e
-
-    async def get_material_mapping(self, mapping_id: int) -> Optional[MaterialMappingFullResponse]:
-        """특정 원료-배출계수 매핑 조회"""
-        try:
-            mapping = await self.matdir_repository.get_material_mapping(mapping_id)
-            if mapping:
-                return MaterialMappingFullResponse(**mapping)
-            return None
-        except Exception as e:
-            logger.error(f"Error getting material mapping {mapping_id}: {e}")
-            raise e
-
-    async def update_material_mapping(self, mapping_id: int, mapping_data: MaterialMappingUpdateRequest) -> Optional[MaterialMappingFullResponse]:
-        """원료-배출계수 매핑 수정"""
-        try:
-            mapping = await self.matdir_repository.update_material_mapping(mapping_id, mapping_data)
-            if mapping:
-                return MaterialMappingFullResponse(**mapping)
-            return None
-        except Exception as e:
-            logger.error(f"Error updating material mapping {mapping_id}: {e}")
-            raise e
-
-    async def delete_material_mapping(self, mapping_id: int) -> bool:
-        """원료-배출계수 매핑 삭제"""
-        try:
-            success = await self.matdir_repository.delete_material_mapping(mapping_id)
-            return success
-        except Exception as e:
-            logger.error(f"Error deleting material mapping {mapping_id}: {e}")
-            raise e
-
-    # ============================================================================
-    # 🔍 원료명 조회 관련 메서드들 (@mapping/ 패턴과 동일)
-    # ============================================================================
-
-    async def lookup_material_by_name(self, mat_name: str) -> MaterialNameLookupResponse:
-        """원료명으로 배출계수 조회 (자동 매핑 기능)"""
+    async def lookup_material_by_name(self, mat_name: str) -> List[Dict[str, Any]]:
+        """원료명으로 배출계수 조회 (자동 매핑 기능) - Railway DB의 materials 테이블 사용"""
         try:
             mappings = await self.matdir_repository.lookup_material_by_name(mat_name)
-            
-            if mappings:
-                # 매핑 결과를 응답 형식으로 변환
-                material_responses = []
-                for mapping in mappings:
-                    material_responses.append(MaterialMappingResponse(
-                        mat_name=mapping['mat_name'],
-                        mat_factor=mapping['mat_factor'],
-                        carbon_content=mapping.get('carbon_content'),
-                        mat_engname=mapping.get('mat_engname')
-                    ))
-                
-                return MaterialNameLookupResponse(
-                    success=True,
-                    data=material_responses,
-                    count=len(material_responses),
-                    message=f"원료 '{mat_name}'에 대한 {len(material_responses)}개의 매핑을 찾았습니다."
-                )
-            else:
-                return MaterialNameLookupResponse(
-                    success=False,
-                    data=[],
-                    count=0,
-                    message=f"원료 '{mat_name}'에 대한 매핑을 찾을 수 없습니다."
-                )
-                
+            return mappings
         except Exception as e:
             logger.error(f"Error looking up material by name '{mat_name}': {e}")
             raise e
 
-    async def search_material_by_name(self, mat_name: str) -> MaterialNameLookupResponse:
+    async def search_material_by_name(self, mat_name: str) -> List[Dict[str, Any]]:
         """원료명으로 검색 (부분 검색)"""
         try:
             # lookup_material_by_name과 동일한 로직 사용
             return await self.lookup_material_by_name(mat_name)
         except Exception as e:
             logger.error(f"Error searching material by name '{mat_name}': {e}")
+            raise e
+
+    # ============================================================================
+    # 🏗️ Material Master 관련 메서드들 (fueldir과 동일한 패턴)
+    # ============================================================================
+
+    async def get_all_materials(self) -> Dict[str, Any]:
+        """모든 원료 마스터 데이터 조회 - Railway DB의 materials 테이블 사용"""
+        try:
+            materials = await self.matdir_repository.get_all_materials()
+            return {
+                "materials": materials,
+                "total_count": len(materials)
+            }
+        except Exception as e:
+            logger.error(f"Error getting all materials: {e}")
+            raise e
+
+    async def search_materials(self, mat_name: str) -> List[Dict[str, Any]]:
+        """원료명으로 검색 (부분 검색) - Railway DB의 materials 테이블 사용"""
+        try:
+            materials = await self.matdir_repository.search_materials(mat_name)
+            return materials
+        except Exception as e:
+            logger.error(f"Error searching materials by name '{mat_name}': {e}")
+            raise e
+
+    async def get_material_factor_by_name(self, mat_name: str) -> Dict[str, Any]:
+        """원료명으로 배출계수 조회 (자동 매핑 기능) - Railway DB의 materials 테이블 사용"""
+        try:
+            result = await self.matdir_repository.get_material_factor_by_name(mat_name)
+            return result
+        except Exception as e:
+            logger.error(f"Error getting material factor by name '{mat_name}': {e}")
+            raise e
+
+    async def create_matdir_with_auto_factor(self, matdir_data: MatDirCreateRequest) -> MatDirResponse:
+        """원료직접배출량 데이터 생성 (배출계수 자동 매핑) - Railway DB의 materials 테이블 사용"""
+        try:
+            # 원료명으로 배출계수 자동 조회
+            material_factor = await self.get_material_factor_by_name(matdir_data.mat_name)
+            
+            if material_factor and material_factor.get('found'):
+                # 배출계수를 자동으로 설정
+                matdir_data.mat_factor = Decimal(str(material_factor['mat_factor']))
+                logger.info(f"✅ 배출계수 자동 매핑 성공: {matdir_data.mat_name} → {matdir_data.mat_factor}")
+            else:
+                logger.warning(f"⚠️ 배출계수 자동 매핑 실패: {matdir_data.mat_name} - 기본값 사용")
+                raise Exception(f"원료 '{matdir_data.mat_name}'의 배출계수를 찾을 수 없습니다. 수동으로 입력해주세요.")
+            
+            # 기존 생성 로직 사용
+            return await self.create_matdir(matdir_data)
+            
+        except Exception as e:
+            logger.error(f"Error creating matdir with auto factor: {e}")
             raise e
