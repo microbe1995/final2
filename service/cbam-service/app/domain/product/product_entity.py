@@ -4,7 +4,7 @@
 
 from sqlalchemy import Column, Integer, Text, DateTime, Date, ForeignKey, Numeric
 from sqlalchemy.orm import relationship
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, Any
 
 # 공통 Base 클래스 사용
@@ -29,8 +29,8 @@ class Product(Base):
     aggrgoods_engname = Column(Text)  # 품목군영문명
     product_sell = Column(Numeric(15, 6), default=0)  # 제품 판매량
     product_eusell = Column(Numeric(15, 6), default=0)  # 제품 EU 판매량
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     
     # 관계 설정
     product_processes = relationship("ProductProcess", back_populates="product")
@@ -81,7 +81,7 @@ class Product(Base):
             aggrgoods_engname=data.get("aggrgoods_engname"),
             product_sell=data.get("product_sell", 0.0),
             product_eusell=data.get("product_eusell", 0.0),
-            created_at=datetime.utcnow()
+            created_at=datetime.now(timezone.utc)
         )
     
     def __repr__(self):

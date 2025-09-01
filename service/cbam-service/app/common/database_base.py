@@ -16,7 +16,7 @@ from typing import Any, Optional
 from sqlalchemy import Column, Integer, String, Numeric, DateTime, Text, Boolean, JSON, create_engine, text
 from sqlalchemy.orm import Mapped, mapped_column, sessionmaker, Session, DeclarativeBase
 from sqlalchemy.exc import OperationalError, ProgrammingError
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, Any
 
 logger = logging.getLogger(__name__)
@@ -158,8 +158,8 @@ class DatabaseBase(Base):
     __abstract__ = True
     
     id: Mapped[str] = mapped_column(Text(36), primary_key=True, index=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     
     def to_dict(self) -> Dict[str, Any]:
         """엔티티를 딕셔너리로 변환"""
@@ -175,8 +175,8 @@ class DatabaseBase(Base):
 # 공통 필드를 가진 Base 클래스 (필요 시 사용)
 class TimestampMixin:
     """생성/수정 시간 공통 필드"""
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
 
 class IdentityMixin:
     """ID 공통 필드"""

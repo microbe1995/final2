@@ -1,7 +1,7 @@
 # 🔄 Process Entity - 공정 데이터베이스 모델
 from sqlalchemy import Column, Integer, Text, DateTime, Date
 from sqlalchemy.orm import relationship
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, Any, List
 
 # 공통 Base 클래스 사용
@@ -16,8 +16,8 @@ class Process(Base):
     process_name = Column(Text, nullable=False, index=True)  # 프로세스명
     start_period = Column(Date, nullable=False)  # 시작일
     end_period = Column(Date, nullable=False)  # 종료일
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     
     # 관계 설정
     product_processes = relationship("ProductProcess", back_populates="process")
@@ -48,7 +48,7 @@ class Process(Base):
             process_name=data.get("process_name"),
             start_period=date.fromisoformat(data.get("start_period")) if data.get("start_period") else None,
             end_period=date.fromisoformat(data.get("end_period")) if data.get("end_period") else None,
-            created_at=datetime.utcnow()
+            created_at=datetime.now(timezone.utc)
         )
     
     def __repr__(self):
