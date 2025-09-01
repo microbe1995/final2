@@ -29,45 +29,43 @@ const targetStyle: React.CSSProperties = {
 
 /**
  * 4방향 핸들 배치 - React Flow 공식 문서에 따른 올바른 구현
- * React Flow가 자체적으로 핸들 ID를 생성하고 관리하도록 함
- * - Left: source (연결 시 자동으로 target으로 변환 가능)
- * - Right: source (연결 시 자동으로 target으로 변환 가능)
- * - Top: source (연결 시 자동으로 target으로 변환 가능)
- * - Bottom: source (연결 시 자동으로 target으로 변환 가능)
+ * 각 방향에 source와 target 핸들을 모두 생성하여 연결 가능하도록 함
+ * - Left: source + target
+ * - Right: source + target  
+ * - Top: source + target
+ * - Bottom: source + target
  */
 export const renderFourDirectionHandles = (isConnectable = true, nodeId?: string) => {
-  const handles = [
-    {
-      position: Position.Left,
-      type: 'source' as HandleType,
-      style: sourceStyle,
-    },
-    {
-      position: Position.Right,
-      type: 'source' as HandleType,
-      style: sourceStyle,
-    },
-    {
-      position: Position.Top,
-      type: 'source' as HandleType,
-      style: sourceStyle,
-    },
-    {
-      position: Position.Bottom,
-      type: 'source' as HandleType,
-      style: sourceStyle,
-    },
+  const nodeIdStr = nodeId || 'node';
+  
+  const handleConfigs = [
+    { position: Position.Left, id: `${nodeIdStr}-left` },
+    { position: Position.Right, id: `${nodeIdStr}-right` },
+    { position: Position.Top, id: `${nodeIdStr}-top` },
+    { position: Position.Bottom, id: `${nodeIdStr}-bottom` },
   ];
 
-  return handles.map(({ position, type, style }, index) => (
-    <Handle
-      key={`${nodeId || 'node'}-${position}-${index}`}
-      type={type}
-      position={position}
-      isConnectable={isConnectable}
-      className={cls}
-      style={style}
-    />
+  return handleConfigs.map(({ position, id }) => (
+    <React.Fragment key={id}>
+      {/* Source 핸들 */}
+      <Handle
+        id={`${id}-source`}
+        type="source"
+        position={position}
+        isConnectable={isConnectable}
+        className={cls}
+        style={sourceStyle}
+      />
+      {/* Target 핸들 */}
+      <Handle
+        id={`${id}-target`}
+        type="target"
+        position={position}
+        isConnectable={isConnectable}
+        className={cls}
+        style={targetStyle}
+      />
+    </React.Fragment>
   ));
 };
 
