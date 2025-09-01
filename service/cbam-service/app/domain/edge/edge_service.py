@@ -355,7 +355,8 @@ class EdgeService:
             logger.error(f"스택 트레이스: {traceback.format_exc()}")
             if hasattr(self.db_session, 'rollback'):
                 await self.db_session.rollback()
-            return None
+            # None 대신 예외를 다시 발생시켜서 FastAPI가 적절한 오류 응답을 보내도록 함
+            raise e
     
     async def get_edges(self) -> List[Edge]:
         """모든 엣지 조회"""
@@ -411,7 +412,7 @@ class EdgeService:
         except Exception as e:
             logger.error(f"엣지 {edge_id} 수정 실패: {e}")
             await self.db_session.rollback()
-            return None
+            raise e
     
     async def delete_edge(self, edge_id: int) -> bool:
         """엣지 삭제"""
@@ -433,4 +434,4 @@ class EdgeService:
         except Exception as e:
             logger.error(f"엣지 {edge_id} 삭제 실패: {e}")
             await self.db_session.rollback()
-            return False
+            raise e

@@ -38,6 +38,12 @@ async def create_edge(
         logger.info(f"🔗 엣지 생성 요청: {edge_data.source_id} -> {edge_data.target_id} ({edge_data.edge_kind})")
         edge_service = EdgeService(db)
         result = await edge_service.create_edge(edge_data)
+        
+        # result가 None인지 확인
+        if result is None:
+            logger.error("❌ Edge 생성 결과가 None입니다")
+            raise HTTPException(status_code=500, detail="Edge 생성에 실패했습니다")
+        
         logger.info(f"✅ 엣지 생성 성공: ID {result.id}")
         return result
     except Exception as e:
