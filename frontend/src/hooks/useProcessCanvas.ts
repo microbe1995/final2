@@ -95,7 +95,7 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
   }, [setNodes, selectedInstall?.id]);
 
   // 공정 노드 추가 (안전한 상태 업데이트)
-  const addProcessNode = useCallback((process: Process, products: Product[], openMatDirModal: (process: Process) => void, openFuelDirModal: (process: Process) => void) => {
+  const addProcessNode = useCallback((process: Process, products: Product[], openInputModal: (process: Process) => void, _: (process: Process) => void) => {
     // 해당 공정이 사용되는 모든 제품 정보 찾기
     const relatedProducts = products.filter((product: Product) => 
       process.products && process.products.some((p: Product) => p.id === product.id)
@@ -127,8 +127,7 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
         is_readonly: isExternalProcess,
         related_products: relatedProducts,
         is_many_to_many: true,
-        onMatDirClick: openMatDirModal,
-        onFuelDirClick: openFuelDirModal,
+        onMatDirClick: openInputModal,
       },
     };
 

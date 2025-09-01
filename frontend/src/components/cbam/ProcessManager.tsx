@@ -6,8 +6,7 @@ import { Plus } from 'lucide-react';
 
 import ProductNode from '@/components/atomic/atoms/ProductNode';
 import ProcessNode from '@/components/atomic/atoms/ProcessNode';
-import MatDirManager from '@/components/cbam/matdir_manager';
-import FuelDirManager from '@/components/cbam/fueldir_manager';
+import InputManager from '@/components/cbam/InputManager';
 import { InstallSelector } from '@/components/cbam/InstallSelector';
 import { ProductSelector } from '@/components/cbam/ProductSelector';
 import { ProcessSelector, ProductProcessModal } from '@/components/cbam/ProcessSelector';
@@ -82,10 +81,8 @@ function ProcessManagerInner() {
   const [showProductModal, setShowProductModal] = useState(false);
   const [showProcessModalForProduct, setShowProcessModalForProduct] = useState(false);
   const [showProcessModal, setShowProcessModal] = useState(false);
-  const [showMatDirModal, setShowMatDirModal] = useState(false);
-  const [showFuelDirModal, setShowFuelDirModal] = useState(false);
-  const [selectedProcessForMatDir, setSelectedProcessForMatDir] = useState<Process | null>(null);
-  const [selectedProcessForFuelDir, setSelectedProcessForFuelDir] = useState<Process | null>(null);
+  const [showInputModal, setShowInputModal] = useState(false);
+  const [selectedProcessForInput, setSelectedProcessForInput] = useState<Process | null>(null);
 
   // Edge 생성 후 통합 공정 그룹 상태 업데이트
   const updateProcessChainsAfterEdge = useCallback(async () => {
@@ -121,24 +118,18 @@ function ProcessManagerInner() {
     setShowProcessModal(true);
   }, []);
 
+  // 투입량 입력 모달 열기
+  const openInputModal = useCallback((process: Process) => {
+    setSelectedProcessForInput(process);
+    setShowInputModal(true);
+  }, []);
+
   // 공정 선택 처리
   const handleProcessSelect = useCallback((process: Process) => {
-    addProcessNode(process, products, openMatDirModal, openFuelDirModal);
+    addProcessNode(process, products, openInputModal, openInputModal);
     setShowProcessModal(false);
     setShowProcessModalForProduct(false);
-  }, [addProcessNode, products]);
-
-  // 원료직접배출량 모달 열기
-  const openMatDirModal = useCallback((process: Process) => {
-    setSelectedProcessForMatDir(process);
-    setShowMatDirModal(true);
-  }, []);
-
-  // 연료직접배출량 모달 열기
-  const openFuelDirModal = useCallback((process: Process) => {
-    setSelectedProcessForFuelDir(process);
-    setShowFuelDirModal(true);
-  }, []);
+  }, [addProcessNode, products, openInputModal]);
 
   // 통합 공정 그룹 탐지
   const handleDetectGroups = useCallback(async () => {
@@ -353,17 +344,10 @@ function ProcessManagerInner() {
         />
       )}
 
-      {showMatDirModal && (
-        <MatDirManager
-          selectedProcess={selectedProcessForMatDir}
-          onClose={() => setShowMatDirModal(false)}
-        />
-      )}
-
-      {showFuelDirModal && (
-        <FuelDirManager
-          selectedProcess={selectedProcessForFuelDir}
-          onClose={() => setShowFuelDirModal(false)}
+      {showInputModal && selectedProcessForInput && (
+        <InputManager
+          selectedProcess={selectedProcessForInput}
+          onClose={() => setShowInputModal(false)}
         />
       )}
 

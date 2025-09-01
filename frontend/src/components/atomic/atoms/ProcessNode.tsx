@@ -157,7 +157,7 @@ function ProcessNode({
           </div>
         )}
 
-        {/* 원료직접배출량 버튼 */}
+        {/* 투입량 입력 버튼 */}
         {data.processData && finalVariant === 'process' && !isExternalProcess && (
           <div className='mt-2 pt-2 border-t border-gray-300'>
             <button
@@ -167,20 +167,9 @@ function ProcessNode({
                   data.onMatDirClick(data.processData);
                 }
               }}
-              className='w-full px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded transition-colors mb-2'
+              className='w-full px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded transition-colors'
             >
-              📊 원료직접배출량
-            </button>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                if (data.onFuelDirClick) {
-                  data.onFuelDirClick(data.processData);
-                }
-              }}
-              className='w-full px-2 py-1 bg-green-600 hover:bg-green-700 text-white text-xs rounded transition-colors'
-            >
-              ⛽ 연료직접배출량
+              📊 투입량 입력
             </button>
           </div>
         )}
