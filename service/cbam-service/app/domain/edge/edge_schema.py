@@ -11,6 +11,7 @@ class EdgeCreateRequest(BaseModel):
     source_node_type: str = Field(..., description="소스 노드 타입")
     source_id: int = Field(..., description="소스 노드 ID")
     target_node_type: str = Field(..., description="타겟 노드 타입")
+    
     target_id: int = Field(..., description="타겟 노드 ID")
     edge_kind: str = Field(..., description="엣지 종류 (consume/produce/continue)")
     
