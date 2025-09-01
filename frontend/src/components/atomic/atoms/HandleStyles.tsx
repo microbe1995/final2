@@ -35,19 +35,19 @@ const handleStyle: React.CSSProperties = {
 export const renderFourDirectionHandles = (isConnectable = true, nodeId?: string) => {
   const nodeIdStr = nodeId || 'node';
   
-  // React Flow 공식 문서: 각 방향에 source와 target 핸들을 모두 생성
+  // React Flow 공식 문서: 각 방향에 하나의 핸들만 생성하여 source/target 자동 결정
   const handleConfigs = [
-    { position: Position.Left, id: `${nodeIdStr}-left`, type: 'source' as const },
-    { position: Position.Right, id: `${nodeIdStr}-right`, type: 'target' as const },
-    { position: Position.Top, id: `${nodeIdStr}-top`, type: 'source' as const },
-    { position: Position.Bottom, id: `${nodeIdStr}-bottom`, type: 'target' as const },
+    { position: Position.Left, id: `${nodeIdStr}-left` },
+    { position: Position.Right, id: `${nodeIdStr}-right` },
+    { position: Position.Top, id: `${nodeIdStr}-top` },
+    { position: Position.Bottom, id: `${nodeIdStr}-bottom` },
   ];
 
-  return handleConfigs.map(({ position, id, type }) => (
+  return handleConfigs.map(({ position, id }) => (
     <Handle
       key={id}
       id={id}
-      type={type}
+      type="source" // React Flow 공식 문서: source로 설정하여 연결 시작점으로 사용
       position={position}
       isConnectable={isConnectable}
       className={cls}
