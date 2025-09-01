@@ -1,10 +1,9 @@
 from sqlalchemy import Column, Integer, Text, DateTime, Index
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from typing import Dict, Any
 
-Base = declarative_base()
+from app.common.database_base import Base
 
 # ============================================================================
 # 🔗 Edge Entity - 엣지 데이터베이스 모델
