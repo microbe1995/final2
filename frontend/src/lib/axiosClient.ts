@@ -367,13 +367,13 @@ export const apiEndpoints = {
       }
     }
   },
-  // Material Master API (matdir 서비스 사용) - 경로 패턴 통일
+  // Material Master API (CBAM 통합 서비스 사용) - 경로 패턴 통일
   materialMaster: {
-      // Gateway: /api/v1/matdir/material-master/{path} → CBAM: /matdir/material-master/{path}
-      list: '/api/v1/matdir/material-master',
-      search: (mat_name: string) => `/api/v1/matdir/material-master/search/${mat_name}`,
-      getFactor: (mat_name: string) => `/api/v1/matdir/material-master/factor/${mat_name}`,
-      autoFactor: '/api/v1/matdir/material-master/auto-factor'
+      // Gateway: /api/v1/cbam/matdir/material-master/{path} → CBAM: /matdir/material-master/{path}
+      list: '/api/v1/cbam/matdir/material-master',
+      search: (mat_name: string) => `/api/v1/cbam/matdir/material-master/search/${mat_name}`,
+      getFactor: (mat_name: string) => `/api/v1/cbam/matdir/material-master/factor/${mat_name}`,
+      autoFactor: '/api/v1/cbam/matdir/material-master/auto-factor'
   },
 } as const;
 
