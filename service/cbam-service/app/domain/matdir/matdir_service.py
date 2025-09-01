@@ -53,10 +53,20 @@ class MatDirService:
             logger.info(f"💾 DB 저장 데이터: {matdir_data}")
             logger.info(f"🔍 oxyfactor 최종 값: {matdir_data['oxyfactor']}")
             logger.info(f"🔍 matdir_em 최종 값: {matdir_data['matdir_em']}")
+            logger.info(f"🔍 process_id 최종 값: {matdir_data['process_id']}")
+            logger.info(f"🔍 mat_name 최종 값: {matdir_data['mat_name']}")
+            logger.info(f"🔍 mat_factor 최종 값: {matdir_data['mat_factor']}")
+            logger.info(f"🔍 mat_amount 최종 값: {matdir_data['mat_amount']}")
             
+            logger.info("🚀 Repository create_matdir 호출 시작")
             saved_matdir = await self.matdir_repository.create_matdir(matdir_data)
+            logger.info(f"✅ Repository create_matdir 호출 완료: {saved_matdir}")
+            
             if saved_matdir:
-                return MatDirResponse(**saved_matdir)
+                logger.info("🔄 MatDirResponse 변환 시작")
+                response = MatDirResponse(**saved_matdir)
+                logger.info(f"✅ MatDirResponse 변환 완료: {response}")
+                return response
             else:
                 raise Exception("원료직접배출량 저장에 실패했습니다.")
         except Exception as e:

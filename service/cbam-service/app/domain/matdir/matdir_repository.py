@@ -130,14 +130,20 @@ class MatDirRepository:
             # 디버깅을 위한 데이터 로깅
             logger.info(f"🔍 create_matdir 입력 데이터: {matdir_data}")
             logger.info(f"🔍 oxyfactor 값: {matdir_data.get('oxyfactor')}")
-            # matdir_em은 계산된 값이므로 별도 로깅 불필요
+            logger.info(f"🔍 matdir_em 값: {matdir_data.get('matdir_em')}")
+            logger.info(f"🔍 process_id 타입: {type(matdir_data.get('process_id'))}, 값: {matdir_data.get('process_id')}")
+            logger.info(f"🔍 mat_name 타입: {type(matdir_data.get('mat_name'))}, 값: {matdir_data.get('mat_name')}")
+            logger.info(f"🔍 mat_factor 타입: {type(matdir_data.get('mat_factor'))}, 값: {matdir_data.get('mat_factor')}")
+            logger.info(f"🔍 mat_amount 타입: {type(matdir_data.get('mat_amount'))}, 값: {matdir_data.get('mat_amount')}")
             
             async with self.pool.acquire() as conn:
                 # 중복 데이터 확인
+                logger.info("🔍 중복 데이터 확인 쿼리 실행 시작")
                 existing_record = await conn.fetchrow("""
                     SELECT id FROM matdir 
                     WHERE process_id = $1 AND mat_name = $2
                 """, matdir_data['process_id'], matdir_data['mat_name'])
+                logger.info(f"🔍 중복 데이터 확인 결과: {existing_record}")
                 
                 if existing_record:
                     # 중복 데이터가 있으면 업데이트
@@ -149,6 +155,7 @@ class MatDirRepository:
                         oxyfactor = Decimal('1.0000')
                     
                     logger.info(f"🔍 UPDATE 쿼리 파라미터: oxyfactor={oxyfactor}, matdir_em={matdir_data['matdir_em']}")
+                    logger.info("🔍 UPDATE 쿼리 실행 시작")
                     
                     result = await conn.fetchrow("""
                         UPDATE matdir 
@@ -163,6 +170,7 @@ class MatDirRepository:
                         matdir_data['process_id'],
                         matdir_data['mat_name']
                     ))
+                    logger.info(f"🔍 UPDATE 쿼리 실행 완료: {result}")
                 else:
                     # 새로운 데이터 삽입
                     logger.info(f"🆕 새로운 데이터 삽입: process_id={matdir_data['process_id']}, mat_name={matdir_data['mat_name']}")
@@ -173,6 +181,7 @@ class MatDirRepository:
                         oxyfactor = Decimal('1.0000')
                     
                     logger.info(f"🔍 INSERT 쿼리 파라미터: oxyfactor={oxyfactor}, matdir_em={matdir_data['matdir_em']}")
+                    logger.info("🔍 INSERT 쿼리 실행 시작")
                     
                     result = await conn.fetchrow("""
                         INSERT INTO matdir (process_id, mat_name, mat_factor, mat_amount, oxyfactor, matdir_em)
@@ -186,6 +195,7 @@ class MatDirRepository:
                         oxyfactor,
                         matdir_data['matdir_em']
                     ))
+                    logger.info(f"🔍 INSERT 쿼리 실행 완료: {result}")
                 
                 action = "업데이트" if existing_record else "생성"
                 logger.info(f"✅ MatDir {action} 성공: ID {result['id']}")
@@ -193,6 +203,8 @@ class MatDirRepository:
                 
         except Exception as e:
             logger.error(f"❌ MatDir 생성/업데이트 실패: {str(e)}")
+            logger.error(f"❌ 에러 타입: {type(e)}")
+            logger.error(f"❌ 에러 상세: {e}")
             raise
 
     async def get_matdirs(self, skip: int = 0, limit: int = 100) -> List[Dict[str, Any]]:
@@ -410,18 +422,35 @@ class MatDirRepository:
             
         try:
             async with self.pool.acquire() as conn:
-                # 업데이트할 필드들만 동적으로 생성
-                set_clause = ", ".join([f"{key} = ${i+1}" for i, key in enumerate(matdir_data.keys())])
-                values = list(matdir_data.values()) + [matdir_id]
+                # None 값과 잘못된 데이터 필터링
+                filtered_data = {k: v for k, v in matdir_data.items() if v is not None}
+                
+                if not filtered_data:
+                    raise Exception("업데이트할 데이터가 없습니다.")
+                
+                # 업데이트할 필드들만 동적으로 생성 (파라미터 수 정확하게 맞춤)
+                set_fields = list(filtered_data.keys())
+                set_clause = ", ".join([f"{field} = ${i+1}" for i, field in enumerate(set_fields)])
+                values = list(filtered_data.values())
+                
+                # updated_at과 WHERE 절을 위한 추가 파라미터
+                updated_at_param = len(values) + 1
+                where_param = len(values) + 2
                 
                 query = f"""
                     UPDATE matdir 
-                    SET {set_clause}, updated_at = NOW()
-                    WHERE id = ${len(matdir_data) + 1} 
+                    SET {set_clause}, updated_at = ${updated_at_param}
+                    WHERE id = ${where_param} 
                     RETURNING *
                 """
                 
-                result = await conn.fetchrow(query, *values)
+                # updated_at과 matdir_id를 values에 추가
+                final_values = values + [datetime.now(), matdir_id]
+                
+                logger.info(f"🔍 UPDATE 쿼리: {query}")
+                logger.info(f"🔍 UPDATE 파라미터: {final_values}")
+                
+                result = await conn.fetchrow(query, *final_values)
                 
                 return dict(result) if result else None
                 
