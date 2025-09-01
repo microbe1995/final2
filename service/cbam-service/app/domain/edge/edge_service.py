@@ -149,7 +149,10 @@ class EdgeService:
     async def propagate_emissions_consume(self, source_product_id: int, target_process_id: int) -> bool:
         """
         규칙 3: 제품→공정 배출량 전달 (edge_kind = "consume")
-        process.attr_em = sum(consumed_products.attr_em * consumption_ratio)
+        to_next_process = product_amount - product_sell - product_eusell
+        여러 공정으로 소비될 경우 생산량 비율에 따라 분배한다.
+        이 값은 target.mat_amount에 반영된다.
+        동시에 product.attr_em이 전구물질 배출량으로 target.attr_em에 귀속된다.
         """
         try:
             logger.info(f"🔗 제품 {source_product_id} → 공정 {target_process_id} 배출량 전달 시작")
@@ -175,23 +178,55 @@ class EdgeService:
                     consumption_amount = float(consume_data['consumption_amount']) if consume_data['consumption_amount'] else 0.0
                     break
             
-            # 4. 배출량 계산 (제품 배출량 * 소비 비율)
-            product_emission = product_data['attr_em']
-            process_emission = product_emission * (consumption_amount / product_data['product_amount']) if product_data['product_amount'] > 0 else 0.0
+            # 4. to_next_process 계산 (dataallocation.mdc 규칙 3번)
+            product_amount = product_data['product_amount']
+            product_sell = product_data['product_sell']
+            product_eusell = product_data['product_eusell']
+            to_next_process = product_amount - product_sell - product_eusell
             
-            # 5. 공정의 자체 배출량에 추가
+            # 5. 여러 공정으로 소비될 경우 생산량 비율에 따라 분배
+            total_consumption = sum([
+                float(data['consumption_amount']) if data['consumption_amount'] else 0.0 
+                for data in consumption_data
+            ])
+            
+            if total_consumption > 0:
+                consumption_ratio = consumption_amount / total_consumption
+                allocated_amount = to_next_process * consumption_ratio
+            else:
+                allocated_amount = 0.0
+            
+            # 6. 배출량 계산 (제품 배출량 * 소비 비율)
+            product_emission = product_data['attr_em']
+            process_emission = product_emission * (consumption_amount / product_amount) if product_amount > 0 else 0.0
+            
+            # 7. 공정의 자체 배출량에 추가
             total_process_emission = process_data['attrdir_em'] + process_emission
             
-            logger.info(f"🧮 제품→공정 배출량 계산:")
-            logger.info(f"  제품 {source_product_id} 배출량: {product_emission}")
-            logger.info(f"  제품 {source_product_id} 총량: {product_data['product_amount']}")
+            logger.info(f"🧮 제품→공정 배출량 계산 (dataallocation.mdc 규칙 3번):")
+            logger.info(f"  제품 {source_product_id} 총량: {product_amount}")
+            logger.info(f"  제품 {source_product_id} 판매량: {product_sell}")
+            logger.info(f"  제품 {source_product_id} EU판매량: {product_eusell}")
+            logger.info(f"  제품 {source_product_id} to_next_process: {to_next_process}")
             logger.info(f"  공정 {target_process_id} 소비량: {consumption_amount}")
+            logger.info(f"  전체 소비량: {total_consumption}")
+            logger.info(f"  소비 비율: {consumption_ratio if total_consumption > 0 else 0.0}")
+            logger.info(f"  할당량: {allocated_amount}")
+            logger.info(f"  제품 {source_product_id} 배출량: {product_emission}")
             logger.info(f"  공정 {target_process_id} 기존 배출량: {process_data['attrdir_em']}")
             logger.info(f"  공정 {target_process_id} 추가 배출량: {process_emission}")
             logger.info(f"  공정 {target_process_id} 최종 배출량: {total_process_emission}")
             
-            # 6. 공정의 배출량 업데이트
+            # 8. 공정의 배출량 업데이트
             success = await self.repository.update_process_cumulative_emission(target_process_id, total_process_emission)
+            
+            # 9. 공정의 원료 투입량 업데이트 (target.mat_amount에 반영)
+            if success:
+                mat_amount_success = await self.repository.update_process_material_amount(
+                    target_process_id, source_product_id, allocated_amount
+                )
+                if not mat_amount_success:
+                    logger.warning(f"⚠️ 공정 {target_process_id}의 원료 투입량 업데이트 실패")
             
             if success:
                 logger.info(f"✅ 제품 {source_product_id} → 공정 {target_process_id} 배출량 전달 완료")
@@ -323,16 +358,27 @@ class EdgeService:
             if result:
                 logger.info(f"✅ 엣지 생성 완료: ID {result['id']}")
                 
-                # 엣지 생성 후 전체 그래프 배출량 전파 실행
-                logger.info("🔄 엣지 변경으로 인한 전체 그래프 배출량 전파 시작")
-                propagation_result = await self.propagate_emissions_full_graph()
-                
-                if propagation_result['success']:
-                    logger.info("✅ 전체 그래프 배출량 전파 완료")
-                    result['propagation_result'] = propagation_result
-                else:
-                    logger.warning(f"⚠️ 전체 그래프 배출량 전파 실패: {propagation_result.get('error', 'Unknown error')}")
-                    result['propagation_result'] = propagation_result
+                try:
+                    # 엣지 생성 후 전체 그래프 배출량 전파 실행
+                    logger.info("🔄 엣지 변경으로 인한 전체 그래프 배출량 전파 시작")
+                    propagation_result = await self.propagate_emissions_full_graph()
+                    
+                    if propagation_result['success']:
+                        logger.info("✅ 전체 그래프 배출량 전파 완료")
+                        result['propagation_result'] = propagation_result
+                    else:
+                        logger.warning(f"⚠️ 전체 그래프 배출량 전파 실패: {propagation_result.get('error', 'Unknown error')}")
+                        result['propagation_result'] = propagation_result
+                        # 배출량 전파 실패는 엣지 생성을 실패시키지 않음 (경고만)
+                        
+                except Exception as propagation_error:
+                    logger.error(f"❌ 배출량 전파 중 오류 발생: {propagation_error}")
+                    # 배출량 전파 실패는 엣지 생성을 실패시키지 않음
+                    result['propagation_result'] = {
+                        'success': False,
+                        'error': str(propagation_error),
+                        'message': '배출량 전파 실패 (엣지는 생성됨)'
+                    }
                 
                 return EdgeResponse(**result)
             else:

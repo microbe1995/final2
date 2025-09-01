@@ -2,7 +2,7 @@
 # 🔗 ProductProcess Entity - 제품-공정 중간 테이블 엔티티
 # ============================================================================
 
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Numeric
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from typing import Dict, Any
@@ -18,6 +18,7 @@ class ProductProcess(Base):
     id = Column(Integer, primary_key=True, index=True)
     product_id = Column(Integer, ForeignKey("product.id"), nullable=False, index=True)  # 제품 ID
     process_id = Column(Integer, ForeignKey("process.id"), nullable=False, index=True)  # 공정 ID
+    consumption_amount = Column(Numeric(15, 6), default=0)  # 제품 소비량 (consume 엣지용)
     created_at = Column(DateTime, default=datetime.now)
     updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
     
@@ -31,9 +32,10 @@ class ProductProcess(Base):
             "id": self.id,
             "product_id": self.product_id,
             "process_id": self.process_id,
+            "consumption_amount": float(self.consumption_amount) if self.consumption_amount else 0.0,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None
         }
     
     def __repr__(self):
-        return f"<ProductProcess(id={self.id}, product_id={self.product_id}, process_id={self.process_id})>"
+        return f"<ProductProcess(id={self.id}, product_id={self.product_id}, process_id={self.process_id}, consumption_amount={self.consumption_amount})>"

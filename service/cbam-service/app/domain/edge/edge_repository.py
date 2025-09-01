@@ -65,7 +65,7 @@ class EdgeRepository:
         
         if not self.pool:
             logger.error("❌ Edge 연결 풀이 초기화되지 않았습니다.")
-            raise Exception("데이터베이스 연결 풀이 초기화되지 않았습니다.")
+            raise Exception("데이터베이스 연결 풀이 초기화되지 않았습니다. DATABASE_URL 환경변수를 확인해주세요.")
         
         logger.info("✅ Edge 연결 풀 정상 상태 확인")
     
@@ -448,8 +448,27 @@ class EdgeRepository:
             await self._ensure_pool_initialized()
             
             async with self.pool.acquire() as conn:
+                # 제품의 to_next_process 계산
+                product_query = """
+                    SELECT product_amount, product_sell, product_eusell, attr_em
+                    FROM product
+                    WHERE id = $1
+                """
+                product_row = await conn.fetchrow(product_query, product_id)
+                
+                if not product_row:
+                    logger.warning(f"제품 {product_id}를 찾을 수 없습니다")
+                    return []
+                
+                # to_next_process = product_amount - product_sell - product_eusell
+                to_next_process = (float(product_row['product_amount']) - 
+                                 float(product_row['product_sell']) - 
+                                 float(product_row['product_eusell']))
+                
+                # 제품을 소비하는 공정들을 조회 (consumption_amount 사용)
                 query = """
-                    SELECT e.target_id as process_id, e.edge_kind, pp.consumption_amount
+                    SELECT e.target_id as process_id, e.edge_kind, 
+                           COALESCE(pp.consumption_amount, 0) as consumption_amount
                     FROM edge e
                     LEFT JOIN product_process pp ON e.target_id = pp.process_id AND e.source_id = pp.product_id
                     WHERE e.source_id = $1 AND e.edge_kind = 'consume'
@@ -460,7 +479,7 @@ class EdgeRepository:
                 return [dict(row) for row in rows]
                 
         except Exception as e:
-            logger.error(f"❌ 제품 {product_id}를 소비하는 공정 조회 실패: {str(e)}")
+            logger.error(f"제품 {product_id}를 소비하는 공정 조회 실패: {str(e)}")
             return []
     
     async def update_process_material_amount(self, process_id: int, product_id: int, amount: float) -> bool:
@@ -478,10 +497,10 @@ class EdgeRepository:
                 result = await conn.execute(query, amount, process_id, product_id)
                 
                 if result == "UPDATE 1":
-                    logger.info(f"✅ 공정 {process_id}의 제품 {product_id} 투입량 업데이트 성공: {amount}")
+                    logger.info(f"공정 {process_id}의 제품 {product_id} 투입량 업데이트 성공: {amount}")
                     return True
                 else:
-                    logger.warning(f"⚠️ 공정 {process_id}의 제품 {product_id} 관계가 없어 새로 생성합니다")
+                    logger.warning(f"공정 {process_id}의 제품 {product_id} 관계가 없어 새로 생성합니다")
                     # 관계가 없으면 새로 생성
                     insert_query = """
                         INSERT INTO product_process (process_id, product_id, consumption_amount)
@@ -492,5 +511,5 @@ class EdgeRepository:
                     return True
                     
         except Exception as e:
-            logger.error(f"❌ 공정 {process_id}의 제품 {product_id} 투입량 업데이트 실패: {str(e)}")
+            logger.error(f"공정 {process_id}의 제품 {product_id} 투입량 업데이트 실패: {str(e)}")
             return False

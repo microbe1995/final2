@@ -14,12 +14,14 @@ class ProductProcessCreateRequest(BaseModel):
     """제품-공정 관계 생성 요청"""
     product_id: int = Field(..., description="제품 ID")
     process_id: int = Field(..., description="공정 ID")
+    consumption_amount: Optional[float] = Field(0.0, description="제품 소비량")
 
 class ProductProcessResponse(BaseModel):
     """제품-공정 관계 응답"""
     id: int = Field(..., description="관계 ID")
     product_id: int = Field(..., description="제품 ID")
     process_id: int = Field(..., description="공정 ID")
+    consumption_amount: Optional[float] = Field(0.0, description="제품 소비량")
     created_at: Optional[datetime] = Field(None, description="생성일")
     updated_at: Optional[datetime] = Field(None, description="수정일")
     
@@ -30,6 +32,7 @@ class ProductProcessUpdateRequest(BaseModel):
     """제품-공정 관계 수정 요청"""
     product_id: Optional[int] = Field(None, description="제품 ID")
     process_id: Optional[int] = Field(None, description="공정 ID")
+    consumption_amount: Optional[float] = Field(None, description="제품 소비량")
 
 class ProductProcessSearchRequest(BaseModel):
     """제품-공정 관계 검색 요청"""

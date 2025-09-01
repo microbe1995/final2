@@ -17,10 +17,71 @@ logger = logging.getLogger(__name__)
 # Gateway를 통해 접근하므로 prefix 제거 (경로 중복 방지)
 router = APIRouter(tags=["Edge"])
 
-# 서비스 인스턴스는 요청 시마다 생성 (모듈 레벨 초기화 방지)
+# 싱글톤 서비스 인스턴스 (성능 최적화)
+_edge_service_instance = None
+
 def get_edge_service():
-    """엣지 서비스 인스턴스 반환"""
-    return EdgeService(None)  # Repository에서 직접 DB 연결 사용
+    """엣지 서비스 인스턴스 반환 (싱글톤 패턴)"""
+    global _edge_service_instance
+    if _edge_service_instance is None:
+        _edge_service_instance = EdgeService(None)  # Repository에서 직접 DB 연결 사용
+        logger.info("✅ Edge Service 싱글톤 인스턴스 생성")
+    return _edge_service_instance
+
+# ============================================================================
+# 📊 상태 확인 엔드포인트
+# ============================================================================
+
+@router.get("/health")
+async def health_check():
+    """Edge 도메인 상태 확인"""
+    try:
+        logger.info("🏥 Edge 도메인 헬스체크 요청")
+        
+        edge_service = get_edge_service()
+        
+        # 데이터베이스 연결 확인
+        try:
+            await edge_service.repository._ensure_pool_initialized()
+            db_status = "healthy"
+        except Exception as e:
+            logger.error(f"❌ 데이터베이스 연결 실패: {e}")
+            db_status = "unhealthy"
+        
+        # 기본 통계 조회 시도
+        try:
+            edges = await edge_service.get_edges(limit=1)
+            api_status = "healthy"
+            edge_count = len(edges)
+        except Exception as e:
+            logger.error(f"❌ API 기능 테스트 실패: {e}")
+            api_status = "unhealthy"
+            edge_count = 0
+        
+        health_status = {
+            "service": "edge",
+            "status": "healthy" if db_status == "healthy" and api_status == "healthy" else "degraded",
+            "timestamp": datetime.now().isoformat(),
+            "components": {
+                "database": db_status,
+                "api": api_status
+            },
+            "metrics": {
+                "total_edges": edge_count
+            }
+        }
+        
+        logger.info(f"✅ Edge 도메인 헬스체크 완료: {health_status['status']}")
+        return health_status
+        
+    except Exception as e:
+        logger.error(f"❌ Edge 도메인 헬스체크 실패: {e}")
+        return {
+            "service": "edge",
+            "status": "unhealthy",
+            "timestamp": datetime.now().isoformat(),
+            "error": str(e)
+        }
 
 # ============================================================================
 # 📋 기본 CRUD 엔드포인트
