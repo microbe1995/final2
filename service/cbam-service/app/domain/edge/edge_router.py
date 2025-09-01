@@ -48,39 +48,7 @@ async def propagate_emissions(
             detail=f"서버 오류: {str(e)}"
         )
 
-@router.get("/chain-emission-summary/{chain_id}")
-async def get_chain_emission_summary(
-    chain_id: int,
-    db: AsyncSession = Depends(get_db)
-) -> Dict[str, Any]:
-    """
-    공정 체인의 배출량 요약 정보를 조회합니다.
-    """
-    try:
-        edge_service = EdgeService(db)
-        
-        # 배출량 요약 조회
-        result = await edge_service.get_process_chain_emission_summary(chain_id)
-        
-        if not result.get('success'):
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=result.get('error', '공정 체인 정보를 찾을 수 없습니다')
-            )
-        
-        return {
-            "success": True,
-            "message": f"공정 체인 {chain_id} 배출량 요약",
-            "data": result.get('summary')
-        }
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"서버 오류: {str(e)}"
-        )
+
 
 @router.post("/propagate-emissions-continue")
 async def propagate_emissions_continue(

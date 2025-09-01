@@ -31,7 +31,6 @@ from app.domain.edge.edge_controller import router as edge_router
 from app.domain.mapping.mapping_controller import router as mapping_router
 from app.domain.matdir.matdir_controller import router as matdir_router
 from app.domain.fueldir.fueldir_controller import router as fueldir_router
-from app.domain.processchain.processchain_controller import router as processchain_router
 from app.domain.productprocess.productprocess_controller import router as product_process_router
 
 # get_async_db 함수는 database_base.py에서 관리
@@ -229,7 +228,6 @@ app.include_router(product_process_router, prefix="/productprocess")
 
 # 3. 계산 및 분석 관련 (중간 테이블에 의존)
 app.include_router(calculation_router, prefix="/calculation")
-app.include_router(processchain_router, prefix="/processchain")
 
 # 4. 도메인별 관리
 app.include_router(mapping_router, prefix="/mapping")

@@ -203,7 +203,7 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
   }, [setNodes]);
 
   // 🔧 4방향 연결을 지원하는 Edge 생성 처리
-  const handleEdgeCreate = useCallback(async (params: Connection, updateProcessChainsAfterEdge: () => void) => {
+  const handleEdgeCreate = useCallback(async (params: Connection, updateCallback: () => void = () => {}) => {
     let tempEdgeId: string | null = null;
     
     try {
@@ -365,8 +365,8 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
         ));
         
         // 콜백 실행
-        if (updateProcessChainsAfterEdge) {
-          updateProcessChainsAfterEdge();
+        if (updateCallback) {
+          updateCallback();
         }
       }
     } catch (error: any) {

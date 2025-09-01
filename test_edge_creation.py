@@ -224,6 +224,92 @@ async def test_edge_crud_operations():
         import traceback
         print(f"스택 트레이스: {traceback.format_exc()}")
 
+async def test_emission_propagation():
+    """배출량 전파 기능 테스트"""
+    print("\n🌱 배출량 전파 기능 테스트")
+    print("=" * 50)
+    
+    try:
+        from app.domain.edge.edge_service import EdgeService
+        from app.domain.edge.edge_schema import EdgeCreateRequest
+        
+        edge_service = EdgeService()
+        await edge_service.initialize()
+        
+        # 1. 전체 그래프 배출량 전파 테스트
+        print("1️⃣ 전체 그래프 배출량 전파 테스트")
+        propagation_result = await edge_service.propagate_emissions_full_graph()
+        
+        if propagation_result['success']:
+            print(f"  ✅ 전체 그래프 배출량 전파 성공")
+            print(f"    총 엣지: {propagation_result['total_edges']}개")
+            print(f"    성공률: {propagation_result['success_rate']:.1f}%")
+            
+            results = propagation_result['propagation_results']
+            print(f"    Continue 엣지: {results['continue_edges']}개")
+            print(f"    Produce 엣지: {results['produce_edges']}개")
+            print(f"    Consume 엣지: {results['consume_edges']}개")
+            print(f"    성공: {results['success_count']}개, 실패: {results['error_count']}개")
+        else:
+            print(f"  ❌ 전체 그래프 배출량 전파 실패: {propagation_result.get('error', 'Unknown error')}")
+        
+        # 2. 공정→공정 배출량 전파 테스트
+        print("\n2️⃣ 공정→공정 배출량 전파 테스트")
+        success = await edge_service.propagate_emissions_continue(165, 166)
+        if success:
+            print(f"  ✅ 공정 165 → 공정 166 배출량 전파 성공")
+            
+            # 업데이트된 배출량 확인
+            updated_emission = await edge_service.get_process_emission_data(166)
+            if updated_emission:
+                print(f"    공정 166 누적 배출량: {updated_emission['cumulative_emission']}")
+        else:
+            print(f"  ❌ 공정 165 → 공정 166 배출량 전파 실패")
+        
+        # 3. 공정→제품 배출량 전파 테스트
+        print("\n3️⃣ 공정→제품 배출량 전파 테스트")
+        success = await edge_service.propagate_emissions_produce(166, 1)
+        if success:
+            print(f"  ✅ 공정 166 → 제품 1 배출량 전파 성공")
+            
+            # 제품 배출량 확인
+            product_data = await edge_service.edge_repository.get_product_data(1)
+            if product_data:
+                print(f"    제품 1 배출량: {product_data['attr_em']}")
+        else:
+            print(f"  ❌ 공정 166 → 제품 1 배출량 전파 실패")
+        
+        # 4. 제품→공정 배출량 전파 테스트
+        print("\n4️⃣ 제품→공정 배출량 전파 테스트")
+        success = await edge_service.propagate_emissions_consume(1, 167)
+        if success:
+            print(f"  ✅ 제품 1 → 공정 167 배출량 전파 성공")
+            
+            # 업데이트된 공정 배출량 확인
+            updated_emission = await edge_service.get_process_emission_data(167)
+            if updated_emission:
+                print(f"    공정 167 누적 배출량: {updated_emission['cumulative_emission']}")
+        else:
+            print(f"  ❌ 제품 1 → 공정 167 배출량 전파 실패")
+        
+        # 5. 순환 참조 감지 테스트
+        print("\n5️⃣ 순환 참조 감지 테스트")
+        test_edges = [
+            {'source_node_type': 'process', 'source_id': 100, 'target_node_type': 'process', 'target_id': 101, 'edge_kind': 'continue'},
+            {'source_node_type': 'process', 'source_id': 101, 'target_node_type': 'process', 'target_id': 100, 'edge_kind': 'continue'}
+        ]
+        
+        has_cycle = await edge_service._detect_cycles(test_edges)
+        if has_cycle:
+            print(f"  ✅ 순환 참조 감지 성공")
+        else:
+            print(f"  ❌ 순환 참조 감지 실패")
+        
+    except Exception as e:
+        print(f"❌ 배출량 전파 테스트 실패: {str(e)}")
+        import traceback
+        print(f"스택 트레이스: {traceback.format_exc()}")
+
 async def main():
     """메인 테스트 함수"""
     print("🚀 CBAM Edge 도메인 테스트 시작")
@@ -235,6 +321,9 @@ async def main():
     
     # CRUD 작업 테스트
     await test_edge_crud_operations()
+    
+    # 배출량 전파 기능 테스트
+    await test_emission_propagation()
     
     print("\n🎉 모든 테스트 완료!")
     print(f"📅 테스트 종료 시간: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")

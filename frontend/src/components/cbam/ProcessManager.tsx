@@ -49,17 +49,12 @@ function ProcessManagerInner() {
     processes,
     allProcesses,
     crossInstallProcesses,
-    processChains,
-    chainLoading,
-    integratedProcessGroups,
     isDetectingChains,
     detectionStatus,
     isUpdatingProduct,
     setSelectedInstall,
     setSelectedProduct,
     fetchProcessesByProduct,
-    detectIntegratedProcessGroups,
-    loadIntegratedProcessGroups,
     handleProductQuantityUpdate,
   } = useProcessManager();
 
@@ -125,12 +120,7 @@ function ProcessManagerInner() {
   const [showInputModal, setShowInputModal] = useState(false);
   const [selectedProcessForInput, setSelectedProcessForInput] = useState<Process | null>(null);
 
-  // Edge 생성 후 통합 공정 그룹 상태 업데이트
-  const updateProcessChainsAfterEdge = useCallback(async () => {
-    setTimeout(() => {
-      // 여기서 processChains를 새로고침하는 로직을 추가할 수 있습니다
-    }, 1000);
-  }, []);
+
 
   // 사업장 선택 처리
   const handleInstallSelect = useCallback((install: Install) => {
@@ -172,15 +162,7 @@ function ProcessManagerInner() {
     setShowProcessModalForProduct(false);
   }, [addProcessNode, products, openInputModal]);
 
-  // 통합 공정 그룹 탐지
-  const handleDetectGroups = useCallback(async () => {
-    await detectIntegratedProcessGroups();
-  }, [detectIntegratedProcessGroups]);
 
-  // 통합 공정 그룹 목록 로드
-  const handleLoadGroups = useCallback(async () => {
-    await loadIntegratedProcessGroups();
-  }, [loadIntegratedProcessGroups]);
 
   // Edge 연결 처리
   const handleConnect = useCallback(async (params: Connection) => {
@@ -194,7 +176,7 @@ function ProcessManagerInner() {
       });
       
       // 연결 처리
-      await handleEdgeCreate(params, updateProcessChainsAfterEdge);
+      await handleEdgeCreate(params, () => {});
       
       console.log('✅ 연결 처리 완료');
       alert(`연결이 성공적으로 생성되었습니다!\n${params.source} → ${params.target}`);
@@ -203,7 +185,7 @@ function ProcessManagerInner() {
       console.error('❌ 연결 처리 실패:', error);
       alert(`연결 처리에 실패했습니다: ${error}`);
     }
-  }, [handleEdgeCreate, updateProcessChainsAfterEdge]);
+  }, [handleEdgeCreate]);
 
   // 🔧 React Flow 공식 문서에 따른 단순화된 연결 검증 로직
   const validateConnection = useCallback((connection: Connection) => {
@@ -307,13 +289,7 @@ function ProcessManagerInner() {
         >
           <Plus className="h-4 w-4" /> 그룹 노드
         </Button>
-        <Button 
-          onClick={handleDetectGroups} 
-          disabled={isDetectingChains || !selectedInstall}
-          className="bg-green-600 hover:bg-green-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg flex items-center gap-2"
-        >
-          🔗 통합 공정 그룹 탐지
-        </Button>
+
         
         <Button 
           onClick={refreshAllProcessEmissions} 
@@ -324,16 +300,7 @@ function ProcessManagerInner() {
 
       </div>
       
-      {/* 통합 공정 그룹 패널 */}
-      <IntegratedGroupsPanel
-        processChains={processChains}
-        integratedProcessGroups={integratedProcessGroups}
-        isDetectingChains={isDetectingChains}
-        detectionStatus={detectionStatus}
-        onDetectGroups={handleDetectGroups}
-        onLoadGroups={handleLoadGroups}
-        onShowGroupsModal={() => {}} // 통합 그룹 모달은 IntegratedGroupsPanel에서 직접 관리
-      />
+
 
       {/* ReactFlow 캔버스 */}
       <div className="flex-1 relative">

@@ -28,16 +28,7 @@ export interface Process {
   products?: Product[];
 }
 
-export interface ProcessChain {
-  id: number;
-  chain_name: string;
-  chain_length: number;
-  total_emission?: number;
-  start_process_id: number;
-  end_process_id: number;
-  is_active: boolean;
-  created_at: string;
-}
+
 
 export const useProcessManager = () => {
   // 사업장 관련 상태
@@ -52,11 +43,6 @@ export const useProcessManager = () => {
   const [processes, setProcesses] = useState<Process[]>([]);
   const [allProcesses, setAllProcesses] = useState<Process[]>([]);
   const [crossInstallProcesses, setCrossInstallProcesses] = useState<Process[]>([]);
-
-  // 통합 공정 그룹 상태
-  const [processChains, setProcessChains] = useState<ProcessChain[]>([]);
-  const [chainLoading, setChainLoading] = useState(false);
-  const [integratedProcessGroups, setIntegratedProcessGroups] = useState<ProcessChain[]>([]);
 
   // 탐지 상태
   const [isDetectingChains, setIsDetectingChains] = useState(false);
@@ -163,67 +149,7 @@ export const useProcessManager = () => {
     }
   }, []);
 
-  // 통합 공정 그룹 조회
-  const fetchProcessChains = useCallback(async () => {
-    try {
-      setChainLoading(true);
-      const response = await axiosClient.get(apiEndpoints.cbam.processchain.chain);
-      if (response.status === 200) {
-        setProcessChains(response.data);
-      }
-    } catch (error) {
-      if (process.env.NODE_ENV === 'development') {
-        console.error('❌ 통합 공정 그룹 조회 실패:', error);
-      }
-    } finally {
-      setChainLoading(false);
-    }
-  }, []);
 
-  // 통합 공정 그룹 자동 탐지
-  const detectIntegratedProcessGroups = useCallback(async () => {
-    try {
-      setIsDetectingChains(true);
-      setDetectionStatus('🔍 연결된 공정들을 탐지 중...');
-      
-      const response = await axiosClient.post('/api/v1/cbam/sourcestream/auto-detect-and-calculate', {
-        max_chain_length: 10,
-        include_inactive: false,
-        recalculate_existing: false
-      });
-      
-      if (response.status === 200) {
-        const result = response.data;
-        setDetectionStatus(`✅ 탐지 완료: ${result.detected_chains}개 그룹, 총 배출량: ${result.total_integrated_emission}`);
-        
-        const groupsResponse = await axiosClient.get(apiEndpoints.cbam.processchain.chain);
-        if (groupsResponse.status === 200) {
-          setIntegratedProcessGroups(groupsResponse.data);
-        }
-      }
-    } catch (error) {
-      if (process.env.NODE_ENV === 'development') {
-        console.error('통합 공정 그룹 탐지 오류:', error);
-      }
-      setDetectionStatus('❌ 탐지 실패: ' + (error as any).message);
-    } finally {
-      setIsDetectingChains(false);
-    }
-  }, []);
-
-  // 통합 공정 그룹 목록 조회
-  const loadIntegratedProcessGroups = useCallback(async () => {
-    try {
-      const response = await axiosClient.get(apiEndpoints.cbam.processchain.chain);
-      if (response.status === 200) {
-        setIntegratedProcessGroups(response.data);
-      }
-    } catch (error) {
-      if (process.env.NODE_ENV === 'development') {
-        console.error('통합 공정 그룹 조회 오류:', error);
-      }
-    }
-  }, []);
 
   // 제품 수량 업데이트
   const handleProductQuantityUpdate = useCallback(async (productQuantityForm: {
@@ -279,11 +205,6 @@ export const useProcessManager = () => {
     fetchInstalls();
   }, [fetchInstalls]);
 
-  // 컴포넌트 마운트 시 통합 공정 그룹 목록 불러오기
-  useEffect(() => {
-    loadIntegratedProcessGroups();
-  }, [loadIntegratedProcessGroups]);
-
   return {
     // 상태
     installs,
@@ -293,9 +214,6 @@ export const useProcessManager = () => {
     processes,
     allProcesses,
     crossInstallProcesses,
-    processChains,
-    chainLoading,
-    integratedProcessGroups,
     isDetectingChains,
     detectionStatus,
     isUpdatingProduct,
@@ -304,8 +222,6 @@ export const useProcessManager = () => {
     setSelectedInstall,
     setSelectedProduct,
     fetchProcessesByProduct,
-    detectIntegratedProcessGroups,
-    loadIntegratedProcessGroups,
     handleProductQuantityUpdate,
   };
 };

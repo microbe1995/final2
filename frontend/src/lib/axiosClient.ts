@@ -261,15 +261,7 @@ export const apiEndpoints = {
     cbam: '/api/v1/cbam/calculation/emission/process/calculate',
     
     // Process Chain 관련 API
-    processchain: {
-      // Gateway: /api/v1/cbam/processchain/{path} → CBAM: /processchain/{path}
-      list: '/api/v1/cbam/processchain/chain',
-      create: '/api/v1/cbam/processchain/chain',
-      get: (id: number) => `/api/v1/cbam/processchain/chain/${id}`,
-      delete: (id: number) => `/api/v1/cbam/processchain/chain/${id}`,
-      chain: '/api/v1/cbam/processchain/chain',
-      test: '/api/v1/cbam/processchain/test'
-    },
+
     
     edge: {
       // Gateway: /api/v1/cbam/edge/{path} → CBAM: /edge/{path}
