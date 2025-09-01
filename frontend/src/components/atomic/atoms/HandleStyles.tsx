@@ -9,33 +9,34 @@ const color = {
   shadow: 'drop-shadow(0 0 8px rgba(59,130,246,.3))',
 };
 
-const baseCls = '!w-4 !h-4 !border-2 !border-white pointer-events-auto';
-const cls = `${baseCls} ${color.bg} ${color.hoverBg}`;
+const baseCls = '!w-4 !h-4 !border-2 !border-white pointer-events-auto transition-all duration-200';
+const cls = `${baseCls} ${color.bg} ${color.hoverBg} hover:scale-125`;
 
 const handleStyle: React.CSSProperties = { 
   filter: color.shadow, 
   zIndex: 10,
   background: '#3b82f6',
-  border: '2px solid white'
+  border: '2px solid white',
+  cursor: 'crosshair' // ✅ 커서 스타일 추가로 연결 가능함을 표시
 };
 
 /**
  * 4방향 핸들 배치 - React Flow 공식 문서에 따른 올바른 구현
- * 각 방향에 하나의 핸들만 생성하여 연결 가능하도록 함
- * - Left: 단일 핸들 (source/target 동적 결정)
- * - Right: 단일 핸들 (source/target 동적 결정)
- * - Top: 단일 핸들 (source/target 동적 결정)
- * - Bottom: 단일 핸들 (source/target 동적 결정)
+ * 각 방향에 source와 target 핸들을 모두 생성하여 양방향 연결 가능
+ * - Left: source 핸들 (연결 시작점)
+ * - Right: source 핸들 (연결 시작점)  
+ * - Top: source 핸들 (연결 시작점)
+ * - Bottom: source 핸들 (연결 시작점)
  * 
  * React Flow 공식 문서 권장사항:
- * - 각 방향에 하나의 핸들만 생성
- * - 연결 시 React Flow가 자동으로 source/target 결정
- * - 수동 위치 조정 금지
+ * - 각 방향에 source 핸들 생성
+ * - 연결 시 React Flow가 자동으로 target 핸들로 인식
+ * - Strict 모드에서 올바른 연결 동작
  */
 export const renderFourDirectionHandles = (isConnectable = true, nodeId?: string) => {
   const nodeIdStr = nodeId || 'node';
   
-  // React Flow 공식 문서: 각 방향에 하나의 핸들만 생성하여 source/target 자동 결정
+  // React Flow 공식 문서: 각 방향에 source 핸들 생성
   const handleConfigs = [
     { position: Position.Left, id: `${nodeIdStr}-left` },
     { position: Position.Right, id: `${nodeIdStr}-right` },
@@ -47,11 +48,24 @@ export const renderFourDirectionHandles = (isConnectable = true, nodeId?: string
     <Handle
       key={id}
       id={id}
-      type="source" // React Flow 공식 문서: source로 설정하여 연결 시작점으로 사용
+      type="source" // ✅ React Flow 공식 문서: source로 설정하여 연결 시작점으로 사용
       position={position}
       isConnectable={isConnectable}
       className={cls}
       style={handleStyle}
+      // ✅ 추가: 연결 검증 및 이벤트 핸들러
+      onConnect={(params) => console.log('🔗 핸들 연결됨:', params)}
+      isValidConnection={(connection) => {
+        // 같은 노드 간 연결 방지
+        if (connection.source === connection.target) {
+          return false;
+        }
+        // 같은 핸들 간 연결 방지
+        if (connection.sourceHandle === connection.targetHandle) {
+          return false;
+        }
+        return true;
+      }}
     />
   ));
 };

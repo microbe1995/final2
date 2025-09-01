@@ -156,7 +156,7 @@ function ProcessManagerInner() {
     await handleEdgeCreate(params, updateProcessChainsAfterEdge);
   }, [handleEdgeCreate, updateProcessChainsAfterEdge]);
 
-  // 🔧 React Flow 공식 문서에 따른 올바른 연결 검증 로직 (Strict 모드)
+  // 🔧 React Flow 공식 문서에 따른 올바른 연결 검증 로직 (Loose 모드)
   const validateConnection = useCallback((connection: Connection) => {
     console.log('🔍 연결 검증 시작:', connection);
     
@@ -166,17 +166,9 @@ function ProcessManagerInner() {
       return { valid: false, reason: 'same_node' };
     }
     
-    // Strict 모드에서는 핸들 ID가 필수
-    if (!connection.sourceHandle || !connection.targetHandle) {
-      console.log('❌ 핸들 ID 누락 (Strict 모드에서는 필수):', { 
-        sourceHandle: connection.sourceHandle, 
-        targetHandle: connection.targetHandle
-      });
-      return { valid: false, reason: 'missing_handles' };
-    }
-    
-    // 같은 핸들 간 연결 방지
-    if (connection.sourceHandle === connection.targetHandle) {
+    // Loose 모드에서는 핸들 ID가 선택적 (없어도 됨)
+    // 하지만 핸들이 있으면 같은 핸들 간 연결 방지
+    if (connection.sourceHandle && connection.targetHandle && connection.sourceHandle === connection.targetHandle) {
       console.log('❌ 같은 핸들 간 연결 시도:', connection.sourceHandle);
       return { valid: false, reason: 'same_handle' };
     }
@@ -272,7 +264,7 @@ function ProcessManagerInner() {
           <div>노드 수: {nodes.length}</div>
           <div>연결 수: {edges.length}</div>
           <div>사업장: {selectedInstall?.install_name || '선택 안됨'}</div>
-          <div>모드: Strict</div>
+          <div>모드: Loose</div>
           <div>핸들 수: {nodes.reduce((acc, node) => acc + (node.data?.showHandles ? 4 : 0), 0)}</div>
         </div>
         <ReactFlow
@@ -282,7 +274,7 @@ function ProcessManagerInner() {
           onEdgesChange={onEdgesChange}
           nodeTypes={nodeTypes}
           edgeTypes={edgeTypes}
-          connectionMode={ConnectionMode.Strict}
+          connectionMode={ConnectionMode.Loose}
           defaultEdgeOptions={{ type: 'custom', markerEnd: { type: MarkerType.ArrowClosed } }}
           deleteKeyCode="Delete"
           className="bg-gray-900"
