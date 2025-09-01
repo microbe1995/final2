@@ -178,8 +178,29 @@ function ProcessManagerInner() {
 
   // Edge 연결 처리
   const handleConnect = useCallback(async (params: Connection) => {
+    console.log('🔗 연결 시도:', params);
     await handleEdgeCreate(params, updateProcessChainsAfterEdge);
   }, [handleEdgeCreate, updateProcessChainsAfterEdge]);
+
+  // 🔴 추가: 커스텀 연결 검증 로직
+  const isValidConnection = useCallback((connection: Connection) => {
+    // 같은 노드 간 연결 방지
+    if (connection.source === connection.target) {
+      return false;
+    }
+    
+    // 이미 존재하는 연결 확인
+    const existingEdge = edges.find(edge => 
+      (edge.source === connection.source && edge.target === connection.target) ||
+      (edge.source === connection.target && edge.target === connection.source)
+    );
+    
+    if (existingEdge) {
+      return false;
+    }
+    
+    return true;
+  }, [edges]);
 
   // 🔴 추가: 연결 시작 이벤트
   const handleConnectStart = useCallback((event: any, params: any) => {
@@ -258,9 +279,6 @@ function ProcessManagerInner() {
           edges={edges}
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
-          onConnect={handleConnect}
-          onConnectStart={handleConnectStart}
-          onConnectEnd={handleConnectEnd}
           nodeTypes={nodeTypes}
           edgeTypes={edgeTypes}
           connectionMode={ConnectionMode.Loose}
@@ -268,6 +286,19 @@ function ProcessManagerInner() {
           deleteKeyCode="Delete"
           className="bg-gray-900"
           fitView
+          onConnectStart={(event, params) => {
+            console.log('🔗 연결 시작:', params);
+            handleConnectStart(event, params);
+          }}
+          onConnect={(params) => {
+            console.log('🔗 연결 완료:', params);
+            if (isValidConnection(params)) {
+              handleConnect(params);
+            } else {
+              console.log('❌ 연결 검증 실패:', params);
+            }
+          }}
+          onConnectEnd={handleConnectEnd}
         >
           <Background color="#334155" gap={24} size={1} />
           <Controls className="!bg-gray-800 !border !border-gray-700 !text-gray-200 !rounded-md" position="bottom-left" />

@@ -28,38 +28,40 @@ const targetStyle: React.CSSProperties = {
 };
 
 /**
- * 4방향 핸들 배치 - 각 방향에 source와 target 핸들 모두 배치
- * React Flow의 연결 로직에 맞게 source와 target을 명시적으로 구분
- * - Left: source (출발점)
- * - Right: target (도착점)  
- * - Top: source (출발점)
- * - Bottom: target (도착점)
+ * 4방향 핸들 배치 - 모든 핸들을 source로 설정하고 연결 시 자동 변환
+ * React Flow의 연결 시 자동으로 target으로 인식되도록 구현
+ * - Left: source (연결 시 자동으로 target으로 변환 가능)
+ * - Right: source (연결 시 자동으로 target으로 변환 가능)
+ * - Top: source (연결 시 자동으로 target으로 변환 가능)
+ * - Bottom: source (연결 시 자동으로 target으로 변환 가능)
  */
-export const renderFourDirectionHandles = (isConnectable = true) => {
+export const renderFourDirectionHandles = (isConnectable = true, nodeId?: string) => {
+  const handlePrefix = nodeId ? `${nodeId}-` : '';
+  
   const handles = [
     {
       position: Position.Left,
       type: 'source' as HandleType,
-      id: 'left-source',
+      id: `${handlePrefix}left`,
       style: sourceStyle,
     },
     {
       position: Position.Right,
-      type: 'target' as HandleType,
-      id: 'right-target',
-      style: targetStyle,
+      type: 'source' as HandleType,
+      id: `${handlePrefix}right`,
+      style: sourceStyle,
     },
     {
       position: Position.Top,
       type: 'source' as HandleType,
-      id: 'top-source',
+      id: `${handlePrefix}top`,
       style: sourceStyle,
     },
     {
       position: Position.Bottom,
-      type: 'target' as HandleType,
-      id: 'bottom-target',
-      style: targetStyle,
+      type: 'source' as HandleType,
+      id: `${handlePrefix}bottom`,
+      style: sourceStyle,
     },
   ];
 

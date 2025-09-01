@@ -174,11 +174,39 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
         return;
       }
       
-      // 🔴 추가: sourceHandle과 targetHandle이 모두 있는지 확인
-      if (!params.sourceHandle || !params.targetHandle) {
-        console.log('❌ sourceHandle 또는 targetHandle이 없음:', params);
-        return;
+        // 🔴 수정: 단순화된 핸들 자동 변환 로직
+  let finalParams = { ...params };
+  
+  // sourceHandle이 없거나 targetHandle이 없는 경우 자동으로 생성
+  if (!params.sourceHandle || !params.targetHandle) {
+    console.log('🔧 핸들 자동 변환 시작:', params);
+    
+    // 노드에서 사용 가능한 핸들 찾기
+    const sourceNode = nodes.find(node => node.id === params.source);
+    const targetNode = nodes.find(node => node.id === params.target);
+    
+    if (sourceNode && targetNode) {
+      // sourceHandle이 없는 경우, source 노드의 핸들 중 하나 선택
+      if (!params.sourceHandle) {
+        const sourceHandleId = `${sourceNode.id}-left`;
+        finalParams.sourceHandle = sourceHandleId;
+        console.log('🔧 sourceHandle 자동 설정:', sourceHandleId);
       }
+      
+      // targetHandle이 없는 경우, target 노드의 핸들 중 하나 선택
+      if (!params.targetHandle) {
+        const targetHandleId = `${targetNode.id}-right`;
+        finalParams.targetHandle = targetHandleId;
+        console.log('🔧 targetHandle 자동 설정:', targetHandleId);
+      }
+    }
+  }
+  
+  // 핸들이 여전히 없는 경우 연결 불가
+  if (!finalParams.sourceHandle || !finalParams.targetHandle) {
+    console.log('❌ 핸들 자동 변환 실패 - 연결 불가:', finalParams);
+    return;
+  }
       
       // 🔴 추가: 같은 노드 간 연결 방지
       if (params.source === params.target) {

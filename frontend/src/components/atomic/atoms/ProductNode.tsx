@@ -89,7 +89,7 @@ function ProductNode({
       }}
     >
       {/* 🎯 4방향 핸들 - HandleStyles.tsx 함수 사용 */}
-      {finalShowHandles && renderFourDirectionHandles(isConnectable)}
+      {finalShowHandles && renderFourDirectionHandles(isConnectable, data.id)}
 
       {/* 노드 내용 */}
       <div className='text-center'>
