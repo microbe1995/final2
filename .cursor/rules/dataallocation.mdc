@@ -1,0 +1,38 @@
+---
+description: >
+  이 프로젝트는 CBAM 데이터 할당 솔루션을 노드 기반으로 구현한다.
+  노드 타입은 Process(공정)과 Product(제품), Edge를 통해 연결된다.
+  
+  로직 설계 원칙:
+  1. 공정→공정 (edge_kind = "continue"):
+     - source.attr_em이 target으로 누적 전달된다.
+     - target.attr_em = source.attr_em + target.attr_em
+  2. 공정→제품 (edge_kind = "produce"):
+     - product.attr_em = sum(connected_processes.attr_em)
+  3. 제품→공정 (edge_kind = "consume"):
+     - to_next_process = product_amount - product_sell - product_eusell
+     - 여러 공정으로 소비될 경우 생산량 비율에 따라 분배한다.
+     - 이 값은 target.mat_amount에 반영된다.
+     - 동시에 product.attr_em이 전구물질 배출량으로 target.attr_em에 귀속된다.
+  
+  구현 지침:
+  - 규제 보고 목적이므로 엣지 변경이 발생할 때마다 전체 그래프를 재계산한다.
+  - 공정 단계별 emission 값과 최종 제품 emission 값을 모두 API 응답으로 제공한다.
+  - emission 계산 결과는 DB에 업데이트하고, 이력(log)을 남긴다.
+  - 에러 처리:
+    * 필수 데이터 누락 → 계산 중단 + 에러 반환
+    * 중복 데이터 → 합산하지 않고 에러 기록
+    * 순환 참조 발견 → DAG 위반 에러 반환
+    * 단위 불일치/변환 실패 → 에러 반환
+  - DB 스키마(process, product, edge, processchain, productprocess)는 변경하지 않는다.
+  - 서비스 계층(EdgeService, ProcessChainService, ProductProcessService)에 
+    propagate_emissions() 또는 유사 로직을 구현한다.
+
+globs:
+  - "app/domain/edge/*.py"
+  - "app/domain/processchain/*.py"
+  - "app/domain/process/*.py"
+  - "app/domain/product/*.py"
+  - "app/domain/productprocess/*.py"
+alwaysApply: true
+---

@@ -655,6 +655,197 @@ class CalculationRepository:
             logger.error(f"❌ 제품별 총 배출량 계산 실패: {str(e)}")
             raise e
 
+    # ============================================================================
+    # 🔄 공정 간 값 전파 관련 Repository 메서드들
+    # ============================================================================
+    
+    async def update_process_attrdir_emission(self, process_id: int, update_data: Dict[str, Any]) -> bool:
+        """공정별 직접귀속배출량 업데이트"""
+        await self._ensure_pool_initialized()
+            
+        try:
+            async with self.pool.acquire() as conn:
+                # 업데이트할 필드들만 추출
+                set_clauses = []
+                values = [process_id]
+                param_count = 1
+                
+                for key, value in update_data.items():
+                    if key in ['total_matdir_emission', 'total_fueldir_emission', 'attrdir_em']:
+                        set_clauses.append(f"{key} = ${param_count + 1}")
+                        values.append(value)
+                        param_count += 1
+                
+                if not set_clauses:
+                    logger.warning("업데이트할 필드가 없습니다.")
+                    return False
+                
+                # updated_at 필드 추가
+                set_clauses.append("updated_at = NOW()")
+                
+                query = f"""
+                    UPDATE process_attrdir_emission 
+                    SET {', '.join(set_clauses)}
+                    WHERE process_id = $1
+                """
+                
+                result = await conn.execute(query, *values)
+                
+                if result == "UPDATE 1":
+                    logger.info(f"✅ 공정 {process_id} 배출량 업데이트 성공")
+                    return True
+                else:
+                    logger.warning(f"⚠️ 공정 {process_id} 배출량 업데이트 실패: {result}")
+                    return False
+                
+        except Exception as e:
+            logger.error(f"❌ 공정별 직접귀속배출량 업데이트 실패: {str(e)}")
+            raise e
+    
+    async def get_continue_edges(self) -> List[Dict[str, Any]]:
+        """모든 continue 엣지 조회"""
+        await self._ensure_pool_initialized()
+            
+        try:
+            async with self.pool.acquire() as conn:
+                results = await conn.fetch("""
+                    SELECT 
+                        e.id,
+                        e.source_id,
+                        e.target_id,
+                        e.source_node_type,
+                        e.target_node_type,
+                        e.edge_kind
+                    FROM edge e
+                    WHERE e.edge_kind = 'continue'
+                    AND e.source_node_type = 'process'
+                    AND e.target_node_type = 'process'
+                    ORDER BY e.id
+                """)
+                
+                return [dict(row) for row in results]
+                
+        except Exception as e:
+            logger.error(f"❌ continue 엣지 조회 실패: {str(e)}")
+            raise e
+    
+    async def get_outgoing_continue_edges(self, process_id: int) -> List[Dict[str, Any]]:
+        """특정 공정에서 나가는 continue 엣지들 조회"""
+        await self._ensure_pool_initialized()
+            
+        try:
+            async with self.pool.acquire() as conn:
+                results = await conn.fetch("""
+                    SELECT 
+                        e.id,
+                        e.source_id,
+                        e.target_id,
+                        e.source_node_type,
+                        e.target_node_type,
+                        e.edge_kind
+                    FROM edge e
+                    WHERE e.edge_kind = 'continue'
+                    AND e.source_node_type = 'process'
+                    AND e.target_node_type = 'process'
+                    AND e.source_id = $1
+                    ORDER BY e.id
+                """, process_id)
+                
+                return [dict(row) for row in results]
+                
+        except Exception as e:
+            logger.error(f"❌ 공정 {process_id}의 나가는 continue 엣지 조회 실패: {str(e)}")
+            raise e
+    
+    async def get_isolated_processes(self) -> List[int]:
+        """고립된 공정들 조회 (엣지가 없는 공정)"""
+        await self._ensure_pool_initialized()
+            
+        try:
+            async with self.pool.acquire() as conn:
+                results = await conn.fetch("""
+                    SELECT p.id
+                    FROM process p
+                    LEFT JOIN edge e ON (
+                        (e.source_node_type = 'process' AND e.source_id = p.id) OR
+                        (e.target_node_type = 'process' AND e.target_id = p.id)
+                    )
+                    WHERE e.id IS NULL
+                    ORDER BY p.id
+                """)
+                
+                return [row['id'] for row in results]
+                
+        except Exception as e:
+            logger.error(f"❌ 고립된 공정 조회 실패: {str(e)}")
+            raise e
+    
+    async def get_very_long_chains(self, max_length: int = 20) -> List[Dict[str, Any]]:
+        """매우 긴 체인들 조회 (무한 루프 가능성 확인)"""
+        await self._ensure_pool_initialized()
+            
+        try:
+            async with self.pool.acquire() as conn:
+                # 재귀 CTE를 사용하여 체인 길이 계산
+                results = await conn.fetch(f"""
+                    WITH RECURSIVE process_chain AS (
+                        -- 시작점: 들어오는 엣지가 없는 공정들
+                        SELECT 
+                            p.id as process_id,
+                            p.process_name,
+                            1 as chain_length,
+                            ARRAY[p.id] as path
+                        FROM process p
+                        LEFT JOIN edge e ON e.target_node_type = 'process' AND e.target_id = p.id
+                        WHERE e.id IS NULL
+                        
+                        UNION ALL
+                        
+                        -- 재귀: continue 엣지를 따라 다음 공정으로
+                        SELECT 
+                            p.id,
+                            p.process_name,
+                            pc.chain_length + 1,
+                            pc.path || p.id
+                        FROM process p
+                        JOIN edge e ON e.source_node_type = 'process' AND e.source_id = p.id
+                        JOIN process_chain pc ON e.target_node_type = 'process' AND e.target_id = pc.process_id
+                        WHERE e.edge_kind = 'continue'
+                        AND pc.chain_length < {max_length}
+                        AND p.id != ALL(pc.path)  -- 순환 방지
+                    )
+                    SELECT 
+                        process_id,
+                        process_name,
+                        chain_length,
+                        path
+                    FROM process_chain
+                    WHERE chain_length >= {max_length}
+                    ORDER BY chain_length DESC, process_id
+                """)
+                
+                return [dict(row) for row in results]
+                
+        except Exception as e:
+            logger.error(f"❌ 긴 체인 조회 실패: {str(e)}")
+            raise e
+    
+    async def get_process(self, process_id: int) -> Optional[Dict[str, Any]]:
+        """공정 정보 조회"""
+        await self._ensure_pool_initialized()
+            
+        try:
+            async with self.pool.acquire() as conn:
+                result = await conn.fetchrow("""
+                    SELECT id, process_name FROM process WHERE id = $1
+                """, process_id)
+                
+                return dict(result) if result else None
+                
+        except Exception as e:
+            logger.error(f"❌ 공정 정보 조회 실패: {str(e)}")
+            raise e
+
 
 
 

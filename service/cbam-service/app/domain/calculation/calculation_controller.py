@@ -11,7 +11,9 @@ from app.domain.calculation.calculation_service import CalculationService
 from app.domain.calculation.calculation_schema import (
     ProcessAttrdirEmissionCreateRequest, ProcessAttrdirEmissionResponse, ProcessAttrdirEmissionUpdateRequest,
     ProcessEmissionCalculationRequest, ProcessEmissionCalculationResponse,
-    ProductEmissionCalculationRequest, ProductEmissionCalculationResponse
+    ProductEmissionCalculationRequest, ProductEmissionCalculationResponse,
+    EmissionPropagationRequest, EmissionPropagationResponse,
+    GraphRecalculationRequest, GraphRecalculationResponse
 )
 
 logger = logging.getLogger(__name__)
@@ -21,11 +23,6 @@ router = APIRouter(tags=["Calculation"])
 
 # 서비스 인스턴스 생성
 calculation_service = CalculationService()
-
-
-
-
-
 
 # ============================================================================
 # 📊 배출량 계산 관련 엔드포인트
@@ -95,7 +92,33 @@ async def create_process_attrdir_emission(process_id: int):
         logger.error(f"❌ 공정별 직접귀속배출량 계산 실패: {str(e)}")
         raise HTTPException(status_code=500, detail=f"공정별 직접귀속배출량 계산 중 오류가 발생했습니다: {str(e)}")
 
+# ============================================================================
+# 🔄 공정 간 값 전파 관련 엔드포인트 (1단계 핵심 기능)
+# ============================================================================
 
+@router.post("/emission/propagate", response_model=EmissionPropagationResponse)
+async def propagate_emissions(request: EmissionPropagationRequest):
+    """공정 간 배출량 전파 계산 (핵심 API)"""
+    try:
+        logger.info(f"🔄 배출량 전파 요청: {request.source_process_id} → {request.target_process_id} ({request.edge_kind})")
+        result = await calculation_service.propagate_emissions(request)
+        logger.info(f"✅ 배출량 전파 성공: {result.propagated_amount} tCO2e 전파됨")
+        return result
+    except Exception as e:
+        logger.error(f"❌ 배출량 전파 실패: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"배출량 전파 중 오류가 발생했습니다: {str(e)}")
+
+@router.post("/emission/graph/recalculate", response_model=GraphRecalculationResponse)
+async def recalculate_entire_graph(request: GraphRecalculationRequest):
+    """전체 그래프 재계산 (엣지 변경 시 호출)"""
+    try:
+        logger.info(f"🚀 전체 그래프 재계산 요청: trigger_edge_id={request.trigger_edge_id}")
+        result = await calculation_service.recalculate_entire_graph(request)
+        logger.info(f"✅ 전체 그래프 재계산 완료: {result.total_processes_calculated}개 공정, {result.total_emission_propagated} tCO2e 전파")
+        return result
+    except Exception as e:
+        logger.error(f"❌ 전체 그래프 재계산 실패: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"전체 그래프 재계산 중 오류가 발생했습니다: {str(e)}")
 
 # ============================================================================
 # 📦 Router Export
