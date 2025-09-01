@@ -5,6 +5,7 @@
 import logging
 from typing import Dict, List, Any, Optional, Tuple
 from decimal import Decimal
+from datetime import datetime
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text, select, update
 from sqlalchemy.orm import selectinload
@@ -63,8 +64,7 @@ class EdgeService:
                     'source_id': edge.source_id,
                     'target_node_type': edge.target_node_type,
                     'target_id': edge.target_id,
-                    'edge_kind': edge.edge_kind,
-                    'qty': float(edge.qty) if edge.qty else None
+                    'edge_kind': edge.edge_kind
                 }
                 for edge in edges
             ]
@@ -323,11 +323,28 @@ class EdgeService:
     async def create_edge(self, edge_data) -> Optional[Edge]:
         """엣지 생성"""
         try:
-            # 기존 엣지 생성 로직 구현
             logger.info(f"엣지 생성: {edge_data}")
-            return None  # TODO: 실제 구현 필요
+            
+            # 새로운 Edge 엔티티 생성
+            new_edge = Edge(
+                source_node_type=edge_data.source_node_type,
+                source_id=edge_data.source_id,
+                target_node_type=edge_data.target_node_type,
+                target_id=edge_data.target_id,
+                edge_kind=edge_data.edge_kind
+            )
+            
+            # 데이터베이스에 저장
+            self.db_session.add(new_edge)
+            await self.db_session.commit()
+            await self.db_session.refresh(new_edge)
+            
+            logger.info(f"✅ 엣지 생성 완료: ID {new_edge.id}")
+            return new_edge
+            
         except Exception as e:
             logger.error(f"엣지 생성 실패: {e}")
+            await self.db_session.rollback()
             return None
     
     async def get_edges(self) -> List[Edge]:
@@ -353,19 +370,57 @@ class EdgeService:
     async def update_edge(self, edge_id: int, edge_data) -> Optional[Edge]:
         """엣지 수정"""
         try:
-            # 기존 엣지 수정 로직 구현
             logger.info(f"엣지 {edge_id} 수정: {edge_data}")
-            return None  # TODO: 실제 구현 필요
+            
+            # 기존 엣지 조회
+            existing_edge = await self.get_edge(edge_id)
+            if not existing_edge:
+                return None
+            
+            # 업데이트할 필드들만 수정
+            if edge_data.source_node_type is not None:
+                existing_edge.source_node_type = edge_data.source_node_type
+            if edge_data.source_id is not None:
+                existing_edge.source_id = edge_data.source_id
+            if edge_data.target_node_type is not None:
+                existing_edge.target_node_type = edge_data.target_node_type
+            if edge_data.target_id is not None:
+                existing_edge.target_id = edge_data.target_id
+            if edge_data.edge_kind is not None:
+                existing_edge.edge_kind = edge_data.edge_kind
+            
+            existing_edge.updated_at = datetime.utcnow()
+            
+            # 데이터베이스에 저장
+            await self.db_session.commit()
+            await self.db_session.refresh(existing_edge)
+            
+            logger.info(f"✅ 엣지 {edge_id} 수정 완료")
+            return existing_edge
+            
         except Exception as e:
             logger.error(f"엣지 {edge_id} 수정 실패: {e}")
+            await self.db_session.rollback()
             return None
     
     async def delete_edge(self, edge_id: int) -> bool:
         """엣지 삭제"""
         try:
-            # 기존 엣지 삭제 로직 구현
             logger.info(f"엣지 {edge_id} 삭제")
-            return True  # TODO: 실제 구현 필요
+            
+            # 기존 엣지 조회
+            existing_edge = await self.get_edge(edge_id)
+            if not existing_edge:
+                return False
+            
+            # 엣지 삭제
+            await self.db_session.delete(existing_edge)
+            await self.db_session.commit()
+            
+            logger.info(f"✅ 엣지 {edge_id} 삭제 완료")
+            return True
+            
         except Exception as e:
             logger.error(f"엣지 {edge_id} 삭제 실패: {e}")
+            await self.db_session.rollback()
             return False
