@@ -84,13 +84,13 @@ export default function ConnectionTestComponent() {
       return { valid: false, reason: 'missing_handles' };
     }
     
-    // 핸들 ID 형식 확인 (React Flow의 실제 형식)
-    const handleIdPattern = /^\d+-(left|right|top|bottom)$/;
+    // 핸들 ID 형식 확인 (새로운 형식: nodeId-direction)
+    const handleIdPattern = /^[^-]+-(left|right|top|bottom)$/;
     if (!handleIdPattern.test(connection.sourceHandle) || !handleIdPattern.test(connection.targetHandle)) {
       console.log('❌ 핸들 ID 형식 불일치:', { 
         sourceHandle: connection.sourceHandle, 
         targetHandle: connection.targetHandle,
-        expectedPattern: '숫자-(left|right|top|bottom)'
+        expectedPattern: 'nodeId-(left|right|top|bottom)'
       });
       return { valid: false, reason: 'invalid_handle_format' };
     }
@@ -165,22 +165,22 @@ export default function ConnectionTestComponent() {
         name: '제품 → 공정 연결',
         source: 'product-123-test',
         target: 'process-456-test',
-        sourceHandle: '8-right',
-        targetHandle: '166-left'
+        sourceHandle: 'product-123-test-right',
+        targetHandle: 'process-456-test-left'
       },
       {
         name: '공정 → 그룹 연결',
         source: 'process-456-test',
         target: 'group-789-test',
-        sourceHandle: '167-top',
-        targetHandle: '168-bottom'
+        sourceHandle: 'process-456-test-top',
+        targetHandle: 'group-789-test-bottom'
       },
       {
         name: '같은 노드 연결 (실패 예상)',
         source: 'product-123-test',
         target: 'product-123-test',
-        sourceHandle: '9-left',
-        targetHandle: '10-right'
+        sourceHandle: 'product-123-test-left',
+        targetHandle: 'product-123-test-right'
       }
     ];
 

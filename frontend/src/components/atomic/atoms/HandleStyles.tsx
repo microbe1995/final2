@@ -36,33 +36,40 @@ const targetStyle: React.CSSProperties = {
  * - Bottom: source (연결 시 자동으로 target으로 변환 가능)
  */
 export const renderFourDirectionHandles = (isConnectable = true, nodeId?: string) => {
-  // 🔧 수정: React Flow가 자체적으로 핸들 ID를 생성하도록 함
+  // 🔧 수정: 명시적인 핸들 ID 생성
+  const nodeIdStr = nodeId || 'node';
+  
   const handles = [
     {
+      id: `${nodeIdStr}-left`,
       position: Position.Left,
       type: 'source' as HandleType,
       style: sourceStyle,
     },
     {
+      id: `${nodeIdStr}-right`,
       position: Position.Right,
       type: 'source' as HandleType,
       style: sourceStyle,
     },
     {
+      id: `${nodeIdStr}-top`,
       position: Position.Top,
       type: 'source' as HandleType,
       style: sourceStyle,
     },
     {
+      id: `${nodeIdStr}-bottom`,
       position: Position.Bottom,
       type: 'source' as HandleType,
       style: sourceStyle,
     },
   ];
 
-  return handles.map(({ position, type, style }, index) => (
+  return handles.map(({ id, position, type, style }) => (
     <Handle
-      key={`${nodeId || 'node'}-${position}-${index}`}
+      key={id}
+      id={id}
       type={type}
       position={position}
       isConnectable={isConnectable}
@@ -71,8 +78,6 @@ export const renderFourDirectionHandles = (isConnectable = true, nodeId?: string
     />
   ));
 };
-
-
 
 /* 그룹 노드 등에서 쓸 기본 핸들 스타일 */
 export const handleStyle = {
