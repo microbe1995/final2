@@ -28,7 +28,7 @@ matdir_service = MatDirService()
 # 📦 1. 기존 MatDir 관련 엔드포인트 (원료직접배출량 데이터 관리)
 # ============================================================================
 
-@router.post("/", response_model=MatDirResponse, status_code=201)
+@router.post("/create", response_model=MatDirResponse, status_code=201)
 async def create_matdir(matdir_data: MatDirCreateRequest):
     """원료직접배출량 데이터 생성"""
     try:
@@ -40,7 +40,7 @@ async def create_matdir(matdir_data: MatDirCreateRequest):
         logger.error(f"❌ 원료직접배출량 생성 실패: {str(e)}")
         raise HTTPException(status_code=500, detail=f"원료직접배출량 생성 중 오류가 발생했습니다: {str(e)}")
 
-@router.get("/", response_model=List[MatDirResponse])
+@router.get("/list", response_model=List[MatDirResponse])
 async def get_matdirs(skip: int = 0, limit: int = 100):
     """모든 원료직접배출량 데이터 조회"""
     try:

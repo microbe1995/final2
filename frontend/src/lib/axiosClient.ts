@@ -281,8 +281,8 @@ export const apiEndpoints = {
     
     matdir: {
       // Gateway: /api/v1/cbam/matdir/{path} → CBAM: /matdir/{path}
-      create: '/api/v1/cbam/matdir',
-      list: '/api/v1/cbam/matdir',
+      create: '/api/v1/cbam/matdir/create',
+      list: '/api/v1/cbam/matdir/list',
       get: (id: number) => `/api/v1/cbam/matdir/${id}`,
       update: (id: number) => `/api/v1/cbam/matdir/${id}`,
       delete: (id: number) => `/api/v1/cbam/matdir/${id}`,
@@ -293,8 +293,8 @@ export const apiEndpoints = {
     
     fueldir: {
       // Gateway: /api/v1/cbam/fueldir/{path} → CBAM: /fueldir/{path}
-      create: '/api/v1/cbam/fueldir',
-      list: '/api/v1/cbam/fueldir',
+      create: '/api/v1/cbam/fueldir/create',
+      list: '/api/v1/cbam/fueldir/list',
       get: (id: number) => `/api/v1/cbam/fueldir/${id}`,
       update: (id: number) => `/api/v1/cbam/fueldir/${id}`,
       delete: (id: number) => `/api/v1/cbam/fueldir/${id}`,

@@ -32,7 +32,7 @@ fueldir_service = FuelDirService()
 # 📦 기존 FuelDir 관련 엔드포인트
 # ============================================================================
 
-@router.post("/", response_model=FuelDirResponse, status_code=201)
+@router.post("/create", response_model=FuelDirResponse, status_code=201)
 async def create_fueldir(fueldir_data: FuelDirCreateRequest):
     """연료직접배출량 데이터 생성"""
     try:
@@ -44,7 +44,7 @@ async def create_fueldir(fueldir_data: FuelDirCreateRequest):
         logger.error(f"❌ 연료직접배출량 생성 실패: {str(e)}")
         raise HTTPException(status_code=500, detail=f"연료직접배출량 생성 중 오류가 발생했습니다: {str(e)}")
 
-@router.get("/", response_model=List[FuelDirResponse])
+@router.get("/list", response_model=List[FuelDirResponse])
 async def get_fueldirs(skip: int = 0, limit: int = 100):
     """모든 연료직접배출량 데이터 조회"""
     try:
