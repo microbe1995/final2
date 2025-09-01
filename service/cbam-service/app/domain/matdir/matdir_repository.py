@@ -349,14 +349,13 @@ class MatDirRepository:
             logger.error(f"❌ 원료직접배출량 데이터 수정 실패: {str(e)}")
             raise
 
-    async def delete_matdir(self, matdir_id: int) -> bool:
-        """원료직접배출량 데이터 삭제"""
-        await self._ensure_pool_initialized()
+    async def delete_matdir(self, matdir_id) -> bool:
+        """원료직접배출량 데이터 삭제 - BIGINT ID 지원"""
         try:
             return await self._delete_matdir_db(matdir_id)
         except Exception as e:
-            logger.error(f"❌ 원료직접배출량 데이터 삭제 실패: {str(e)}")
-            raise
+            logger.error(f"❌ MatDir 삭제 실패: {str(e)}")
+            return False
 
     def calculate_matdir_emission(self, mat_amount: Decimal, mat_factor: Decimal, oxyfactor: Decimal = Decimal('1.0000')) -> Decimal:
         """원료직접배출량 계산: matdir_em = mat_amount * mat_factor * oxyfactor"""
@@ -505,7 +504,7 @@ class MatDirRepository:
                 return [dict(row) for row in results]
                 
         except Exception as e:
-            logger.error(f"❌ 공정별 MatDir 조회 실패: {str(e)}")
+            logger.error(f"❌ MatDir 조회 실패: {str(e)}")
             raise
 
     async def _get_matdir_db(self, matdir_id: int) -> Optional[Dict[str, Any]]:
@@ -568,16 +567,18 @@ class MatDirRepository:
             logger.error(f"❌ MatDir 수정 실패: {str(e)}")
             raise
 
-    async def _delete_matdir_db(self, matdir_id: int) -> bool:
-        """원료직접배출량 데이터 삭제 (DB 작업)"""
+    async def _delete_matdir_db(self, matdir_id) -> bool:
+        """원료직접배출량 데이터 삭제 (DB 작업) - BIGINT ID 지원"""
         if not self.pool:
             raise Exception("데이터베이스 연결 풀이 초기화되지 않았습니다.")
             
         try:
             async with self.pool.acquire() as conn:
+                # ID를 문자열로 변환하여 BIGINT 범위 지원
+                matdir_id_str = str(matdir_id)
                 result = await conn.execute("""
                     DELETE FROM matdir WHERE id = $1
-                """, matdir_id)
+                """, matdir_id_str)
                 
                 return result != "DELETE 0"
                 

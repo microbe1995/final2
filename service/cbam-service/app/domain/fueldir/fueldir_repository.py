@@ -269,16 +269,31 @@ class FuelDirRepository:
             return None
 
     async def update_fueldir(self, fueldir_id: int, fueldir_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-        """연료직접배출량 데이터 수정"""
+        """연료직접배출량 데이터 수정 (배출계수 수정 제한)"""
         await self._ensure_pool_initialized()
         try:
+            # 배출계수 수정 시도 감지 및 차단
+            if 'fuel_factor' in fueldir_data:
+                logger.warning(f"🚫 배출계수 수정 시도 차단: fueldir_id={fueldir_id}, fuel_factor={fueldir_data['fuel_factor']}")
+                raise Exception("배출계수는 Master Table의 값만 사용해야 합니다. 수정할 수 없습니다.")
+            
+            # 배출계수는 Master Table에서 자동으로 가져와야 함
+            if 'fuel_name' in fueldir_data:
+                # 연료명이 변경된 경우, Master Table에서 배출계수를 자동으로 가져옴
+                fuel_factor = await self.get_fuel_factor_by_name(fueldir_data['fuel_name'])
+                if fuel_factor and fuel_factor.get('found'):
+                    fueldir_data['fuel_factor'] = fuel_factor['fuel_factor']
+                    logger.info(f"✅ Master Table에서 배출계수 자동 설정: {fueldir_data['fuel_name']} → {fueldir_data['fuel_factor']}")
+                else:
+                    raise Exception(f"연료 '{fueldir_data['fuel_name']}'의 배출계수를 Master Table에서 찾을 수 없습니다.")
+            
             return await self._update_fueldir_db(fueldir_id, fueldir_data)
         except Exception as e:
             logger.error(f"❌ FuelDir 수정 실패: {str(e)}")
-            return None
+            raise e
 
-    async def delete_fueldir(self, fueldir_id: int) -> bool:
-        """연료직접배출량 데이터 삭제"""
+    async def delete_fueldir(self, fueldir_id) -> bool:
+        """연료직접배출량 데이터 삭제 - BIGINT ID 지원"""
         await self._ensure_pool_initialized()
         try:
             return await self._delete_fueldir_db(fueldir_id)
@@ -482,16 +497,18 @@ class FuelDirRepository:
             logger.error(f"❌ FuelDir 수정 실패: {str(e)}")
             raise
 
-    async def _delete_fueldir_db(self, fueldir_id: int) -> bool:
-        """연료직접배출량 데이터 삭제 (DB 작업)"""
+    async def _delete_fueldir_db(self, fueldir_id) -> bool:
+        """연료직접배출량 데이터 삭제 (DB 작업) - BIGINT ID 지원"""
         if not self.pool:
             raise Exception("데이터베이스 연결 풀이 초기화되지 않았습니다.")
             
         try:
             async with self.pool.acquire() as conn:
+                # ID를 문자열로 변환하여 BIGINT 범위 지원
+                fueldir_id_str = str(fueldir_id)
                 result = await conn.execute("""
                     DELETE FROM fueldir WHERE id = $1
-                """, fueldir_id)
+                """, fueldir_id_str)
                 
                 return result != "DELETE 0"
                 

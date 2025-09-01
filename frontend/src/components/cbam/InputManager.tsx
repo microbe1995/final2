@@ -652,17 +652,21 @@ export default function InputManager({ selectedProcess, onClose }: InputManagerP
 
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
-                    배출계수 {matdirForm.factor > 0 && <span className="text-green-400">(자동 설정됨)</span>}
+                    배출계수 {matdirForm.factor > 0 && <span className="text-green-400">(Master Table 자동 설정)</span>}
+                    <span className="text-xs text-red-400 ml-2">(수정 불가)</span>
                   </label>
                   <input
                     type="number"
                     step="0.000001"
                     min="0"
                     value={matdirForm.factor}
-                    onChange={(e) => setMatdirForm(prev => ({ ...prev, factor: parseFloat(e.target.value) || 0 }))}
-                    className="w-full px-3 py-2 bg-gray-600 border border-gray-500 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="0.000000"
+                    readOnly
+                    className="w-full px-3 py-2 bg-gray-500 border border-gray-400 rounded-md text-gray-300 cursor-not-allowed"
+                    placeholder="Master Table에서 자동 설정됨"
                   />
+                  <div className="text-xs text-gray-400 mt-1">
+                    💡 배출계수는 Master Table의 값만 사용 가능합니다
+                  </div>
                 </div>
 
                 <div>
@@ -744,17 +748,21 @@ export default function InputManager({ selectedProcess, onClose }: InputManagerP
 
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
-                    배출계수 {fueldirForm.factor > 0 && <span className="text-green-400">(자동 설정됨)</span>}
+                    배출계수 {fueldirForm.factor > 0 && <span className="text-green-400">(Master Table 자동 설정)</span>}
+                    <span className="text-xs text-red-400 ml-2">(수정 불가)</span>
                   </label>
                   <input
                     type="number"
                     step="0.000001"
                     min="0"
                     value={fueldirForm.factor}
-                    onChange={(e) => setFueldirForm(prev => ({ ...prev, factor: parseFloat(e.target.value) || 0 }))}
-                    className="w-full px-3 py-2 bg-gray-600 border border-gray-500 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="0.000000"
+                    readOnly
+                    className="w-full px-3 py-2 bg-gray-500 border border-gray-400 rounded-md text-gray-300 cursor-not-allowed"
+                    placeholder="Master Table에서 자동 설정됨"
                   />
+                  <div className="text-xs text-gray-400 mt-1">
+                    💡 배출계수는 Master Table의 값만 사용 가능합니다
+                  </div>
                 </div>
 
                 <div>
@@ -865,9 +873,10 @@ export default function InputManager({ selectedProcess, onClose }: InputManagerP
                             type="number"
                             step="0.000001"
                             value={editForm.factor}
-                            onChange={(e) => setEditForm(prev => ({ ...prev, factor: parseFloat(e.target.value) || 0 }))}
-                            className="px-2 py-1 bg-gray-700 border border-gray-500 rounded text-white text-sm"
-                            placeholder="배출계수"
+                            readOnly
+                            className="px-2 py-1 bg-gray-600 border border-gray-400 rounded text-gray-400 text-sm cursor-not-allowed"
+                            placeholder="배출계수 (수정불가)"
+                            title="배출계수는 Master Table의 값만 사용 가능합니다"
                           />
                           <input
                             type="number"
