@@ -209,9 +209,22 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
     try {
       console.log('🔗 Edge 연결 시도:', params);
       
-      // 기본 파라미터 검증
+      // ✅ React Flow 공식 문서: 기본 파라미터 검증 강화
       if (!params.source || !params.target) {
         console.log('❌ source 또는 target이 없음:', params);
+        return;
+      }
+      
+      // ✅ 중복 엣지 방지: 이미 존재하는 연결 확인
+      const existingEdge = edges.find(edge => 
+        edge.source === params.source && 
+        edge.target === params.target &&
+        edge.sourceHandle === params.sourceHandle &&
+        edge.targetHandle === params.targetHandle
+      );
+      
+      if (existingEdge) {
+        console.log('❌ 이미 존재하는 연결:', existingEdge);
         return;
       }
       
@@ -231,19 +244,20 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
         targetHandle: params.targetHandle
       });
       
-              // 🔧 4방향 연결 임시 Edge 생성
-        tempEdgeId = `temp-${Date.now()}`;
-        const tempEdge = {
-          id: tempEdgeId,
-          source: params.source,
-          target: params.target,
-          sourceHandle: params.sourceHandle,
-          targetHandle: params.targetHandle,
-          type: 'custom',
-          data: { isTemporary: true },
-          style: { strokeDasharray: '5,5', stroke: '#6b7280' }
-        };
+      // ✅ React Flow 공식 문서: 임시 Edge 생성으로 사용자 피드백 제공
+      tempEdgeId = `temp-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      const tempEdge = {
+        id: tempEdgeId,
+        source: params.source,
+        target: params.target,
+        sourceHandle: params.sourceHandle,
+        targetHandle: params.targetHandle,
+        type: 'custom',
+        data: { isTemporary: true },
+        style: { strokeDasharray: '5,5', stroke: '#6b7280' }
+      };
       
+      // ✅ 임시 엣지 추가
       setEdges(prev => [...prev, tempEdge]);
       console.log('🔗 임시 Edge 추가됨:', tempEdgeId);
       
@@ -306,7 +320,7 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
         const newEdge = response.data;
         console.log('✅ Edge 생성 성공:', newEdge);
         
-        // 🔧 임시 Edge를 실제 Edge로 교체
+        // ✅ React Flow 공식 문서: 임시 Edge를 실제 Edge로 교체
         setEdges(prev => prev.map(edge => 
           edge.id === tempEdgeId 
             ? {
@@ -337,7 +351,7 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
         params: params
       });
       
-      // 🔧 에러 발생 시 임시 Edge 제거
+      // ✅ React Flow 공식 문서: 에러 발생 시 임시 Edge 제거
       if (tempEdgeId) {
         setEdges(prev => prev.filter(edge => edge.id !== tempEdgeId));
       }

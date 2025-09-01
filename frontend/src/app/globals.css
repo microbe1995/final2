@@ -435,43 +435,46 @@
 }
 
 /* ============================================================================
-   React Flow 엣지 애니메이션
+   React Flow 엣지 스타일링
 ============================================================================ */
 
-/* 대시 애니메이션 */
-@keyframes dash {
-  to {
-    stroke-dashoffset: -8;
-  }
+/* 기본 엣지 스타일 */
+.react-flow__edge {
+  pointer-events: all;
 }
 
-/* 글로우 애니메이션 */
-@keyframes glow {
-  0%, 100% {
-    filter: drop-shadow(0 0 4px rgba(59, 130, 246, 0.4));
-  }
-  50% {
-    filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.8));
-  }
+.react-flow__edge-path {
+  stroke-width: 6px;
+  stroke-linecap: round;
+  transition: all 0.2s ease-in-out;
 }
 
-/* 펄스 애니메이션 */
-@keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.7;
-  }
+/* 커스텀 엣지 타입 */
+.react-flow__edge[data-type="custom"] .react-flow__edge-path {
+  stroke-width: 8px;
 }
 
-/* 선택된 엣지 애니메이션 */
+/* 선택된 엣지 */
 .react-flow__edge.selected .react-flow__edge-path {
-  animation: glow 2s ease-in-out infinite;
+  stroke-width: 10px;
+  filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.6));
 }
 
 /* 호버 효과 */
 .react-flow__edge:hover .react-flow__edge-path {
-  filter: drop-shadow(0 0 6px rgba(59, 130, 246, 0.6));
-  transition: all 0.2s ease;
+  stroke-width: 9px;
+  filter: drop-shadow(0 0 6px rgba(59, 130, 246, 0.4));
+}
+
+/* 임시 엣지 */
+.react-flow__edge[data-temporary="true"] .react-flow__edge-path {
+  stroke-dasharray: 8,8;
+  animation: dash 2s linear infinite;
+}
+
+/* 대시 애니메이션 */
+@keyframes dash {
+  to {
+    stroke-dashoffset: -16;
+  }
 }

@@ -215,20 +215,20 @@ function ProcessManagerInner() {
       targetHandle: connection.targetHandle
     });
     
-    // 같은 노드 간 연결 방지
+    // ✅ React Flow 공식 문서: 같은 노드 간 연결 방지
     if (connection.source === connection.target) {
       console.log('❌ 같은 노드 간 연결 시도');
       return { valid: false, reason: '같은 노드 간 연결은 불가능합니다' };
     }
     
-    // 같은 핸들 간 연결 방지 (핸들이 있는 경우에만)
+    // ✅ React Flow 공식 문서: 같은 핸들 간 연결 방지
     if (connection.sourceHandle && connection.targetHandle && 
         connection.sourceHandle === connection.targetHandle) {
       console.log('❌ 같은 핸들 간 연결 시도');
       return { valid: false, reason: '같은 핸들 간 연결은 불가능합니다' };
     }
     
-    // 이미 존재하는 연결 확인 (핸들 ID까지 포함하여 정확히 같은 연결만 체크)
+    // ✅ React Flow 공식 문서: 이미 존재하는 연결 확인 (핸들 ID까지 포함하여 정확히 같은 연결만 체크)
     const existingEdge = edges.find(edge => 
       edge.source === connection.source && 
       edge.target === connection.target &&
@@ -237,8 +237,22 @@ function ProcessManagerInner() {
     );
     
     if (existingEdge) {
-      console.log('❌ 이미 존재하는 연결 (핸들 ID 포함)');
+      console.log('❌ 이미 존재하는 연결 (핸들 ID 포함):', existingEdge);
       return { valid: false, reason: '이미 존재하는 연결입니다' };
+    }
+    
+    // ✅ React Flow 공식 문서: 추가 검증 - 임시 엣지와의 중복 방지
+    const tempEdgeExists = edges.find(edge => 
+      edge.data?.isTemporary &&
+      edge.source === connection.source && 
+      edge.target === connection.target &&
+      edge.sourceHandle === connection.sourceHandle &&
+      edge.targetHandle === connection.targetHandle
+    );
+    
+    if (tempEdgeExists) {
+      console.log('❌ 임시 엣지와 중복:', tempEdgeExists);
+      return { valid: false, reason: '연결 처리 중입니다. 잠시 기다려주세요.' };
     }
     
     console.log('✅ React Flow 연결 검증 통과');
