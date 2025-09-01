@@ -14,6 +14,7 @@ import os
 import logging
 from typing import Any, Optional
 from sqlalchemy import Column, Integer, String, Numeric, DateTime, Text, Boolean, JSON, create_engine, text
+from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy.orm import Mapped, mapped_column, sessionmaker, Session, DeclarativeBase
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from sqlalchemy.exc import OperationalError, ProgrammingError
@@ -61,7 +62,7 @@ def clean_database_url(url: str) -> str:
     return url
 
 def create_database_engine(database_url: Optional[str] = None):
-    """데이터베이스 엔진 생성 (Railway PostgreSQL 최적화)"""
+    """동기 데이터베이스 엔진 생성 (Railway PostgreSQL 최적화)"""
     try:
         if not database_url:
             database_url = get_database_url()
@@ -149,9 +150,71 @@ def get_db() -> Session:
     """FastAPI 의존성 주입용 동기 데이터베이스 세션 생성"""
     return get_database_session()
 
+def create_async_database_engine(database_url: Optional[str] = None):
+    """비동기 데이터베이스 엔진 생성 (Railway PostgreSQL 최적화)"""
+    try:
+        if not database_url:
+            database_url = get_database_url()
+        
+        if not database_url:
+            logger.warning("DATABASE_URL이 설정되지 않음. SQLite 폴백 사용")
+            return create_async_engine(
+                "sqlite+aiosqlite:///./cbam_fallback.db",
+                pool_pre_ping=True,
+                echo=False
+            )
+        
+        # DATABASE_URL 정리
+        clean_url = clean_database_url(database_url)
+        
+        # PostgreSQL URL을 비동기 URL로 변환
+        if 'postgresql://' in clean_url:
+            async_url = clean_url.replace('postgresql://', 'postgresql+asyncpg://')
+        elif 'postgres://' in clean_url:
+            async_url = clean_url.replace('postgres://', 'postgresql+asyncpg://')
+        else:
+            async_url = clean_url
+        
+        # Railway PostgreSQL 최적화 설정
+        engine_params = {
+            'pool_pre_ping': True,
+            'pool_recycle': 300,
+            'pool_size': 10,
+            'max_overflow': 20,
+            'echo': False,
+            'connect_args': {
+                'connect_timeout': 10,
+                'application_name': 'cbam-service',
+                'options': '-c timezone=utc -c client_encoding=utf8'
+            }
+        }
+        
+        # SSL 모드 설정
+        if 'postgresql' in async_url.lower():
+            if '?' in async_url:
+                async_url += "&sslmode=require"
+            else:
+                async_url += "?sslmode=require"
+        
+        logger.info(f"비동기 데이터베이스 연결 시도: {async_url.split('@')[1] if '@' in async_url else async_url}")
+        
+        engine = create_async_engine(async_url, **engine_params)
+        
+        return engine
+        
+    except Exception as e:
+        logger.error(f"❌ 비동기 데이터베이스 엔진 생성 실패: {str(e)}")
+        # SQLite 폴백
+        logger.info("비동기 SQLite 폴백 데이터베이스 사용")
+        return create_async_engine(
+            "sqlite+aiosqlite:///./cbam_fallback.db",
+            pool_pre_ping=True,
+            echo=False
+        )
+
 def get_async_db() -> AsyncSession:
     """FastAPI 의존성 주입용 비동기 데이터베이스 세션 생성"""
-    engine = create_database_engine()
+    engine = create_async_database_engine()
     AsyncSessionLocal = async_sessionmaker(autocommit=False, autoflush=False, bind=engine)
     return AsyncSessionLocal()
 
@@ -200,6 +263,7 @@ __all__ = [
     "get_db",
     "get_async_db",
     "create_database_engine",
+    "create_async_database_engine",
     "DatabaseBase",
     "TimestampMixin",
     "IdentityMixin"

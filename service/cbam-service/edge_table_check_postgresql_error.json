@@ -1,6 +1,0 @@
-{
-  "check_date": "2025-09-01T23:08:22.784881",
-  "database_url": "postgresql://postgres:eQGfytQNhXYAZxsJYlFhYagpJAgstrni@shortline.proxy.rlwy.net:46071/railway",
-  "status": "error",
-  "error_message": "Object of type datetime is not JSON serializable"
-}
