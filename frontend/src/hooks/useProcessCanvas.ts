@@ -172,7 +172,7 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
     });
   }, [setNodes]);
 
-  // 🔧 단순화된 Edge 생성 처리 (검증은 ProcessManager에서 수행)
+  // 🔧 4방향 연결을 지원하는 Edge 생성 처리
   const handleEdgeCreate = useCallback(async (params: Connection, updateProcessChainsAfterEdge: () => void) => {
     let tempEdgeId: string | null = null;
     
@@ -185,33 +185,29 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
         return;
       }
       
-      // 🔧 수정: React Flow의 핸들 ID를 그대로 사용
-      let finalParams = { ...params };
+      // 핸들 ID 검증 (ConnectionMode.Strict에서는 필수)
+      if (!params.sourceHandle || !params.targetHandle) {
+        console.log('❌ 핸들 ID 누락 - 연결 불가:', params);
+        return;
+      }
       
-      // React Flow가 이미 핸들 ID를 제공했으므로 그대로 사용
-      console.log('🔧 React Flow에서 제공된 핸들 ID:', {
+      console.log('🔧 4방향 연결 핸들 ID:', {
         sourceHandle: params.sourceHandle,
         targetHandle: params.targetHandle
       });
       
-      // 🔧 핸들 ID 존재 여부 확인
-      if (!finalParams.sourceHandle || !finalParams.targetHandle) {
-        console.log('❌ 핸들 ID 누락 - 연결 불가:', finalParams);
-        return;
-      }
-      
-      // 🔧 단순화된 임시 Edge 생성
-      tempEdgeId = `temp-${Date.now()}`;
-      const tempEdge = {
-        id: tempEdgeId,
-        source: finalParams.source,
-        target: finalParams.target,
-        sourceHandle: finalParams.sourceHandle,
-        targetHandle: finalParams.targetHandle,
-        type: 'custom',
-        data: { isTemporary: true },
-        style: { strokeDasharray: '5,5', stroke: '#6b7280' }
-      };
+              // 🔧 4방향 연결 임시 Edge 생성
+        tempEdgeId = `temp-${Date.now()}`;
+        const tempEdge = {
+          id: tempEdgeId,
+          source: params.source,
+          target: params.target,
+          sourceHandle: params.sourceHandle,
+          targetHandle: params.targetHandle,
+          type: 'custom',
+          data: { isTemporary: true },
+          style: { strokeDasharray: '5,5', stroke: '#6b7280' }
+        };
       
       setEdges(prev => [...prev, tempEdge]);
       console.log('🔗 임시 Edge 추가됨:', tempEdgeId);
@@ -280,10 +276,10 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
           edge.id === tempEdgeId 
             ? {
                 id: `e-${newEdge.id}`,
-                source: finalParams.source,
-                target: finalParams.target,
-                sourceHandle: finalParams.sourceHandle,
-                targetHandle: finalParams.targetHandle,
+                source: params.source,
+                target: params.target,
+                sourceHandle: params.sourceHandle,
+                targetHandle: params.targetHandle,
                 type: 'custom',
                 data: { edgeData: newEdge, isTemporary: false },
                 style: { stroke: '#3b82f6' }

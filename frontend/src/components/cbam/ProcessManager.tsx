@@ -166,14 +166,22 @@ function ProcessManagerInner() {
       return { valid: false, reason: 'same_node' };
     }
     
-    // ConnectionMode.Loose에서는 핸들 ID가 선택적이므로 검증하지 않음
-    // React Flow가 자체적으로 핸들을 관리함
-    console.log('🔧 핸들 ID 확인 (선택적):', { 
-      sourceHandle: connection.sourceHandle, 
-      targetHandle: connection.targetHandle
-    });
+    // 핸들 ID 검증 (ConnectionMode.Strict에서는 필수)
+    if (!connection.sourceHandle || !connection.targetHandle) {
+      console.log('❌ 핸들 ID 누락:', { 
+        sourceHandle: connection.sourceHandle, 
+        targetHandle: connection.targetHandle
+      });
+      return { valid: false, reason: 'missing_handles' };
+    }
     
-    // 이미 존재하는 연결 확인
+    // 같은 핸들 간 연결 방지
+    if (connection.sourceHandle === connection.targetHandle) {
+      console.log('❌ 같은 핸들 간 연결 시도:', connection.sourceHandle);
+      return { valid: false, reason: 'same_handle' };
+    }
+    
+    // 이미 존재하는 연결 확인 (양방향 모두 체크)
     const existingEdge = edges.find(edge => 
       (edge.source === connection.source && edge.target === connection.target) ||
       (edge.source === connection.target && edge.target === connection.source)
@@ -258,7 +266,13 @@ function ProcessManagerInner() {
       />
 
       {/* ReactFlow 캔버스 */}
-      <div className="flex-1">
+      <div className="flex-1 relative">
+        {/* 디버깅 정보 */}
+        <div className="absolute top-2 right-2 bg-black bg-opacity-75 text-white p-2 rounded text-xs z-10">
+          <div>노드 수: {nodes.length}</div>
+          <div>연결 수: {edges.length}</div>
+          <div>사업장: {selectedInstall?.install_name || '선택 안됨'}</div>
+        </div>
         <ReactFlow
           nodes={nodes}
           edges={edges}
@@ -266,24 +280,24 @@ function ProcessManagerInner() {
           onEdgesChange={onEdgesChange}
           nodeTypes={nodeTypes}
           edgeTypes={edgeTypes}
-          connectionMode={ConnectionMode.Loose}
+          connectionMode={ConnectionMode.Strict}
           defaultEdgeOptions={{ type: 'custom', markerEnd: { type: MarkerType.ArrowClosed } }}
           deleteKeyCode="Delete"
           className="bg-gray-900"
           fitView
           onConnectStart={(event, params) => {
-            console.log('🔗 연결 시작:', params);
+            console.log('🔗 4방향 연결 시작:', params);
             handleConnectStart(event, params);
           }}
-                  onConnect={(params) => {
-          console.log('🔗 연결 완료:', params);
-          const validation = validateConnection(params);
-          if (validation.valid) {
-            handleConnect(params);
-          } else {
-            console.log(`❌ 연결 검증 실패: ${validation.reason}`, params);
-          }
-        }}
+          onConnect={(params) => {
+            console.log('🔗 4방향 연결 완료:', params);
+            const validation = validateConnection(params);
+            if (validation.valid) {
+              handleConnect(params);
+            } else {
+              console.log(`❌ 연결 검증 실패: ${validation.reason}`, params);
+            }
+          }}
           onConnectEnd={handleConnectEnd}
         >
           <Background color="#334155" gap={24} size={1} />
