@@ -1,0 +1,1140 @@
+{
+  "analysis_date": "2025-09-01T21:59:37.346373",
+  "database_url": "shortline.proxy.rlwy.net:46071/railway",
+  "total_tables": 16,
+  "tables": {
+    "companies": {
+      "type": "BASE TABLE",
+      "columns": [
+        {
+          "name": "id",
+          "type": "integer",
+          "nullable": "NO",
+          "default": "nextval('companies_id_seq'::regclass)",
+          "max_length": null,
+          "precision": 32,
+          "scale": 0
+        },
+        {
+          "name": "company_name",
+          "type": "text",
+          "nullable": "NO",
+          "default": null,
+          "max_length": null,
+          "precision": null,
+          "scale": null
+        },
+        {
+          "name": "country",
+          "type": "text",
+          "nullable": "YES",
+          "default": null,
+          "max_length": null,
+          "precision": null,
+          "scale": null
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp without time zone",
+          "nullable": "YES",
+          "default": "CURRENT_TIMESTAMP",
+          "max_length": null,
+          "precision": null,
+          "scale": null
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp without time zone",
+          "nullable": "YES",
+          "default": "CURRENT_TIMESTAMP",
+          "max_length": null,
+          "precision": null,
+          "scale": null
+        }
+      ]
+    },
+    "countries": {
+      "type": "BASE TABLE",
+      "columns": [
+        {
+          "name": "id",
+          "type": "integer",
+          "nullable": "NO",
+          "default": "nextval('countries_id_seq'::regclass)",
+          "max_length": null,
+          "precision": 32,
+          "scale": 0
+        },
+        {
+          "name": "country_name",
+          "type": "text",
+          "nullable": "NO",
+          "default": null,
+          "max_length": null,
+          "precision": null,
+          "scale": null
+        },
+        {
+          "name": "country_code",
+          "type": "text",
+          "nullable": "NO",
+          "default": null,
+          "max_length": null,
+          "precision": null,
+          "scale": null
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp without time zone",
+          "nullable": "YES",
+          "default": "CURRENT_TIMESTAMP",
+          "max_length": null,
+          "precision": null,
+          "scale": null
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp without time zone",
+          "nullable": "YES",
+          "default": "CURRENT_TIMESTAMP",
+          "max_length": null,
+          "precision": null,
+          "scale": null
+        }
+      ]
+    },
+    "edge": {
+      "type": "BASE TABLE",
+      "columns": [
+        {
+          "name": "id",
+          "type": "integer",
+          "nullable": "NO",
+          "default": "nextval('edge_id_seq'::regclass)",
+          "max_length": null,
+          "precision": 32,
+          "scale": 0
+        },
+        {
+          "name": "source_node_type",
+          "type": "USER-DEFINED",
+          "nullable": "NO",
+          "default": null,
+          "max_length": null,
+          "precision": null,
+          "scale": null
+        },
+        {
+          "name": "source_id",
+          "type": "integer",
+          "nullable": "NO",
+          "default": null,
+          "max_length": null,
+          "precision": 32,
+          "scale": 0
+        },
+        {
+          "name": "target_node_type",
+          "type": "USER-DEFINED",
+          "nullable": "NO",
+          "default": null,
+          "max_length": null,
+          "precision": null,
+          "scale": null
+        },
+        {
+          "name": "target_id",
+          "type": "integer",
+          "nullable": "NO",
+          "default": null,
+          "max_length": null,
+          "precision": 32,
+          "scale": 0
+        },
+        {
+          "name": "edge_kind",
+          "type": "USER-DEFINED",
+          "nullable": "NO",
+          "default": null,
+          "max_length": null,
+          "precision": null,
+          "scale": null
+        },
+        {
+          "name": "qty",
+          "type": "double precision",
+          "nullable": "YES",
+          "default": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp without time zone",
+          "nullable": "YES",
+          "default": "CURRENT_TIMESTAMP",
+          "max_length": null,
+          "precision": null,
+          "scale": null
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp without time zone",
+          "nullable": "YES",
+          "default": "CURRENT_TIMESTAMP",
+          "max_length": null,
+          "precision": null,
+          "scale": null
+        }
+      ]
+    },
+    "fuel_master": {
+      "type": "BASE TABLE",
+      "columns": [
+        {
+          "name": "id",
+          "type": "integer",
+          "nullable": "NO",
+          "default": "nextval('fuel_master_id_seq'::regclass)",
+          "max_length": null,
+          "precision": 32,
+          "scale": 0
+        },
+        {
+          "name": "fuel_name",
+          "type": "character varying",
+          "nullable": "NO",
+          "default": null,
+          "max_length": 255,
+          "precision": null,
+          "scale": null
+        },
+        {
+          "name": "fuel_engname",
+          "type": "character varying",
+          "nullable": "NO",
+          "default": null,
+          "max_length": 255,
+          "precision": null,
+          "scale": null
+        },
+        {
+          "name": "fuel_factor",
+          "type": "numeric",
+          "nullable": "NO",
+          "default": null,
+          "max_length": null,
+          "precision": 10,
+          "scale": 6
+        },
+        {
+          "name": "net_calory",
+          "type": "numeric",
+          "nullable": "YES",
+          "default": null,
+          "max_length": null,
+          "precision": 10,
+          "scale": 6
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "nullable": "YES",
+          "default": "now()",
+          "max_length": null,
+          "precision": null,
+          "scale": null
+        }
+      ]
+    },
+    "fueldir": {
+      "type": "BASE TABLE",
+      "columns": [
+        {
+          "name": "id",
+          "type": "integer",
+          "nullable": "NO",
+          "default": "nextval('fueldir_id_seq'::regclass)",
+          "max_length": null,
+          "precision": 32,
+          "scale": 0
+        },
+        {
+          "name": "process_id",
+          "type": "integer",
+          "nullable": "NO",
+          "default": null,
+          "max_length": null,
+          "precision": 32,
+          "scale": 0
+        },
+        {
+          "name": "fuel_name",
+          "type": "character varying",
+          "nullable": "NO",
+          "default": null,
+          "max_length": 255,
+          "precision": null,
+          "scale": null
+        },
+        {
+          "name": "fuel_factor",
+          "type": "numeric",
+          "nullable": "NO",
+          "default": null,
+          "max_length": null,
+          "precision": 10,
+          "scale": 6
+        },
+        {
+          "name": "fuel_amount",
+          "type": "numeric",
+          "nullable": "NO",
+          "default": null,
+          "max_length": null,
+          "precision": 15,
+          "scale": 6
+        },
+        {
+          "name": "fuel_oxyfactor",
+          "type": "numeric",
+          "nullable": "YES",
+          "default": "1.0000",
+          "max_length": null,
+          "precision": 5,
+          "scale": 4
+        },
+        {
+          "name": "fueldir_em",
+          "type": "numeric",
+          "nullable": "YES",
+          "default": "0",
+          "max_length": null,
+          "precision": 15,
+          "scale": 6
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "nullable": "YES",
+          "default": "CURRENT_TIMESTAMP",
+          "max_length": null,
+          "precision": null,
+          "scale": null
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "nullable": "YES",
+          "default": "CURRENT_TIMESTAMP",
+          "max_length": null,
+          "precision": null,
+          "scale": null
+        }
+      ]
+    },
+    "hs_cn_mapping": {
+      "type": "BASE TABLE",
+      "columns": [
+        {
+          "name": "id",
+          "type": "integer",
+          "nullable": "NO",
+          "default": "nextval('hs_cn_mapping_id_seq'::regclass)",
+          "max_length": null,
+          "precision": 32,
+          "scale": 0
+        },
+        {
+          "name": "hscode",
+          "type": "character varying",
+          "nullable": "NO",
+          "default": null,
+          "max_length": 6,
+          "precision": null,
+          "scale": null
+        },
+        {
+          "name": "aggregoods_name",
+          "type": "text",
+          "nullable": "YES",
+          "default": null,
+          "max_length": null,
+          "precision": null,
+          "scale": null
+        },
+        {
+          "name": "aggregoods_engname",
+          "type": "text",
+          "nullable": "YES",
+          "default": null,
+          "max_length": null,
+          "precision": null,
+          "scale": null
+        },
+        {
+          "name": "cncode_total",
+          "type": "character varying",
+          "nullable": "NO",
+          "default": null,
+          "max_length": 8,
+          "precision": null,
+          "scale": null
+        },
+        {
+          "name": "goods_name",
+          "type": "text",
+          "nullable": "YES",
+          "default": null,
+          "max_length": null,
+          "precision": null,
+          "scale": null
+        },
+        {
+          "name": "goods_engname",
+          "type": "text",
+          "nullable": "YES",
+          "default": null,
+          "max_length": null,
+          "precision": null,
+          "scale": null
+        }
+      ]
+    },
+    "install": {
+      "type": "BASE TABLE",
+      "columns": [
+        {
+          "name": "id",
+          "type": "integer",
+          "nullable": "NO",
+          "default": "nextval('install_id_seq'::regclass)",
+          "max_length": null,
+          "precision": 32,
+          "scale": 0
+        },
+        {
+          "name": "install_name",
+          "type": "text",
+          "nullable": "NO",
+          "default": null,
+          "max_length": null,
+          "precision": null,
+          "scale": null
+        },
+        {
+          "name": "reporting_year",
+          "type": "integer",
+          "nullable": "NO",
+          "default": "EXTRACT(year FROM now())",
+          "max_length": null,
+          "precision": 32,
+          "scale": 0
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "nullable": "YES",
+          "default": "now()",
+          "max_length": null,
+          "precision": null,
+          "scale": null
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "nullable": "YES",
+          "default": "now()",
+          "max_length": null,
+          "precision": null,
+          "scale": null
+        }
+      ]
+    },
+    "matdir": {
+      "type": "BASE TABLE",
+      "columns": [
+        {
+          "name": "id",
+          "type": "integer",
+          "nullable": "NO",
+          "default": "nextval('matdir_id_seq'::regclass)",
+          "max_length": null,
+          "precision": 32,
+          "scale": 0
+        },
+        {
+          "name": "process_id",
+          "type": "integer",
+          "nullable": "NO",
+          "default": null,
+          "max_length": null,
+          "precision": 32,
+          "scale": 0
+        },
+        {
+          "name": "mat_name",
+          "type": "character varying",
+          "nullable": "NO",
+          "default": null,
+          "max_length": 255,
+          "precision": null,
+          "scale": null
+        },
+        {
+          "name": "mat_factor",
+          "type": "numeric",
+          "nullable": "NO",
+          "default": null,
+          "max_length": null,
+          "precision": 10,
+          "scale": 6
+        },
+        {
+          "name": "mat_amount",
+          "type": "numeric",
+          "nullable": "NO",
+          "default": null,
+          "max_length": null,
+          "precision": 15,
+          "scale": 6
+        },
+        {
+          "name": "oxyfactor",
+          "type": "numeric",
+          "nullable": "YES",
+          "default": "1.0000",
+          "max_length": null,
+          "precision": 5,
+          "scale": 4
+        },
+        {
+          "name": "matdir_em",
+          "type": "numeric",
+          "nullable": "YES",
+          "default": "0",
+          "max_length": null,
+          "precision": 15,
+          "scale": 6
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp without time zone",
+          "nullable": "YES",
+          "default": "CURRENT_TIMESTAMP",
+          "max_length": null,
+          "precision": null,
+          "scale": null
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp without time zone",
+          "nullable": "YES",
+          "default": "CURRENT_TIMESTAMP",
+          "max_length": null,
+          "precision": null,
+          "scale": null
+        }
+      ]
+    },
+    "material_master": {
+      "type": "BASE TABLE",
+      "columns": [
+        {
+          "name": "id",
+          "type": "integer",
+          "nullable": "NO",
+          "default": "nextval('material_master_id_seq'::regclass)",
+          "max_length": null,
+          "precision": 32,
+          "scale": 0
+        },
+        {
+          "name": "mat_name",
+          "type": "character varying",
+          "nullable": "NO",
+          "default": null,
+          "max_length": 255,
+          "precision": null,
+          "scale": null
+        },
+        {
+          "name": "mat_engname",
+          "type": "character varying",
+          "nullable": "NO",
+          "default": null,
+          "max_length": 255,
+          "precision": null,
+          "scale": null
+        },
+        {
+          "name": "carbon_content",
+          "type": "numeric",
+          "nullable": "YES",
+          "default": null,
+          "max_length": null,
+          "precision": 10,
+          "scale": 6
+        },
+        {
+          "name": "mat_factor",
+          "type": "numeric",
+          "nullable": "NO",
+          "default": null,
+          "max_length": null,
+          "precision": 10,
+          "scale": 6
+        }
+      ]
+    },
+    "process": {
+      "type": "BASE TABLE",
+      "columns": [
+        {
+          "name": "id",
+          "type": "integer",
+          "nullable": "NO",
+          "default": "nextval('process_id_seq'::regclass)",
+          "max_length": null,
+          "precision": 32,
+          "scale": 0
+        },
+        {
+          "name": "process_name",
+          "type": "text",
+          "nullable": "NO",
+          "default": null,
+          "max_length": null,
+          "precision": null,
+          "scale": null
+        },
+        {
+          "name": "start_period",
+          "type": "date",
+          "nullable": "YES",
+          "default": null,
+          "max_length": null,
+          "precision": null,
+          "scale": null
+        },
+        {
+          "name": "end_period",
+          "type": "date",
+          "nullable": "YES",
+          "default": null,
+          "max_length": null,
+          "precision": null,
+          "scale": null
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp without time zone",
+          "nullable": "YES",
+          "default": "CURRENT_TIMESTAMP",
+          "max_length": null,
+          "precision": null,
+          "scale": null
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp without time zone",
+          "nullable": "YES",
+          "default": "CURRENT_TIMESTAMP",
+          "max_length": null,
+          "precision": null,
+          "scale": null
+        }
+      ]
+    },
+    "process_attrdir_emission": {
+      "type": "BASE TABLE",
+      "columns": [
+        {
+          "name": "id",
+          "type": "integer",
+          "nullable": "NO",
+          "default": "nextval('process_attrdir_emission_id_seq'::regclass)",
+          "max_length": null,
+          "precision": 32,
+          "scale": 0
+        },
+        {
+          "name": "process_id",
+          "type": "integer",
+          "nullable": "NO",
+          "default": null,
+          "max_length": null,
+          "precision": 32,
+          "scale": 0
+        },
+        {
+          "name": "total_matdir_emission",
+          "type": "numeric",
+          "nullable": "YES",
+          "default": "0",
+          "max_length": null,
+          "precision": 15,
+          "scale": 6
+        },
+        {
+          "name": "total_fueldir_emission",
+          "type": "numeric",
+          "nullable": "YES",
+          "default": "0",
+          "max_length": null,
+          "precision": 15,
+          "scale": 6
+        },
+        {
+          "name": "attrdir_em",
+          "type": "numeric",
+          "nullable": "YES",
+          "default": "0",
+          "max_length": null,
+          "precision": 15,
+          "scale": 6
+        },
+        {
+          "name": "calculation_date",
+          "type": "timestamp with time zone",
+          "nullable": "YES",
+          "default": "now()",
+          "max_length": null,
+          "precision": null,
+          "scale": null
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "nullable": "YES",
+          "default": "now()",
+          "max_length": null,
+          "precision": null,
+          "scale": null
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "nullable": "YES",
+          "default": "now()",
+          "max_length": null,
+          "precision": null,
+          "scale": null
+        }
+      ]
+    },
+    "process_chain": {
+      "type": "BASE TABLE",
+      "columns": [
+        {
+          "name": "id",
+          "type": "integer",
+          "nullable": "NO",
+          "default": "nextval('process_chain_id_seq'::regclass)",
+          "max_length": null,
+          "precision": 32,
+          "scale": 0
+        },
+        {
+          "name": "chain_name",
+          "type": "text",
+          "nullable": "NO",
+          "default": null,
+          "max_length": null,
+          "precision": null,
+          "scale": null
+        },
+        {
+          "name": "start_process_id",
+          "type": "integer",
+          "nullable": "NO",
+          "default": null,
+          "max_length": null,
+          "precision": 32,
+          "scale": 0
+        },
+        {
+          "name": "end_process_id",
+          "type": "integer",
+          "nullable": "NO",
+          "default": null,
+          "max_length": null,
+          "precision": 32,
+          "scale": 0
+        },
+        {
+          "name": "chain_length",
+          "type": "integer",
+          "nullable": "NO",
+          "default": "1",
+          "max_length": null,
+          "precision": 32,
+          "scale": 0
+        },
+        {
+          "name": "is_active",
+          "type": "boolean",
+          "nullable": "NO",
+          "default": "true",
+          "max_length": null,
+          "precision": null,
+          "scale": null
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp without time zone",
+          "nullable": "YES",
+          "default": "CURRENT_TIMESTAMP",
+          "max_length": null,
+          "precision": null,
+          "scale": null
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp without time zone",
+          "nullable": "YES",
+          "default": "CURRENT_TIMESTAMP",
+          "max_length": null,
+          "precision": null,
+          "scale": null
+        }
+      ]
+    },
+    "process_chain_link": {
+      "type": "BASE TABLE",
+      "columns": [
+        {
+          "name": "id",
+          "type": "integer",
+          "nullable": "NO",
+          "default": "nextval('process_chain_link_id_seq'::regclass)",
+          "max_length": null,
+          "precision": 32,
+          "scale": 0
+        },
+        {
+          "name": "chain_id",
+          "type": "integer",
+          "nullable": "NO",
+          "default": null,
+          "max_length": null,
+          "precision": 32,
+          "scale": 0
+        },
+        {
+          "name": "process_id",
+          "type": "integer",
+          "nullable": "NO",
+          "default": null,
+          "max_length": null,
+          "precision": 32,
+          "scale": 0
+        },
+        {
+          "name": "sequence_order",
+          "type": "integer",
+          "nullable": "NO",
+          "default": null,
+          "max_length": null,
+          "precision": 32,
+          "scale": 0
+        },
+        {
+          "name": "is_continue_edge",
+          "type": "boolean",
+          "nullable": "NO",
+          "default": "true",
+          "max_length": null,
+          "precision": null,
+          "scale": null
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp without time zone",
+          "nullable": "YES",
+          "default": "CURRENT_TIMESTAMP",
+          "max_length": null,
+          "precision": null,
+          "scale": null
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp without time zone",
+          "nullable": "YES",
+          "default": "CURRENT_TIMESTAMP",
+          "max_length": null,
+          "precision": null,
+          "scale": null
+        }
+      ]
+    },
+    "product": {
+      "type": "BASE TABLE",
+      "columns": [
+        {
+          "name": "id",
+          "type": "integer",
+          "nullable": "NO",
+          "default": "nextval('product_id_seq'::regclass)",
+          "max_length": null,
+          "precision": 32,
+          "scale": 0
+        },
+        {
+          "name": "install_id",
+          "type": "integer",
+          "nullable": "NO",
+          "default": null,
+          "max_length": null,
+          "precision": 32,
+          "scale": 0
+        },
+        {
+          "name": "product_name",
+          "type": "text",
+          "nullable": "NO",
+          "default": null,
+          "max_length": null,
+          "precision": null,
+          "scale": null
+        },
+        {
+          "name": "product_category",
+          "type": "text",
+          "nullable": "NO",
+          "default": null,
+          "max_length": null,
+          "precision": null,
+          "scale": null
+        },
+        {
+          "name": "prostart_period",
+          "type": "date",
+          "nullable": "NO",
+          "default": null,
+          "max_length": null,
+          "precision": null,
+          "scale": null
+        },
+        {
+          "name": "proend_period",
+          "type": "date",
+          "nullable": "NO",
+          "default": null,
+          "max_length": null,
+          "precision": null,
+          "scale": null
+        },
+        {
+          "name": "cncode_total",
+          "type": "text",
+          "nullable": "YES",
+          "default": null,
+          "max_length": null,
+          "precision": null,
+          "scale": null
+        },
+        {
+          "name": "goods_name",
+          "type": "text",
+          "nullable": "YES",
+          "default": null,
+          "max_length": null,
+          "precision": null,
+          "scale": null
+        },
+        {
+          "name": "goods_engname",
+          "type": "text",
+          "nullable": "YES",
+          "default": null,
+          "max_length": null,
+          "precision": null,
+          "scale": null
+        },
+        {
+          "name": "aggrgoods_name",
+          "type": "text",
+          "nullable": "YES",
+          "default": null,
+          "max_length": null,
+          "precision": null,
+          "scale": null
+        },
+        {
+          "name": "aggrgoods_engname",
+          "type": "text",
+          "nullable": "YES",
+          "default": null,
+          "max_length": null,
+          "precision": null,
+          "scale": null
+        },
+        {
+          "name": "product_amount",
+          "type": "numeric",
+          "nullable": "YES",
+          "default": "0",
+          "max_length": null,
+          "precision": 15,
+          "scale": 6
+        },
+        {
+          "name": "product_sell",
+          "type": "numeric",
+          "nullable": "YES",
+          "default": "0",
+          "max_length": null,
+          "precision": 15,
+          "scale": 6
+        },
+        {
+          "name": "product_eusell",
+          "type": "numeric",
+          "nullable": "YES",
+          "default": "0",
+          "max_length": null,
+          "precision": 15,
+          "scale": 6
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "nullable": "YES",
+          "default": "now()",
+          "max_length": null,
+          "precision": null,
+          "scale": null
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "nullable": "YES",
+          "default": "now()",
+          "max_length": null,
+          "precision": null,
+          "scale": null
+        }
+      ]
+    },
+    "product_process": {
+      "type": "BASE TABLE",
+      "columns": [
+        {
+          "name": "id",
+          "type": "integer",
+          "nullable": "NO",
+          "default": "nextval('product_process_id_seq1'::regclass)",
+          "max_length": null,
+          "precision": 32,
+          "scale": 0
+        },
+        {
+          "name": "product_id",
+          "type": "integer",
+          "nullable": "NO",
+          "default": null,
+          "max_length": null,
+          "precision": 32,
+          "scale": 0
+        },
+        {
+          "name": "process_id",
+          "type": "integer",
+          "nullable": "NO",
+          "default": null,
+          "max_length": null,
+          "precision": 32,
+          "scale": 0
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "nullable": "YES",
+          "default": "now()",
+          "max_length": null,
+          "precision": null,
+          "scale": null
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "nullable": "YES",
+          "default": "now()",
+          "max_length": null,
+          "precision": null,
+          "scale": null
+        }
+      ]
+    },
+    "users": {
+      "type": "BASE TABLE",
+      "columns": [
+        {
+          "name": "id",
+          "type": "integer",
+          "nullable": "NO",
+          "default": "nextval('users_id_seq'::regclass)",
+          "max_length": null,
+          "precision": 32,
+          "scale": 0
+        },
+        {
+          "name": "username",
+          "type": "text",
+          "nullable": "NO",
+          "default": null,
+          "max_length": null,
+          "precision": null,
+          "scale": null
+        },
+        {
+          "name": "email",
+          "type": "text",
+          "nullable": "NO",
+          "default": null,
+          "max_length": null,
+          "precision": null,
+          "scale": null
+        },
+        {
+          "name": "password_hash",
+          "type": "text",
+          "nullable": "NO",
+          "default": null,
+          "max_length": null,
+          "precision": null,
+          "scale": null
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp without time zone",
+          "nullable": "YES",
+          "default": "CURRENT_TIMESTAMP",
+          "max_length": null,
+          "precision": null,
+          "scale": null
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp without time zone",
+          "nullable": "YES",
+          "default": "CURRENT_TIMESTAMP",
+          "max_length": null,
+          "precision": null,
+          "scale": null
+        }
+      ]
+    }
+  },
+  "cbam_analysis": {
+    "has_process_attrdir_emission": true,
+    "has_cumulative_emission": false,
+    "has_edge_table": true,
+    "has_edge_kind": true
+  },
+  "recommendations": [
+    "process_attrdir_emission 테이블에 cumulative_emission 필드 추가"
+  ]
+}
