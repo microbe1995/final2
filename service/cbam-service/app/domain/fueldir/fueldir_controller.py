@@ -32,7 +32,7 @@ fueldir_service = FuelDirService()
 # 📦 기존 FuelDir 관련 엔드포인트
 # ============================================================================
 
-@router.post("/fueldir", response_model=FuelDirResponse, status_code=201)
+@router.post("/", response_model=FuelDirResponse, status_code=201)
 async def create_fueldir(fueldir_data: FuelDirCreateRequest):
     """연료직접배출량 데이터 생성"""
     try:
@@ -44,7 +44,7 @@ async def create_fueldir(fueldir_data: FuelDirCreateRequest):
         logger.error(f"❌ 연료직접배출량 생성 실패: {str(e)}")
         raise HTTPException(status_code=500, detail=f"연료직접배출량 생성 중 오류가 발생했습니다: {str(e)}")
 
-@router.get("/fueldir", response_model=List[FuelDirResponse])
+@router.get("/", response_model=List[FuelDirResponse])
 async def get_fueldirs(skip: int = 0, limit: int = 100):
     """모든 연료직접배출량 데이터 조회"""
     try:
@@ -56,7 +56,7 @@ async def get_fueldirs(skip: int = 0, limit: int = 100):
         logger.error(f"❌ 연료직접배출량 목록 조회 실패: {str(e)}")
         raise HTTPException(status_code=500, detail=f"연료직접배출량 목록 조회 중 오류가 발생했습니다: {str(e)}")
 
-@router.get("/fueldir/process/{process_id}", response_model=List[FuelDirResponse])
+@router.get("/process/{process_id}", response_model=List[FuelDirResponse])
 async def get_fueldirs_by_process(process_id: int):
     """특정 공정의 연료직접배출량 데이터 조회"""
     try:
@@ -68,7 +68,7 @@ async def get_fueldirs_by_process(process_id: int):
         logger.error(f"❌ 공정별 연료직접배출량 조회 실패: {str(e)}")
         raise HTTPException(status_code=500, detail=f"공정별 연료직접배출량 조회 중 오류가 발생했습니다: {str(e)}")
 
-@router.get("/fueldir/{fueldir_id}", response_model=FuelDirResponse)
+@router.get("/{fueldir_id}", response_model=FuelDirResponse)
 async def get_fueldir(fueldir_id: int):
     """특정 연료직접배출량 데이터 조회"""
     try:
@@ -85,7 +85,7 @@ async def get_fueldir(fueldir_id: int):
         logger.error(f"❌ 연료직접배출량 조회 실패: {str(e)}")
         raise HTTPException(status_code=500, detail=f"연료직접배출량 조회 중 오류가 발생했습니다: {str(e)}")
 
-@router.put("/fueldir/{fueldir_id}", response_model=FuelDirResponse)
+@router.put("/{fueldir_id}", response_model=FuelDirResponse)
 async def update_fueldir(fueldir_id: int, fueldir_data: FuelDirUpdateRequest):
     """연료직접배출량 데이터 수정"""
     try:
@@ -102,7 +102,7 @@ async def update_fueldir(fueldir_id: int, fueldir_data: FuelDirUpdateRequest):
         logger.error(f"❌ 연료직접배출량 수정 실패: {str(e)}")
         raise HTTPException(status_code=500, detail=f"연료직접배출량 수정 중 오류가 발생했습니다: {str(e)}")
 
-@router.delete("/fueldir/{fueldir_id}")
+@router.delete("/{fueldir_id}")
 async def delete_fueldir(fueldir_id: int):
     """연료직접배출량 데이터 삭제"""
     try:
@@ -123,7 +123,7 @@ async def delete_fueldir(fueldir_id: int):
 # 🧮 계산 관련 엔드포인트
 # ============================================================================
 
-@router.post("/fueldir/calculate", response_model=FuelDirCalculationResponse)
+@router.post("/calculate", response_model=FuelDirCalculationResponse)
 async def calculate_fueldir_emission(calculation_data: FuelDirCalculationRequest):
     """연료직접배출량 계산 (공식 포함)"""
     try:
@@ -135,7 +135,7 @@ async def calculate_fueldir_emission(calculation_data: FuelDirCalculationRequest
         logger.error(f"❌ 연료직접배출량 계산 실패: {str(e)}")
         raise HTTPException(status_code=500, detail=f"연료직접배출량 계산 중 오류가 발생했습니다: {str(e)}")
 
-@router.get("/fueldir/process/{process_id}/total")
+@router.get("/process/{process_id}/total")
 async def get_total_fueldir_emission_by_process(process_id: int):
     """특정 공정의 총 연료직접배출량 계산"""
     try:
@@ -190,7 +190,7 @@ async def get_fuel_factor(fuel_name: str):
         logger.error(f"❌ 연료 배출계수 조회 실패: {str(e)}")
         raise HTTPException(status_code=500, detail=f"연료 배출계수 조회 중 오류가 발생했습니다: {str(e)}")
 
-@router.post("/fueldir/auto-factor", response_model=FuelDirResponse, status_code=201)
+@router.post("/auto-factor", response_model=FuelDirResponse, status_code=201)
 async def create_fueldir_with_auto_factor(fueldir_data: FuelDirCreateRequest):
     """연료직접배출량 데이터 생성 (배출계수 자동 매핑)"""
     try:
@@ -203,38 +203,10 @@ async def create_fueldir_with_auto_factor(fueldir_data: FuelDirCreateRequest):
         raise HTTPException(status_code=500, detail=f"연료직접배출량 생성 중 오류가 발생했습니다: {str(e)}")
 
 # ============================================================================
-# 🧮 계산 관련 엔드포인트
-# ============================================================================
-
-@router.post("/fueldir/calculate", response_model=FuelDirCalculationResponse)
-async def calculate_fueldir_emission(calculation_data: FuelDirCalculationRequest):
-    """연료직접배출량 계산 (공식 포함)"""
-    try:
-        logger.info(f"🧮 연료직접배출량 계산 요청: {calculation_data.dict()}")
-        result = fueldir_service.calculate_fueldir_emission_with_formula(calculation_data)
-        logger.info(f"✅ 연료직접배출량 계산 성공: {result.fueldir_em}")
-        return result
-    except Exception as e:
-        logger.error(f"❌ 연료직접배출량 계산 실패: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"연료직접배출량 계산 중 오류가 발생했습니다: {str(e)}")
-
-@router.get("/fueldir/process/{process_id}/total")
-async def get_total_fueldir_emission_by_process(process_id: int):
-    """특정 공정의 총 연료직접배출량 계산"""
-    try:
-        logger.info(f"🧮 공정별 총 연료직접배출량 계산 요청: Process ID {process_id}")
-        total_emission = await fueldir_service.get_total_fueldir_emission_by_process(process_id)
-        logger.info(f"✅ 공정별 총 연료직접배출량 계산 성공: {total_emission}")
-        return {"process_id": process_id, "total_fueldir_emission": float(total_emission)}
-    except Exception as e:
-        logger.error(f"❌ 공정별 총 연료직접배출량 계산 실패: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"공정별 총 연료직접배출량 계산 중 오류가 발생했습니다: {str(e)}")
-
-# ============================================================================
 # 📊 통계 및 요약 엔드포인트
 # ============================================================================
 
-@router.get("/fueldir/stats/summary")
+@router.get("/stats/summary")
 async def get_fueldir_summary():
     """연료직접배출량 통계 요약"""
     try:
@@ -250,7 +222,7 @@ async def get_fueldir_summary():
 # 🔍 검색 및 필터링 엔드포인트
 # ============================================================================
 
-@router.get("/fueldir/search/fuel-name")
+@router.get("/search/fuel-name")
 async def search_fueldirs_by_fuel_name(fuel_name: str, skip: int = 0, limit: int = 100):
     """연료명으로 연료직접배출량 검색"""
     try:
@@ -266,7 +238,7 @@ async def search_fueldirs_by_fuel_name(fuel_name: str, skip: int = 0, limit: int
 # 📦 일괄 처리 엔드포인트
 # ============================================================================
 
-@router.post("/fueldir/bulk")
+@router.post("/bulk")
 async def create_fueldirs_bulk(fueldirs_data: List[FuelDirCreateRequest]):
     """여러 연료직접배출량 데이터 일괄 생성"""
     try:

@@ -28,7 +28,7 @@ matdir_service = MatDirService()
 # 📦 1. 기존 MatDir 관련 엔드포인트 (원료직접배출량 데이터 관리)
 # ============================================================================
 
-@router.post("/matdir", response_model=MatDirResponse, status_code=201)
+@router.post("/", response_model=MatDirResponse, status_code=201)
 async def create_matdir(matdir_data: MatDirCreateRequest):
     """원료직접배출량 데이터 생성"""
     try:
@@ -40,7 +40,7 @@ async def create_matdir(matdir_data: MatDirCreateRequest):
         logger.error(f"❌ 원료직접배출량 생성 실패: {str(e)}")
         raise HTTPException(status_code=500, detail=f"원료직접배출량 생성 중 오류가 발생했습니다: {str(e)}")
 
-@router.get("/matdir", response_model=List[MatDirResponse])
+@router.get("/", response_model=List[MatDirResponse])
 async def get_matdirs(skip: int = 0, limit: int = 100):
     """모든 원료직접배출량 데이터 조회"""
     try:
@@ -52,7 +52,7 @@ async def get_matdirs(skip: int = 0, limit: int = 100):
         logger.error(f"❌ 원료직접배출량 목록 조회 실패: {str(e)}")
         raise HTTPException(status_code=500, detail=f"원료직접배출량 목록 조회 중 오류가 발생했습니다: {str(e)}")
 
-@router.get("/matdir/process/{process_id}", response_model=List[MatDirResponse])
+@router.get("/process/{process_id}", response_model=List[MatDirResponse])
 async def get_matdirs_by_process(process_id: int):
     """특정 공정의 원료직접배출량 데이터 조회"""
     try:
@@ -64,7 +64,7 @@ async def get_matdirs_by_process(process_id: int):
         logger.error(f"❌ 공정별 원료직접배출량 조회 실패: {str(e)}")
         raise HTTPException(status_code=500, detail=f"공정별 원료직접배출량 조회 중 오류가 발생했습니다: {str(e)}")
 
-@router.get("/matdir/{matdir_id}", response_model=MatDirResponse)
+@router.get("/{matdir_id}", response_model=MatDirResponse)
 async def get_matdir(matdir_id: int):
     """특정 원료직접배출량 데이터 조회"""
     try:
@@ -81,7 +81,7 @@ async def get_matdir(matdir_id: int):
         logger.error(f"❌ 원료직접배출량 조회 실패: {str(e)}")
         raise HTTPException(status_code=500, detail=f"원료직접배출량 조회 중 오류가 발생했습니다: {str(e)}")
 
-@router.put("/matdir/{matdir_id}", response_model=MatDirResponse)
+@router.put("/{matdir_id}", response_model=MatDirResponse)
 async def update_matdir(matdir_id: int, matdir_data: MatDirUpdateRequest):
     """원료직접배출량 데이터 수정"""
     try:
@@ -98,7 +98,7 @@ async def update_matdir(matdir_id: int, matdir_data: MatDirUpdateRequest):
         logger.error(f"❌ 원료직접배출량 수정 실패: {str(e)}")
         raise HTTPException(status_code=500, detail=f"원료직접배출량 수정 중 오류가 발생했습니다: {str(e)}")
 
-@router.delete("/matdir/{matdir_id}")
+@router.delete("/{matdir_id}")
 async def delete_matdir(matdir_id: int):
     """원료직접배출량 데이터 삭제"""
     try:
@@ -119,7 +119,7 @@ async def delete_matdir(matdir_id: int):
 # 🧮 2. 계산 관련 엔드포인트
 # ============================================================================
 
-@router.post("/matdir/calculate", response_model=MatDirCalculationResponse)
+@router.post("/calculate", response_model=MatDirCalculationResponse)
 async def calculate_matdir_emission(calculation_data: MatDirCalculationRequest):
     """원료직접배출량 계산 (공식 포함)"""
     try:
@@ -131,7 +131,7 @@ async def calculate_matdir_emission(calculation_data: MatDirCalculationRequest):
         logger.error(f"❌ 원료직접배출량 계산 실패: {str(e)}")
         raise HTTPException(status_code=500, detail=f"원료직접배출량 계산 중 오류가 발생했습니다: {str(e)}")
 
-@router.get("/matdir/process/{process_id}/total")
+@router.get("/process/{process_id}/total")
 async def get_total_matdir_emission_by_process(process_id: int):
     """특정 공정의 총 원료직접배출량 계산"""
     try:
@@ -186,7 +186,7 @@ async def get_material_factor(mat_name: str):
         logger.error(f"❌ 원료 배출계수 조회 실패: {str(e)}")
         raise HTTPException(status_code=500, detail=f"원료 배출계수 조회 중 오류가 발생했습니다: {str(e)}")
 
-@router.post("/matdir/auto-factor", response_model=MatDirResponse, status_code=201)
+@router.post("/auto-factor", response_model=MatDirResponse, status_code=201)
 async def create_matdir_with_auto_factor(matdir_data: MatDirCreateRequest):
     """원료직접배출량 데이터 생성 (배출계수 자동 매핑) - Railway DB의 materials 테이블 사용"""
     try:
