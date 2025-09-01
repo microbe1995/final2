@@ -375,81 +375,113 @@ class EdgeService:
     # 🔗 기존 Edge CRUD 메서드들
     # ============================================================================
     
-    async def create_edge(self, edge_data) -> Optional[Edge]:
-        """엣지 생성"""
+    async def create_edge(self, edge_data) -> Optional[Dict[str, Any]]:
+        """엣지 생성 (asyncpg 패턴)"""
+        await self._ensure_pool_initialized()
         try:
             logger.info(f"엣지 생성 시작: {edge_data}")
-            logger.info(f"db_session 타입: {type(self.db_session)}")
-            logger.info(f"db_session 내용: {self.db_session}")
             
-            # db_session이 None인지 확인
-            if self.db_session is None:
-                logger.error("❌ db_session이 None입니다!")
-                raise ValueError("데이터베이스 세션이 초기화되지 않았습니다")
-            
-            # Edge 엔티티 클래스 확인
-            logger.info(f"Edge 클래스: {Edge}")
-            logger.info(f"Edge 클래스 타입: {type(Edge)}")
-            logger.info(f"Edge 클래스의 Base: {Edge.__bases__}")
-            
-            # 새로운 Edge 엔티티 생성
-            logger.info("Edge 엔티티 생성 중...")
-            logger.info(f"생성할 데이터: source_node_type={edge_data.source_node_type}, source_id={edge_data.source_id}, target_node_type={edge_data.target_node_type}, target_id={edge_data.target_id}, edge_kind={edge_data.edge_kind}")
-            
-            new_edge = Edge(
-                source_node_type=edge_data.source_node_type,
-                source_id=edge_data.source_id,
-                target_node_type=edge_data.target_node_type,
-                target_id=edge_data.target_id,
-                edge_kind=edge_data.edge_kind
-            )
-            logger.info(f"Edge 엔티티 생성 완료: {new_edge}")
-            logger.info(f"Edge 엔티티 타입: {type(new_edge)}")
-            logger.info(f"Edge 엔티티 ID: {new_edge.id}")
-            
-            # 데이터베이스에 저장
-            logger.info("데이터베이스에 Edge 추가 중...")
-            self.db_session.add(new_edge)
-            logger.info("Edge 추가 완료, commit 중...")
-            await self.db_session.commit()
-            logger.info("commit 완료, refresh 중...")
-            await self.db_session.refresh(new_edge)
-            
-            logger.info(f"✅ 엣지 생성 완료: ID {new_edge.id}")
-            return new_edge
-            
+            async with self.pool.acquire() as conn:
+                query = """
+                    INSERT INTO edge (source_node_type, source_id, target_node_type, target_id, edge_kind, created_at, updated_at)
+                    VALUES ($1, $2, $3, $4, $5, $6, $6)
+                    RETURNING id, source_node_type, source_id, target_node_type, target_id, edge_kind, created_at, updated_at
+                """
+                
+                now = datetime.now(timezone.utc)
+                row = await conn.fetchrow(
+                    query,
+                    edge_data.source_node_type,
+                    edge_data.source_id,
+                    edge_data.target_node_type,
+                    edge_data.target_id,
+                    edge_data.edge_kind,
+                    now
+                )
+                
+                if row:
+                    result = {
+                        'id': row['id'],
+                        'source_node_type': row['source_node_type'],
+                        'source_id': row['source_id'],
+                        'target_node_type': row['target_node_type'],
+                        'target_id': row['target_id'],
+                        'edge_kind': row['edge_kind'],
+                        'created_at': row['created_at'].isoformat() if row['created_at'] else None,
+                        'updated_at': row['updated_at'].isoformat() if row['updated_at'] else None
+                    }
+                    logger.info(f"✅ 엣지 생성 완료: ID {row['id']}")
+                    return result
+                else:
+                    logger.error("엣지 생성 실패: 데이터베이스에서 결과를 반환하지 않았습니다.")
+                    return None
+                    
         except Exception as e:
             logger.error(f"엣지 생성 실패: {e}")
-            logger.error(f"오류 타입: {type(e)}")
             import traceback
             logger.error(f"스택 트레이스: {traceback.format_exc()}")
-            if hasattr(self.db_session, 'rollback'):
-                await self.db_session.rollback()
-            # None 대신 예외를 다시 발생시켜서 FastAPI가 적절한 오류 응답을 보내도록 함
             raise e
     
-    async def get_edges(self) -> List[Edge]:
-        """모든 엣지 조회"""
+    async def get_edges(self) -> List[Dict[str, Any]]:
+        """모든 엣지 조회 (asyncpg 패턴)"""
+        await self._ensure_pool_initialized()
         try:
-            query = select(Edge)
-            result = await self.db_session.execute(query)
-            return result.scalars().all()
+            async with self.pool.acquire() as conn:
+                query = """
+                    SELECT id, source_node_type, source_id, target_node_type, target_id, edge_kind, created_at, updated_at
+                    FROM edge
+                    ORDER BY id
+                """
+                rows = await conn.fetch(query)
+                
+                return [
+                    {
+                        'id': row['id'],
+                        'source_node_type': row['source_node_type'],
+                        'source_id': row['source_id'],
+                        'target_node_type': row['target_node_type'],
+                        'target_id': row['target_id'],
+                        'edge_kind': row['edge_kind'],
+                        'created_at': row['created_at'].isoformat() if row['created_at'] else None,
+                        'updated_at': row['updated_at'].isoformat() if row['updated_at'] else None
+                    }
+                    for row in rows
+                ]
         except Exception as e:
             logger.error(f"엣지 조회 실패: {e}")
             return []
     
-    async def get_edge(self, edge_id: int) -> Optional[Edge]:
-        """특정 엣지 조회"""
+    async def get_edge(self, edge_id: int) -> Optional[Dict[str, Any]]:
+        """특정 엣지 조회 (asyncpg 패턴)"""
+        await self._ensure_pool_initialized()
         try:
-            query = select(Edge).where(Edge.id == edge_id)
-            result = await self.db_session.execute(query)
-            return result.scalar_one_or_none()
+            async with self.pool.acquire() as conn:
+                query = """
+                    SELECT id, source_node_type, source_id, target_node_type, target_id, edge_kind, created_at, updated_at
+                    FROM edge
+                    WHERE id = $1
+                """
+                row = await conn.fetchrow(query, edge_id)
+                
+                if row:
+                    return {
+                        'id': row['id'],
+                        'source_node_type': row['source_node_type'],
+                        'source_id': row['source_id'],
+                        'target_node_type': row['target_node_type'],
+                        'target_id': row['target_id'],
+                        'edge_kind': row['edge_kind'],
+                        'created_at': row['created_at'].isoformat() if row['created_at'] else None,
+                        'updated_at': row['updated_at'].isoformat() if row['updated_at'] else None
+                    }
+                return None
         except Exception as e:
             logger.error(f"엣지 {edge_id} 조회 실패: {e}")
             return None
     
-    async def update_edge(self, edge_id: int, edge_data) -> Optional[Edge]:
-        """엣지 수정"""
+    async def update_edge(self, edge_id: int, edge_data) -> Optional[Dict[str, Any]]:
+        """엣지 수정 (asyncpg 패턴)"""
+        await self._ensure_pool_initialized()
         try:
             logger.info(f"엣지 {edge_id} 수정: {edge_data}")
             
@@ -458,34 +490,78 @@ class EdgeService:
             if not existing_edge:
                 return None
             
-            # 업데이트할 필드들만 수정
-            if edge_data.source_node_type is not None:
-                existing_edge.source_node_type = edge_data.source_node_type
-            if edge_data.source_id is not None:
-                existing_edge.source_id = edge_data.source_id
-            if edge_data.target_node_type is not None:
-                existing_edge.target_node_type = edge_data.target_node_type
-            if edge_data.target_id is not None:
-                existing_edge.target_id = edge_data.target_id
-            if edge_data.edge_kind is not None:
-                existing_edge.edge_kind = edge_data.edge_kind
-            
-            existing_edge.updated_at = datetime.now(timezone.utc)
-            
-            # 데이터베이스에 저장
-            await self.db_session.commit()
-            await self.db_session.refresh(existing_edge)
-            
-            logger.info(f"✅ 엣지 {edge_id} 수정 완료")
-            return existing_edge
-            
+            async with self.pool.acquire() as conn:
+                # 업데이트할 필드들을 동적으로 구성
+                update_fields = []
+                params = []
+                param_count = 1
+                
+                if edge_data.source_node_type is not None:
+                    update_fields.append(f"source_node_type = ${param_count}")
+                    params.append(edge_data.source_node_type)
+                    param_count += 1
+                
+                if edge_data.source_id is not None:
+                    update_fields.append(f"source_id = ${param_count}")
+                    params.append(edge_data.source_id)
+                    param_count += 1
+                
+                if edge_data.target_node_type is not None:
+                    update_fields.append(f"target_node_type = ${param_count}")
+                    params.append(edge_data.target_node_type)
+                    param_count += 1
+                
+                if edge_data.target_id is not None:
+                    update_fields.append(f"target_id = ${param_count}")
+                    params.append(edge_data.target_id)
+                    param_count += 1
+                
+                if edge_data.edge_kind is not None:
+                    update_fields.append(f"edge_kind = ${param_count}")
+                    params.append(edge_data.edge_kind)
+                    param_count += 1
+                
+                # updated_at 필드 추가
+                update_fields.append(f"updated_at = ${param_count}")
+                params.append(datetime.now(timezone.utc))
+                param_count += 1
+                
+                # ID 파라미터 추가
+                params.append(edge_id)
+                
+                if update_fields:
+                    query = f"""
+                        UPDATE edge 
+                        SET {', '.join(update_fields)}
+                        WHERE id = ${param_count}
+                        RETURNING id, source_node_type, source_id, target_node_type, target_id, edge_kind, created_at, updated_at
+                    """
+                    
+                    row = await conn.fetchrow(query, *params)
+                    
+                    if row:
+                        result = {
+                            'id': row['id'],
+                            'source_node_type': row['source_node_type'],
+                            'source_id': row['source_id'],
+                            'target_node_type': row['target_node_type'],
+                            'target_id': row['target_id'],
+                            'edge_kind': row['edge_kind'],
+                            'created_at': row['created_at'].isoformat() if row['created_at'] else None,
+                            'updated_at': row['updated_at'].isoformat() if row['updated_at'] else None
+                        }
+                        logger.info(f"✅ 엣지 {edge_id} 수정 완료")
+                        return result
+                
+                return None
+                
         except Exception as e:
             logger.error(f"엣지 {edge_id} 수정 실패: {e}")
-            await self.db_session.rollback()
             raise e
     
     async def delete_edge(self, edge_id: int) -> bool:
-        """엣지 삭제"""
+        """엣지 삭제 (asyncpg 패턴)"""
+        await self._ensure_pool_initialized()
         try:
             logger.info(f"엣지 {edge_id} 삭제")
             
@@ -494,14 +570,22 @@ class EdgeService:
             if not existing_edge:
                 return False
             
-            # 엣지 삭제
-            await self.db_session.delete(existing_edge)
-            await self.db_session.commit()
-            
-            logger.info(f"✅ 엣지 {edge_id} 삭제 완료")
-            return True
-            
+            async with self.pool.acquire() as conn:
+                query = """
+                    DELETE FROM edge 
+                    WHERE id = $1
+                    RETURNING id
+                """
+                
+                row = await conn.fetchrow(query, edge_id)
+                
+                if row:
+                    logger.info(f"✅ 엣지 {edge_id} 삭제 완료")
+                    return True
+                else:
+                    logger.warning(f"엣지 {edge_id} 삭제 실패: 해당 엣지를 찾을 수 없습니다.")
+                    return False
+                    
         except Exception as e:
             logger.error(f"엣지 {edge_id} 삭제 실패: {e}")
-            await self.db_session.rollback()
             raise e
