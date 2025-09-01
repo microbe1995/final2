@@ -9,5 +9,6 @@ description: >
 globs:
   - "**/*.py"
   - "**/*.ts"
+  - "**/*.tsx"
 alwaysApply: true
 ---

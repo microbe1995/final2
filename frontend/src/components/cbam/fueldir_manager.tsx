@@ -18,13 +18,16 @@ interface FuelDirForm {
 }
 
 interface FuelDirResult {
-  id: number;
+  id: number | string;
   fuel_name: string;
   fuel_factor: number;
   fuel_amount: number;
   fuel_oxyfactor: number;
   fueldir_em: number;
   calculation_formula: string;
+  type?: 'fueldir' | 'matdir';
+  created_at?: string;
+  updated_at?: string;
 }
 
 export default function FuelDirManager({ selectedProcess, onClose }: FuelDirManagerProps) {
@@ -45,6 +48,9 @@ export default function FuelDirManager({ selectedProcess, onClose }: FuelDirMana
   const [fuelSuggestions, setFuelSuggestions] = useState<FuelMaster[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [autoFactorStatus, setAutoFactorStatus] = useState<string>('');
+
+  // 데이터 로딩 상태
+  const [isLoadingData, setIsLoadingData] = useState(false);
 
   // 연료명 변경 시 실시간 검색
   const handleFuelNameChange = useCallback(async (fuelName: string) => {
@@ -113,15 +119,19 @@ export default function FuelDirManager({ selectedProcess, onClose }: FuelDirMana
       console.log('✅ 연료직접배출량 계산 성공:', calculationResult);
 
       // 결과를 목록에 추가
-      setFuelDirResults(prev => [...prev, {
+      const newResult: FuelDirResult = {
         id: Date.now(),
         fuel_name: fuelDirForm.fuel_name,
         fuel_factor: fuelDirForm.fuel_factor,
         fuel_amount: fuelDirForm.fuel_amount,
         fuel_oxyfactor: fuelDirForm.fuel_oxyfactor,
         fueldir_em: calculationResult.fueldir_em,
-        calculation_formula: calculationResult.calculation_formula
-      }]);
+        calculation_formula: calculationResult.calculation_formula,
+        type: 'fueldir',
+        created_at: new Date().toISOString()
+      };
+
+      setFuelDirResults(prev => [newResult, ...prev]);
 
       // 폼 초기화
       setFuelDirForm({
@@ -184,6 +194,9 @@ export default function FuelDirManager({ selectedProcess, onClose }: FuelDirMana
       
       alert('연료직접배출량 데이터가 성공적으로 저장되었습니다!');
       
+      // 저장 후 기존 데이터 다시 로드
+      await loadAllExistingData();
+      
       // 모달 닫기
       onClose();
 
@@ -198,10 +211,213 @@ export default function FuelDirManager({ selectedProcess, onClose }: FuelDirMana
     }
   }, [selectedProcess, fuelDirResults, onClose]);
 
-  // 연료직접배출량 결과 삭제
+  // 연료직접배출량 결과 삭제 (로컬에서만)
   const removeFuelDirResult = useCallback((index: number) => {
     setFuelDirResults(prev => prev.filter((_, i) => i !== index));
   }, []);
+
+  // ============================================================================
+  // 🔍 기존 데이터 로드 및 관리
+  // ============================================================================
+
+  // 모든 기존 데이터 로드 (fueldir + matdir)
+  const loadAllExistingData = useCallback(async () => {
+    if (!selectedProcess?.id) return;
+    
+    setIsLoadingData(true);
+    try {
+      console.log('🔍 기존 데이터 로드 시작:', selectedProcess.id);
+      
+      // 연료직접배출량과 원료직접배출량 데이터를 병렬로 로드
+      const [fueldirResponse, matdirResponse] = await Promise.all([
+        axiosClient.get(apiEndpoints.cbam.fueldir.byProcess(selectedProcess.id)),
+        axiosClient.get(apiEndpoints.cbam.matdir.byProcess(selectedProcess.id))
+      ]);
+      
+      const allResults: FuelDirResult[] = [];
+      
+      // 연료직접배출량 데이터 처리
+      if (fueldirResponse.data && Array.isArray(fueldirResponse.data)) {
+        const fueldirResults = fueldirResponse.data.map((item: any) => ({
+          id: item.id,
+          fuel_name: item.fuel_name,
+          fuel_factor: parseFloat(item.fuel_factor) || 0,
+          fuel_amount: parseFloat(item.fuel_amount) || 0,
+          fuel_oxyfactor: parseFloat(item.fuel_oxyfactor) || 1.0000,
+          fueldir_em: parseFloat(item.fueldir_em) || 0,
+          calculation_formula: `연료직접배출량 = ${item.fuel_amount} × ${item.fuel_factor} × ${item.fuel_oxyfactor}`,
+          type: 'fueldir' as const,
+          created_at: item.created_at,
+          updated_at: item.updated_at
+        }));
+        allResults.push(...fueldirResults);
+      }
+      
+      // 원료직접배출량 데이터 처리
+      if (matdirResponse.data && Array.isArray(matdirResponse.data)) {
+        const matdirResults = matdirResponse.data.map((item: any) => ({
+          id: `matdir_${item.id}`,
+          fuel_name: item.mat_name,
+          fuel_factor: parseFloat(item.mat_factor) || 0,
+          fuel_amount: parseFloat(item.mat_amount) || 0,
+          fuel_oxyfactor: parseFloat(item.oxyfactor) || 1.0000,
+          fueldir_em: parseFloat(item.matdir_em) || 0,
+          calculation_formula: `원료직접배출량 = ${item.mat_amount} × ${item.mat_factor} × ${item.oxyfactor}`,
+          type: 'matdir' as const,
+          created_at: item.created_at,
+          updated_at: item.updated_at
+        }));
+        allResults.push(...matdirResults);
+      }
+      
+      // 생성일 기준으로 최신순 정렬
+      allResults.sort((a, b) => {
+        const dateA = new Date(a.created_at || 0);
+        const dateB = new Date(b.created_at || 0);
+        return dateB.getTime() - dateA.getTime();
+      });
+      
+      setFuelDirResults(allResults);
+      console.log('✅ 기존 데이터 로드 완료:', allResults.length, '개');
+      
+    } catch (error: any) {
+      console.warn('⚠️ 기존 데이터 로드 실패:', error);
+      // 에러가 발생해도 새로 계산할 수 있도록 계속 진행
+    } finally {
+      setIsLoadingData(false);
+    }
+  }, [selectedProcess?.id]);
+
+  // 컴포넌트 마운트 시 기존 데이터 로드
+  useEffect(() => {
+    if (selectedProcess?.id) {
+      loadAllExistingData();
+    }
+  }, [selectedProcess?.id, loadAllExistingData]);
+
+  // ============================================================================
+  // ✏️ 결과 수정 기능
+  // ============================================================================
+
+  const [editingResult, setEditingResult] = useState<FuelDirResult | null>(null);
+  const [editForm, setEditForm] = useState<FuelDirForm>({
+    fuel_name: '',
+    fuel_factor: 0,
+    fuel_amount: 0,
+    fuel_oxyfactor: 1.0000
+  });
+
+  const startEditing = useCallback((result: FuelDirResult) => {
+    setEditingResult(result);
+    setEditForm({
+      fuel_name: result.fuel_name,
+      fuel_factor: result.fuel_factor,
+      fuel_amount: result.fuel_amount,
+      fuel_oxyfactor: result.fuel_oxyfactor
+    });
+  }, []);
+
+  const cancelEditing = useCallback(() => {
+    setEditingResult(null);
+    setEditForm({
+      fuel_name: '',
+      fuel_factor: 0,
+      fuel_amount: 0,
+      fuel_oxyfactor: 1.0000
+    });
+  }, []);
+
+  const saveEdit = useCallback(async () => {
+    if (!editingResult || !selectedProcess?.id) return;
+    
+    try {
+      const isMatDir = editingResult.id.toString().startsWith('matdir_');
+      const endpoint = isMatDir ? apiEndpoints.cbam.matdir.update : apiEndpoints.cbam.fueldir.update;
+      const actualId = isMatDir ? editingResult.id.toString().replace('matdir_', '') : editingResult.id;
+      
+      if (isMatDir) {
+        // matdir의 경우 필드명 변경
+        const matdirUpdateData = {
+          mat_name: editForm.fuel_name,
+          mat_factor: editForm.fuel_factor,
+          mat_amount: editForm.fuel_amount,
+          oxyfactor: editForm.fuel_oxyfactor
+        };
+        
+        await axiosClient.put(endpoint(actualId), matdirUpdateData);
+      } else {
+        // fueldir의 경우
+        const fueldirUpdateData = {
+          fuel_name: editForm.fuel_name,
+          fuel_factor: editForm.fuel_factor,
+          fuel_amount: editForm.fuel_amount,
+          fuel_oxyfactor: editForm.fuel_oxyfactor
+        };
+        
+        await axiosClient.put(endpoint(actualId), fueldirUpdateData);
+      }
+
+      // 결과 목록 업데이트
+      setFuelDirResults(prev => prev.map(result => 
+        result.id === editingResult.id 
+          ? { 
+              ...result, 
+              ...editForm,
+              updated_at: new Date().toISOString()
+            }
+          : result
+      ));
+      
+      setEditingResult(null);
+      alert('수정이 완료되었습니다!');
+      
+    } catch (error: any) {
+      console.error('❌ 결과 수정 실패:', error);
+      alert(`수정에 실패했습니다: ${error.response?.data?.detail || error.message}`);
+    }
+  }, [editingResult, editForm, selectedProcess?.id]);
+
+  // ============================================================================
+  // 🗑️ 결과 삭제 기능
+  // ============================================================================
+
+  const deleteResult = useCallback(async (result: FuelDirResult) => {
+    if (!selectedProcess?.id) return;
+    
+    if (!confirm('정말로 이 결과를 삭제하시겠습니까?')) return;
+    
+    try {
+      const isMatDir = result.id.toString().startsWith('matdir_');
+      const endpoint = isMatDir ? apiEndpoints.cbam.matdir.delete : apiEndpoints.cbam.fueldir.delete;
+      const actualId = isMatDir ? result.id.toString().replace('matdir_', '') : result.id;
+      
+      await axiosClient.delete(endpoint(actualId));
+      
+      // 결과 목록에서 제거
+      setFuelDirResults(prev => prev.filter(r => r.id !== result.id));
+      alert('삭제가 완료되었습니다!');
+      
+    } catch (error: any) {
+      console.error('❌ 결과 삭제 실패:', error);
+      alert(`삭제에 실패했습니다: ${error.response?.data?.detail || error.message}`);
+    }
+  }, [selectedProcess?.id]);
+
+  // 날짜 포맷팅 함수
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return '';
+    try {
+      return new Date(dateString).toLocaleString('ko-KR', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch {
+      return '';
+    }
+  };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -327,14 +543,27 @@ export default function FuelDirManager({ selectedProcess, onClose }: FuelDirMana
             </div>
           </div>
 
-          {/* 오른쪽: 결과 목록 */}
+          {/* 오른쪽: 계산 결과 목록 */}
           <div className="bg-gray-700 rounded-lg p-4">
             <div className="flex justify-between items-center mb-4">
               <h4 className="text-lg font-medium text-white">계산 결과</h4>
-              <span className="text-sm text-gray-400">{fuelDirResults.length}개</span>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-400">{fuelDirResults.length}개</span>
+                <button
+                  onClick={loadAllExistingData}
+                  disabled={isLoadingData}
+                  className="text-blue-400 hover:text-blue-300 text-sm disabled:text-gray-500"
+                >
+                  {isLoadingData ? '로딩 중...' : '🔄 새로고침'}
+                </button>
+              </div>
             </div>
 
-            {fuelDirResults.length === 0 ? (
+            {isLoadingData ? (
+              <div className="text-center text-gray-400 py-8">
+                데이터를 불러오는 중...
+              </div>
+            ) : fuelDirResults.length === 0 ? (
               <div className="text-center text-gray-400 py-8">
                 계산된 결과가 없습니다.
               </div>
@@ -342,26 +571,118 @@ export default function FuelDirManager({ selectedProcess, onClose }: FuelDirMana
               <div className="space-y-3 max-h-96 overflow-y-auto">
                 {fuelDirResults.map((result, index) => (
                   <div key={result.id} className="bg-gray-600 rounded-lg p-3">
-                    <div className="flex justify-between items-start mb-2">
-                      <h5 className="font-medium text-white">{result.fuel_name}</h5>
-                      <button
-                        onClick={() => removeFuelDirResult(index)}
-                        className="text-red-400 hover:text-red-300 text-sm"
-                      >
-                        삭제
-                      </button>
-                    </div>
-                    <div className="text-sm text-gray-300 space-y-1">
-                      <div>배출계수: {result.fuel_factor}</div>
-                      <div>연료량: {result.fuel_amount}</div>
-                      <div>산화계수: {result.fuel_oxyfactor}</div>
-                      <div className="font-medium text-green-400">
-                        연료직접배출량: {result.fueldir_em}
+                    {editingResult?.id === result.id ? (
+                      // 수정 모드
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm font-medium text-blue-400">
+                            {result.type === 'matdir' ? '원료직접배출량' : '연료직접배출량'} 수정 중
+                          </span>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={saveEdit}
+                              className="text-green-400 hover:text-green-300 text-sm"
+                            >
+                              저장
+                            </button>
+                            <button
+                              onClick={cancelEditing}
+                              className="text-gray-400 hover:text-gray-300 text-sm"
+                            >
+                              취소
+                            </button>
+                          </div>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-2">
+                          <input
+                            type="text"
+                            value={editForm.fuel_name}
+                            onChange={(e) => setEditForm(prev => ({ ...prev, fuel_name: e.target.value }))}
+                            className="px-2 py-1 bg-gray-700 border border-gray-500 rounded text-white text-sm"
+                            placeholder="이름"
+                          />
+                          <input
+                            type="number"
+                            step="0.000001"
+                            value={editForm.fuel_amount}
+                            onChange={(e) => setEditForm(prev => ({ ...prev, fuel_amount: parseFloat(e.target.value) || 0 }))}
+                            className="px-2 py-1 bg-gray-700 border border-gray-500 rounded text-white text-sm"
+                            placeholder="수량"
+                          />
+                          <input
+                            type="number"
+                            step="0.000001"
+                            value={editForm.fuel_factor}
+                            onChange={(e) => setEditForm(prev => ({ ...prev, fuel_factor: parseFloat(e.target.value) || 0 }))}
+                            className="px-2 py-1 bg-gray-700 border border-gray-500 rounded text-white text-sm"
+                            placeholder="배출계수"
+                          />
+                          <input
+                            type="number"
+                            step="0.0001"
+                            value={editForm.fuel_oxyfactor}
+                            onChange={(e) => setEditForm(prev => ({ ...prev, fuel_oxyfactor: parseFloat(e.target.value) || 1.0000 }))}
+                            className="px-2 py-1 bg-gray-700 border border-gray-500 rounded text-white text-sm"
+                            placeholder="산화계수"
+                          />
+                        </div>
                       </div>
-                      <div className="text-xs text-gray-400 mt-2">
-                        {result.calculation_formula}
-                      </div>
-                    </div>
+                    ) : (
+                      // 표시 모드
+                      <>
+                        <div className="flex justify-between items-start mb-2">
+                          <div className="flex items-center gap-2">
+                            <h5 className="font-medium text-white">{result.fuel_name}</h5>
+                            <span className={`px-2 py-1 text-xs rounded-full ${
+                              result.type === 'matdir' 
+                                ? 'bg-purple-600 text-white' 
+                                : 'bg-blue-600 text-white'
+                            }`}>
+                              {result.type === 'matdir' ? '원료' : '연료'}
+                            </span>
+                          </div>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => startEditing(result)}
+                              className="text-blue-400 hover:text-blue-300 text-sm"
+                            >
+                              수정
+                            </button>
+                            <button
+                              onClick={() => deleteResult(result)}
+                              className="text-red-400 hover:text-red-300 text-sm"
+                            >
+                              삭제
+                            </button>
+                          </div>
+                        </div>
+                        
+                        <div className="text-sm text-gray-300 space-y-1">
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>배출계수: {result.fuel_factor}</div>
+                            <div>수량: {result.fuel_amount}</div>
+                            <div>산화계수: {result.fuel_oxyfactor}</div>
+                            <div className="font-medium text-green-400">
+                              배출량: {result.fueldir_em}
+                            </div>
+                          </div>
+                          
+                          <div className="text-xs text-gray-400 mt-2 p-2 bg-gray-700 rounded">
+                            {result.calculation_formula}
+                          </div>
+                          
+                          {result.created_at && (
+                            <div className="text-xs text-gray-500 mt-2">
+                              생성: {formatDate(result.created_at)}
+                              {result.updated_at && result.updated_at !== result.created_at && 
+                                ` | 수정: ${formatDate(result.updated_at)}`
+                              }
+                            </div>
+                          )}
+                        </div>
+                      </>
+                    )}
                   </div>
                 ))}
               </div>
