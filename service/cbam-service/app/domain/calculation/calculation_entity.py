@@ -3,14 +3,13 @@
 # ============================================================================
 
 from sqlalchemy import Column, Integer, String, Numeric, DateTime, Text, BigInteger, Date, ForeignKey
-from sqlalchemy.orm import DeclarativeBase, relationship
+from sqlalchemy.orm import relationship
 from datetime import datetime
 from typing import Dict, Any, List
 from decimal import Decimal
 
-# SQLAlchemy 2.0 호환 Base 클래스
-class Base(DeclarativeBase):
-    pass
+# 공통 Base 클래스 사용
+from app.common.database_base import Base
 
 # ============================================================================
 # 📊 ProcessAttrdirEmission 엔티티 (공정별 직접귀속배출량)

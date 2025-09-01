@@ -4,8 +4,8 @@ from sqlalchemy.orm import relationship
 from datetime import datetime
 from typing import Dict, Any, List
 
-# 공통 Base 클래스 사용 (declarative_base 대신)
-from app.domain.calculation.calculation_entity import Base
+# 공통 Base 클래스 사용
+from app.common.database_base import Base
 
 class Process(Base):
     """프로세스 엔티티"""
