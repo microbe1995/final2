@@ -1,0 +1,144 @@
+{
+  "table_exists": true,
+  "columns": {
+    "id": {
+      "name": "id",
+      "type": "integer",
+      "nullable": false,
+      "default": "nextval('edge_id_seq'::regclass)",
+      "max_length": null,
+      "precision": 32,
+      "scale": 0
+    },
+    "source_node_type": {
+      "name": "source_node_type",
+      "type": "USER-DEFINED",
+      "nullable": false,
+      "default": null,
+      "max_length": null,
+      "precision": null,
+      "scale": null
+    },
+    "source_id": {
+      "name": "source_id",
+      "type": "integer",
+      "nullable": false,
+      "default": null,
+      "max_length": null,
+      "precision": 32,
+      "scale": 0
+    },
+    "target_node_type": {
+      "name": "target_node_type",
+      "type": "USER-DEFINED",
+      "nullable": false,
+      "default": null,
+      "max_length": null,
+      "precision": null,
+      "scale": null
+    },
+    "target_id": {
+      "name": "target_id",
+      "type": "integer",
+      "nullable": false,
+      "default": null,
+      "max_length": null,
+      "precision": 32,
+      "scale": 0
+    },
+    "edge_kind": {
+      "name": "edge_kind",
+      "type": "USER-DEFINED",
+      "nullable": false,
+      "default": null,
+      "max_length": null,
+      "precision": null,
+      "scale": null
+    },
+    "created_at": {
+      "name": "created_at",
+      "type": "timestamp without time zone",
+      "nullable": true,
+      "default": "CURRENT_TIMESTAMP",
+      "max_length": null,
+      "precision": null,
+      "scale": null
+    },
+    "updated_at": {
+      "name": "updated_at",
+      "type": "timestamp without time zone",
+      "nullable": true,
+      "default": "CURRENT_TIMESTAMP",
+      "max_length": null,
+      "precision": null,
+      "scale": null
+    }
+  },
+  "constraints": [
+    {
+      "constraint_name": "edge_pkey",
+      "constraint_type": "PRIMARY KEY",
+      "column_name": "id"
+    }
+  ],
+  "indexes": [
+    {
+      "indexname": "edge_pkey",
+      "indexdef": "CREATE UNIQUE INDEX edge_pkey ON public.edge USING btree (id)"
+    },
+    {
+      "indexname": "idx_edge_kind",
+      "indexdef": "CREATE INDEX idx_edge_kind ON public.edge USING btree (edge_kind)"
+    },
+    {
+      "indexname": "idx_edge_source_id",
+      "indexdef": "CREATE INDEX idx_edge_source_id ON public.edge USING btree (source_id)"
+    },
+    {
+      "indexname": "idx_edge_source_node_type",
+      "indexdef": "CREATE INDEX idx_edge_source_node_type ON public.edge USING btree (source_node_type)"
+    },
+    {
+      "indexname": "idx_edge_target_id",
+      "indexdef": "CREATE INDEX idx_edge_target_id ON public.edge USING btree (target_id)"
+    },
+    {
+      "indexname": "idx_edge_target_node_type",
+      "indexdef": "CREATE INDEX idx_edge_target_node_type ON public.edge USING btree (target_node_type)"
+    }
+  ],
+  "sample_data": [
+    {
+      "id": 21,
+      "source_node_type": "product",
+      "source_id": 65512,
+      "target_node_type": "product",
+      "target_id": 445177,
+      "edge_kind": "continue",
+      "created_at": "2025-08-31 19:23:59.132397",
+      "updated_at": "2025-08-31 19:23:59.132397"
+    },
+    {
+      "id": 22,
+      "source_node_type": "product",
+      "source_id": 65512,
+      "target_node_type": "product",
+      "target_id": 445177,
+      "edge_kind": "continue",
+      "created_at": "2025-08-31 19:24:01.875215",
+      "updated_at": "2025-08-31 19:24:01.875215"
+    },
+    {
+      "id": 23,
+      "source_node_type": "product",
+      "source_id": 65512,
+      "target_node_type": "product",
+      "target_id": 445177,
+      "edge_kind": "continue",
+      "created_at": "2025-08-31 19:24:14.621190",
+      "updated_at": "2025-08-31 19:24:14.621190"
+    }
+  ],
+  "total_rows": 48,
+  "checked_at": "2025-09-02T04:53:33.181238"
+}
