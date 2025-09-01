@@ -184,25 +184,48 @@ function ProcessManagerInner() {
 
   // Edge 연결 처리
   const handleConnect = useCallback(async (params: Connection) => {
-    console.log('🔗 연결 시도:', params);
-    await handleEdgeCreate(params, updateProcessChainsAfterEdge);
+    try {
+      console.log('🔗 연결 시도:', params);
+      console.log('📍 연결 정보:', {
+        source: params.source,
+        target: params.target,
+        sourceHandle: params.sourceHandle,
+        targetHandle: params.targetHandle
+      });
+      
+      // 연결 처리
+      await handleEdgeCreate(params, updateProcessChainsAfterEdge);
+      
+      console.log('✅ 연결 처리 완료');
+      alert(`연결이 성공적으로 생성되었습니다!\n${params.source} → ${params.target}`);
+      
+    } catch (error) {
+      console.error('❌ 연결 처리 실패:', error);
+      alert(`연결 처리에 실패했습니다: ${error}`);
+    }
   }, [handleEdgeCreate, updateProcessChainsAfterEdge]);
 
   // 🔧 React Flow 공식 문서에 따른 단순화된 연결 검증 로직
   const validateConnection = useCallback((connection: Connection) => {
     console.log('🔍 연결 검증 시작:', connection);
+    console.log('📍 검증 대상:', {
+      source: connection.source,
+      target: connection.target,
+      sourceHandle: connection.sourceHandle,
+      targetHandle: connection.targetHandle
+    });
     
     // 같은 노드 간 연결 방지
     if (connection.source === connection.target) {
       console.log('❌ 같은 노드 간 연결 시도');
-      return { valid: false };
+      return { valid: false, reason: '같은 노드 간 연결은 불가능합니다' };
     }
     
     // 같은 핸들 간 연결 방지 (핸들이 있는 경우에만)
     if (connection.sourceHandle && connection.targetHandle && 
         connection.sourceHandle === connection.targetHandle) {
       console.log('❌ 같은 핸들 간 연결 시도');
-      return { valid: false };
+      return { valid: false, reason: '같은 핸들 간 연결은 불가능합니다' };
     }
     
     // 이미 존재하는 연결 확인 (핸들 ID까지 포함하여 정확히 같은 연결만 체크)
@@ -215,11 +238,11 @@ function ProcessManagerInner() {
     
     if (existingEdge) {
       console.log('❌ 이미 존재하는 연결 (핸들 ID 포함)');
-      return { valid: false };
+      return { valid: false, reason: '이미 존재하는 연결입니다' };
     }
     
     console.log('✅ React Flow 연결 검증 통과');
-    return { valid: true };
+    return { valid: true, reason: '연결이 유효합니다' };
   }, [edges]);
 
   // 🔧 단순화된 연결 이벤트 핸들러
@@ -300,15 +323,20 @@ function ProcessManagerInner() {
 
       {/* ReactFlow 캔버스 */}
       <div className="flex-1 relative">
-        {/* 디버깅 정보 */}
-                           <div className="absolute top-2 right-2 bg-black bg-opacity-75 text-white p-2 rounded text-xs z-10">
-            <div>노드 수: {nodes.length}</div>
-            <div>연결 수: {edges.length}</div>
-            <div>사업장: {selectedInstall?.install_name || '선택 안됨'}</div>
-            <div>모드: Loose (다중 핸들 연결 가능)</div>
-            <div>핸들 수: {nodes.reduce((acc, node) => acc + (node.data?.showHandles ? 4 : 0), 0)}</div>
-            <div>최대 연결 가능: {nodes.length * 4}</div>
-          </div>
+                 {/* 디버깅 정보 */}
+         <div className="absolute top-2 right-2 bg-black bg-opacity-75 text-white p-2 rounded text-xs z-10">
+           <div>노드 수: {nodes.length}</div>
+           <div>연결 수: {edges.length}</div>
+           <div>사업장: {selectedInstall?.install_name || '선택 안됨'}</div>
+           <div>모드: Loose (다중 핸들 연결 가능)</div>
+           <div>핸들 수: {nodes.reduce((acc, node) => acc + (node.data?.showHandles ? 4 : 0), 0)}</div>
+           <div>최대 연결 가능: {nodes.length * 4}</div>
+           <div className="mt-2 pt-2 border-t border-gray-600">
+             <div className="text-yellow-400">🔗 연결 테스트</div>
+             <div>노드 간 드래그하여 연결</div>
+             <div>콘솔에서 이벤트 확인</div>
+           </div>
+         </div>
                  <ReactFlow
            nodes={nodes}
            edges={edges}
@@ -329,9 +357,11 @@ function ProcessManagerInner() {
              console.log('🔗 4방향 연결 완료:', params);
              const validation = validateConnection(params);
              if (validation.valid) {
+               console.log('✅ 연결 검증 통과, 연결 처리 시작');
                handleConnect(params);
              } else {
-               console.log(`❌ 연결 검증 실패`, params);
+               console.log(`❌ 연결 검증 실패: ${validation.reason}`, params);
+               alert(`연결이 유효하지 않습니다: ${validation.reason}`);
              }
            }}
            onConnectEnd={handleConnectEnd}
