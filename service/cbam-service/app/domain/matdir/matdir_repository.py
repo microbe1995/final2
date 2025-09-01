@@ -127,6 +127,11 @@ class MatDirRepository:
         await self._ensure_pool_initialized()
         
         try:
+            # 디버깅을 위한 데이터 로깅
+            logger.info(f"🔍 create_matdir 입력 데이터: {matdir_data}")
+            logger.info(f"🔍 oxyfactor 값: {matdir_data.get('oxyfactor')}")
+            # matdir_em은 계산된 값이므로 별도 로깅 불필요
+            
             async with self.pool.acquire() as conn:
                 # 중복 데이터 확인
                 existing_record = await conn.fetchrow("""
@@ -137,6 +142,14 @@ class MatDirRepository:
                 if existing_record:
                     # 중복 데이터가 있으면 업데이트
                     logger.info(f"🔄 중복 데이터 발견, 업데이트: process_id={matdir_data['process_id']}, mat_name={matdir_data['mat_name']}")
+                    
+                    # oxyfactor 기본값 설정 (matdir_em은 계산된 값이므로 기본값 불필요)
+                    oxyfactor = matdir_data.get('oxyfactor')
+                    if oxyfactor is None:
+                        oxyfactor = Decimal('1.0000')
+                    
+                    logger.info(f"🔍 UPDATE 쿼리 파라미터: oxyfactor={oxyfactor}, matdir_em={matdir_data['matdir_em']}")
+                    
                     result = await conn.fetchrow("""
                         UPDATE matdir 
                         SET mat_factor = $1, mat_amount = $2, oxyfactor = $3, matdir_em = $4, updated_at = NOW()
@@ -145,24 +158,33 @@ class MatDirRepository:
                     """, (
                         matdir_data['mat_factor'],
                         matdir_data['mat_amount'],
-                        matdir_data.get('oxyfactor', 1.0000),
-                        matdir_data.get('matdir_em', 0),
+                        oxyfactor,
+                        matdir_data['matdir_em'],
                         matdir_data['process_id'],
                         matdir_data['mat_name']
                     ))
                 else:
                     # 새로운 데이터 삽입
+                    logger.info(f"🆕 새로운 데이터 삽입: process_id={matdir_data['process_id']}, mat_name={matdir_data['mat_name']}")
+                    
+                    # oxyfactor 기본값 설정 (matdir_em은 계산된 값이므로 기본값 불필요)
+                    oxyfactor = matdir_data.get('oxyfactor')
+                    if oxyfactor is None:
+                        oxyfactor = Decimal('1.0000')
+                    
+                    logger.info(f"🔍 INSERT 쿼리 파라미터: oxyfactor={oxyfactor}, matdir_em={matdir_data['matdir_em']}")
+                    
                     result = await conn.fetchrow("""
-                        INSERT INTO matdir (process_id, mat_name, mat_factor, mat_amount, oxyfactor, matdir_em, created_at, updated_at)
-                        VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
+                        INSERT INTO matdir (process_id, mat_name, mat_factor, mat_amount, oxyfactor, matdir_em)
+                        VALUES ($1, $2, $3, $4, $5, $6)
                         RETURNING *
                     """, (
                         matdir_data['process_id'],
                         matdir_data['mat_name'],
                         matdir_data['mat_factor'],
                         matdir_data['mat_amount'],
-                        matdir_data.get('oxyfactor', 1.0000),
-                        matdir_data.get('matdir_em', 0)
+                        oxyfactor,
+                        matdir_data['matdir_em']
                     ))
                 
                 action = "업데이트" if existing_record else "생성"

@@ -153,8 +153,8 @@ class FuelDirRepository:
                 else:
                     # 새로운 데이터 삽입
                     result = await conn.fetchrow("""
-                        INSERT INTO fueldir (process_id, fuel_name, fuel_factor, fuel_amount, fuel_oxyfactor, fueldir_em, created_at, updated_at)
-                        VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
+                        INSERT INTO fueldir (process_id, fuel_name, fuel_factor, fuel_amount, fuel_oxyfactor, fueldir_em)
+                        VALUES ($1, $2, $3, $4, $5, $6)
                         RETURNING *
                     """, (
                         fueldir_data['process_id'],

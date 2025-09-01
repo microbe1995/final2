@@ -28,11 +28,14 @@ class MatDirService:
     async def create_matdir(self, request: MatDirCreateRequest) -> MatDirResponse:
         """원료직접배출량 데이터 생성"""
         try:
+            # oxyfactor 기본값 설정
+            oxyfactor = request.oxyfactor if request.oxyfactor is not None else Decimal('1.0000')
+            
             # 계산 수행
             matdir_em = self.calculate_matdir_emission(
                 request.mat_amount,
                 request.mat_factor,
-                request.oxyfactor
+                oxyfactor
             )
             
             logger.info(f"🧮 계산된 배출량: {matdir_em}")
@@ -43,11 +46,13 @@ class MatDirService:
                 "mat_name": request.mat_name,
                 "mat_factor": request.mat_factor,
                 "mat_amount": request.mat_amount,
-                "oxyfactor": request.oxyfactor,
+                "oxyfactor": oxyfactor,
                 "matdir_em": matdir_em
             }
             
             logger.info(f"💾 DB 저장 데이터: {matdir_data}")
+            logger.info(f"🔍 oxyfactor 최종 값: {matdir_data['oxyfactor']}")
+            logger.info(f"🔍 matdir_em 최종 값: {matdir_data['matdir_em']}")
             
             saved_matdir = await self.matdir_repository.create_matdir(matdir_data)
             if saved_matdir:
