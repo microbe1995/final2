@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useCallback } from 'react';
-import { ReactFlow, ReactFlowProvider, Background, Controls, Node, Edge, Connection } from '@xyflow/react';
+import { ReactFlow, ReactFlowProvider, Background, Controls, Node, Edge, Connection, ConnectionMode } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
 import ProductNode from '@/components/atomic/atoms/ProductNode';
@@ -271,7 +271,7 @@ export default function ConnectionTestComponent() {
           onConnect={handleConnect}
           onConnectStart={handleConnectStart}
           onConnectEnd={handleConnectEnd}
-          connectionMode="loose"
+          connectionMode={ConnectionMode.Loose}
           defaultEdgeOptions={{ type: 'custom' }}
           fitView
         >
