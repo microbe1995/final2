@@ -10,14 +10,14 @@ const color = {
 };
 
 const baseCls = '!w-4 !h-4 !border-2 !border-white pointer-events-auto transition-all duration-200';
-const cls = `${baseCls} ${color.bg} ${color.hoverBg} hover:scale-125`;
+const cls = `${baseCls} ${color.bg} ${color.hoverBg} hover:scale-125 hover:shadow-lg`;
 
 const handleStyle: React.CSSProperties = { 
   filter: color.shadow, 
   zIndex: 10,
   background: '#3b82f6',
   border: '2px solid white',
-  cursor: 'crosshair' // ✅ 커서 스타일 추가로 연결 가능함을 표시
+  cursor: 'crosshair'
 };
 
 /**
@@ -55,17 +55,6 @@ export const renderFourDirectionHandles = (isConnectable = true, nodeId?: string
       style={handleStyle}
       // ✅ 추가: 연결 검증 및 이벤트 핸들러
       onConnect={(params) => console.log('🔗 핸들 연결됨:', params)}
-      isValidConnection={(connection) => {
-        // 같은 노드 간 연결 방지
-        if (connection.source === connection.target) {
-          return false;
-        }
-        // 같은 핸들 간 연결 방지
-        if (connection.sourceHandle === connection.targetHandle) {
-          return false;
-        }
-        return true;
-      }}
     />
   ));
 };

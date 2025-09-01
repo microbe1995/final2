@@ -156,36 +156,14 @@ function ProcessManagerInner() {
     await handleEdgeCreate(params, updateProcessChainsAfterEdge);
   }, [handleEdgeCreate, updateProcessChainsAfterEdge]);
 
-  // 🔧 React Flow 공식 문서에 따른 올바른 연결 검증 로직 (Loose 모드)
+  // 🔧 React Flow 공식 문서에 따른 단순화된 연결 검증 로직
   const validateConnection = useCallback((connection: Connection) => {
     console.log('🔍 연결 검증 시작:', connection);
     
-    // 같은 노드 간 연결 방지
-    if (connection.source === connection.target) {
-      console.log('❌ 같은 노드 간 연결 시도:', connection.source);
-      return { valid: false, reason: 'same_node' };
-    }
-    
-    // Loose 모드에서는 핸들 ID가 선택적 (없어도 됨)
-    // 하지만 핸들이 있으면 같은 핸들 간 연결 방지
-    if (connection.sourceHandle && connection.targetHandle && connection.sourceHandle === connection.targetHandle) {
-      console.log('❌ 같은 핸들 간 연결 시도:', connection.sourceHandle);
-      return { valid: false, reason: 'same_handle' };
-    }
-    
-    // 이미 존재하는 연결 확인 (정확히 같은 방향만 체크)
-    const existingEdge = edges.find(edge => 
-      edge.source === connection.source && edge.target === connection.target
-    );
-    
-    if (existingEdge) {
-      console.log('❌ 이미 존재하는 연결:', existingEdge);
-      return { valid: false, reason: 'duplicate_edge' };
-    }
-    
-    console.log('✅ 연결 검증 통과');
+    // React Flow의 isValidConnection에서 이미 검증했으므로 여기서는 단순히 통과
+    console.log('✅ 연결 검증 통과 (React Flow에서 이미 검증됨)');
     return { valid: true };
-  }, [edges]);
+  }, []);
 
   // 🔧 단순화된 연결 이벤트 핸들러
   const handleConnectStart = useCallback((event: any, params: any) => {
@@ -266,33 +244,63 @@ function ProcessManagerInner() {
            <div>모드: Loose (양방향 연결 가능)</div>
            <div>핸들 수: {nodes.reduce((acc, node) => acc + (node.data?.showHandles ? 4 : 0), 0)}</div>
          </div>
-        <ReactFlow
-          nodes={nodes}
-          edges={edges}
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
-          nodeTypes={nodeTypes}
-          edgeTypes={edgeTypes}
-          connectionMode={ConnectionMode.Loose}
-          defaultEdgeOptions={{ type: 'custom', markerEnd: { type: MarkerType.ArrowClosed } }}
-          deleteKeyCode="Delete"
-          className="bg-gray-900"
-          fitView
-          onConnectStart={(event, params) => {
-            console.log('🔗 4방향 연결 시작:', params);
-            handleConnectStart(event, params);
-          }}
-          onConnect={(params) => {
-            console.log('🔗 4방향 연결 완료:', params);
-            const validation = validateConnection(params);
-            if (validation.valid) {
-              handleConnect(params);
-            } else {
-              console.log(`❌ 연결 검증 실패: ${validation.reason}`, params);
-            }
-          }}
-          onConnectEnd={handleConnectEnd}
-        >
+                 <ReactFlow
+           nodes={nodes}
+           edges={edges}
+           onNodesChange={onNodesChange}
+           onEdgesChange={onEdgesChange}
+           nodeTypes={nodeTypes}
+           edgeTypes={edgeTypes}
+           connectionMode={ConnectionMode.Loose}
+           defaultEdgeOptions={{ type: 'custom', markerEnd: { type: MarkerType.ArrowClosed } }}
+           deleteKeyCode="Delete"
+           className="bg-gray-900"
+           fitView
+           onConnectStart={(event, params) => {
+             console.log('🔗 4방향 연결 시작:', params);
+             handleConnectStart(event, params);
+           }}
+           onConnect={(params) => {
+             console.log('🔗 4방향 연결 완료:', params);
+             const validation = validateConnection(params);
+             if (validation.valid) {
+               handleConnect(params);
+             } else {
+               console.log(`❌ 연결 검증 실패`, params);
+             }
+           }}
+           onConnectEnd={handleConnectEnd}
+           isValidConnection={(connection) => {
+             // React Flow 공식 문서: 연결 검증 로직
+             console.log('🔍 React Flow 연결 검증:', connection);
+             
+             // 같은 노드 간 연결 방지
+             if (connection.source === connection.target) {
+               console.log('❌ 같은 노드 간 연결 시도');
+               return false;
+             }
+             
+             // 같은 핸들 간 연결 방지
+             if (connection.sourceHandle && connection.targetHandle && 
+                 connection.sourceHandle === connection.targetHandle) {
+               console.log('❌ 같은 핸들 간 연결 시도');
+               return false;
+             }
+             
+             // 이미 존재하는 연결 확인 (정확히 같은 방향만 체크)
+             const existingEdge = edges.find(edge => 
+               edge.source === connection.source && edge.target === connection.target
+             );
+             
+             if (existingEdge) {
+               console.log('❌ 이미 존재하는 연결');
+               return false;
+             }
+             
+             console.log('✅ React Flow 연결 검증 통과');
+             return true;
+           }}
+         >
           <Background color="#334155" gap={24} size={1} />
           <Controls className="!bg-gray-800 !border !border-gray-700 !text-gray-200 !rounded-md" position="bottom-left" />
           <MiniMap
