@@ -325,9 +325,17 @@ class EdgeService:
         try:
             logger.info(f"엣지 생성 시작: {edge_data}")
             logger.info(f"db_session 타입: {type(self.db_session)}")
+            logger.info(f"db_session 내용: {self.db_session}")
+            
+            # Edge 엔티티 클래스 확인
+            logger.info(f"Edge 클래스: {Edge}")
+            logger.info(f"Edge 클래스 타입: {type(Edge)}")
+            logger.info(f"Edge 클래스의 Base: {Edge.__bases__}")
             
             # 새로운 Edge 엔티티 생성
             logger.info("Edge 엔티티 생성 중...")
+            logger.info(f"생성할 데이터: source_node_type={edge_data.source_node_type}, source_id={edge_data.source_id}, target_node_type={edge_data.target_node_type}, target_id={edge_data.target_id}, edge_kind={edge_data.edge_kind}")
+            
             new_edge = Edge(
                 source_node_type=edge_data.source_node_type,
                 source_id=edge_data.source_id,
@@ -336,6 +344,8 @@ class EdgeService:
                 edge_kind=edge_data.edge_kind
             )
             logger.info(f"Edge 엔티티 생성 완료: {new_edge}")
+            logger.info(f"Edge 엔티티 타입: {type(new_edge)}")
+            logger.info(f"Edge 엔티티 ID: {new_edge.id}")
             
             # 데이터베이스에 저장
             logger.info("데이터베이스에 Edge 추가 중...")
