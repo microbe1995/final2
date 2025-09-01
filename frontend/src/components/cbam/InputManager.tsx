@@ -8,6 +8,7 @@ import { FuelMaster } from '@/lib/types';
 interface InputManagerProps {
   selectedProcess: any;
   onClose: () => void;
+  onDataSaved?: () => void; // 데이터 저장 후 콜백 추가
 }
 
 interface InputForm {
@@ -535,11 +536,16 @@ export default function InputManager({ selectedProcess, onClose }: InputManagerP
       // 저장 후 기존 데이터 다시 로드
       await loadAllExistingData();
       
+      // 부모 컴포넌트에 데이터 저장 완료 알림
+      if (onDataSaved) {
+        onDataSaved();
+      }
+      
     } catch (error: any) {
       console.error('❌ 데이터 저장 실패:', error);
       alert(`데이터 저장에 실패했습니다: ${error.response?.data?.detail || error.message}`);
     }
-  }, [selectedProcess, inputResults, loadAllExistingData]);
+  }, [selectedProcess, inputResults, loadAllExistingData, onDataSaved]);
 
   // 날짜 포맷팅 함수
   const formatDate = (dateString?: string) => {

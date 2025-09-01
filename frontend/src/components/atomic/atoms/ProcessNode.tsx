@@ -153,6 +153,38 @@ function ProcessNode({
               <span>종료일:</span>
               <span className='font-medium'>{data.processData.end_period || 'N/A'}</span>
             </div>
+            
+            {/* 직접귀속배출량 표시 */}
+            {data.processData.attr_em !== undefined && (
+              <div className='flex justify-between mt-1 pt-1 border-t border-gray-200'>
+                <span className='text-green-600 font-medium'>직접귀속배출량:</span>
+                <span className='text-green-600 font-bold'>
+                  {typeof data.processData.attr_em === 'number' 
+                    ? `${data.processData.attr_em.toFixed(2)} tCO2e`
+                    : data.processData.attr_em || '0.00 tCO2e'
+                  }
+                </span>
+              </div>
+            )}
+            
+            {/* 원료/연료별 배출량 상세 정보 */}
+            {data.processData.total_matdir_emission !== undefined && (
+              <div className='text-xs text-blue-600 mt-1'>
+                <div className='flex justify-between'>
+                  <span>원료직접:</span>
+                  <span>{data.processData.total_matdir_emission?.toFixed(2) || '0.00'} tCO2e</span>
+                </div>
+              </div>
+            )}
+            {data.processData.total_fueldir_emission !== undefined && (
+              <div className='text-xs text-orange-600'>
+                <div className='flex justify-between'>
+                  <span>연료직접:</span>
+                  <span>{data.processData.total_fueldir_emission?.toFixed(2) || '0.00'} tCO2e</span>
+                </div>
+              </div>
+            )}
+            
             {/* product_id는 다대다 관계에서 더 이상 사용되지 않음 */}
           </div>
         )}

@@ -58,6 +58,15 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
     // 실제 캔버스 상태 복원은 useEffect에서 자동으로 처리됨
   }, []);
 
+  // 노드 데이터 업데이트
+  const updateNodeData = useCallback((nodeId: string, newData: any) => {
+    setNodes(prev => prev.map(node => 
+      node.id === nodeId 
+        ? { ...node, data: { ...node.data, ...newData } }
+        : node
+    ));
+  }, [setNodes]);
+
   // 제품 노드 추가 (안전한 상태 업데이트)
   const addProductNode = useCallback((product: Product, handleProductNodeClick: (product: Product) => void) => {
     // 🔴 수정: 더 작은 ID 생성 (int32 범위 내)
@@ -95,46 +104,68 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
   }, [setNodes, selectedInstall?.id]);
 
   // 공정 노드 추가 (안전한 상태 업데이트)
-  const addProcessNode = useCallback((process: Process, products: Product[], openInputModal: (process: Process) => void, _: (process: Process) => void) => {
+  const addProcessNode = useCallback(async (process: Process, products: Product[], openInputModal: (process: Process) => void, openProcessModal: (process: Process) => void) => {
     // 해당 공정이 사용되는 모든 제품 정보 찾기
     const relatedProducts = products.filter((product: Product) => 
-      process.products && process.products.some((p: Product) => p.id === product.id)
+      process.products?.some(p => p.id === product.id)
     );
-    const productNames = relatedProducts.map((product: Product) => product.product_name).join(', ');
-    
-    // 외부 사업장의 공정인지 확인
-    const isExternalProcess = process.products && 
-      process.products.some((p: Product) => p.install_id !== selectedInstall?.id);
-    
+
+    // 공정별 직접귀속배출량 정보 가져오기
+    let emissionData = null;
+    try {
+      const response = await axiosClient.get(apiEndpoints.cbam.calculation.process.attrdir(process.id));
+      if (response.data) {
+        emissionData = {
+          attr_em: response.data.attrdir_em || 0,
+          total_matdir_emission: response.data.total_matdir_emission || 0,
+          total_fueldir_emission: response.data.total_fueldir_emission || 0,
+          calculation_date: response.data.calculation_date
+        };
+      }
+    } catch (error) {
+      console.log(`⚠️ 공정 ${process.id}의 배출량 정보가 아직 없습니다.`);
+    }
+
     // 🔴 수정: 더 작은 ID 생성 (int32 범위 내)
     const nodeId = Math.floor(Math.random() * 1000000) + 1; // 1 ~ 1,000,000
     const actualNodeId = `process-${nodeId}-${Math.random().toString(36).slice(2)}`;
     
     const newNode: Node = {
       id: actualNodeId,
-      type: 'process',
+      type: 'process',  // 'process' 타입으로 설정
       position: { x: Math.random() * 400 + 100, y: Math.random() * 300 + 100 },
       data: {
         id: process.id,  // 실제 공정 ID 추가
         nodeId: actualNodeId,  // 🔴 추가: 실제 노드 ID를 data에 저장
-        label: process.process_name,
+        label: process.process_name,  // 🔴 수정: label을 올바르게 설정
         description: `공정: ${process.process_name}`,
-        variant: 'process',
-        processData: process,
-        product_names: productNames || '알 수 없음',
-        install_id: selectedInstall?.id,
-        current_install_id: selectedInstall?.id,
-        is_readonly: isExternalProcess,
-        related_products: relatedProducts,
-        is_many_to_many: true,
-        onMatDirClick: openInputModal,
+        variant: 'process',  // 🔴 수정: variant를 'process'로 명시적 설정
+        processData: {
+          ...process,
+          start_period: process.start_period || 'N/A',
+          end_period: process.end_period || 'N/A',
+          product_names: relatedProducts.map(p => p.product_name).join(', ') || 'N/A',
+          is_many_to_many: relatedProducts.length > 1,
+          install_id: selectedInstall?.id,
+          current_install_id: selectedInstall?.id,
+          is_readonly: false,
+          // 배출량 정보 추가
+          ...emissionData
+        },
+        onMatDirClick: (processData: any) => openInputModal(processData),
+        // 🔴 추가: ProcessNode가 기대하는 추가 데이터
+        size: 'md',
+        showHandles: true,
       },
     };
+
+    console.log('🔍 공정 노드 생성:', newNode); // 🔴 추가: 디버깅 로그
 
     // setNodes를 사용하여 안전하게 노드 추가
     setNodes(prev => {
       const newNodes = [...prev, newNode];
       prevNodesRef.current = newNodes;
+      console.log('🔍 노드 상태 업데이트:', newNodes); // 🔴 추가: 디버깅 로그
       return newNodes;
     });
   }, [setNodes, selectedInstall?.id]);
@@ -341,5 +372,6 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
     addProductNode,
     addProcessNode,
     addGroupNode,
+    updateNodeData,
   };
 };

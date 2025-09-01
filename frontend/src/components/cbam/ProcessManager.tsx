@@ -3,6 +3,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import Button from '@/components/atomic/atoms/Button';
 import { Plus } from 'lucide-react';
+import axiosClient, { apiEndpoints } from '@/lib/axiosClient';
 
 import ProductNode from '@/components/atomic/atoms/ProductNode';
 import ProcessNode from '@/components/atomic/atoms/ProcessNode';
@@ -75,7 +76,47 @@ function ProcessManagerInner() {
     addProductNode,
     addProcessNode,
     addGroupNode,
+    updateNodeData,
   } = useProcessCanvas(selectedInstall);
+
+  // 공정별 직접귀속배출량 정보 가져오기
+  const fetchProcessEmissionData = useCallback(async (processId: number) => {
+    try {
+      const response = await axiosClient.get(apiEndpoints.cbam.calculation.process.attrdir(processId));
+      if (response.data) {
+        return {
+          attr_em: response.data.attrdir_em || 0,
+          total_matdir_emission: response.data.total_matdir_emission || 0,
+          total_fueldir_emission: response.data.total_fueldir_emission || 0,
+          calculation_date: response.data.calculation_date
+        };
+      }
+    } catch (error) {
+      console.log(`⚠️ 공정 ${processId}의 배출량 정보가 아직 없습니다.`);
+    }
+    return null;
+  }, []);
+
+  // 모든 공정 노드의 배출량 정보 새로고침
+  const refreshAllProcessEmissions = useCallback(async () => {
+    const processNodes = nodes.filter(node => node.type === 'process');
+    
+    for (const node of processNodes) {
+      const processId = node.data.id;
+      if (processId && typeof processId === 'number') {
+        const emissionData = await fetchProcessEmissionData(processId);
+        if (emissionData && node.data.processData) {
+          // 노드 데이터 업데이트
+          updateNodeData(node.id, {
+            processData: {
+              ...node.data.processData,
+              ...emissionData
+            }
+          });
+        }
+      }
+    }
+  }, [nodes, fetchProcessEmissionData, updateNodeData]);
 
   // 모달 상태
   const [showProductModal, setShowProductModal] = useState(false);
@@ -125,8 +166,8 @@ function ProcessManagerInner() {
   }, []);
 
   // 공정 선택 처리
-  const handleProcessSelect = useCallback((process: Process) => {
-    addProcessNode(process, products, openInputModal, openInputModal);
+  const handleProcessSelect = useCallback(async (process: Process) => {
+    await addProcessNode(process, products, openInputModal, openInputModal);
     setShowProcessModal(false);
     setShowProcessModalForProduct(false);
   }, [addProcessNode, products, openInputModal]);
@@ -151,10 +192,35 @@ function ProcessManagerInner() {
   const validateConnection = useCallback((connection: Connection) => {
     console.log('🔍 연결 검증 시작:', connection);
     
-    // React Flow의 isValidConnection에서 이미 검증했으므로 여기서는 단순히 통과
-    console.log('✅ 연결 검증 통과 (React Flow에서 이미 검증됨)');
+    // 같은 노드 간 연결 방지
+    if (connection.source === connection.target) {
+      console.log('❌ 같은 노드 간 연결 시도');
+      return { valid: false };
+    }
+    
+    // 같은 핸들 간 연결 방지 (핸들이 있는 경우에만)
+    if (connection.sourceHandle && connection.targetHandle && 
+        connection.sourceHandle === connection.targetHandle) {
+      console.log('❌ 같은 핸들 간 연결 시도');
+      return { valid: false };
+    }
+    
+    // 이미 존재하는 연결 확인 (핸들 ID까지 포함하여 정확히 같은 연결만 체크)
+    const existingEdge = edges.find(edge => 
+      edge.source === connection.source && 
+      edge.target === connection.target &&
+      edge.sourceHandle === connection.sourceHandle &&
+      edge.targetHandle === connection.targetHandle
+    );
+    
+    if (existingEdge) {
+      console.log('❌ 이미 존재하는 연결 (핸들 ID 포함)');
+      return { valid: false };
+    }
+    
+    console.log('✅ React Flow 연결 검증 통과');
     return { valid: true };
-  }, []);
+  }, [edges]);
 
   // 🔧 단순화된 연결 이벤트 핸들러
   const handleConnectStart = useCallback((event: any, params: any) => {
@@ -211,6 +277,13 @@ function ProcessManagerInner() {
         >
           🔗 통합 공정 그룹 탐지
         </Button>
+        
+        <Button 
+          onClick={refreshAllProcessEmissions} 
+          className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+        >
+          📊 배출량 정보 새로고침
+        </Button>
 
       </div>
       
@@ -262,39 +335,10 @@ function ProcessManagerInner() {
              }
            }}
            onConnectEnd={handleConnectEnd}
-                       isValidConnection={(connection) => {
-              // React Flow 공식 문서: 연결 검증 로직
-              console.log('🔍 React Flow 연결 검증:', connection);
-              
-              // 같은 노드 간 연결 방지
-              if (connection.source === connection.target) {
-                console.log('❌ 같은 노드 간 연결 시도');
-                return false;
-              }
-              
-              // 같은 핸들 간 연결 방지 (핸들이 있는 경우에만)
-              if (connection.sourceHandle && connection.targetHandle && 
-                  connection.sourceHandle === connection.targetHandle) {
-                console.log('❌ 같은 핸들 간 연결 시도');
-                return false;
-              }
-              
-              // 이미 존재하는 연결 확인 (핸들 ID까지 포함하여 정확히 같은 연결만 체크)
-              const existingEdge = edges.find(edge => 
-                edge.source === connection.source && 
-                edge.target === connection.target &&
-                edge.sourceHandle === connection.sourceHandle &&
-                edge.targetHandle === connection.targetHandle
-              );
-              
-              if (existingEdge) {
-                console.log('❌ 이미 존재하는 연결 (핸들 ID 포함)');
-                return false;
-              }
-              
-              console.log('✅ React Flow 연결 검증 통과');
-              return true;
-            }}
+           isValidConnection={(connection) => {
+             const validation = validateConnection(connection);
+             return validation.valid;
+           }}
          >
           <Background color="#334155" gap={24} size={1} />
           <Controls className="!bg-gray-800 !border !border-gray-700 !text-gray-200 !rounded-md" position="bottom-left" />
@@ -348,6 +392,7 @@ function ProcessManagerInner() {
         <InputManager
           selectedProcess={selectedProcessForInput}
           onClose={() => setShowInputModal(false)}
+          onDataSaved={refreshAllProcessEmissions} // 데이터 저장 후 배출량 정보 새로고침
         />
       )}
 
