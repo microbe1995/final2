@@ -173,10 +173,9 @@ function ProcessManagerInner() {
       return { valid: false, reason: 'same_handle' };
     }
     
-    // 이미 존재하는 연결 확인 (양방향 모두 체크)
+    // 이미 존재하는 연결 확인 (정확히 같은 방향만 체크)
     const existingEdge = edges.find(edge => 
-      (edge.source === connection.source && edge.target === connection.target) ||
-      (edge.source === connection.target && edge.target === connection.source)
+      edge.source === connection.source && edge.target === connection.target
     );
     
     if (existingEdge) {
@@ -260,13 +259,13 @@ function ProcessManagerInner() {
       {/* ReactFlow 캔버스 */}
       <div className="flex-1 relative">
         {/* 디버깅 정보 */}
-        <div className="absolute top-2 right-2 bg-black bg-opacity-75 text-white p-2 rounded text-xs z-10">
-          <div>노드 수: {nodes.length}</div>
-          <div>연결 수: {edges.length}</div>
-          <div>사업장: {selectedInstall?.install_name || '선택 안됨'}</div>
-          <div>모드: Loose</div>
-          <div>핸들 수: {nodes.reduce((acc, node) => acc + (node.data?.showHandles ? 4 : 0), 0)}</div>
-        </div>
+                 <div className="absolute top-2 right-2 bg-black bg-opacity-75 text-white p-2 rounded text-xs z-10">
+           <div>노드 수: {nodes.length}</div>
+           <div>연결 수: {edges.length}</div>
+           <div>사업장: {selectedInstall?.install_name || '선택 안됨'}</div>
+           <div>모드: Loose (양방향 연결 가능)</div>
+           <div>핸들 수: {nodes.reduce((acc, node) => acc + (node.data?.showHandles ? 4 : 0), 0)}</div>
+         </div>
         <ReactFlow
           nodes={nodes}
           edges={edges}

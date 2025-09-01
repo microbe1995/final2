@@ -31,7 +31,7 @@ const handleStyle: React.CSSProperties = {
  * React Flow 공식 문서 권장사항:
  * - 각 방향에 source 핸들 생성
  * - 연결 시 React Flow가 자동으로 target 핸들로 인식
- * - Strict 모드에서 올바른 연결 동작
+ * - Loose 모드에서 올바른 연결 동작
  */
 export const renderFourDirectionHandles = (isConnectable = true, nodeId?: string) => {
   const nodeIdStr = nodeId || 'node';
