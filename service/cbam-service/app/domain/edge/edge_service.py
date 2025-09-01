@@ -327,6 +327,11 @@ class EdgeService:
             logger.info(f"db_session 타입: {type(self.db_session)}")
             logger.info(f"db_session 내용: {self.db_session}")
             
+            # db_session이 None인지 확인
+            if self.db_session is None:
+                logger.error("❌ db_session이 None입니다!")
+                raise ValueError("데이터베이스 세션이 초기화되지 않았습니다")
+            
             # Edge 엔티티 클래스 확인
             logger.info(f"Edge 클래스: {Edge}")
             logger.info(f"Edge 클래스 타입: {type(Edge)}")
