@@ -323,9 +323,11 @@ class EdgeService:
     async def create_edge(self, edge_data) -> Optional[Edge]:
         """엣지 생성"""
         try:
-            logger.info(f"엣지 생성: {edge_data}")
+            logger.info(f"엣지 생성 시작: {edge_data}")
+            logger.info(f"db_session 타입: {type(self.db_session)}")
             
             # 새로운 Edge 엔티티 생성
+            logger.info("Edge 엔티티 생성 중...")
             new_edge = Edge(
                 source_node_type=edge_data.source_node_type,
                 source_id=edge_data.source_id,
@@ -333,10 +335,14 @@ class EdgeService:
                 target_id=edge_data.target_id,
                 edge_kind=edge_data.edge_kind
             )
+            logger.info(f"Edge 엔티티 생성 완료: {new_edge}")
             
             # 데이터베이스에 저장
+            logger.info("데이터베이스에 Edge 추가 중...")
             self.db_session.add(new_edge)
+            logger.info("Edge 추가 완료, commit 중...")
             await self.db_session.commit()
+            logger.info("commit 완료, refresh 중...")
             await self.db_session.refresh(new_edge)
             
             logger.info(f"✅ 엣지 생성 완료: ID {new_edge.id}")
@@ -344,6 +350,9 @@ class EdgeService:
             
         except Exception as e:
             logger.error(f"엣지 생성 실패: {e}")
+            logger.error(f"오류 타입: {type(e)}")
+            import traceback
+            logger.error(f"스택 트레이스: {traceback.format_exc()}")
             if hasattr(self.db_session, 'rollback'):
                 await self.db_session.rollback()
             return None
