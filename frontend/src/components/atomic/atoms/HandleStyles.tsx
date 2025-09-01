@@ -78,78 +78,7 @@ export const renderFourDirectionHandles = (isConnectable = true, nodeId?: string
   ));
 };
 
-/**
- * 🔴 추가: 양방향 연결을 위한 8방향 핸들 (선택적 사용)
- * 각 방향에 source와 target 핸들을 모두 배치하여 양방향 연결 가능
- */
-export const renderEightDirectionHandles = (isConnectable = true) => {
-  const handles = [
-    // Left 방향
-    {
-      position: Position.Left,
-      type: 'source' as HandleType,
-      id: 'left-source',
-      style: sourceStyle,
-    },
-    {
-      position: Position.Left,
-      type: 'target' as HandleType,
-      id: 'left-target',
-      style: targetStyle,
-    },
-    // Right 방향
-    {
-      position: Position.Right,
-      type: 'source' as HandleType,
-      id: 'right-source',
-      style: sourceStyle,
-    },
-    {
-      position: Position.Right,
-      type: 'target' as HandleType,
-      id: 'right-target',
-      style: targetStyle,
-    },
-    // Top 방향
-    {
-      position: Position.Top,
-      type: 'source' as HandleType,
-      id: 'top-source',
-      style: sourceStyle,
-    },
-    {
-      position: Position.Top,
-      type: 'target' as HandleType,
-      id: 'top-target',
-      style: targetStyle,
-    },
-    // Bottom 방향
-    {
-      position: Position.Bottom,
-      type: 'source' as HandleType,
-      id: 'bottom-source',
-      style: sourceStyle,
-    },
-    {
-      position: Position.Bottom,
-      type: 'target' as HandleType,
-      id: 'bottom-target',
-      style: targetStyle,
-    },
-  ];
 
-  return handles.map(({ position, type, id, style }) => (
-    <Handle
-      key={id}
-      id={id}
-      type={type}
-      position={position}
-      isConnectable={isConnectable}
-      className={cls}
-      style={style}
-    />
-  ));
-};
 
 /* 그룹 노드 등에서 쓸 기본 핸들 스타일 */
 export const handleStyle = {
