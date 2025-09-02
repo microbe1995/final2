@@ -76,8 +76,8 @@ class ProcessRepository:
                         CREATE TABLE process (
                             id SERIAL PRIMARY KEY,
                             process_name TEXT NOT NULL,
-                            start_period DATE NOT NULL,
-                            end_period DATE NOT NULL,
+                            start_period DATE,  -- 🔴 수정: NULL 허용
+                            end_period DATE,    -- 🔴 수정: NULL 허용
                             created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
                             updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
                         );
@@ -85,6 +85,16 @@ class ProcessRepository:
                     logger.info("✅ process 테이블 생성 완료")
                 else:
                     logger.info("✅ process 테이블 확인 완료")
+                    # 🔴 추가: 기존 테이블의 start_period, end_period를 NULL 허용으로 변경
+                    try:
+                        await conn.execute("""
+                            ALTER TABLE process 
+                            ALTER COLUMN start_period DROP NOT NULL,
+                            ALTER COLUMN end_period DROP NOT NULL
+                        """)
+                        logger.info("✅ process 테이블 스키마 업데이트 완료 (start_period, end_period를 NULL 허용)")
+                    except Exception as e:
+                        logger.info(f"ℹ️ process 테이블 스키마는 이미 최신 상태입니다: {e}")
                     
         except Exception as e:
             logger.error(f"❌ Process 테이블 생성 실패: {str(e)}")
@@ -151,11 +161,11 @@ class ProcessRepository:
             
         try:
             async with self.pool.acquire() as conn:
-                # 1. 공정 생성
+                # 1. 공정 생성 (start_period, end_period는 선택적)
                 params = (
                     process_data['process_name'], 
-                    process_data['start_period'], 
-                    process_data['end_period']
+                    process_data.get('start_period'), 
+                    process_data.get('end_period')
                 )
                 result = await conn.fetchrow("""
                     INSERT INTO process (
