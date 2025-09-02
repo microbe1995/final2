@@ -5,12 +5,12 @@ export interface DummyData {
   id: number;
   로트번호: string;
   생산품명: string;
-  생산수량: number; // 🔴 수정: 정규화 후 number 타입으로 고정
+  생산수량: number; // 🔴 수정: int 타입으로 변경
   투입일: string | null;
   종료일: string | null;
   공정: string;
   투입물명: string | null;
-  수량: number; // 🔴 수정: 정규화 후 number 타입으로 고정
+  수량: number; // 🔴 수정: int 타입으로 변경
   단위: string;
   created_at: string;
   updated_at: string;

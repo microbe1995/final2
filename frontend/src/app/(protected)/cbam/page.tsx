@@ -25,9 +25,9 @@ export default function CBAMPage() {
   const normalizeDummyData = (rawData: any[]): DummyData[] => {
     return rawData.map(item => ({
       ...item,
-      // 숫자 필드들을 안전하게 변환 (number 타입으로 확실하게)
-      생산수량: Number(parseFloat(String(item.생산수량 || 0)) || 0),
-      수량: Number(parseFloat(String(item.수량 || 0)) || 0),
+      // 숫자 필드들을 안전하게 int로 변환
+      생산수량: Math.round(Number(item.생산수량 || 0)),
+      수량: Math.round(Number(item.수량 || 0)),
       // 날짜 필드들을 안전하게 처리
       투입일: item.투입일 || null,
       종료일: item.종료일 || null,
@@ -154,12 +154,12 @@ export default function CBAMPage() {
                       <tr key={item.id} className='border-b border-white/10 hover:bg-white/5 transition-colors'>
                         <td className='py-3 px-4 text-white/90'>{item.로트번호}</td>
                         <td className='py-3 px-4 text-white/90'>{item.생산품명}</td>
-                        <td className='py-3 px-4 text-white/90'>{item.생산수량.toFixed(2)}</td>
+                        <td className='py-3 px-4 text-white/90'>{item.생산수량}</td>
                         <td className='py-3 px-4 text-white/90'>{item.투입일 || '-'}</td>
                         <td className='py-3 px-4 text-white/90'>{item.종료일 || '-'}</td>
                         <td className='py-3 px-4 text-white/90'>{item.공정}</td>
                         <td className='py-3 px-4 text-white/90'>{item.투입물명 || '-'}</td>
-                        <td className='py-3 px-4 text-white/90'>{item.수량.toFixed(2)}</td>
+                        <td className='py-3 px-4 text-white/90'>{item.수량}</td>
                         <td className='py-3 px-4 text-white/90'>{item.단위}</td>
                         <td className='py-3 px-4 text-white/90'>
                           <span className='px-2 py-1 bg-blue-600/20 text-blue-400 rounded-full text-xs'>
