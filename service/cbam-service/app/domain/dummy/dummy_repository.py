@@ -348,14 +348,22 @@ class DummyRepository:
             params = []
             param_count = 0
             
-            # 시작일 조건 추가 (문자열을 DATE로 명시적 캐스팅)
-            if start_date:
+            # 기간 조건 추가 (기간이 겹치는 모든 제품 찾기)
+            if start_date and end_date:
+                param_count += 1
+                param_count += 1
+                query += f""" AND (
+                    (투입일 <= ${param_count-1}::DATE AND 종료일 >= ${param_count}::DATE)  -- 기간이 완전히 겹치는 경우
+                    OR (투입일 BETWEEN ${param_count-1}::DATE AND ${param_count}::DATE)    -- 투입일이 기간 내에 있는 경우
+                    OR (종료일 BETWEEN ${param_count-1}::DATE AND ${param_count}::DATE)    -- 종료일이 기간 내에 있는 경우
+                    OR (투입일 <= ${param_count-1}::DATE AND 종료일 >= ${param_count}::DATE)  -- 기간을 완전히 포함하는 경우
+                )"""
+                params.extend([end_date, start_date])
+            elif start_date:
                 param_count += 1
                 query += f" AND 투입일 >= ${param_count}::DATE"
                 params.append(start_date)
-            
-            # 종료일 조건 추가 (문자열을 DATE로 명시적 캐스팅)
-            if end_date:
+            elif end_date:
                 param_count += 1
                 query += f" AND 종료일 <= ${param_count}::DATE"
                 params.append(end_date)
