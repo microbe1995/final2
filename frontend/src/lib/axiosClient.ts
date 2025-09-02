@@ -273,9 +273,13 @@ export const apiEndpoints = {
       byProduct: (product_name: string) => `/api/v1/cbam/dummy/search/product/${product_name}`,
       count: '/api/v1/cbam/dummy/stats/count',
       health: '/api/v1/cbam/dummy/health',
-      // 제품명 관련 API
-      productNames: '/api/v1/cbam/dummy/products/names',  // 고유 제품명 목록
-      productNamesByPeriod: '/api/v1/cbam/dummy/products/names/by-period'  // 기간별 제품명 목록
+          // 제품명 관련 API
+    productNames: '/api/v1/cbam/dummy/products/names',  // 고유 제품명 목록
+    productNamesByPeriod: '/api/v1/cbam/dummy/products/names/by-period',  // 기간별 제품명 목록
+    
+    // 공정명 관련 API (제품명과 동일한 패턴)
+    processNames: '/api/v1/cbam/dummy/processes/names',  // 고유 공정명 목록
+    processNamesByPeriod: '/api/v1/cbam/dummy/processes/names/by-period'  // 기간별 공정명 목록
     },
     
     // Process Chain 관련 API

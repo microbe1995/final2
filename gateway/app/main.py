@@ -384,7 +384,14 @@ async def proxy_request(service: str, path: str, request: Request) -> Response:
 # 범용 프록시 라우트 (메인 라우팅 역할)
 @app.api_route("/api/v1/{service}/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
 async def proxy(service: str, path: str, request: Request):
-    return await proxy_request(service, path, request)
+    # 🔴 수정: cbam 서비스의 모든 하위 경로를 올바르게 처리
+    if service == "cbam":
+        # cbam 서비스의 모든 하위 경로를 그대로 전달
+        logger.info(f"🔍 CBAM 서비스 요청: service={service}, path={path}")
+        return await proxy_request(service, path, request)
+    else:
+        # 다른 서비스는 기존 로직 사용
+        return await proxy_request(service, path, request)
 
 # 🔴 추가: 루트 경로 핸들러 (브라우저 접근 시)
 @app.get("/", summary="Gateway 루트")

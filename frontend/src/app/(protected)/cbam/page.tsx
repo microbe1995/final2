@@ -27,8 +27,8 @@ export default function CBAMPage() {
     setError(null);
     
     try {
-      // 올바른 API 엔드포인트 호출
-      const response = await axiosClient.get('/api/v1/dummy/');
+      // cbam 서비스를 통해 더미 데이터 조회
+      const response = await axiosClient.get('/api/v1/cbam/dummy/');
       let data: DummyData[] = [];
       
       if (response.data && Array.isArray(response.data)) {

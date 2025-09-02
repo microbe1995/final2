@@ -26,7 +26,8 @@ export const useDummyData = () => {
     setError(null);
     
     try {
-      const response = await axiosClient.get(`/api/v1/dummy/products/${encodeURIComponent(productName)}/processes`);
+      // 🔴 수정: 올바른 API 경로 사용 (/api/v1/cbam/dummy/...)
+      const response = await axiosClient.get(`/api/v1/cbam/dummy/products/${encodeURIComponent(productName)}/processes`);
       return response.data.data.processes || [];
     } catch (err: any) {
       const errorMessage = err.response?.data?.detail || err.message || '공정 목록 조회에 실패했습니다.';
