@@ -293,11 +293,19 @@ class ProductRepository:
         await self._ensure_pool_initialized()
         try:
             async with self.pool.acquire() as conn:
-                result = await conn.execute("""
-                    DELETE FROM product WHERE id = $1
-                """, product_id)
-                
-                return result != "DELETE 0"
+                # 트랜잭션 시작
+                async with conn.transaction():
+                    # 1단계: product_process 관계 먼저 삭제
+                    await conn.execute("""
+                        DELETE FROM product_process WHERE product_id = $1
+                    """, product_id)
+                    
+                    # 2단계: 제품 삭제
+                    result = await conn.execute("""
+                        DELETE FROM product WHERE id = $1
+                    """, product_id)
+                    
+                    return result != "DELETE 0"
                 
         except Exception as e:
             logger.error(f"❌ 제품 삭제 실패: {str(e)}")
