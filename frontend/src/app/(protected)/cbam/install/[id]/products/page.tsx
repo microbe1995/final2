@@ -110,6 +110,9 @@ export default function InstallProductsPage() {
   const { getProcessesByProduct, loading: dummyLoading, error: dummyError } = useDummyData();
   const [availableProcesses, setAvailableProcesses] = useState<string[]>([]);
   const [selectedProcess, setSelectedProcess] = useState<string>('');
+  
+  // 🔴 추가: 제품별 공정 목록 상태 관리
+  const [productProcessesMap, setProductProcessesMap] = useState<Map<number, string[]>>(new Map());
 
   // 사업장별 제품 목록 조회
   const fetchProducts = async () => {
@@ -149,6 +152,18 @@ export default function InstallProductsPage() {
     }
   }, [getProcessesByProduct]);
 
+  // 🔴 추가: 특정 제품의 공정 목록 조회 및 상태 업데이트
+  const fetchProductProcesses = useCallback(async (productId: number, productName: string) => {
+    try {
+      const processes = await getProcessesByProduct(productName);
+      setProductProcessesMap(prev => new Map(prev.set(productId, processes)));
+      console.log(`✅ 제품 ${productName} (ID: ${productId})의 공정 목록 업데이트:`, processes);
+    } catch (error) {
+      console.error(`❌ 제품 ${productName} (ID: ${productId})의 공정 목록 조회 실패:`, error);
+      setProductProcessesMap(prev => new Map(prev.set(productId, [])));
+    }
+  }, [getProcessesByProduct]);
+
   // 공정 추가 폼 표시 시 해당 제품의 공정 목록 조회
   const handleShowProcessForm = (product: Product) => {
     setShowProcessFormForProduct(product.id);
@@ -172,6 +187,15 @@ export default function InstallProductsPage() {
       setIsLoading(false);
     }
   }, [installId]);
+
+  // 🔴 추가: 제품 목록이 로드될 때마다 각 제품의 공정 목록 초기화
+  useEffect(() => {
+    if (products.length > 0) {
+      products.forEach(async (product) => {
+        await fetchProductProcesses(product.id, product.product_name);
+      });
+    }
+  }, [products, fetchProductProcesses]);
 
   // 기간 변경 시 제품명 목록 업데이트 (useEffect 제거, 수동 호출로 변경)
   // useEffect(() => {
@@ -417,6 +441,15 @@ export default function InstallProductsPage() {
 
       // 목록 새로고침
       fetchProcesses();
+      
+      // 🔴 추가: 해당 제품의 공정 목록 새로고침
+      if (showProcessFormForProduct) {
+        const product = products.find(p => p.id === showProcessFormForProduct);
+        if (product) {
+          await fetchProductProcesses(product.id, product.product_name);
+        }
+      }
+      
       console.log('🔄 공정 목록 새로고침 완료');
     } catch (error: any) {
       console.error('❌ 프로세스 생성 실패:', error);
@@ -475,6 +508,48 @@ export default function InstallProductsPage() {
         message: `프로세스 삭제에 실패했습니다: ${error.response?.data?.detail || error.message}`,
         type: 'error'
       });
+    }
+  };
+
+  // 🔴 추가: 공정명으로 공정 삭제 (제품별 공정 목록에서)
+  const handleDeleteProcessByName = async (processName: string, productId: number) => {
+    if (!confirm(`"${processName}" 공정을 삭제하시겠습니까?`)) return;
+
+    try {
+      setIsLoading(true);
+      
+      // 공정명으로 공정 ID 찾기
+      const process = processes.find(p => p.process_name === processName);
+      if (process) {
+        await axiosClient.delete(apiEndpoints.cbam.process.delete(process.id));
+        console.log('✅ 공정 삭제 성공');
+        setToast({
+          message: '공정이 성공적으로 삭제되었습니다!',
+          type: 'success'
+        });
+        
+        // 공정 목록 새로고침
+        fetchProcesses();
+        
+        // 해당 제품의 공정 목록 새로고침
+        const product = products.find(p => p.id === productId);
+        if (product) {
+          await fetchProductProcesses(product.id, product.product_name);
+        }
+      } else {
+        setToast({
+          message: '삭제할 공정을 찾을 수 없습니다.',
+          type: 'error'
+        });
+      }
+    } catch (error: any) {
+      console.error('❌ 공정 삭제 실패:', error);
+      setToast({
+        message: `공정 삭제에 실패했습니다: ${error.response?.data?.detail || error.message}`,
+        type: 'error'
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -782,22 +857,8 @@ export default function InstallProductsPage() {
             ) : (
               <div className="space-y-6">
                 {products.map((product) => {
-                  // 제품과 연결된 공정들 필터링 (product_id로 관계 확인)
-                  const productProcesses = processes.filter(
-                    process => process.product_id === product.id
-                  );
-                  
-                  // 공정 데이터 유효성 검사
-                  const validProcesses = productProcesses.filter(process => 
-                    process && process.id && process.process_name && 
-                    Object.keys(process).length > 0
-                  );
-                  
-                  if (productProcesses.length !== validProcesses.length) {
-                    console.warn(`⚠️ 제품 ${product.product_name} (ID: ${product.id})에서 ${productProcesses.length - validProcesses.length}개의 빈 공정 데이터 발견`);
-                  }
-                  
-                  console.log(`🔍 제품 ${product.product_name} (ID: ${product.id})의 공정들:`, validProcesses);
+                  // 🔴 수정: 제품별 공정 목록을 productProcessesMap에서 가져오기
+                  const productProcesses = productProcessesMap.get(product.id) || [];
                   const isShowingProcessForm = showProcessFormForProduct === product.id;
                   
                   return (
@@ -809,7 +870,7 @@ export default function InstallProductsPage() {
                       <div className="space-y-1 mb-3">
                         <p className="text-gray-300 text-sm">기간: {product.prostart_period} ~ {product.proend_period}</p>
                         <p className="text-gray-300 text-sm">수량: {product.product_amount.toLocaleString()}</p>
-                        <p className="text-gray-300 text-sm">공정 수: {validProcesses.length}개</p>
+                        <p className="text-gray-300 text-sm">공정 수: {productProcessesMap.get(product.id)?.length || 0}개</p>
                         {product.product_category && (
                           <p className="text-gray-300 text-sm">카테고리: <span className="text-blue-300">{product.product_category}</span></p>
                         )}
@@ -833,22 +894,22 @@ export default function InstallProductsPage() {
                       </div>
 
                       {/* 공정 목록 */}
-                      {validProcesses.length > 0 && (
+                      {productProcessesMap.get(product.id) && productProcessesMap.get(product.id)!.length > 0 && (
                         <div className="mb-4 p-3 bg-white/5 rounded-lg">
                           <h5 className="text-sm font-medium text-white mb-2">📋 등록된 공정:</h5>
                           <div className="space-y-2">
-                            {validProcesses.map((process) => (
-                              <div key={process.id} className="flex justify-between items-center p-2 bg-white/5 rounded">
-                                <span className="text-gray-300 text-sm">{process.process_name}</span>
+                            {productProcessesMap.get(product.id)!.map((processName, index) => (
+                              <div key={index} className="flex justify-between items-center p-2 bg-white/5 rounded">
+                                <span className="text-gray-300 text-sm">{processName}</span>
                                 <div className="flex gap-1">
                                   <button
-                                    onClick={() => router.push(`/cbam/process/process-input?process_id=${process.id}`)}
+                                    onClick={() => router.push(`/cbam/process/process-input?process_name=${processName}`)}
                                     className="px-2 py-1 bg-green-600 hover:bg-green-700 text-white text-xs rounded"
                                   >
                                     입력 데이터
                                   </button>
                                   <button
-                                    onClick={() => handleDeleteProcess(process.id, process.process_name)}
+                                    onClick={() => handleDeleteProcessByName(processName, product.id)}
                                     className="px-2 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded"
                                   >
                                     삭제
