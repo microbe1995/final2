@@ -6,6 +6,8 @@ import CommonShell from '@/components/common/CommonShell';
 import ProcessManager from '@/components/cbam/ProcessManager';
 import { ReactFlowProvider } from '@xyflow/react';
 import axiosClient from '@/lib/axiosClient';
+import { useDummyData } from '@/hooks/useDummyData';
+import { RefreshCw, ArrowRight } from 'lucide-react';
 
 // ============================================================================
 // 🎯 CBAM 관리 페이지
@@ -16,35 +18,105 @@ export default function CBAMPage() {
     'overview' | 'install' | 'boundary' | 'reports' | 'settings'
   >('overview');
 
-  const renderOverview = () => (
-    <div className='space-y-6'>
-      <div className='stitch-card p-6'>
-        <h3 className='stitch-h1 text-lg font-semibold mb-4'>CBAM 개요</h3>
-        <p className='stitch-caption text-white/60'>
-          탄소국경조정메커니즘(CBAM)은 EU가 수입되는 특정 상품의 탄소 배출량에
-          대해 탄소 가격을 부과하는 제도입니다.
-        </p>
-        <div className='mt-4 grid grid-cols-1 md:grid-cols-3 gap-4'>
-          <div className='p-4 bg-white/5 rounded-lg'>
-            <h4 className='font-semibold text-white mb-2'>적용 대상</h4>
-            <p className='text-white/60 text-sm'>
-              철강, 시멘트, 알루미늄, 비료, 전기, 수소 등
-            </p>
+  // useDummyData 훅을 컴포넌트 최상위 레벨로 이동
+  const { data, loading, error, refreshData } = useDummyData();
+
+  const renderOverview = () => {
+
+    return (
+      <div className='space-y-6'>
+        <div className='stitch-card p-6'>
+          <div className='flex items-center justify-between mb-4'>
+            <div>
+              <h3 className='stitch-h1 text-lg font-semibold mb-2'>투입물 데이터</h3>
+              <p className='stitch-caption text-white/60'>
+                생산에 투입되는 원자재 및 자재 정보를 관리합니다.
+              </p>
+            </div>
+            <div className='flex gap-3'>
+              <button
+                onClick={refreshData}
+                disabled={loading}
+                className='inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50'
+              >
+                <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
+                새로고침
+              </button>
+              <button className='inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors'>
+                <ArrowRight size={16} />
+                수정하러 가기
+              </button>
+            </div>
           </div>
-          <div className='p-4 bg-white/5 rounded-lg'>
-            <h4 className='font-semibold text-white mb-2'>탄소 가격</h4>
-            <p className='text-white/60 text-sm'>
-              EU ETS 평균 가격 기준으로 계산
-            </p>
-          </div>
-          <div className='p-4 bg-white/5 rounded-lg'>
-            <h4 className='font-semibold text-white mb-2'>시행 일정</h4>
-            <p className='text-white/60 text-sm'>2023년 10월부터 단계적 시행</p>
+
+          {/* 데이터 테이블 */}
+          <div className='mt-6 overflow-x-auto'>
+            {loading ? (
+              <div className='text-center py-8'>
+                <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto'></div>
+                <p className='text-white/60 mt-2'>데이터를 불러오는 중...</p>
+              </div>
+            ) : error ? (
+              <div className='text-center py-8'>
+                <p className='text-red-400'>{error}</p>
+                <button
+                  onClick={refreshData}
+                  className='mt-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors'
+                >
+                  다시 시도
+                </button>
+              </div>
+            ) : (
+              <table className='w-full text-sm'>
+                <thead>
+                  <tr className='border-b border-white/20'>
+                    <th className='text-left py-3 px-4 font-medium text-white/80'>로트번호</th>
+                    <th className='text-left py-3 px-4 font-medium text-white/80'>제품명</th>
+                    <th className='text-left py-3 px-4 font-medium text-white/80'>생산수량</th>
+                    <th className='text-left py-3 px-4 font-medium text-white/80'>입력일</th>
+                    <th className='text-left py-3 px-4 font-medium text-white/80'>종료일</th>
+                    <th className='text-left py-3 px-4 font-medium text-white/80'>공정명</th>
+                    <th className='text-left py-3 px-4 font-medium text-white/80'>투입물</th>
+                    <th className='text-left py-3 px-4 font-medium text-white/80'>수량</th>
+                    <th className='text-left py-3 px-4 font-medium text-white/80'>단위</th>
+                    <th className='text-left py-3 px-4 font-medium text-white/80'>AI추천</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.length === 0 ? (
+                    <tr>
+                      <td colSpan={10} className='text-center py-8 text-white/40'>
+                        데이터가 없습니다.
+                      </td>
+                    </tr>
+                  ) : (
+                    data.map((item) => (
+                      <tr key={item.id} className='border-b border-white/10 hover:bg-white/5 transition-colors'>
+                        <td className='py-3 px-4 text-white/90'>{item.로트번호}</td>
+                        <td className='py-3 px-4 text-white/90'>{item.생산품명}</td>
+                        <td className='py-3 px-4 text-white/90'>{item.생산수량.toFixed(2)}</td>
+                        <td className='py-3 px-4 text-white/90'>{item.투입일 || '-'}</td>
+                        <td className='py-3 px-4 text-white/90'>{item.종료일 || '-'}</td>
+                        <td className='py-3 px-4 text-white/90'>{item.공정}</td>
+                        <td className='py-3 px-4 text-white/90'>{item.투입물명 || '-'}</td>
+                        <td className='py-3 px-4 text-white/90'>{item.수량.toFixed(2)}</td>
+                        <td className='py-3 px-4 text-white/90'>{item.단위}</td>
+                        <td className='py-3 px-4 text-white/90'>
+                          <span className='px-2 py-1 bg-blue-600/20 text-blue-400 rounded-full text-xs'>
+                            추천
+                          </span>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            )}
           </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const renderInstall = () => (
     <div className='space-y-6'>
@@ -139,7 +211,7 @@ export default function CBAMPage() {
                 : 'text-white/60 hover:text-white hover:bg-white/5'
             }`}
           >
-            개요
+            투입물
           </button>
           <button
             onClick={() => setActiveTab('install')}

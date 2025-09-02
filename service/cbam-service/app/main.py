@@ -32,6 +32,7 @@ from app.domain.mapping.mapping_controller import router as mapping_router
 from app.domain.matdir.matdir_controller import router as matdir_router
 from app.domain.fueldir.fueldir_controller import router as fueldir_router
 from app.domain.productprocess.productprocess_controller import router as product_process_router
+from app.domain.dummy.dummy_controller import router as dummy_router
 
 # get_async_db 함수는 database_base.py에서 관리
 
@@ -234,6 +235,7 @@ app.include_router(mapping_router, prefix="/mapping")
 app.include_router(edge_router, prefix="/edge")
 app.include_router(matdir_router, prefix="/matdir")
 app.include_router(fueldir_router, prefix="/fueldir")
+app.include_router(dummy_router, prefix="/dummy")
 
 logger.info("✅ 모든 라우터 등록 완료 (엔티티 의존성 순서 고려)")
 logger.info("🔗 기본 엔티티 → 중간 테이블 → 계산/분석 순서로 등록")
