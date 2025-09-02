@@ -215,6 +215,16 @@ export default function InstallProductsPage() {
 
   // 공정 추가 폼 표시 시 해당 제품의 공정 목록 조회
   const handleShowProcessForm = (product: Product) => {
+    // 이미 폼이 열려있으면 닫기
+    if (showProcessFormForProduct === product.id) {
+      setShowProcessFormForProduct(null);
+      setSelectedProcess('');
+      setAvailableProcesses([]);
+      setProcessForm({ process_name: '' });
+      return;
+    }
+    
+    // 새로 폼 열기
     setShowProcessFormForProduct(product.id);
     
     // 해당 제품의 공정 목록 조회 (기간 정보 제거)
@@ -497,15 +507,42 @@ export default function InstallProductsPage() {
       };
 
       console.log('🔍 전송할 공정 데이터:', processData);
-      console.log('🔍 API 엔드포인트:', apiEndpoints.cbam.process.create);
 
-      const response = await axiosClient.post(apiEndpoints.cbam.process.create, processData);
-      console.log('✅ 프로세스 생성 성공:', response.data);
+      let response;
       
-      setToast({
-        message: '프로세스가 성공적으로 생성되었습니다.',
-        type: 'success'
-      });
+      // 🔴 수정: 수정 모드인지 추가 모드인지 구분하여 처리
+      if (selectedProcess && showProcessFormForProduct) {
+        // 수정 모드: 기존 공정 업데이트
+        console.log('🔧 공정 수정 모드:', selectedProcess, '→', processForm.process_name);
+        
+        // 기존 공정 ID 찾기
+        const existingProcess = processes.find(p => p.process_name === selectedProcess);
+        if (existingProcess) {
+          // 공정명만 업데이트
+          response = await axiosClient.put(apiEndpoints.cbam.process.update(existingProcess.id), {
+            process_name: processForm.process_name
+          });
+          console.log('✅ 공정 수정 성공:', response.data);
+          setToast({
+            message: `공정이 "${selectedProcess}"에서 "${processForm.process_name}"으로 수정되었습니다.`,
+            type: 'success'
+          });
+        } else {
+          throw new Error('수정할 공정을 찾을 수 없습니다.');
+        }
+      } else {
+        // 추가 모드: 새 공정 생성
+        console.log('➕ 공정 추가 모드');
+        console.log('🔍 API 엔드포인트:', apiEndpoints.cbam.process.create);
+        
+        response = await axiosClient.post(apiEndpoints.cbam.process.create, processData);
+        console.log('✅ 프로세스 생성 성공:', response.data);
+        
+        setToast({
+          message: '프로세스가 성공적으로 생성되었습니다.',
+          type: 'success'
+        });
+      }
 
       // 폼 초기화 및 숨기기
       setProcessForm({
@@ -529,11 +566,11 @@ export default function InstallProductsPage() {
       
       console.log('🔄 공정 목록 새로고침 완료');
     } catch (error: any) {
-      console.error('❌ 프로세스 생성 실패:', error);
+      console.error('❌ 프로세스 처리 실패:', error);
       console.error('❌ 에러 응답 데이터:', error.response?.data);
       console.error('❌ 에러 상태 코드:', error.response?.status);
       setToast({
-        message: `프로세스 생성에 실패했습니다: ${error.response?.data?.detail || error.message}`,
+        message: `프로세스 처리에 실패했습니다: ${error.response?.data?.detail || error.message}`,
         type: 'error'
       });
     }
@@ -597,6 +634,8 @@ export default function InstallProductsPage() {
 
   // 🔴 추가: 공정 수정 모드 시작
   const handleEditProcess = (processName: string, productId: number) => {
+    console.log('🔧 공정 수정 모드 시작:', processName, '제품 ID:', productId);
+    
     // 공정 수정 폼을 표시하고 해당 공정 정보를 설정
     setShowProcessFormForProduct(productId);
     setSelectedProcess(processName);
@@ -1030,9 +1069,9 @@ export default function InstallProductsPage() {
                        {isShowingProcessForm && (
                          <div className="mb-4 p-4 bg-white/5 rounded-lg border border-purple-500/30">
                            <h5 className="text-sm font-medium text-white mb-3">
-                             {selectedProcess && productProcessesMap.get(product.id)?.includes(selectedProcess) 
-                               ? '🔄 공정 수정' 
-                               : '🔄 공정 추가'
+                             {selectedProcess && showProcessFormForProduct === product.id 
+                               ? '🔧 공정 수정' 
+                               : '➕ 공정 추가'
                              }
                            </h5>
                           
@@ -1077,9 +1116,11 @@ export default function InstallProductsPage() {
                                 disabled={availableProcesses.length === 0}
                               >
                                 <option value="">
-                                  {availableProcesses.length > 0 
-                                    ? '공정을 선택하세요' 
-                                    : '사용 가능한 공정이 없습니다'
+                                  {selectedProcess && showProcessFormForProduct === product.id
+                                    ? `현재: ${selectedProcess}`
+                                    : availableProcesses.length > 0 
+                                      ? '공정을 선택하세요' 
+                                      : '사용 가능한 공정이 없습니다'
                                   }
                                 </option>
                                 {availableProcesses.map((process) => (
@@ -1113,19 +1154,9 @@ export default function InstallProductsPage() {
                                     : 'bg-gray-500 cursor-not-allowed'
                                 }`}
                               >
-                                🔄 공정 생성
+                                🔄 {selectedProcess && showProcessFormForProduct === product.id ? '공정 수정' : '공정 생성'}
                               </button>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setShowProcessFormForProduct(null);
-                                  setSelectedProcess('');
-                                  setAvailableProcesses([]);
-                                }}
-                                className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white text-sm font-medium rounded-md transition-colors duration-200"
-                              >
-                                취소
-                              </button>
+                              
                             </div>
                           </form>
                         </div>
