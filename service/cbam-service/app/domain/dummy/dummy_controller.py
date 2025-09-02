@@ -32,6 +32,11 @@ def get_dummy_service():
 # 📊 상태 확인 엔드포인트
 # ============================================================================
 
+@router.options("/")
+async def options_dummy_data():
+    """CORS preflight 요청 처리"""
+    return {"message": "CORS preflight OK"}
+
 @router.get("/health")
 async def health_check():
     """Dummy 도메인 상태 확인"""
@@ -86,6 +91,40 @@ async def health_check():
 # 📋 기본 CRUD 엔드포인트
 # ============================================================================
 
+@router.get("/", response_model=DummyDataListResponse)
+async def get_all_dummy_data(
+    limit: int = Query(100, ge=1, le=1000, description="페이지 크기"),
+    offset: int = Query(0, ge=0, description="오프셋"),
+    search: Optional[str] = Query(None, description="검색어")
+):
+    """모든 Dummy 데이터 조회 (페이징 및 검색)"""
+    try:
+        logger.info(f"🎭 Dummy 데이터 목록 조회 요청: limit={limit}, offset={offset}, search={search}")
+        
+        dummy_service = get_dummy_service()
+        
+        if search:
+            # 검색 기능 사용
+            data_list = await dummy_service.search_dummy_data(search, limit)
+            total = await dummy_service.get_dummy_data_count()
+        else:
+            # 전체 목록 조회
+            data_list = await dummy_service.get_all_dummy_data(limit, offset)
+            total = await dummy_service.get_dummy_data_count()
+        
+        logger.info(f"✅ Dummy 데이터 목록 조회 성공: {len(data_list)}개")
+        
+        return DummyDataListResponse(
+            items=data_list,
+            total=total,
+            page=(offset // limit) + 1 if limit > 0 else 1,
+            size=limit
+        )
+        
+    except Exception as e:
+        logger.error(f"❌ Dummy 데이터 목록 조회 실패: {e}")
+        raise HTTPException(status_code=500, detail=f"서버 오류: {str(e)}")
+
 @router.post("/", response_model=DummyDataResponse, status_code=201)
 async def create_dummy_data(
     data: DummyDataCreateRequest
@@ -133,40 +172,6 @@ async def get_dummy_data(data_id: int):
         raise
     except Exception as e:
         logger.error(f"❌ Dummy 데이터 조회 실패: {e}")
-        raise HTTPException(status_code=500, detail=f"서버 오류: {str(e)}")
-
-@router.get("/", response_model=DummyDataListResponse)
-async def get_all_dummy_data(
-    limit: int = Query(100, ge=1, le=1000, description="페이지 크기"),
-    offset: int = Query(0, ge=0, description="오프셋"),
-    search: Optional[str] = Query(None, description="검색어")
-):
-    """모든 Dummy 데이터 조회 (페이징 및 검색)"""
-    try:
-        logger.info(f"🎭 Dummy 데이터 목록 조회 요청: limit={limit}, offset={offset}, search={search}")
-        
-        dummy_service = get_dummy_service()
-        
-        if search:
-            # 검색 기능 사용
-            data_list = await dummy_service.search_dummy_data(search, limit)
-            total = await dummy_service.get_dummy_data_count()
-        else:
-            # 전체 목록 조회
-            data_list = await dummy_service.get_all_dummy_data(limit, offset)
-            total = await dummy_service.get_dummy_data_count()
-        
-        logger.info(f"✅ Dummy 데이터 목록 조회 성공: {len(data_list)}개")
-        
-        return DummyDataListResponse(
-            items=data_list,
-            total=total,
-            page=(offset // limit) + 1 if limit > 0 else 1,
-            size=limit
-        )
-        
-    except Exception as e:
-        logger.error(f"❌ Dummy 데이터 목록 조회 실패: {e}")
         raise HTTPException(status_code=500, detail=f"서버 오류: {str(e)}")
 
 @router.put("/{data_id}", response_model=DummyDataResponse)

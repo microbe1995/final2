@@ -187,7 +187,8 @@ app = FastAPI(
     docs_url="/docs" if DEBUG_MODE else None,
     redoc_url="/redoc" if DEBUG_MODE else None,
     openapi_url="/openapi.json" if DEBUG_MODE else None,
-    lifespan=lifespan
+    lifespan=lifespan,
+    redirect_slashes=False  # trailing slash 리다이렉트 방지
 )
 
 # ============================================================================
