@@ -16,6 +16,7 @@ class DummyRepository:
     """Dummy 데이터 접근 클래스 (asyncpg 연결 풀)"""
     
     def __init__(self):
+        self.database_url = os.getenv('DATABASE_URL')
         self.pool: Optional[asyncpg.Pool] = None
         self._initialization_attempted = False
     
