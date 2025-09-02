@@ -171,6 +171,34 @@ class DummyService:
             logger.error(f"❌ 기간별 제품명 목록 조회 실패: {str(e)}")
             raise
 
+    async def get_unique_process_names(self) -> List[str]:
+        """고유한 공정명 목록 조회"""
+        try:
+            logger.info("🔍 고유 공정명 목록 조회 요청")
+            
+            process_names = await self.repository.get_unique_process_names()
+            
+            logger.info(f"✅ 고유 공정명 목록 조회 성공: {len(process_names)}개")
+            return process_names
+            
+        except Exception as e:
+            logger.error(f"❌ 고유 공정명 목록 조회 실패: {str(e)}")
+            raise
+
+    async def get_unique_process_names_by_period(self, start_period: str, end_period: str) -> List[str]:
+        """기간별 고유한 공정명 목록 조회"""
+        try:
+            logger.info(f"🔍 기간별 공정명 목록 조회 요청: {start_period} ~ {end_period}")
+            
+            process_names = await self.repository.get_unique_process_names_by_period(start_period, end_period)
+            
+            logger.info(f"✅ 기간별 공정명 목록 조회 성공: {len(process_names)}개")
+            return process_names
+            
+        except Exception as e:
+            logger.error(f"❌ 기간별 공정명 목록 조회 실패: {str(e)}")
+            raise
+
     async def get_unique_processes_by_product(self, product_name: str) -> List[str]:
         """특정 제품의 고유한 공정 목록 조회"""
         try:

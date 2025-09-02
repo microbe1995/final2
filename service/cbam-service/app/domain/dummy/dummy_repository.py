@@ -408,6 +408,103 @@ class DummyRepository:
             logger.error(f"❌ 기간별 제품명 목록 조회 실패: {e}")
             return []
 
+    async def get_unique_process_names(self) -> List[str]:
+        """고유한 공정명 목록 조회"""
+        if not self.pool:
+            logger.warning("⚠️ 연결 풀이 초기화되지 않았습니다.")
+            return []
+        
+        try:
+            query = """
+                SELECT DISTINCT 공정 
+                FROM dummy 
+                WHERE 공정 IS NOT NULL 
+                ORDER BY 공정;
+            """
+            rows = await self.pool.fetch(query)
+            
+            # 공정명 추출
+            process_names = [row['공정'] for row in rows if row['공정']]
+            
+            logger.info(f"✅ 고유 공정명 목록 조회 성공: {len(process_names)}개")
+            return process_names
+            
+        except Exception as e:
+            logger.error(f"❌ 고유 공정명 목록 조회 실패: {e}")
+            return []
+
+    async def get_unique_process_names_by_period(self, start_period: str, end_period: str) -> List[str]:
+        """기간별 고유한 공정명 목록 조회"""
+        if not self.pool:
+            logger.warning("⚠️ 연결 풀이 초기화되지 않았습니다.")
+            return []
+        
+        try:
+            # 기본 쿼리
+            query = "SELECT DISTINCT 공정 FROM dummy WHERE 공정 IS NOT NULL"
+            params = []
+            
+            # 기간 조건 추가 (기간이 겹치는 모든 공정 찾기)
+            if start_period and end_period:
+                # 날짜 형식 검증 및 변환
+                try:
+                    from datetime import datetime
+                    start_period_obj = datetime.strptime(start_period, "%Y-%m-%d").date()
+                    end_period_obj = datetime.strptime(end_period, "%Y-%m-%d").date()
+                    
+                    # 날짜 순서 검증
+                    if start_period_obj > end_period_obj:
+                        logger.warning(f"⚠️ 시작일({start_period})이 종료일({end_period})보다 늦습니다.")
+                        return []
+                        
+                except ValueError as e:
+                    logger.error(f"❌ 날짜 형식 오류: {start_period} 또는 {end_period} - {e}")
+                    return []
+                
+                # 기간 겹침 쿼리
+                query += """ AND (
+                    (투입일 <= $2 AND 종료일 >= $1)  -- 기간이 겹치는 경우
+                    OR (투입일 BETWEEN $1 AND $2)     -- 투입일이 기간 내에 있는 경우
+                    OR (종료일 BETWEEN $1 AND $2)     -- 종료일이 기간 내에 있는 경우
+                )"""
+                params.extend([start_period_obj, end_period_obj])
+                
+            elif start_period:
+                try:
+                    from datetime import datetime
+                    start_period_obj = datetime.strptime(start_period, "%Y-%m-%d").date()
+                    query += " AND 투입일 >= $1"
+                    params.append(start_period_obj)
+                except ValueError as e:
+                    logger.error(f"❌ 시작일 형식 오류: {start_period} - {e}")
+                    return []
+                    
+            elif end_period:
+                try:
+                    from datetime import datetime
+                    end_period_obj = datetime.strptime(end_period, "%Y-%m-%d").date()
+                    query += " AND 종료일 <= $1"
+                    params.append(end_period_obj)
+                except ValueError as e:
+                    logger.error(f"❌ 종료일 형식 오류: {end_period} - {e}")
+                    return []
+            
+            # 정렬 추가
+            query += " ORDER BY 공정;"
+            
+            # 쿼리 실행
+            rows = await self.pool.fetch(query, *params)
+            
+            # 공정명 추출
+            process_names = [row['공정'] for row in rows if row['공정']]
+            
+            logger.info(f"✅ 기간별 공정명 목록 조회 성공: {start_period} ~ {end_period} - {len(process_names)}개")
+            return process_names
+            
+        except Exception as e:
+            logger.error(f"❌ 기간별 공정명 목록 조회 실패: {e}")
+            return []
+
     async def get_unique_processes_by_product(self, product_name: str) -> List[str]:
         """특정 제품의 고유한 공정 목록 조회"""
         if not self.pool:
