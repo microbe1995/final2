@@ -160,13 +160,44 @@ class DummyService:
     async def get_unique_product_names_by_period(self, start_date: Optional[str] = None, end_date: Optional[str] = None) -> List[str]:
         """기간별 고유한 제품명 목록 조회"""
         try:
+            logger.info(f"🔍 기간별 제품명 목록 조회 요청: {start_date} ~ {end_date}")
+            
             product_names = await self.repository.get_unique_product_names_by_period(start_date, end_date)
-            logger.info(f"✅ 기간별 제품명 목록 조회 성공: {start_date} ~ {end_date} - {len(product_names)}개")
+            
+            logger.info(f"✅ 기간별 제품명 목록 조회 성공: {len(product_names)}개")
             return product_names
             
         except Exception as e:
-            logger.error(f"❌ 기간별 제품명 목록 조회 실패: {e}")
-            return []
+            logger.error(f"❌ 기간별 제품명 목록 조회 실패: {str(e)}")
+            raise
+
+    async def get_unique_processes_by_product(self, product_name: str) -> List[str]:
+        """특정 제품의 고유한 공정 목록 조회"""
+        try:
+            logger.info(f"🔍 제품 '{product_name}'의 공정 목록 조회 요청")
+            
+            processes = await self.repository.get_unique_processes_by_product(product_name)
+            
+            logger.info(f"✅ 제품 '{product_name}'의 공정 목록 조회 성공: {len(processes)}개")
+            return processes
+            
+        except Exception as e:
+            logger.error(f"❌ 제품 '{product_name}'의 공정 목록 조회 실패: {str(e)}")
+            raise
+
+    async def get_unique_processes_by_product_period(self, product_name: str, start_date: Optional[str] = None, end_date: Optional[str] = None) -> List[str]:
+        """특정 제품의 기간별 고유한 공정 목록 조회"""
+        try:
+            logger.info(f"🔍 제품 '{product_name}'의 기간별 공정 목록 조회 요청: {start_date} ~ {end_date}")
+            
+            processes = await self.repository.get_unique_processes_by_product_period(product_name, start_date, end_date)
+            
+            logger.info(f"✅ 제품 '{product_name}'의 기간별 공정 목록 조회 성공: {len(processes)}개")
+            return processes
+            
+        except Exception as e:
+            logger.error(f"❌ 제품 '{product_name}'의 기간별 공정 목록 조회 실패: {str(e)}")
+            raise
 
     async def get_dummy_data_by_product(self, product_name: str, limit: int = 100) -> List[DummyDataResponse]:
         """생산품별 Dummy 데이터 조회"""

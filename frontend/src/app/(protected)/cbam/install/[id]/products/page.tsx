@@ -6,6 +6,7 @@ import axiosClient from '@/lib/axiosClient';
 import { apiEndpoints } from '@/lib/axiosClient';
 import { useMappingAPI, HSCNMappingResponse } from '@/hooks/useMappingAPI';
 import { useProductNames } from '@/hooks/useProductNames';
+import { useDummyData } from '@/hooks/useDummyData';
 
 interface Install {
   id: number;
@@ -109,6 +110,11 @@ export default function InstallProductsPage() {
     process_name: ''
   });
 
+  // 더미 데이터 훅 사용
+  const { getProcessesByProduct, getProcessesByProductPeriod, loading: dummyLoading, error: dummyError } = useDummyData();
+  const [availableProcesses, setAvailableProcesses] = useState<string[]>([]);
+  const [selectedProcess, setSelectedProcess] = useState<string>('');
+
   // 사업장별 제품 목록 조회
   const fetchProducts = async () => {
     try {
@@ -129,6 +135,45 @@ export default function InstallProductsPage() {
     } catch (error: any) {
       console.error('❌ 프로세스 목록 조회 실패:', error);
     }
+  };
+
+  // 제품별 공정 목록 조회
+  const fetchAvailableProcesses = useCallback(async (productName: string, startDate?: string, endDate?: string) => {
+    if (!productName) return;
+    
+    try {
+      let processes: string[] = [];
+      
+      if (startDate && endDate) {
+        // 기간별 공정 목록 조회
+        processes = await getProcessesByProductPeriod(productName, startDate, endDate);
+      } else {
+        // 전체 기간 공정 목록 조회
+        processes = await getProcessesByProduct(productName);
+      }
+      
+      setAvailableProcesses(processes);
+      console.log(`✅ 제품 '${productName}'의 사용 가능한 공정 목록:`, processes);
+    } catch (error) {
+      console.error(`❌ 제품 '${productName}'의 공정 목록 조회 실패:`, error);
+      setAvailableProcesses([]);
+    }
+  }, [getProcessesByProduct, getProcessesByProductPeriod]);
+
+  // 공정 추가 폼 표시 시 해당 제품의 공정 목록 조회
+  const handleShowProcessForm = (product: Product) => {
+    setShowProcessFormForProduct(product.id);
+    
+    // 해당 제품의 공정 목록 조회
+    if (product.product_name) {
+      fetchAvailableProcesses(product.product_name, product.prostart_period, product.proend_period);
+    }
+  };
+
+  // 공정 선택 변경 시
+  const handleProcessSelectionChange = (processName: string) => {
+    setSelectedProcess(processName);
+    setProcessForm({ process_name: processName });
   };
 
   useEffect(() => {
@@ -384,6 +429,8 @@ export default function InstallProductsPage() {
       setProcessForm({
         process_name: ''
       });
+      setSelectedProcess('');
+      setAvailableProcesses([]);
       setShowProcessFormForProduct(null);
 
       // 목록 새로고침
@@ -835,28 +882,90 @@ export default function InstallProductsPage() {
                       {isShowingProcessForm && (
                         <div className="mb-4 p-4 bg-white/5 rounded-lg border border-purple-500/30">
                           <h5 className="text-sm font-medium text-white mb-3">🔄 공정 추가</h5>
+                          
+                          {/* 더미 데이터에서 가져온 공정 목록 안내 */}
+                          {availableProcesses.length > 0 ? (
+                            <div className="mb-3 p-2 bg-blue-500/10 border border-blue-500/20 rounded-md">
+                              <p className="text-xs text-blue-300">
+                                📋 <strong>더미 데이터에서 확인된 공정:</strong> {availableProcesses.length}개
+                              </p>
+                              <p className="text-xs text-blue-400 mt-1">
+                                아래 드롭다운에서 해당 제품에 적합한 공정을 선택해주세요.
+                              </p>
+                            </div>
+                          ) : (
+                            <div className="mb-3 p-2 bg-yellow-500/10 border border-yellow-500/20 rounded-md">
+                              <p className="text-xs text-yellow-300">
+                                ⚠️ <strong>사용 가능한 공정이 없습니다.</strong>
+                              </p>
+                              <p className="text-xs text-yellow-400 mt-1">
+                                더미 데이터에서 해당 제품의 공정 정보를 찾을 수 없습니다.
+                              </p>
+                            </div>
+                          )}
+                          
                           <form onSubmit={(e) => handleProcessSubmit(e, product.id)} className="space-y-3">
                             <div>
                               <label className="block text-sm font-medium text-gray-300 mb-1">공정명 *</label>
-                              <input
-                                type="text"
-                                value={processForm.process_name}
-                                onChange={(e) => handleProcessInputChange('process_name', e.target.value)}
-                                className="w-full px-3 py-2 bg-gray-800/50 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-                                placeholder="예: 압연, 용해, 주조"
+                              
+                              {/* 더미 데이터 공정 드롭다운 (필수) */}
+                              <select
+                                value={selectedProcess}
+                                onChange={(e) => handleProcessSelectionChange(e.target.value)}
+                                className={`w-full px-3 py-2 border rounded-md text-white focus:outline-none focus:ring-2 focus:ring-purple-500 ${
+                                  availableProcesses.length > 0 
+                                    ? 'bg-gray-800/50 border-gray-600' 
+                                    : 'bg-gray-700/50 border-gray-500 cursor-not-allowed'
+                                }`}
                                 required
-                              />
+                                disabled={availableProcesses.length === 0}
+                              >
+                                <option value="">
+                                  {availableProcesses.length > 0 
+                                    ? '공정을 선택하세요' 
+                                    : '사용 가능한 공정이 없습니다'
+                                  }
+                                </option>
+                                {availableProcesses.map((process) => (
+                                  <option key={process} value={process}>{process}</option>
+                                ))}
+                              </select>
+                              
+                              {/* 로딩 및 에러 상태 표시 */}
+                              {dummyLoading && (
+                                <p className="text-xs text-gray-400 mt-1">공정 목록을 불러오는 중...</p>
+                              )}
+                              {dummyError && (
+                                <p className="text-xs text-red-400 mt-1">공정 목록 로드 실패: {dummyError}</p>
+                              )}
+                              
+                              {/* 공정이 없을 때 안내 메시지 */}
+                              {!dummyLoading && !dummyError && availableProcesses.length === 0 && (
+                                <p className="text-xs text-yellow-400 mt-1">
+                                  해당 제품의 공정 정보가 더미 데이터에 등록되어 있지 않습니다.
+                                </p>
+                              )}
                             </div>
+                            
                             <div className="flex gap-2">
                               <button
                                 type="submit"
-                                className="flex-1 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-md transition-colors duration-200"
+                                disabled={!selectedProcess || availableProcesses.length === 0}
+                                className={`flex-1 px-4 py-2 text-white text-sm font-medium rounded-md transition-colors duration-200 ${
+                                  selectedProcess && availableProcesses.length > 0
+                                    ? 'bg-purple-600 hover:bg-purple-700'
+                                    : 'bg-gray-500 cursor-not-allowed'
+                                }`}
                               >
                                 🔄 공정 생성
                               </button>
                               <button
                                 type="button"
-                                onClick={() => setShowProcessFormForProduct(null)}
+                                onClick={() => {
+                                  setShowProcessFormForProduct(null);
+                                  setSelectedProcess('');
+                                  setAvailableProcesses([]);
+                                }}
                                 className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white text-sm font-medium rounded-md transition-colors duration-200"
                               >
                                 취소
@@ -868,7 +977,7 @@ export default function InstallProductsPage() {
 
                       <div className="flex gap-2">
                         <button
-                          onClick={() => setShowProcessFormForProduct(isShowingProcessForm ? null : product.id)}
+                          onClick={() => handleShowProcessForm(product)}
                           className="flex-1 px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-md transition-colors duration-200"
                         >
                           {isShowingProcessForm ? '공정 추가 취소' : '공정 추가'}

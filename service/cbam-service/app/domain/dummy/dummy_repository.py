@@ -408,6 +408,105 @@ class DummyRepository:
             logger.error(f"❌ 기간별 제품명 목록 조회 실패: {e}")
             return []
 
+    async def get_unique_processes_by_product(self, product_name: str) -> List[str]:
+        """특정 제품의 고유한 공정 목록 조회"""
+        if not self.pool:
+            logger.warning("⚠️ 연결 풀이 초기화되지 않았습니다.")
+            return []
+        
+        try:
+            query = """
+                SELECT DISTINCT 공정 
+                FROM dummy 
+                WHERE 생산품명 = $1 AND 공정 IS NOT NULL 
+                ORDER BY 공정;
+            """
+            rows = await self.pool.fetch(query, product_name)
+            
+            # 공정명 추출
+            processes = [row['공정'] for row in rows if row['공정']]
+            
+            logger.info(f"✅ 제품 '{product_name}'의 공정 목록 조회 성공: {len(processes)}개")
+            return processes
+            
+        except Exception as e:
+            logger.error(f"❌ 제품 '{product_name}'의 공정 목록 조회 실패: {e}")
+            return []
+
+    async def get_unique_processes_by_product_period(self, product_name: str, start_date: Optional[str] = None, end_date: Optional[str] = None) -> List[str]:
+        """특정 제품의 기간별 고유한 공정 목록 조회"""
+        if not self.pool:
+            logger.warning("⚠️ 연결 풀이 초기화되지 않았습니다.")
+            return []
+        
+        try:
+            # 기본 쿼리
+            query = """
+                SELECT DISTINCT 공정 
+                FROM dummy 
+                WHERE 생산품명 = $1 AND 공정 IS NOT NULL
+            """
+            params = [product_name]
+            
+            # 기간 조건 추가
+            if start_date and end_date:
+                try:
+                    from datetime import datetime
+                    start_date_obj = datetime.strptime(start_date, "%Y-%m-%d").date()
+                    end_date_obj = datetime.strptime(end_date, "%Y-%m-%d").date()
+                    
+                    if start_date_obj > end_date_obj:
+                        logger.warning(f"⚠️ 시작일({start_date})이 종료일({end_date})보다 늦습니다.")
+                        return []
+                        
+                except ValueError as e:
+                    logger.error(f"❌ 날짜 형식 오류: {start_date} 또는 {end_date} - {e}")
+                    return []
+                
+                # 기간 겹침 쿼리
+                query += """ AND (
+                    (투입일 <= $3 AND 종료일 >= $2)  -- 기간이 겹치는 경우
+                    OR (투입일 BETWEEN $2 AND $3)     -- 투입일이 기간 내에 있는 경우
+                    OR (종료일 BETWEEN $2 AND $3)     -- 종료일이 기간 내에 있는 경우
+                )"""
+                params.extend([start_date_obj, end_date_obj])
+                
+            elif start_date:
+                try:
+                    from datetime import datetime
+                    start_date_obj = datetime.strptime(start_date, "%Y-%m-%d").date()
+                    query += " AND 투입일 >= $2"
+                    params.append(start_date_obj)
+                except ValueError as e:
+                    logger.error(f"❌ 시작일 형식 오류: {start_date} - {e}")
+                    return []
+                    
+            elif end_date:
+                try:
+                    from datetime import datetime
+                    end_date_obj = datetime.strptime(end_date, "%Y-%m-%d").date()
+                    query += " AND 종료일 <= $2"
+                    params.append(end_date_obj)
+                except ValueError as e:
+                    logger.error(f"❌ 종료일 형식 오류: {end_date} - {e}")
+                    return []
+            
+            # 정렬 추가
+            query += " ORDER BY 공정;"
+            
+            # 쿼리 실행
+            rows = await self.pool.fetch(query, *params)
+            
+            # 공정명 추출
+            processes = [row['공정'] for row in rows if row['공정']]
+            
+            logger.info(f"✅ 제품 '{product_name}'의 기간별 공정 목록 조회 성공: {start_date} ~ {end_date} - {len(processes)}개")
+            return processes
+            
+        except Exception as e:
+            logger.error(f"❌ 제품 '{product_name}'의 기간별 공정 목록 조회 실패: {e}")
+            return []
+
     async def close(self):
         """연결 풀 종료"""
         if self.pool:
