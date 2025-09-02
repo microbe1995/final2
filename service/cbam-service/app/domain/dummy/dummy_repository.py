@@ -8,19 +8,15 @@ from typing import List, Dict, Any, Optional
 from datetime import datetime, date
 from decimal import Decimal
 import asyncpg
+import asyncio
 
 logger = logging.getLogger(__name__)
 
 class DummyRepository:
     """Dummy 데이터 접근 클래스 (asyncpg 연결 풀)"""
     
-    def __init__(self, db_session=None):
-        self.database_url = os.getenv('DATABASE_URL')
-        if not self.database_url:
-            logger.warning("DATABASE_URL 환경변수가 설정되지 않았습니다. 데이터베이스 기능이 제한됩니다.")
-            return
-        
-        self.pool = None
+    def __init__(self):
+        self.pool: Optional[asyncpg.Pool] = None
         self._initialization_attempted = False
     
     async def initialize(self):
@@ -351,16 +347,16 @@ class DummyRepository:
             params = []
             param_count = 0
             
-            # 시작일 조건 추가
+            # 시작일 조건 추가 (문자열을 DATE로 명시적 캐스팅)
             if start_date:
                 param_count += 1
-                query += f" AND 투입일 >= ${param_count}"
+                query += f" AND 투입일 >= ${param_count}::DATE"
                 params.append(start_date)
             
-            # 종료일 조건 추가
+            # 종료일 조건 추가 (문자열을 DATE로 명시적 캐스팅)
             if end_date:
                 param_count += 1
-                query += f" AND 종료일 <= ${param_count}"
+                query += f" AND 종료일 <= ${param_count}::DATE"
                 params.append(end_date)
             
             # 정렬 추가
