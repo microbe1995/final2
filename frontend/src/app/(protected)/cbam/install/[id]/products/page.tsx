@@ -554,29 +554,77 @@ export default function InstallProductsPage() {
 
             {showProductForm && (
               <form onSubmit={handleProductSubmit} className="space-y-4">
+                {/* 기간 설정을 먼저 배치 */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">기간 시작일 *</label>
+                    <input
+                      type="date"
+                      value={productForm.prostart_period}
+                      onChange={(e) => handleProductInputChange('prostart_period', e.target.value)}
+                      className="w-full px-3 py-2 bg-gray-800/50 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">기간 종료일 *</label>
+                    <input
+                      type="date"
+                      value={productForm.proend_period}
+                      onChange={(e) => handleProductInputChange('proend_period', e.target.value)}
+                      className="w-full px-3 py-2 bg-gray-800/50 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      required
+                    />
+                  </div>
+                </div>
+
+                {/* 기간별 제품명 안내 메시지 */}
+                {(productForm.prostart_period || productForm.proend_period) && (
+                  <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-md">
+                    <p className="text-sm text-blue-300">
+                      📅 <strong>기간 설정 완료:</strong> {productForm.prostart_period || '시작일 미설정'} ~ {productForm.proend_period || '종료일 미설정'}
+                    </p>
+                    <p className="text-xs text-blue-400 mt-1">
+                      이제 아래에서 해당 기간에 생산되는 제품명을 선택할 수 있습니다.
+                    </p>
+                  </div>
+                )}
+
+                {/* 제품명 선택 (기간 설정 후 활성화) */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">제품명 *</label>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    제품명 * 
+                    {(!productForm.prostart_period || !productForm.proend_period) && (
+                      <span className="text-yellow-400 text-xs ml-2">(기간을 먼저 설정해주세요)</span>
+                    )}
+                  </label>
                   <select
                     value={productForm.product_name}
                     onChange={(e) => handleProductInputChange('product_name', e.target.value)}
-                    className="w-full px-3 py-2 bg-gray-800/50 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className={`w-full px-3 py-2 border rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      (!productForm.prostart_period || !productForm.proend_period) 
+                        ? 'bg-gray-700/50 border-gray-500 cursor-not-allowed' 
+                        : 'bg-gray-800/50 border-gray-600'
+                    }`}
                     required
-                    disabled={productNamesLoading}
+                    disabled={productNamesLoading || !productForm.prostart_period || !productForm.proend_period}
                   >
-                    <option value="">제품명을 선택하세요</option>
+                    <option value="">
+                      {(!productForm.prostart_period || !productForm.proend_period) 
+                        ? '기간을 먼저 설정해주세요' 
+                        : '제품명을 선택하세요'
+                      }
+                    </option>
                     {productNames.map((name) => (
                       <option key={name} value={name}>{name}</option>
                     ))}
                   </select>
                   
                   {/* 기간별 필터링 정보 표시 */}
-                  {(productForm.prostart_period || productForm.proend_period) && (
-                    <div className="mt-2 p-2 bg-blue-500/10 border border-blue-500/20 rounded-md">
-                      <p className="text-xs text-blue-300">
-                        📅 기간별 필터링: {productForm.prostart_period || '시작일 미설정'} ~ {productForm.proend_period || '종료일 미설정'}
-                      </p>
-                      <p className="text-xs text-blue-400 mt-1">
-                        해당 기간에 생산된 제품만 표시됩니다 ({productNames.length}개)
+                  {(productForm.prostart_period && productForm.proend_period) && (
+                    <div className="mt-2 p-2 bg-green-500/10 border border-green-500/20 rounded-md">
+                      <p className="text-xs text-green-300">
+                        ✅ 해당 기간에 생산된 제품명 {productNames.length}개가 표시됩니다
                       </p>
                     </div>
                   )}
@@ -587,8 +635,8 @@ export default function InstallProductsPage() {
                   {productNamesError && (
                     <p className="text-xs text-red-400 mt-1">제품명 목록 로드 실패: {productNamesError}</p>
                   )}
-                  {productNames.length === 0 && !productNamesLoading && !productNamesError && (
-                    <p className="text-xs text-yellow-400 mt-1">사용 가능한 제품명이 없습니다.</p>
+                  {productNames.length === 0 && !productNamesLoading && !productNamesError && productForm.prostart_period && productForm.proend_period && (
+                    <p className="text-xs text-yellow-400 mt-1">해당 기간에 생산된 제품명이 없습니다.</p>
                   )}
                 </div>
 
@@ -648,29 +696,6 @@ export default function InstallProductsPage() {
                       </div>
                     </div>
                   )}
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">기간 시작일 *</label>
-                    <input
-                      type="date"
-                      value={productForm.prostart_period}
-                      onChange={(e) => handleProductInputChange('prostart_period', e.target.value)}
-                      className="w-full px-3 py-2 bg-gray-800/50 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">기간 종료일 *</label>
-                    <input
-                      type="date"
-                      value={productForm.proend_period}
-                      onChange={(e) => handleProductInputChange('proend_period', e.target.value)}
-                      className="w-full px-3 py-2 bg-gray-800/50 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      required
-                    />
-                  </div>
-                </div>
 
                 <div className="flex gap-4">
                   {editingProduct && (
