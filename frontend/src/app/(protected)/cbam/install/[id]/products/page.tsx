@@ -149,16 +149,30 @@ export default function InstallProductsPage() {
 
   // 기간 설정 완료 시 수동으로 제품명 목록 업데이트
   const handlePeriodChange = useCallback((field: 'prostart_period' | 'proend_period', value: string) => {
+    console.log(`🔄 기간 변경: ${field} = ${value}`);
+    
     const newForm = { ...productForm, [field]: value };
+    console.log('📅 새로운 폼 상태:', newForm);
     
     // 두 기간이 모두 설정된 경우에만 제품명 조회
     if (newForm.prostart_period && newForm.proend_period) {
       console.log('🔄 기간 설정 완료, 제품명 목록 업데이트 시작');
+      console.log('📅 조회할 기간:', newForm.prostart_period, '~', newForm.proend_period);
+      
+      // API 호출 전 상태 확인
+      console.log('🔍 API 호출 전 productNames 상태:', productNames);
+      console.log('🔍 API 호출 전 loading 상태:', productNamesLoading);
+      
       fetchProductNamesByPeriod(newForm.prostart_period, newForm.proend_period);
+    } else {
+      console.log('⚠️ 기간이 아직 완전히 설정되지 않음:', {
+        start: newForm.prostart_period,
+        end: newForm.proend_period
+      });
     }
     
     setProductForm(newForm);
-  }, [productForm, fetchProductNamesByPeriod]);
+  }, [productForm, fetchProductNamesByPeriod, productNames, productNamesLoading]);
 
   const handleProductInputChange = (field: keyof ProductForm, value: string | number) => {
     setProductForm(prev => ({

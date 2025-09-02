@@ -33,19 +33,27 @@ export const useProductNames = () => {
   }, []);
 
   const fetchProductNamesByPeriod = useCallback(async (startDate?: string, endDate?: string) => {
+    console.log('🚀 fetchProductNamesByPeriod 호출됨:', { startDate, endDate });
+    
     try {
       setLoading(true);
       setError(null);
+      console.log('⏳ 로딩 상태 시작');
       
       // 기간별 제품명 목록을 가져오는 API 호출
       const params = new URLSearchParams();
       if (startDate) params.append('start_date', startDate);
       if (endDate) params.append('end_date', endDate);
       
-      const response = await axiosClient.get(`${apiEndpoints.cbam.dummy.productNamesByPeriod}?${params.toString()}`);
+      const apiUrl = `${apiEndpoints.cbam.dummy.productNamesByPeriod}?${params.toString()}`;
+      console.log('🌐 API 호출 URL:', apiUrl);
+      
+      const response = await axiosClient.get(apiUrl);
+      console.log('📡 API 응답 받음:', response);
       
       // API 응답이 배열인지 확인
       if (Array.isArray(response.data)) {
+        console.log('✅ 응답 데이터가 배열임:', response.data);
         setProductNames(response.data);
         console.log('✅ 기간별 제품명 목록 조회 성공:', response.data.length, '개');
       } else {
@@ -59,6 +67,7 @@ export const useProductNames = () => {
       setProductNames([]);
     } finally {
       setLoading(false);
+      console.log('⏹️ 로딩 상태 종료');
     }
   }, []);
 
