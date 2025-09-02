@@ -6,7 +6,7 @@ export const useProductNames = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchProductNames = async () => {
+  const fetchProductNames = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -30,7 +30,7 @@ export const useProductNames = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   const fetchProductNamesByPeriod = useCallback(async (startDate?: string, endDate?: string) => {
     try {
@@ -66,9 +66,10 @@ export const useProductNames = () => {
     fetchProductNames();
   }, [fetchProductNames]);
 
-  useEffect(() => {
-    fetchProductNames();
-  }, [fetchProductNames]);
+  // 초기 로딩은 수동으로만 실행 (자동 실행 방지)
+  // useEffect(() => {
+  //   fetchProductNames();
+  // }, []);
 
   return {
     productNames,

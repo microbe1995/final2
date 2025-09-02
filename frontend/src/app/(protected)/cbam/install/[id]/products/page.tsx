@@ -139,23 +139,26 @@ export default function InstallProductsPage() {
     }
   }, [installId]);
 
-  // 기간 변경 시 제품명 목록 업데이트
-  useEffect(() => {
-    if (productForm.prostart_period || productForm.proend_period) {
-      // 기간이 설정된 경우에만 기간별 제품명 조회
-      fetchProductNamesByPeriod(productForm.prostart_period, productForm.proend_period);
-    }
-    // 기간이 설정되지 않은 경우는 호출하지 않음 (무한 루프 방지)
-  }, [productForm.prostart_period, productForm.proend_period, fetchProductNamesByPeriod]);
+  // 기간 변경 시 제품명 목록 업데이트 (useEffect 제거, 수동 호출로 변경)
+  // useEffect(() => {
+  //   if (productForm.prostart_period && productForm.proend_period) {
+  //     console.log('🔄 기간 설정 완료, 제품명 목록 업데이트 시작');
+  //     fetchProductNamesByPeriod(productForm.prostart_period, productForm.proend_period);
+  //   }
+  // }, [productForm.prostart_period, productForm.proend_period, fetchProductNamesByPeriod]);
 
-  // 초기 로딩 시 제품명 목록 가져오기
-  useEffect(() => {
-    // 컴포넌트 마운트 시 한 번만 실행
-    if (!productForm.prostart_period && !productForm.proend_period) {
-      // useProductNames 훅에서 자동으로 초기 제품명 목록을 가져옴
-      console.log('🔄 초기 제품명 목록 로딩 시작');
+  // 기간 설정 완료 시 수동으로 제품명 목록 업데이트
+  const handlePeriodChange = useCallback((field: 'prostart_period' | 'proend_period', value: string) => {
+    const newForm = { ...productForm, [field]: value };
+    
+    // 두 기간이 모두 설정된 경우에만 제품명 조회
+    if (newForm.prostart_period && newForm.proend_period) {
+      console.log('🔄 기간 설정 완료, 제품명 목록 업데이트 시작');
+      fetchProductNamesByPeriod(newForm.prostart_period, newForm.proend_period);
     }
-  }, []);
+    
+    setProductForm(newForm);
+  }, [productForm, fetchProductNamesByPeriod]);
 
   const handleProductInputChange = (field: keyof ProductForm, value: string | number) => {
     setProductForm(prev => ({
@@ -561,7 +564,7 @@ export default function InstallProductsPage() {
                     <input
                       type="date"
                       value={productForm.prostart_period}
-                      onChange={(e) => handleProductInputChange('prostart_period', e.target.value)}
+                      onChange={(e) => handlePeriodChange('prostart_period', e.target.value)}
                       className="w-full px-3 py-2 bg-gray-800/50 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                       required
                     />
@@ -571,7 +574,7 @@ export default function InstallProductsPage() {
                     <input
                       type="date"
                       value={productForm.proend_period}
-                      onChange={(e) => handleProductInputChange('proend_period', e.target.value)}
+                      onChange={(e) => handlePeriodChange('proend_period', e.target.value)}
                       className="w-full px-3 py-2 bg-gray-800/50 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                       required
                     />
@@ -601,6 +604,13 @@ export default function InstallProductsPage() {
                   <select
                     value={productForm.product_name}
                     onChange={(e) => handleProductInputChange('product_name', e.target.value)}
+                    onFocus={() => {
+                      // 드롭다운 클릭 시에만 데이터 로드
+                      if (productForm.prostart_period && productForm.proend_period && productNames.length === 0) {
+                        console.log('🔄 드롭다운 클릭, 제품명 목록 로드 시작');
+                        fetchProductNamesByPeriod(productForm.prostart_period, productForm.proend_period);
+                      }
+                    }}
                     className={`w-full px-3 py-2 border rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                       (!productForm.prostart_period || !productForm.proend_period) 
                         ? 'bg-gray-700/50 border-gray-500 cursor-not-allowed' 
@@ -612,7 +622,9 @@ export default function InstallProductsPage() {
                     <option value="">
                       {(!productForm.prostart_period || !productForm.proend_period) 
                         ? '기간을 먼저 설정해주세요' 
-                        : '제품명을 선택하세요'
+                        : productNamesLoading 
+                          ? '제품명 목록을 불러오는 중...'
+                          : '제품명을 선택하세요'
                       }
                     </option>
                     {productNames.map((name) => (
