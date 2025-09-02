@@ -90,41 +90,6 @@
 
 ---
 
-## 🗃️ 테이블: `dummy_data`
-
-### 📊 기본 정보
-- **테이블 타입**: BASE TABLE
-- **데이터 개수**: 0
-
-### 📝 컬럼 구조
-
-| 컬럼명 | 데이터 타입 | NULL 허용 | 기본값 | 설명 |
-|--------|-------------|-----------|---------|------|
-| id | integer | ❌ | nextval('dummy_data_id_seq'::regclass) | - |
-| 로트번호 | character varying | ❌ | - | - |
-| 생산품명 | character varying | ❌ | - | - |
-| 생산수량 | numeric | ❌ | - | - |
-| 투입일 | date | ✅ | - | - |
-| 종료일 | date | ✅ | - | - |
-| 공정 | character varying | ❌ | - | - |
-| 투입물명 | character varying | ❌ | - | - |
-| 수량 | numeric | ❌ | - | - |
-| 단위 | character varying | ❌ | - | - |
-| created_at | timestamp with time zone | ✅ | now() | - |
-| updated_at | timestamp with time zone | ✅ | now() | - |
-
-### 🔒 제약조건
-- **dummy_data_pkey**: PRIMARY KEY (id)
-
-### 📍 인덱스
-- **dummy_data_pkey**: CREATE UNIQUE INDEX dummy_data_pkey ON public.dummy_data USING btree (id)
-- **idx_dummy_로트번호**: CREATE INDEX "idx_dummy_로트번호" ON public.dummy_data USING btree ("로트번호")
-- **idx_dummy_생산품명**: CREATE INDEX "idx_dummy_생산품명" ON public.dummy_data USING btree ("생산품명")
-- **idx_dummy_공정**: CREATE INDEX "idx_dummy_공정" ON public.dummy_data USING btree ("공정")
-- **idx_dummy_투입물명**: CREATE INDEX "idx_dummy_투입물명" ON public.dummy_data USING btree ("투입물명")
-
----
-
 ## 🗃️ 테이블: `edge`
 
 ### 📊 기본 정보
