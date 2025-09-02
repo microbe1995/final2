@@ -272,7 +272,8 @@ export const apiEndpoints = {
       byProcess: (process_name: string) => `/api/v1/cbam/dummy/search/process/${process_name}`,
       byProduct: (product_name: string) => `/api/v1/cbam/dummy/search/product/${product_name}`,
       count: '/api/v1/cbam/dummy/stats/count',
-      productNames: '/api/v1/cbam/dummy/products/names'  // 고유 제품명 목록
+      productNames: '/api/v1/cbam/dummy/products/names',  // 고유 제품명 목록
+      productNamesByPeriod: '/api/v1/cbam/dummy/products/names/by-period'  // 기간별 제품명 목록
     },
     
     // Process Chain 관련 API

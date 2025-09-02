@@ -97,7 +97,7 @@ export default function InstallProductsPage() {
   const [showCnCodeResults, setShowCnCodeResults] = useState(false);
 
   // 제품명 목록 훅 사용 (Railway DB의 dummy 테이블에서 가져옴)
-  const { productNames, loading: productNamesLoading, error: productNamesError } = useProductNames();
+  const { productNames, loading: productNamesLoading, error: productNamesError, fetchProductNamesByPeriod } = useProductNames();
 
   // 모달 상태 관리
   const [showHSCodeModal, setShowHSCodeModal] = useState(false);
@@ -138,6 +138,17 @@ export default function InstallProductsPage() {
       setIsLoading(false);
     }
   }, [installId]);
+
+  // 기간 변경 시 제품명 목록 업데이트
+  useEffect(() => {
+    if (productForm.prostart_period || productForm.proend_period) {
+      // 기간이 설정된 경우에만 기간별 제품명 조회
+      fetchProductNamesByPeriod(productForm.prostart_period, productForm.proend_period);
+    } else {
+      // 기간이 설정되지 않은 경우 전체 제품명 조회
+      fetchProductNamesByPeriod();
+    }
+  }, [productForm.prostart_period, productForm.proend_period, fetchProductNamesByPeriod]);
 
   const handleProductInputChange = (field: keyof ProductForm, value: string | number) => {
     setProductForm(prev => ({
@@ -462,7 +473,7 @@ export default function InstallProductsPage() {
                   value={hsCodeSearchInput}
                   onChange={(e) => handleHSCodeSearchInputChange(e.target.value)}
                   placeholder="HS 코드를 입력하세요"
-                  className="w-full px-3 py-2 border border-gray-600 rounded-md text-white bg-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 bg-gray-800/50 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   autoFocus
                 />
               </div>
@@ -541,7 +552,7 @@ export default function InstallProductsPage() {
                   <select
                     value={productForm.product_name}
                     onChange={(e) => handleProductInputChange('product_name', e.target.value)}
-                    className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 bg-gray-800/50 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                     required
                     disabled={productNamesLoading}
                   >
@@ -550,6 +561,19 @@ export default function InstallProductsPage() {
                       <option key={name} value={name}>{name}</option>
                     ))}
                   </select>
+                  
+                  {/* 기간별 필터링 정보 표시 */}
+                  {(productForm.prostart_period || productForm.proend_period) && (
+                    <div className="mt-2 p-2 bg-blue-500/10 border border-blue-500/20 rounded-md">
+                      <p className="text-xs text-blue-300">
+                        📅 기간별 필터링: {productForm.prostart_period || '시작일 미설정'} ~ {productForm.proend_period || '종료일 미설정'}
+                      </p>
+                      <p className="text-xs text-blue-400 mt-1">
+                        해당 기간에 생산된 제품만 표시됩니다 ({productNames.length}개)
+                      </p>
+                    </div>
+                  )}
+                  
                   {productNamesLoading && (
                     <p className="text-xs text-gray-400 mt-1">제품명 목록을 불러오는 중...</p>
                   )}
@@ -566,7 +590,7 @@ export default function InstallProductsPage() {
                   <select
                     value={productForm.product_category}
                     onChange={(e) => handleProductInputChange('product_category', e.target.value)}
-                    className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 bg-gray-800/50 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="">카테고리를 선택하세요</option>
                     <option value="단순제품">단순제품</option>
@@ -582,8 +606,8 @@ export default function InstallProductsPage() {
                         type="text"
                         value={productForm.cncode_total}
                         onChange={(e) => handleProductInputChange('cncode_total', e.target.value)}
-                        className="flex-1 px-3 py-2 bg-white/10 border border-white/20 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder=""
+                        className="flex-1 px-3 py-2 bg-gray-800/50 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="HS CODE 검색 후 자동 입력"
                         readOnly
                       />
                       <button
@@ -625,7 +649,7 @@ export default function InstallProductsPage() {
                       type="date"
                       value={productForm.prostart_period}
                       onChange={(e) => handleProductInputChange('prostart_period', e.target.value)}
-                      className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 bg-gray-800/50 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                       required
                     />
                   </div>
@@ -635,7 +659,7 @@ export default function InstallProductsPage() {
                       type="date"
                       value={productForm.proend_period}
                       onChange={(e) => handleProductInputChange('proend_period', e.target.value)}
-                      className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 bg-gray-800/50 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                       required
                     />
                   </div>
@@ -749,7 +773,7 @@ export default function InstallProductsPage() {
                                 type="text"
                                 value={processForm.process_name}
                                 onChange={(e) => handleProcessInputChange('process_name', e.target.value)}
-                                className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                className="w-full px-3 py-2 bg-gray-800/50 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
                                 placeholder="예: 압연, 용해, 주조"
                                 required
                               />

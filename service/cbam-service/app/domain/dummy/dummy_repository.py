@@ -339,6 +339,46 @@ class DummyRepository:
             logger.error(f"❌ 고유 제품명 목록 조회 실패: {e}")
             return []
 
+    async def get_unique_product_names_by_period(self, start_date: Optional[str] = None, end_date: Optional[str] = None) -> List[str]:
+        """기간별 고유한 제품명 목록 조회"""
+        if not self.pool:
+            logger.warning("⚠️ 연결 풀이 초기화되지 않았습니다.")
+            return []
+        
+        try:
+            # 기본 쿼리
+            query = "SELECT DISTINCT 생산품명 FROM dummy WHERE 생산품명 IS NOT NULL"
+            params = []
+            param_count = 0
+            
+            # 시작일 조건 추가
+            if start_date:
+                param_count += 1
+                query += f" AND 투입일 >= ${param_count}"
+                params.append(start_date)
+            
+            # 종료일 조건 추가
+            if end_date:
+                param_count += 1
+                query += f" AND 종료일 <= ${param_count}"
+                params.append(end_date)
+            
+            # 정렬 추가
+            query += " ORDER BY 생산품명;"
+            
+            # 쿼리 실행
+            rows = await self.pool.fetch(query, *params)
+            
+            # 제품명 추출
+            product_names = [row['생산품명'] for row in rows if row['생산품명']]
+            
+            logger.info(f"✅ 기간별 제품명 목록 조회 성공: {start_date} ~ {end_date} - {len(product_names)}개")
+            return product_names
+            
+        except Exception as e:
+            logger.error(f"❌ 기간별 제품명 목록 조회 실패: {e}")
+            return []
+
     async def close(self):
         """연결 풀 종료"""
         if self.pool:

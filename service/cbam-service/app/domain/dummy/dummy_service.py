@@ -155,6 +155,17 @@ class DummyService:
             logger.error(f"❌ 고유 제품명 목록 조회 실패: {e}")
             return []
 
+    async def get_unique_product_names_by_period(self, start_date: Optional[str] = None, end_date: Optional[str] = None) -> List[str]:
+        """기간별 고유한 제품명 목록 조회"""
+        try:
+            product_names = await self.repository.get_unique_product_names_by_period(start_date, end_date)
+            logger.info(f"✅ 기간별 제품명 목록 조회 성공: {start_date} ~ {end_date} - {len(product_names)}개")
+            return product_names
+            
+        except Exception as e:
+            logger.error(f"❌ 기간별 제품명 목록 조회 실패: {e}")
+            return []
+
     async def get_dummy_data_by_product(self, product_name: str, limit: int = 100) -> List[DummyDataResponse]:
         """생산품별 Dummy 데이터 조회"""
         try:
