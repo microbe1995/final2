@@ -319,6 +319,26 @@ class DummyRepository:
             logger.error(f"❌ Dummy 데이터 개수 조회 실패: {e}")
             return 0
     
+    async def get_unique_product_names(self) -> List[str]:
+        """고유한 제품명 목록 조회"""
+        if not self.pool:
+            logger.warning("⚠️ 연결 풀이 초기화되지 않았습니다.")
+            return []
+        
+        try:
+            query = "SELECT DISTINCT 생산품명 FROM dummy WHERE 생산품명 IS NOT NULL ORDER BY 생산품명;"
+            rows = await self.pool.fetch(query)
+            
+            # 제품명 추출
+            product_names = [row['생산품명'] for row in rows if row['생산품명']]
+            
+            logger.info(f"✅ 고유 제품명 목록 조회 성공: {len(product_names)}개")
+            return product_names
+            
+        except Exception as e:
+            logger.error(f"❌ 고유 제품명 목록 조회 실패: {e}")
+            return []
+
     async def close(self):
         """연결 풀 종료"""
         if self.pool:

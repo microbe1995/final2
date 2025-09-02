@@ -272,6 +272,22 @@ async def get_dummy_data_by_product(
         logger.error(f"❌ 생산품별 Dummy 데이터 조회 실패: {e}")
         raise HTTPException(status_code=500, detail=f"서버 오류: {str(e)}")
 
+@router.get("/products/names", response_model=List[str])
+async def get_dummy_product_names():
+    """Dummy 테이블에서 고유한 제품명 목록 조회"""
+    try:
+        logger.info("🎭 고유 제품명 목록 조회 요청")
+        
+        dummy_service = await ensure_service_initialized()
+        product_names = await dummy_service.get_unique_product_names()
+        
+        logger.info(f"✅ 고유 제품명 목록 조회 성공: {len(product_names)}개")
+        return product_names
+        
+    except Exception as e:
+        logger.error(f"❌ 고유 제품명 목록 조회 실패: {e}")
+        raise HTTPException(status_code=500, detail=f"서버 오류: {str(e)}")
+
 @router.get("/stats/count")
 async def get_dummy_data_count():
     """Dummy 데이터 총 개수 조회"""
