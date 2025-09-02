@@ -99,9 +99,8 @@ if cors_url_env and cors_url_env.strip():
     allowed_origins = [o.strip() for o in cors_url_env.split(",") if o.strip()]
 else:
     allowed_origins = [
-        "https://lca-final.vercel.app",  # Vercel 프로덕션 프론트엔드
-        "https://greensteel.site",       # 커스텀 도메인 (있다면)
-        "http://localhost:3000",         # 로컬 개발 환경
+        "https://final2-mu-seven.vercel.app",  # ✅ 현재 Vercel 프로덕션 프론트엔드
+        "http://localhost:3000",               # ✅ 로컬 개발 환경
     ]
 
 # 🔴 수정: CORS 설정을 더 유연하게

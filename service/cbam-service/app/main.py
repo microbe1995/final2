@@ -192,6 +192,38 @@ app = FastAPI(
 )
 
 # ============================================================================
+# 🌐 CORS 미들웨어 설정
+# ============================================================================
+
+# CORS 설정 - 환경변수에서 허용된 오리진 읽기
+cors_url_env = os.getenv("CORS_URL", "")
+if cors_url_env and cors_url_env.strip():
+    allowed_origins = [o.strip() for o in cors_url_env.split(",") if o.strip()]
+else:
+    allowed_origins = [
+        "https://final2-mu-seven.vercel.app",  # Vercel 프로덕션 프론트엔드
+        "https://gateway-production-22ef.up.railway.app",  # Gateway 서비스
+        "http://localhost:3000",  # 로컬 개발 환경
+    ]
+
+# CORS 미들웨어 추가
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=allowed_origins,
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+    allow_headers=["*"],
+    expose_headers=["*"],
+    max_age=86400,
+)
+
+logger.info(f"🌐 CORS 설정 완료:")
+logger.info(f"   허용된 오리진: {allowed_origins}")
+logger.info(f"   자격증명 허용: True")
+logger.info(f"   허용된 메서드: GET, POST, PUT, DELETE, OPTIONS, PATCH")
+logger.info(f"   허용된 헤더: 모든 헤더")
+
+# ============================================================================
 # 📊 요청/응답 로깅 미들웨어
 # ============================================================================
 
