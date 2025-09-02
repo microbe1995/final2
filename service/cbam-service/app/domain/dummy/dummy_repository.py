@@ -346,26 +346,21 @@ class DummyRepository:
             # 기본 쿼리
             query = "SELECT DISTINCT 생산품명 FROM dummy WHERE 생산품명 IS NOT NULL"
             params = []
-            param_count = 0
             
             # 기간 조건 추가 (기간이 겹치는 모든 제품 찾기)
             if start_date and end_date:
-                param_count += 1
-                param_count += 1
-                query += f""" AND (
-                    (투입일 <= ${param_count-1}::DATE AND 종료일 >= ${param_count}::DATE)  -- 기간이 완전히 겹치는 경우
-                    OR (투입일 BETWEEN ${param_count-1}::DATE AND ${param_count}::DATE)    -- 투입일이 기간 내에 있는 경우
-                    OR (종료일 BETWEEN ${param_count-1}::DATE AND ${param_count}::DATE)    -- 종료일이 기간 내에 있는 경우
-                    OR (투입일 <= ${param_count-1}::DATE AND 종료일 >= ${param_count}::DATE)  -- 기간을 완전히 포함하는 경우
+                query += """ AND (
+                    (투입일 <= $1::DATE AND 종료일 >= $2::DATE)  -- 기간이 완전히 겹치는 경우
+                    OR (투입일 BETWEEN $1::DATE AND $2::DATE)    -- 투입일이 기간 내에 있는 경우
+                    OR (종료일 BETWEEN $1::DATE AND $2::DATE)    -- 종료일이 기간 내에 있는 경우
+                    OR (투입일 <= $1::DATE AND 종료일 >= $2::DATE)  -- 기간을 완전히 포함하는 경우
                 )"""
-                params.extend([end_date, start_date])
+                params.extend([start_date, end_date])
             elif start_date:
-                param_count += 1
-                query += f" AND 투입일 >= ${param_count}::DATE"
+                query += " AND 투입일 >= $1::DATE"
                 params.append(start_date)
             elif end_date:
-                param_count += 1
-                query += f" AND 종료일 <= ${param_count}::DATE"
+                query += " AND 종료일 <= $1::DATE"
                 params.append(end_date)
             
             # 정렬 추가
