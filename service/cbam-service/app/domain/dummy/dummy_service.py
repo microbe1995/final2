@@ -146,6 +146,20 @@ class DummyService:
             logger.error(f"공정별 Dummy 데이터 조회 실패: {e}")
             return []
     
+    async def get_all_dummy_data(self) -> List[dict]:
+        """전체 더미 데이터 조회"""
+        try:
+            logger.info("🔍 전체 더미 데이터 조회 요청")
+            
+            all_data = await self.repository.get_all_dummy_data()
+            
+            logger.info(f"✅ 전체 더미 데이터 조회 성공: {len(all_data)}개")
+            return all_data
+            
+        except Exception as e:
+            logger.error(f"❌ 전체 더미 데이터 조회 실패: {str(e)}")
+            return []
+
     async def get_unique_product_names(self) -> List[str]:
         """고유한 제품명 목록 조회"""
         try:

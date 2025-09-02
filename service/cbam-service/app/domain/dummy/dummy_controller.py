@@ -44,6 +44,22 @@ async def ensure_service_initialized():
 # 🎯 핵심 기능 엔드포인트
 # ============================================================================
 
+@router.get("", response_model=List[dict])
+async def get_all_dummy_data():
+    """Dummy 테이블의 모든 데이터 조회"""
+    try:
+        logger.info("🎭 전체 더미 데이터 조회 요청")
+        
+        dummy_service = await ensure_service_initialized()
+        all_data = await dummy_service.get_all_dummy_data()
+        
+        logger.info(f"✅ 전체 더미 데이터 조회 성공: {len(all_data)}개")
+        return all_data
+        
+    except Exception as e:
+        logger.error(f"❌ 전체 더미 데이터 조회 실패: {e}")
+        raise HTTPException(status_code=500, detail=f"서버 오류: {str(e)}")
+
 @router.get("/products/names", response_model=List[str])
 async def get_dummy_product_names():
     """Dummy 테이블에서 고유한 제품명 목록 조회"""

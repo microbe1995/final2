@@ -28,7 +28,7 @@ export default function CBAMPage() {
     
     try {
       // cbam 서비스를 통해 더미 데이터 조회
-      const response = await axiosClient.get('/api/v1/cbam/dummy/');
+      const response = await axiosClient.get('/api/v1/cbam/dummy');
       let data: DummyData[] = [];
       
       if (response.data && Array.isArray(response.data)) {

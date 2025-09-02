@@ -113,6 +113,9 @@ export default function InstallProductsPage() {
 
   // 제품명 목록 훅 사용 (Railway DB의 dummy 테이블에서 가져옴)
   const { productNames, loading: productNamesLoading, error: productNamesError, fetchProductNamesByPeriod } = useProductNames();
+  
+  // 🔴 추가: 이미 선택된 제품명들을 추적하는 상태
+  const [selectedProductNames, setSelectedProductNames] = useState<Set<string>>(new Set());
 
   // 모달 상태 관리
   const [showHSCodeModal, setShowHSCodeModal] = useState(false);
@@ -237,6 +240,10 @@ export default function InstallProductsPage() {
   // 🔴 추가: 제품 목록이 로드될 때마다 각 제품의 공정 목록 초기화
   useEffect(() => {
     if (products.length > 0) {
+      // 🔴 추가: 기존 제품명들을 선택된 제품명 추적 상태에 추가
+      const existingProductNames = new Set(products.map(p => p.product_name));
+      setSelectedProductNames(existingProductNames);
+      
       products.forEach(async (product) => {
         await fetchProductProcesses(product.id, product.product_name);
       });
@@ -428,6 +435,15 @@ export default function InstallProductsPage() {
         // 수정
         const response = await axiosClient.put(apiEndpoints.cbam.product.update(editingProduct.id), productData);
         console.log('✅ 제품 수정 성공:', response.data);
+        
+        // 🔴 추가: 기존 제품명 제거하고 새 제품명 추가
+        setSelectedProductNames(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(editingProduct.product_name);
+          newSet.add(productForm.product_name);
+          return newSet;
+        });
+        
         setToast({
           message: '제품이 성공적으로 수정되었습니다.',
           type: 'success'
@@ -436,6 +452,10 @@ export default function InstallProductsPage() {
         // 생성
         const response = await axiosClient.post(apiEndpoints.cbam.product.create, productData);
         console.log('✅ 제품 생성 성공:', response.data);
+        
+        // 🔴 추가: 선택된 제품명을 추적 상태에 추가
+        setSelectedProductNames(prev => new Set(prev).add(productForm.product_name));
+        
         setToast({
           message: '제품이 성공적으로 생성되었습니다.',
           type: 'success'
@@ -496,14 +516,13 @@ export default function InstallProductsPage() {
       setShowProcessFormForProduct(null);
 
       // 목록 새로고침
-      fetchProcesses();
+      await fetchProcesses();
       
       // 🔴 수정: 해당 제품의 공정 목록 새로고침
       if (showProcessFormForProduct) {
         const product = products.find(p => p.id === showProcessFormForProduct);
         if (product) {
-          // 공정 목록을 먼저 새로고침한 후 제품별 공정 목록 업데이트
-          await fetchProcesses();
+          // 제품별 공정 목록 업데이트
           await fetchProductProcesses(product.id, product.product_name);
         }
       }
@@ -528,6 +547,13 @@ export default function InstallProductsPage() {
     try {
       await axiosClient.delete(apiEndpoints.cbam.product.delete(productId));
       console.log('✅ 제품 삭제 성공');
+      
+      // 🔴 추가: 선택된 제품명에서 제거
+      setSelectedProductNames(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(productName);
+        return newSet;
+      });
       
       setToast({
         message: `"${productName}" 제품이 성공적으로 삭제되었습니다.`,
@@ -817,9 +843,11 @@ export default function InstallProductsPage() {
                           : '제품명을 선택하세요'
                       }
                     </option>
-                    {productNames.map((name) => (
-                      <option key={name} value={name}>{name}</option>
-                    ))}
+                    {productNames
+                      .filter(name => !selectedProductNames.has(name)) // 🔴 추가: 이미 선택된 제품명 제외
+                      .map((name) => (
+                        <option key={name} value={name}>{name}</option>
+                      ))}
                   </select>
                   
                   {/* 기간별 필터링 정보 표시 */}
@@ -827,6 +855,11 @@ export default function InstallProductsPage() {
                     <div className="mt-2 p-2 bg-green-500/10 border border-green-500/20 rounded-md">
                       <p className="text-xs text-green-300">
                         ✅ 해당 기간에 생산된 제품명 {productNames.length}개가 표시됩니다
+                        {selectedProductNames.size > 0 && (
+                          <span className="block text-yellow-300 mt-1">
+                            🔒 이미 선택된 제품명 {selectedProductNames.size}개는 제외됨
+                          </span>
+                        )}
                       </p>
                     </div>
                   )}

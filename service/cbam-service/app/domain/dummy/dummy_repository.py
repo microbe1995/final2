@@ -316,6 +316,33 @@ class DummyRepository:
             logger.error(f"❌ Dummy 데이터 개수 조회 실패: {e}")
             return 0
     
+    async def get_all_dummy_data(self) -> List[dict]:
+        """전체 더미 데이터 조회"""
+        if not self.pool:
+            logger.warning("⚠️ 연결 풀이 초기화되지 않았습니다.")
+            return []
+        
+        try:
+            query = """
+                SELECT 
+                    id, 로트번호, 생산품명, 생산수량, 
+                    투입일, 종료일, 공정, 투입물명, 수량, 단위,
+                    created_at, updated_at
+                FROM dummy 
+                ORDER BY id DESC;
+            """
+            rows = await self.pool.fetch(query)
+            
+            # Record들을 딕셔너리로 변환
+            data_list = [dict(row) for row in rows]
+            
+            logger.info(f"✅ 전체 더미 데이터 조회 성공: {len(data_list)}개")
+            return data_list
+            
+        except Exception as e:
+            logger.error(f"❌ 전체 더미 데이터 조회 실패: {e}")
+            return []
+
     async def get_unique_product_names(self) -> List[str]:
         """고유한 제품명 목록 조회"""
         if not self.pool:
