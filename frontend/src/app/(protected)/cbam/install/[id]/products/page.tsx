@@ -1007,8 +1007,35 @@ export default function InstallProductsPage() {
                   
                   return (
                     <div key={product.id} className="bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-white/20">
-                                             <div className="flex justify-between items-start mb-2">
+                       <div className="flex justify-between items-start mb-2">
                          <h4 className="text-white font-semibold text-lg">{product.product_name}</h4>
+                         
+                         {/* 🔴 추가: 오른쪽 상단에 공정 관련 버튼들 배치 */}
+                         <div className="flex gap-2">
+                           {/* 공정 추가/취소 버튼 */}
+                           <button
+                             onClick={() => handleShowProcessForm(product)}
+                             className="px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-md transition-colors duration-200"
+                           >
+                             {showProcessFormForProduct === product.id ? '공정 취소' : '공정 추가'}
+                           </button>
+                           
+                           {/* 제품 수정 버튼 */}
+                           <button
+                             onClick={() => handleEditProduct(product)}
+                             className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-md transition-colors duration-200"
+                           >
+                             수정
+                           </button>
+                           
+                           {/* 제품 삭제 버튼 */}
+                           <button
+                             onClick={() => handleDeleteProduct(product.id, product.product_name)}
+                             className="px-3 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-md transition-colors duration-200"
+                           >
+                             삭제
+                           </button>
+                         </div>
                        </div>
                       
                       <div className="space-y-1 mb-3">
@@ -1156,32 +1183,46 @@ export default function InstallProductsPage() {
                               >
                                 🔄 {selectedProcess && showProcessFormForProduct === product.id ? '공정 수정' : '공정 생성'}
                               </button>
-                              
-                            </div>
+                               
+                               {/* 공정 추가 모드일 때만 추가 버튼 표시 */}
+                               {!selectedProcess && (
+                                 <button
+                                   type="button"
+                                   onClick={() => {
+                                     // 공정 추가 모드로 전환
+                                     setSelectedProcess('');
+                                     setProcessForm({ process_name: '' });
+                                     // 사용 가능한 공정 목록 새로고침
+                                     fetchAvailableProcesses(product.product_name, product.id);
+                                   }}
+                                   className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-md transition-colors duration-200"
+                                 >
+                                   ➕ 공정 추가
+                                 </button>
+                               )}
+                               
+                               {/* 공정 수정 모드일 때만 수정 버튼 표시 */}
+                               {selectedProcess && showProcessFormForProduct === product.id && (
+                                 <button
+                                   type="button"
+                                   onClick={() => {
+                                     // 공정 수정 모드로 전환
+                                     setSelectedProcess('');
+                                     setProcessForm({ process_name: '' });
+                                     // 사용 가능한 공정 목록 새로고침
+                                     fetchAvailableProcesses(product.product_name, product.id);
+                                   }}
+                                   className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-md transition-colors duration-200"
+                                 >
+                                   🔧 공정 수정
+                                 </button>
+                               )}
+                             </div>
                           </form>
                         </div>
                       )}
 
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => handleShowProcessForm(product)}
-                          className="flex-1 px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-md transition-colors duration-200"
-                        >
-                          {isShowingProcessForm ? '공정 추가 취소' : '공정 추가'}
-                        </button>
-                                                 <button
-                           onClick={() => handleEditProduct(product)}
-                           className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-md transition-colors duration-200"
-                         >
-                           수정
-                         </button>
-                        <button
-                          onClick={() => handleDeleteProduct(product.id, product.product_name)}
-                          className="px-3 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-md transition-colors duration-200"
-                        >
-                          삭제
-                        </button>
-                      </div>
+                      
                     </div>
                   );
                 })}
