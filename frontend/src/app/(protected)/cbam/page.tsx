@@ -21,6 +21,27 @@ export default function CBAMPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // 🔴 추가: 데이터 타입 변환 함수
+  const normalizeDummyData = (rawData: any[]): DummyData[] => {
+    return rawData.map(item => ({
+      ...item,
+      // 숫자 필드들을 안전하게 변환 (number 타입으로 확실하게)
+      생산수량: Number(parseFloat(String(item.생산수량 || 0)) || 0),
+      수량: Number(parseFloat(String(item.수량 || 0)) || 0),
+      // 날짜 필드들을 안전하게 처리
+      투입일: item.투입일 || null,
+      종료일: item.종료일 || null,
+      // 문자열 필드들을 안전하게 처리
+      로트번호: String(item.로트번호 || ''),
+      생산품명: String(item.생산품명 || ''),
+      공정: String(item.공정 || ''),
+      투입물명: item.투입물명 || null,
+      단위: String(item.단위 || ''),
+      created_at: String(item.created_at || ''),
+      updated_at: String(item.updated_at || '')
+    }));
+  };
+
   // 더미 데이터 조회 함수
   const fetchDummyData = async () => {
     setLoading(true);
@@ -39,8 +60,13 @@ export default function CBAMPage() {
         data = [];
       }
       
-      setDummyData(data);
-      console.log('✅ 더미 데이터 조회 성공:', data.length, '개');
+      // 🔴 추가: 데이터 타입 정규화
+      console.log('🔍 원본 데이터 샘플:', data.slice(0, 2));
+      const normalizedData = normalizeDummyData(data);
+      console.log('🔍 정규화된 데이터 샘플:', normalizedData.slice(0, 2));
+      setDummyData(normalizedData);
+      console.log('✅ 더미 데이터 조회 성공:', normalizedData.length, '개');
+      console.log('🔍 데이터 타입 정규화 완료');
     } catch (err: any) {
       console.error('❌ 더미 데이터 조회 실패:', err);
       setError(err.response?.data?.detail || err.message || '데이터를 불러오는데 실패했습니다.');
