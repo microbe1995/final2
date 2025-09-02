@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import axiosClient from '@/lib/axiosClient';
+import axiosClient, { apiEndpoints } from '@/lib/axiosClient';
 
 export interface DummyData {
   id: number;
@@ -28,7 +28,7 @@ export const useDummyData = () => {
       
       // Railway DB의 dummy 테이블 데이터를 가져오는 API 호출
       // Gateway를 통해 CBAM 서비스의 API를 호출
-      const response = await axiosClient.get('/api/v1/cbam/dummy');
+      const response = await axiosClient.get(apiEndpoints.cbam.dummy.list);
       setData(response.data);
     } catch (err) {
       console.error('Dummy 데이터 조회 실패:', err);

@@ -260,6 +260,20 @@ export const apiEndpoints = {
     // CBAM 계산 API
     cbam: '/api/v1/cbam/calculation/emission/process/calculate',
     
+    // Dummy 데이터 API
+    dummy: {
+      // Gateway: /api/v1/cbam/dummy/{path} → CBAM: /dummy/{path}
+      create: '/api/v1/cbam/dummy',
+      list: '/api/v1/cbam/dummy',
+      get: (id: number) => `/api/v1/cbam/dummy/${id}`,
+      update: (id: number) => `/api/v1/cbam/dummy/${id}`,
+      delete: (id: number) => `/api/v1/cbam/dummy/${id}`,
+      search: '/api/v1/cbam/dummy',
+      byProcess: (process_name: string) => `/api/v1/cbam/dummy/search/process/${process_name}`,
+      byProduct: (product_name: string) => `/api/v1/cbam/dummy/search/product/${product_name}`,
+      count: '/api/v1/cbam/dummy/stats/count'
+    },
+    
     // Process Chain 관련 API
 
     
