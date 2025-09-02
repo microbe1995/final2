@@ -304,12 +304,35 @@ async def get_dummy_product_names_by_period(
     try:
         logger.info(f"🎭 기간별 제품명 목록 조회 요청: {start_date} ~ {end_date}")
         
+        # 날짜 파라미터 검증
+        if start_date and end_date:
+            # 날짜 형식 검증
+            try:
+                from datetime import datetime
+                start_dt = datetime.strptime(start_date, "%Y-%m-%d")
+                end_dt = datetime.strptime(end_date, "%Y-%m-%d")
+                
+                # 날짜 순서 검증
+                if start_dt > end_dt:
+                    raise HTTPException(
+                        status_code=400, 
+                        detail="시작일이 종료일보다 늦을 수 없습니다."
+                    )
+                    
+            except ValueError:
+                raise HTTPException(
+                    status_code=400, 
+                    detail="날짜 형식이 올바르지 않습니다. YYYY-MM-DD 형식으로 입력해주세요."
+                )
+        
         dummy_service = await ensure_service_initialized()
         product_names = await dummy_service.get_unique_product_names_by_period(start_date, end_date)
         
-        logger.info(f"✅ 기간별 제품명 목록 조회 성공: {len(product_names)}개")
+        logger.info(f"✅ 기간별 제품명 목록 조회 성공: {start_date} ~ {end_date} - {len(product_names)}개")
         return product_names
         
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"❌ 기간별 제품명 목록 조회 실패: {e}")
         raise HTTPException(status_code=500, detail=f"서버 오류: {str(e)}")

@@ -349,24 +349,48 @@ class DummyRepository:
             
             # 기간 조건 추가 (기간이 겹치는 모든 제품 찾기)
             if start_date and end_date:
+                # 날짜 형식 검증 및 변환
+                try:
+                    from datetime import datetime
+                    start_date_obj = datetime.strptime(start_date, "%Y-%m-%d").date()
+                    end_date_obj = datetime.strptime(end_date, "%Y-%m-%d").date()
+                    
+                    # 날짜 순서 검증
+                    if start_date_obj > end_date_obj:
+                        logger.warning(f"⚠️ 시작일({start_date})이 종료일({end_date})보다 늦습니다.")
+                        return []
+                        
+                except ValueError as e:
+                    logger.error(f"❌ 날짜 형식 오류: {start_date} 또는 {end_date} - {e}")
+                    return []
+                
+                # 기간 겹침 쿼리 (더 정확한 로직)
                 query += """ AND (
-                    투입일 <= $2 AND 종료일 >= $1  -- 기간이 겹치는 경우 (간단한 로직)
+                    (투입일 <= $2 AND 종료일 >= $1)  -- 기간이 겹치는 경우
+                    OR (투입일 BETWEEN $1 AND $2)     -- 투입일이 기간 내에 있는 경우
+                    OR (종료일 BETWEEN $1 AND $2)     -- 종료일이 기간 내에 있는 경우
                 )"""
-                # 문자열을 DATE 객체로 변환
-                from datetime import datetime
-                start_date_obj = datetime.strptime(start_date, "%Y-%m-%d").date()
-                end_date_obj = datetime.strptime(end_date, "%Y-%m-%d").date()
                 params.extend([start_date_obj, end_date_obj])
+                
             elif start_date:
-                from datetime import datetime
-                start_date_obj = datetime.strptime(start_date, "%Y-%m-%d").date()
-                query += " AND 투입일 >= $1"
-                params.append(start_date_obj)
+                try:
+                    from datetime import datetime
+                    start_date_obj = datetime.strptime(start_date, "%Y-%m-%d").date()
+                    query += " AND 투입일 >= $1"
+                    params.append(start_date_obj)
+                except ValueError as e:
+                    logger.error(f"❌ 시작일 형식 오류: {start_date} - {e}")
+                    return []
+                    
             elif end_date:
-                from datetime import datetime
-                end_date_obj = datetime.strptime(end_date, "%Y-%m-%d").date()
-                query += " AND 종료일 <= $1"
-                params.append(end_date_obj)
+                try:
+                    from datetime import datetime
+                    end_date_obj = datetime.strptime(end_date, "%Y-%m-%d").date()
+                    query += " AND 종료일 <= $1"
+                    params.append(end_date_obj)
+                except ValueError as e:
+                    logger.error(f"❌ 종료일 형식 오류: {end_date} - {e}")
+                    return []
             
             # 정렬 추가
             query += " ORDER BY 생산품명;"
