@@ -256,6 +256,12 @@ async def proxy_request(service: str, path: str, request: Request) -> Response:
             # 기타 edge 경로는 그대로 유지
             logger.info(f"🔍 edge 기타 경로 유지: {path} → {normalized_path}")
 
+    # 🔴 추가: dummy 경로 처리 (제품명/공정명 조회용)
+    elif service == "cbam" and (path == "dummy" or path.startswith("dummy/")):
+        # dummy 경로는 그대로 유지 (슬래시 추가하지 않음)
+        normalized_path = path
+        logger.info(f"🔍 dummy 경로 처리: {path} → {normalized_path} (변경 없음)")
+
     target_url = f"{base_url.rstrip('/')}/{normalized_path}"
     
     # 라우팅 정보 로깅

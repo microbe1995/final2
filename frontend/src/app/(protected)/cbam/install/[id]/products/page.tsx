@@ -163,11 +163,18 @@ export default function InstallProductsPage() {
       // 제품명으로만 공정 목록 조회 (기간 필터링 제거)
       const allProcesses = await getProcessesByProduct(productName);
       
-      // 이미 제품에 연결된 공정들은 제외
+      // 이미 제품에 연결된 공정들은 제외 (단, 수정 모드일 때는 현재 선택된 공정은 포함)
       const connectedProcesses = productProcessesMap.get(productId) || [];
-      const availableProcesses = allProcesses.filter((process: string) => 
-        !connectedProcesses.includes(process)
-      );
+      const currentSelectedProcess = processForm.process_name;
+      
+      const availableProcesses = allProcesses.filter((process: string) => {
+        // 수정 모드이고 현재 선택된 공정이면 포함
+        if (currentSelectedProcess && process === currentSelectedProcess) {
+          return true;
+        }
+        // 이미 연결된 공정은 제외
+        return !connectedProcesses.includes(process);
+      });
       
       setAvailableProcesses(availableProcesses);
       console.log(`✅ 제품 '${productName}'의 사용 가능한 공정 목록:`, availableProcesses);
@@ -562,6 +569,20 @@ export default function InstallProductsPage() {
     }
   };
 
+  // 🔴 추가: 공정 수정 모드 시작
+  const handleEditProcess = (processName: string, productId: number) => {
+    // 공정 수정 폼을 표시하고 해당 공정 정보를 설정
+    setShowProcessFormForProduct(productId);
+    setSelectedProcess(processName);
+    setProcessForm({ process_name: processName });
+    
+    // 해당 제품의 사용 가능한 공정 목록 새로고침 (수정 모드)
+    const product = products.find(p => p.id === productId);
+    if (product) {
+      fetchAvailableProcesses(product.product_name, productId);
+    }
+  };
+
   // 🔴 추가: 공정명으로 공정 삭제 (제품별 공정 목록에서)
   const handleDeleteProcessByName = async (processName: string, productId: number) => {
     if (!confirm(`"${processName}" 공정을 삭제하시겠습니까?`)) return;
@@ -949,33 +970,38 @@ export default function InstallProductsPage() {
                         <div className="mb-4 p-3 bg-white/5 rounded-lg">
                           <h5 className="text-sm font-medium text-white mb-2">📋 등록된 공정:</h5>
                           <div className="space-y-2">
-                            {productProcessesMap.get(product.id)!.map((processName, index) => (
-                              <div key={index} className="flex justify-between items-center p-2 bg-white/5 rounded">
-                                <span className="text-gray-300 text-sm">{processName}</span>
-                                <div className="flex gap-1">
-                                  <button
-                                    onClick={() => router.push(`/cbam/process/process-input?process_name=${processName}`)}
-                                    className="px-2 py-1 bg-green-600 hover:bg-green-700 text-white text-xs rounded"
-                                  >
-                                    입력 데이터
-                                  </button>
-                                  <button
-                                    onClick={() => handleDeleteProcessByName(processName, product.id)}
-                                    className="px-2 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded"
-                                  >
-                                    삭제
-                                  </button>
-                                </div>
-                              </div>
-                            ))}
+                                                         {productProcessesMap.get(product.id)!.map((processName, index) => (
+                               <div key={index} className="flex justify-between items-center p-2 bg-white/5 rounded">
+                                 <span className="text-gray-300 text-sm">{processName}</span>
+                                 <div className="flex gap-1">
+                                   <button
+                                     onClick={() => handleEditProcess(processName, product.id)}
+                                     className="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded"
+                                   >
+                                     수정
+                                   </button>
+                                   <button
+                                     onClick={() => handleDeleteProcessByName(processName, product.id)}
+                                     className="px-2 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded"
+                                   >
+                                     삭제
+                                   </button>
+                                 </div>
+                               </div>
+                             ))}
                           </div>
                         </div>
                       )}
 
-                      {/* 공정 추가 폼 */}
-                      {isShowingProcessForm && (
-                        <div className="mb-4 p-4 bg-white/5 rounded-lg border border-purple-500/30">
-                          <h5 className="text-sm font-medium text-white mb-3">🔄 공정 추가</h5>
+                                             {/* 공정 추가/수정 폼 */}
+                       {isShowingProcessForm && (
+                         <div className="mb-4 p-4 bg-white/5 rounded-lg border border-purple-500/30">
+                           <h5 className="text-sm font-medium text-white mb-3">
+                             {selectedProcess && productProcessesMap.get(product.id)?.includes(selectedProcess) 
+                               ? '🔄 공정 수정' 
+                               : '🔄 공정 추가'
+                             }
+                           </h5>
                           
                                                      {/* 더미 데이터에서 가져온 공정 목록 안내 */}
                            {availableProcesses.length > 0 ? (
@@ -1079,12 +1105,12 @@ export default function InstallProductsPage() {
                         >
                           {isShowingProcessForm ? '공정 추가 취소' : '공정 추가'}
                         </button>
-                        <button
-                          onClick={() => handleEditProduct(product)}
-                          className="px-3 py-2 bg-yellow-600 hover:bg-yellow-700 text-white text-sm font-medium rounded-md transition-colors duration-200"
-                        >
-                          수정
-                        </button>
+                                                 <button
+                           onClick={() => handleEditProduct(product)}
+                           className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-md transition-colors duration-200"
+                         >
+                           수정
+                         </button>
                         <button
                           onClick={() => handleDeleteProduct(product.id, product.product_name)}
                           className="px-3 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-md transition-colors duration-200"
