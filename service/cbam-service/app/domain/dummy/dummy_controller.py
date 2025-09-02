@@ -28,6 +28,15 @@ def get_dummy_service():
         logger.info("✅ Dummy Service 싱글톤 인스턴스 생성")
     return _dummy_service_instance
 
+async def ensure_service_initialized():
+    """서비스가 초기화되었는지 확인하고, 필요시 초기화"""
+    service = get_dummy_service()
+    if not getattr(service, '_initialized', False):
+        await service.initialize()
+        service._initialized = True
+        logger.info("✅ Dummy Service 초기화 완료")
+    return service
+
 # ============================================================================
 # 📊 상태 확인 엔드포인트
 # ============================================================================
@@ -43,7 +52,7 @@ async def health_check():
     try:
         logger.info("🏥 Dummy 도메인 헬스체크 요청")
         
-        dummy_service = get_dummy_service()
+        dummy_service = await ensure_service_initialized()
         
         # 데이터베이스 연결 확인
         try:
@@ -80,12 +89,7 @@ async def health_check():
         
     except Exception as e:
         logger.error(f"❌ Dummy 도메인 헬스체크 실패: {e}")
-        return {
-            "service": "dummy",
-            "status": "unhealthy",
-            "timestamp": datetime.now().isoformat(),
-            "error": str(e)
-        }
+        raise HTTPException(status_code=500, detail=f"서버 오류: {str(e)}")
 
 # ============================================================================
 # 📋 기본 CRUD 엔드포인트
@@ -97,7 +101,7 @@ async def get_dummy_data(data_id: int):
     try:
         logger.info(f"🎭 Dummy 데이터 조회 요청: ID {data_id}")
         
-        dummy_service = get_dummy_service()
+        dummy_service = await ensure_service_initialized()
         data = await dummy_service.get_dummy_data_by_id(data_id)
         
         if data:
@@ -123,7 +127,7 @@ async def get_all_dummy_data(
     try:
         logger.info(f"🎭 Dummy 데이터 목록 조회 요청: limit={limit}, offset={offset}, search={search}")
         
-        dummy_service = get_dummy_service()
+        dummy_service = await ensure_service_initialized()
         
         if search:
             # 검색 기능 사용
@@ -156,7 +160,7 @@ async def create_dummy_data(
     try:
         logger.info(f"🎭 Dummy 데이터 생성 요청: {data.로트번호} - {data.생산품명}")
         
-        dummy_service = get_dummy_service()
+        dummy_service = await ensure_service_initialized()
         result_id = await dummy_service.create_dummy_data(data)
         
         if result_id:
@@ -185,7 +189,7 @@ async def update_dummy_data(
     try:
         logger.info(f"🎭 Dummy 데이터 수정 요청: ID {data_id}")
         
-        dummy_service = get_dummy_service()
+        dummy_service = await ensure_service_initialized()
         success = await dummy_service.update_dummy_data(data_id, data)
         
         if success:
@@ -211,7 +215,7 @@ async def delete_dummy_data(data_id: int):
     try:
         logger.info(f"🎭 Dummy 데이터 삭제 요청: ID {data_id}")
         
-        dummy_service = get_dummy_service()
+        dummy_service = await ensure_service_initialized()
         success = await dummy_service.delete_dummy_data(data_id)
         
         if success:
@@ -239,7 +243,7 @@ async def get_dummy_data_by_process(
     try:
         logger.info(f"🎭 공정별 Dummy 데이터 조회 요청: {process_name}")
         
-        dummy_service = get_dummy_service()
+        dummy_service = await ensure_service_initialized()
         data_list = await dummy_service.get_dummy_data_by_process(process_name, limit)
         
         logger.info(f"✅ 공정별 Dummy 데이터 조회 성공: {process_name} - {len(data_list)}개")
@@ -258,7 +262,7 @@ async def get_dummy_data_by_product(
     try:
         logger.info(f"🎭 생산품별 Dummy 데이터 조회 요청: {product_name}")
         
-        dummy_service = get_dummy_service()
+        dummy_service = await ensure_service_initialized()
         data_list = await dummy_service.get_dummy_data_by_product(product_name, limit)
         
         logger.info(f"✅ 생산품별 Dummy 데이터 조회 성공: {product_name} - {len(data_list)}개")
@@ -274,7 +278,7 @@ async def get_dummy_data_count():
     try:
         logger.info("🎭 Dummy 데이터 개수 조회 요청")
         
-        dummy_service = get_dummy_service()
+        dummy_service = await ensure_service_initialized()
         count = await dummy_service.get_dummy_data_count()
         
         logger.info(f"✅ Dummy 데이터 개수 조회 성공: {count}개")
