@@ -350,10 +350,7 @@ class DummyRepository:
             # 기간 조건 추가 (기간이 겹치는 모든 제품 찾기)
             if start_date and end_date:
                 query += """ AND (
-                    (투입일 <= $1::DATE AND 종료일 >= $2::DATE)  -- 기간이 완전히 겹치는 경우
-                    OR (투입일 BETWEEN $1::DATE AND $2::DATE)    -- 투입일이 기간 내에 있는 경우
-                    OR (종료일 BETWEEN $1::DATE AND $2::DATE)    -- 종료일이 기간 내에 있는 경우
-                    OR (투입일 <= $1::DATE AND 종료일 >= $2::DATE)  -- 기간을 완전히 포함하는 경우
+                    투입일 <= $2::DATE AND 종료일 >= $1::DATE  -- 기간이 겹치는 경우 (간단한 로직)
                 )"""
                 params.extend([start_date, end_date])
             elif start_date:
