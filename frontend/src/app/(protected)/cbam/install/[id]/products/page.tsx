@@ -34,12 +34,30 @@ interface Product {
 
 interface Process {
   id: number;
-  product_id: number;
   process_name: string;
-  start_period: string;
-  end_period: string;
+  start_period?: string;
+  end_period?: string;
   created_at?: string;
   updated_at?: string;
+  // 🔴 추가: 백엔드에서 반환하는 실제 데이터 구조
+  products?: Array<{
+    id: number;
+    install_id: number;
+    product_name: string;
+    product_category: string;
+    prostart_period: string;
+    proend_period: string;
+    product_amount: number;
+    cncode_total?: string;
+    goods_name?: string;
+    goods_engname?: string;
+    aggrgoods_name?: string;
+    aggrgoods_engname?: string;
+    product_sell: number;
+    product_eusell: number;
+    created_at?: string;
+    updated_at?: string;
+  }>;
 }
 
 interface ProductForm {
@@ -130,6 +148,7 @@ export default function InstallProductsPage() {
   const fetchProcesses = async () => {
     try {
       const response = await axiosClient.get(apiEndpoints.cbam.process.list);
+      console.log('🔍 전체 공정 목록 조회 결과:', response.data);
       setProcesses(response.data);
     } catch (error: any) {
       console.error('❌ 프로세스 목록 조회 실패:', error);
@@ -152,17 +171,29 @@ export default function InstallProductsPage() {
     }
   }, [getProcessesByProduct]);
 
-  // 🔴 추가: 특정 제품의 공정 목록 조회 및 상태 업데이트
+  // 🔴 수정: 특정 제품의 공정 목록 조회 및 상태 업데이트 (실제 생성된 공정)
   const fetchProductProcesses = useCallback(async (productId: number, productName: string) => {
     try {
-      const processes = await getProcessesByProduct(productName);
-      setProductProcessesMap(prev => new Map(prev.set(productId, processes)));
-      console.log(`✅ 제품 ${productName} (ID: ${productId})의 공정 목록 업데이트:`, processes);
+      // 실제 생성된 공정 목록에서 해당 제품과 연결된 공정들 찾기
+      const productProcesses = processes.filter(process => {
+        // process.products 배열에서 해당 제품이 있는지 확인
+        if (process.products && Array.isArray(process.products)) {
+          return process.products.some(product => product.id === productId);
+        }
+        return false;
+      });
+      
+      // 공정명만 추출
+      const processNames = productProcesses.map(process => process.process_name);
+      
+      setProductProcessesMap(prev => new Map(prev.set(productId, processNames)));
+      console.log(`✅ 제품 ${productName} (ID: ${productId})의 공정 목록 업데이트:`, processNames);
+      console.log(`🔍 연결된 공정 상세:`, productProcesses);
     } catch (error) {
       console.error(`❌ 제품 ${productName} (ID: ${productId})의 공정 목록 조회 실패:`, error);
       setProductProcessesMap(prev => new Map(prev.set(productId, [])));
     }
-  }, [getProcessesByProduct]);
+  }, [processes]);
 
   // 공정 추가 폼 표시 시 해당 제품의 공정 목록 조회
   const handleShowProcessForm = (product: Product) => {
@@ -442,10 +473,12 @@ export default function InstallProductsPage() {
       // 목록 새로고침
       fetchProcesses();
       
-      // 🔴 추가: 해당 제품의 공정 목록 새로고침
+      // 🔴 수정: 해당 제품의 공정 목록 새로고침
       if (showProcessFormForProduct) {
         const product = products.find(p => p.id === showProcessFormForProduct);
         if (product) {
+          // 공정 목록을 먼저 새로고침한 후 제품별 공정 목록 업데이트
+          await fetchProcesses();
           await fetchProductProcesses(product.id, product.product_name);
         }
       }
@@ -528,14 +561,14 @@ export default function InstallProductsPage() {
           type: 'success'
         });
         
-        // 공정 목록 새로고침
-        fetchProcesses();
-        
-        // 해당 제품의 공정 목록 새로고침
-        const product = products.find(p => p.id === productId);
-        if (product) {
-          await fetchProductProcesses(product.id, product.product_name);
-        }
+                 // 공정 목록 새로고침
+         await fetchProcesses();
+         
+         // 해당 제품의 공정 목록 새로고침
+         const product = products.find(p => p.id === productId);
+         if (product) {
+           await fetchProductProcesses(product.id, product.product_name);
+         }
       } else {
         setToast({
           message: '삭제할 공정을 찾을 수 없습니다.',
