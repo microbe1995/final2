@@ -27,7 +27,8 @@ export default function CBAMPage() {
     setError(null);
     
     try {
-      const response = await axiosClient.get('/api/v1/dummy');
+      // 올바른 API 엔드포인트 호출
+      const response = await axiosClient.get('/api/v1/dummy/');
       let data: DummyData[] = [];
       
       if (response.data && Array.isArray(response.data)) {

@@ -320,19 +320,3 @@ async def get_processes_by_product(product_name: str):
             status_code=500,
             detail=f"제품 '{product_name}'의 공정 목록 조회에 실패했습니다: {str(e)}"
         )
-
-@router.get("/products")
-async def get_unique_product_names():
-    """Dummy 테이블에서 고유한 제품명 목록 조회"""
-    try:
-        logger.info("🎭 고유 제품명 목록 조회 요청")
-        
-        dummy_service = await ensure_service_initialized()
-        product_names = await dummy_service.get_unique_product_names()
-        
-        logger.info(f"✅ 고유 제품명 목록 조회 성공: {len(product_names)}개")
-        return product_names
-        
-    except Exception as e:
-        logger.error(f"❌ 고유 제품명 목록 조회 실패: {e}")
-        raise HTTPException(status_code=500, detail=f"서버 오류: {str(e)}")
