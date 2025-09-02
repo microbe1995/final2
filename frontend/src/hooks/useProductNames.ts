@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import axiosClient, { apiEndpoints } from '@/lib/axiosClient';
 
 export const useProductNames = () => {
@@ -32,7 +32,7 @@ export const useProductNames = () => {
     }
   };
 
-  const fetchProductNamesByPeriod = async (startDate?: string, endDate?: string) => {
+  const fetchProductNamesByPeriod = useCallback(async (startDate?: string, endDate?: string) => {
     try {
       setLoading(true);
       setError(null);
@@ -60,15 +60,15 @@ export const useProductNames = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const refreshProductNames = () => {
+  const refreshProductNames = useCallback(() => {
     fetchProductNames();
-  };
+  }, [fetchProductNames]);
 
   useEffect(() => {
     fetchProductNames();
-  }, []);
+  }, [fetchProductNames]);
 
   return {
     productNames,

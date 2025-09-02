@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import axiosClient from '@/lib/axiosClient';
 import { apiEndpoints } from '@/lib/axiosClient';
@@ -144,11 +144,18 @@ export default function InstallProductsPage() {
     if (productForm.prostart_period || productForm.proend_period) {
       // 기간이 설정된 경우에만 기간별 제품명 조회
       fetchProductNamesByPeriod(productForm.prostart_period, productForm.proend_period);
-    } else {
-      // 기간이 설정되지 않은 경우 전체 제품명 조회
-      fetchProductNamesByPeriod();
     }
+    // 기간이 설정되지 않은 경우는 호출하지 않음 (무한 루프 방지)
   }, [productForm.prostart_period, productForm.proend_period, fetchProductNamesByPeriod]);
+
+  // 초기 로딩 시 제품명 목록 가져오기
+  useEffect(() => {
+    // 컴포넌트 마운트 시 한 번만 실행
+    if (!productForm.prostart_period && !productForm.proend_period) {
+      // useProductNames 훅에서 자동으로 초기 제품명 목록을 가져옴
+      console.log('🔄 초기 제품명 목록 로딩 시작');
+    }
+  }, []);
 
   const handleProductInputChange = (field: keyof ProductForm, value: string | number) => {
     setProductForm(prev => ({
