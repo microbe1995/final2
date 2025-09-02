@@ -20,7 +20,7 @@ from app.common.database_base import Base
 class DummyData(Base):
     """Dummy 데이터 엔티티"""
     
-    __tablename__ = "dummy_data"
+    __tablename__ = "dummy"
     
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     로트번호 = Column(Text, nullable=False, index=True)
