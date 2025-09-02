@@ -350,15 +350,23 @@ class DummyRepository:
             # 기간 조건 추가 (기간이 겹치는 모든 제품 찾기)
             if start_date and end_date:
                 query += """ AND (
-                    투입일 <= $2::DATE AND 종료일 >= $1::DATE  -- 기간이 겹치는 경우 (간단한 로직)
+                    투입일 <= $2 AND 종료일 >= $1  -- 기간이 겹치는 경우 (간단한 로직)
                 )"""
-                params.extend([start_date, end_date])
+                # 문자열을 DATE 객체로 변환
+                from datetime import datetime
+                start_date_obj = datetime.strptime(start_date, "%Y-%m-%d").date()
+                end_date_obj = datetime.strptime(end_date, "%Y-%m-%d").date()
+                params.extend([start_date_obj, end_date_obj])
             elif start_date:
-                query += " AND 투입일 >= $1::DATE"
-                params.append(start_date)
+                from datetime import datetime
+                start_date_obj = datetime.strptime(start_date, "%Y-%m-%d").date()
+                query += " AND 투입일 >= $1"
+                params.append(start_date_obj)
             elif end_date:
-                query += " AND 종료일 <= $1::DATE"
-                params.append(end_date)
+                from datetime import datetime
+                end_date_obj = datetime.strptime(end_date, "%Y-%m-%d").date()
+                query += " AND 종료일 <= $1"
+                params.append(end_date_obj)
             
             # 정렬 추가
             query += " ORDER BY 생산품명;"
