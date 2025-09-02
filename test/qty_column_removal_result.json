@@ -1,8 +1,0 @@
-{
-  "migration_date": "2025-09-01T22:39:42.244449",
-  "operation": "remove_qty_column",
-  "table": "edge",
-  "column_removed": "qty",
-  "status": "success",
-  "message": "qty 컬럼이 성공적으로 삭제되었습니다."
-}

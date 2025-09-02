@@ -91,6 +91,28 @@ async def health_check():
 # 📋 기본 CRUD 엔드포인트
 # ============================================================================
 
+@router.get("/{data_id}", response_model=DummyDataResponse)
+async def get_dummy_data(data_id: int):
+    """ID로 Dummy 데이터 조회"""
+    try:
+        logger.info(f"🎭 Dummy 데이터 조회 요청: ID {data_id}")
+        
+        dummy_service = get_dummy_service()
+        data = await dummy_service.get_dummy_data_by_id(data_id)
+        
+        if data:
+            logger.info(f"✅ Dummy 데이터 조회 성공: ID {data_id}")
+            return data
+        else:
+            raise HTTPException(status_code=404, detail=f"ID {data_id}의 Dummy 데이터를 찾을 수 없습니다.")
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"❌ Dummy 데이터 조회 실패: {e}")
+        raise HTTPException(status_code=500, detail=f"서버 오류: {str(e)}")
+
+@router.get("", response_model=DummyDataListResponse)
 @router.get("/", response_model=DummyDataListResponse)
 async def get_all_dummy_data(
     limit: int = Query(100, ge=1, le=1000, description="페이지 크기"),
@@ -125,6 +147,7 @@ async def get_all_dummy_data(
         logger.error(f"❌ Dummy 데이터 목록 조회 실패: {e}")
         raise HTTPException(status_code=500, detail=f"서버 오류: {str(e)}")
 
+@router.post("", response_model=DummyDataResponse, status_code=201)
 @router.post("/", response_model=DummyDataResponse, status_code=201)
 async def create_dummy_data(
     data: DummyDataCreateRequest
@@ -151,27 +174,6 @@ async def create_dummy_data(
         raise
     except Exception as e:
         logger.error(f"❌ Dummy 데이터 생성 실패: {e}")
-        raise HTTPException(status_code=500, detail=f"서버 오류: {str(e)}")
-
-@router.get("/{data_id}", response_model=DummyDataResponse)
-async def get_dummy_data(data_id: int):
-    """ID로 Dummy 데이터 조회"""
-    try:
-        logger.info(f"🎭 Dummy 데이터 조회 요청: ID {data_id}")
-        
-        dummy_service = get_dummy_service()
-        data = await dummy_service.get_dummy_data_by_id(data_id)
-        
-        if data:
-            logger.info(f"✅ Dummy 데이터 조회 성공: ID {data_id}")
-            return data
-        else:
-            raise HTTPException(status_code=404, detail=f"ID {data_id}의 Dummy 데이터를 찾을 수 없습니다.")
-            
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"❌ Dummy 데이터 조회 실패: {e}")
         raise HTTPException(status_code=500, detail=f"서버 오류: {str(e)}")
 
 @router.put("/{data_id}", response_model=DummyDataResponse)
