@@ -31,10 +31,17 @@ def get_dummy_service():
 async def ensure_service_initialized():
     """서비스가 초기화되었는지 확인하고, 필요시 초기화"""
     service = get_dummy_service()
-    if not getattr(service, '_initialized', False):
-        await service.initialize()
-        service._initialized = True
-        logger.info("✅ Dummy Service 초기화 완료")
+    
+    # 서비스 초기화 상태 확인
+    if not hasattr(service, '_initialized') or not service._initialized:
+        try:
+            await service.initialize()
+            service._initialized = True
+            logger.info("✅ Dummy Service 초기화 완료")
+        except Exception as e:
+            logger.error(f"❌ Dummy Service 초기화 실패: {e}")
+            raise Exception(f"Dummy Service 초기화 실패: {e}")
+    
     return service
 
 # ============================================================================

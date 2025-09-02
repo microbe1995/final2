@@ -17,11 +17,13 @@ class DummyService:
     
     def __init__(self):
         self.repository = DummyRepository()
+        self._initialized = False
         logger.info("✅ Dummy Service 초기화 완료")
     
     async def initialize(self):
         """서비스 초기화"""
         await self.repository.initialize()
+        self._initialized = True
         logger.info("✅ Dummy Service 초기화 완료")
     
     async def create_dummy_data(self, data: DummyDataCreateRequest) -> Optional[int]:
