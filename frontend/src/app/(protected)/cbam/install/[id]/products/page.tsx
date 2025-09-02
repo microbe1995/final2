@@ -5,6 +5,7 @@ import { useRouter, useParams } from 'next/navigation';
 import axiosClient from '@/lib/axiosClient';
 import { apiEndpoints } from '@/lib/axiosClient';
 import { useMappingAPI, HSCNMappingResponse } from '@/hooks/useMappingAPI';
+import { useProductNames } from '@/hooks/useProductNames';
 
 interface Install {
   id: number;
@@ -94,6 +95,9 @@ export default function InstallProductsPage() {
   const { lookupByHSCode, loading: mappingLoading } = useMappingAPI();
   const [cnCodeResults, setCnCodeResults] = useState<HSCNMappingResponse[]>([]);
   const [showCnCodeResults, setShowCnCodeResults] = useState(false);
+
+  // 제품명 목록 훅 사용 (Railway DB의 dummy 테이블에서 가져옴)
+  const { productNames, loading: productNamesLoading, error: productNamesError } = useProductNames();
 
   // 모달 상태 관리
   const [showHSCodeModal, setShowHSCodeModal] = useState(false);
@@ -534,14 +538,27 @@ export default function InstallProductsPage() {
               <form onSubmit={handleProductSubmit} className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">제품명 *</label>
-                  <input
-                    type="text"
+                  <select
                     value={productForm.product_name}
                     onChange={(e) => handleProductInputChange('product_name', e.target.value)}
                     className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="예: 철강, 알루미늄"
                     required
-                  />
+                    disabled={productNamesLoading}
+                  >
+                    <option value="">제품명을 선택하세요</option>
+                    {productNames.map((name) => (
+                      <option key={name} value={name}>{name}</option>
+                    ))}
+                  </select>
+                  {productNamesLoading && (
+                    <p className="text-xs text-gray-400 mt-1">제품명 목록을 불러오는 중...</p>
+                  )}
+                  {productNamesError && (
+                    <p className="text-xs text-red-400 mt-1">제품명 목록 로드 실패: {productNamesError}</p>
+                  )}
+                  {productNames.length === 0 && !productNamesLoading && !productNamesError && (
+                    <p className="text-xs text-yellow-400 mt-1">사용 가능한 제품명이 없습니다.</p>
+                  )}
                 </div>
 
                 <div>
