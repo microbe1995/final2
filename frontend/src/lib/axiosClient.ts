@@ -264,7 +264,7 @@ export const apiEndpoints = {
     dummy: {
       // Gateway: /api/v1/cbam/dummy/{path} → CBAM: /dummy/{path}
       create: '/api/v1/cbam/dummy',
-      list: '/api/v1/cbam/dummy',
+      list: '/행ㅎㅐ ',
       get: (id: number) => `/api/v1/cbam/dummy/${id}`,
       update: (id: number) => `/api/v1/cbam/dummy/${id}`,
       delete: (id: number) => `/api/v1/cbam/dummy/${id}`,
@@ -345,6 +345,20 @@ export const apiEndpoints = {
       product: {
         calculate: '/api/v1/cbam/calculation/emission/product/calculate'
       }
+    },
+    
+    // Dummy 테이블 API
+    dummy: {
+      // 제품명 관련 API
+      productNames: '/api/v1/cbam/dummy/products/names',
+      productNamesByPeriod: '/api/v1/cbam/dummy/products/names/by-period',
+      // 기타 Dummy API
+      list: '/api/v1/cbam/dummy',
+      get: (id: number) => `/api/v1/cbam/dummy/${id}`,
+      create: '/api/v1/cbam/dummy',
+      update: (id: number) => `/api/v1/cbam/dummy/${id}`,
+      delete: (id: number) => `/api/v1/cbam/dummy/${id}`,
+      health: '/api/v1/cbam/dummy/health'
     }
   },
   // Material Master API (CBAM 통합 서비스 사용) - 경로 패턴 통일

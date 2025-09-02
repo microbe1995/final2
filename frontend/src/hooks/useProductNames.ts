@@ -16,8 +16,14 @@ export const useProductNames = () => {
       
       // API 응답이 배열인지 확인
       if (Array.isArray(response.data)) {
-        setProductNames(response.data);
-        console.log('✅ 제품명 목록 조회 성공:', response.data.length, '개');
+        // 제품명만 추출하여 설정
+        const names = response.data.map((item: any) => {
+          // item이 문자열이면 그대로 사용, 객체면 생산품명 필드 추출
+          return typeof item === 'string' ? item : item.생산품명 || item.product_name || item;
+        }).filter(Boolean); // 빈 값 제거
+        
+        setProductNames(names);
+        console.log('✅ 제품명 목록 조회 성공:', names.length, '개');
       } else {
         console.warn('⚠️ API 응답이 배열이 아닙니다:', response.data);
         setProductNames([]);
@@ -54,8 +60,15 @@ export const useProductNames = () => {
       // API 응답이 배열인지 확인
       if (Array.isArray(response.data)) {
         console.log('✅ 응답 데이터가 배열임:', response.data);
-        setProductNames(response.data);
-        console.log('✅ 기간별 제품명 목록 조회 성공:', response.data.length, '개');
+        
+        // 제품명만 추출하여 설정
+        const names = response.data.map((item: any) => {
+          // item이 문자열이면 그대로 사용, 객체면 생산품명 필드 추출
+          return typeof item === 'string' ? item : item.생산품명 || item.product_name || item;
+        }).filter(Boolean); // 빈 값 제거
+        
+        setProductNames(names);
+        console.log('✅ 기간별 제품명 목록 조회 성공:', names.length, '개');
       } else {
         console.warn('⚠️ API 응답이 배열이 아닙니다:', response.data);
         setProductNames([]);
