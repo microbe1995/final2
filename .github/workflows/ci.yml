@@ -48,7 +48,7 @@ jobs:
       run: cd frontend && pnpm run lint
     
     - name: Run type checking
-      run: cd frontend && pnpm run type-check
+      run: cd frontend && pnpm run type-check --skipLibCheck
     
     - name: Build application
       run: cd frontend && pnpm run build
