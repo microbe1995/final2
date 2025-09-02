@@ -9,7 +9,7 @@ export interface DummyData {
   투입일: string | null;
   종료일: string | null;
   공정: string;
-  투입물명: string;
+  투입물명: string | null;
   수량: number;
   단위: string;
   created_at: string;
@@ -38,42 +38,9 @@ export const useDummyData = () => {
     }
   }, []);
 
-  // 제품별 기간별 공정 목록 조회
-  const getProcessesByProductPeriod = useCallback(async (
-    productName: string, 
-    startDate?: string, 
-    endDate?: string
-  ) => {
-    setLoading(true);
-    setError(null);
-    
-    try {
-      let url = `/api/v1/dummy/products/${encodeURIComponent(productName)}/processes/period`;
-      const params = new URLSearchParams();
-      
-      if (startDate) params.append('start_date', startDate);
-      if (endDate) params.append('end_date', endDate);
-      
-      if (params.toString()) {
-        url += `?${params.toString()}`;
-      }
-      
-      const response = await axiosClient.get(url);
-      return response.data.data.processes || [];
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.detail || err.message || '기간별 공정 목록 조회에 실패했습니다.';
-      setError(errorMessage);
-      console.error('❌ 제품별 기간별 공정 목록 조회 실패:', err);
-      return [];
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
   return {
     loading,
     error,
-    getProcessesByProduct,
-    getProcessesByProductPeriod
+    getProcessesByProduct
   };
 };

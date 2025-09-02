@@ -1,13 +1,11 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import CommonShell from '@/components/common/CommonShell';
-import ProcessManager from '@/components/cbam/ProcessManager';
-import { ReactFlowProvider } from '@xyflow/react';
 import axiosClient from '@/lib/axiosClient';
-import { useDummyData } from '@/hooks/useDummyData';
 import { RefreshCw, ArrowRight } from 'lucide-react';
+import { DummyData } from '@/hooks/useDummyData';
 
 // ============================================================================
 // 🎯 CBAM 관리 페이지
@@ -18,8 +16,43 @@ export default function CBAMPage() {
     'overview' | 'install' | 'boundary' | 'reports' | 'settings'
   >('overview');
 
-  // useDummyData 훅을 컴포넌트 최상위 레벨로 이동
-  const { data, loading, error, refreshData } = useDummyData();
+  // 더미 데이터 상태 관리
+  const [dummyData, setDummyData] = useState<DummyData[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // 더미 데이터 조회 함수
+  const fetchDummyData = async () => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const response = await axiosClient.get('/api/v1/dummy');
+      let data: DummyData[] = [];
+      
+      if (response.data && Array.isArray(response.data)) {
+        data = response.data;
+      } else if (response.data && response.data.items && Array.isArray(response.data.items)) {
+        data = response.data.items;
+      } else {
+        data = [];
+      }
+      
+      setDummyData(data);
+      console.log('✅ 더미 데이터 조회 성공:', data.length, '개');
+    } catch (err: any) {
+      console.error('❌ 더미 데이터 조회 실패:', err);
+      setError(err.response?.data?.detail || err.message || '데이터를 불러오는데 실패했습니다.');
+      setDummyData([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 컴포넌트 마운트 시 데이터 로드
+  useEffect(() => {
+    fetchDummyData();
+  }, []);
 
   const renderOverview = () => {
 
@@ -35,7 +68,7 @@ export default function CBAMPage() {
             </div>
             <div className='flex gap-3'>
               <button
-                onClick={refreshData}
+                onClick={fetchDummyData}
                 disabled={loading}
                 className='inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50'
               >
@@ -60,7 +93,7 @@ export default function CBAMPage() {
               <div className='text-center py-8'>
                 <p className='text-red-400'>{error}</p>
                 <button
-                  onClick={refreshData}
+                  onClick={fetchDummyData}
                   className='mt-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors'
                 >
                   다시 시도
@@ -83,14 +116,14 @@ export default function CBAMPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {data.length === 0 ? (
+                  {dummyData.length === 0 ? (
                     <tr>
                       <td colSpan={10} className='text-center py-8 text-white/40'>
                         데이터가 없습니다.
                       </td>
                     </tr>
                   ) : (
-                    data.map((item) => (
+                    dummyData.map((item) => (
                       <tr key={item.id} className='border-b border-white/10 hover:bg-white/5 transition-colors'>
                         <td className='py-3 px-4 text-white/90'>{item.로트번호}</td>
                         <td className='py-3 px-4 text-white/90'>{item.생산품명}</td>

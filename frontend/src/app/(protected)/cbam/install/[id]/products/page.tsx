@@ -58,10 +58,6 @@ interface ProductForm {
   product_eusell: number;
 }
 
-interface ProcessForm {
-  process_name: string;
-}
-
 export default function InstallProductsPage() {
   const router = useRouter();
   const params = useParams();
@@ -106,12 +102,12 @@ export default function InstallProductsPage() {
   const [searchResults, setSearchResults] = useState<HSCNMappingResponse[]>([]);
   const [isSearching, setIsSearching] = useState(false);
 
-  const [processForm, setProcessForm] = useState<ProcessForm>({
+  const [processForm, setProcessForm] = useState<{ process_name: string }>({
     process_name: ''
   });
 
   // 더미 데이터 훅 사용
-  const { getProcessesByProduct, getProcessesByProductPeriod, loading: dummyLoading, error: dummyError } = useDummyData();
+  const { getProcessesByProduct, loading: dummyLoading, error: dummyError } = useDummyData();
   const [availableProcesses, setAvailableProcesses] = useState<string[]>([]);
   const [selectedProcess, setSelectedProcess] = useState<string>('');
 
@@ -138,19 +134,12 @@ export default function InstallProductsPage() {
   };
 
   // 제품별 공정 목록 조회
-  const fetchAvailableProcesses = useCallback(async (productName: string, startDate?: string, endDate?: string) => {
+  const fetchAvailableProcesses = useCallback(async (productName: string) => {
     if (!productName) return;
     
     try {
-      let processes: string[] = [];
-      
-      if (startDate && endDate) {
-        // 기간별 공정 목록 조회
-        processes = await getProcessesByProductPeriod(productName, startDate, endDate);
-      } else {
-        // 전체 기간 공정 목록 조회
-        processes = await getProcessesByProduct(productName);
-      }
+      // 제품명으로만 공정 목록 조회 (기간 필터링 제거)
+      const processes = await getProcessesByProduct(productName);
       
       setAvailableProcesses(processes);
       console.log(`✅ 제품 '${productName}'의 사용 가능한 공정 목록:`, processes);
@@ -158,15 +147,15 @@ export default function InstallProductsPage() {
       console.error(`❌ 제품 '${productName}'의 공정 목록 조회 실패:`, error);
       setAvailableProcesses([]);
     }
-  }, [getProcessesByProduct, getProcessesByProductPeriod]);
+  }, [getProcessesByProduct]);
 
   // 공정 추가 폼 표시 시 해당 제품의 공정 목록 조회
   const handleShowProcessForm = (product: Product) => {
     setShowProcessFormForProduct(product.id);
     
-    // 해당 제품의 공정 목록 조회
+    // 해당 제품의 공정 목록 조회 (기간 정보 제거)
     if (product.product_name) {
-      fetchAvailableProcesses(product.product_name, product.prostart_period, product.proend_period);
+      fetchAvailableProcesses(product.product_name);
     }
   };
 
@@ -221,13 +210,6 @@ export default function InstallProductsPage() {
 
   const handleProductInputChange = (field: keyof ProductForm, value: string | number) => {
     setProductForm(prev => ({
-      ...prev,
-      [field]: value
-    }));
-  };
-
-  const handleProcessInputChange = (field: keyof ProcessForm, value: string) => {
-    setProcessForm(prev => ({
       ...prev,
       [field]: value
     }));
