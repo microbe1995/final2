@@ -695,11 +695,22 @@ export default function InstallProductsPage() {
             ) : (
               <div className="space-y-6">
                 {products.map((product) => {
-                  // 다대다 관계에 맞게 제품과 연결된 공정들 필터링
-                  const productProcesses = processes.filter((process: any) => 
-                    process.products && process.products.some((p: any) => p.id === product.id)
+                  // 제품과 연결된 공정들 필터링 (product_id로 관계 확인)
+                  const productProcesses = processes.filter(
+                    process => process.product_id === product.id
                   );
-                  console.log(`🔍 제품 ${product.product_name} (ID: ${product.id})의 공정들:`, productProcesses);
+                  
+                  // 공정 데이터 유효성 검사
+                  const validProcesses = productProcesses.filter(process => 
+                    process && process.id && process.process_name && 
+                    Object.keys(process).length > 0
+                  );
+                  
+                  if (productProcesses.length !== validProcesses.length) {
+                    console.warn(`⚠️ 제품 ${product.product_name} (ID: ${product.id})에서 ${productProcesses.length - validProcesses.length}개의 빈 공정 데이터 발견`);
+                  }
+                  
+                  console.log(`🔍 제품 ${product.product_name} (ID: ${product.id})의 공정들:`, validProcesses);
                   const isShowingProcessForm = showProcessFormForProduct === product.id;
                   
                   return (
@@ -711,7 +722,7 @@ export default function InstallProductsPage() {
                       <div className="space-y-1 mb-3">
                         <p className="text-gray-300 text-sm">기간: {product.prostart_period} ~ {product.proend_period}</p>
                         <p className="text-gray-300 text-sm">수량: {product.product_amount.toLocaleString()}</p>
-                        <p className="text-gray-300 text-sm">공정 수: {productProcesses.length}개</p>
+                        <p className="text-gray-300 text-sm">공정 수: {validProcesses.length}개</p>
                         {product.product_category && (
                           <p className="text-gray-300 text-sm">카테고리: <span className="text-blue-300">{product.product_category}</span></p>
                         )}
@@ -735,11 +746,11 @@ export default function InstallProductsPage() {
                       </div>
 
                       {/* 공정 목록 */}
-                      {productProcesses.length > 0 && (
+                      {validProcesses.length > 0 && (
                         <div className="mb-4 p-3 bg-white/5 rounded-lg">
                           <h5 className="text-sm font-medium text-white mb-2">📋 등록된 공정:</h5>
                           <div className="space-y-2">
-                            {productProcesses.map((process) => (
+                            {validProcesses.map((process) => (
                               <div key={process.id} className="flex justify-between items-center p-2 bg-white/5 rounded">
                                 <span className="text-gray-300 text-sm">{process.process_name}</span>
                                 <div className="flex gap-1">
