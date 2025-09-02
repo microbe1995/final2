@@ -264,7 +264,7 @@ export const apiEndpoints = {
     dummy: {
       // Gateway: /api/v1/cbam/dummy/{path} → CBAM: /dummy/{path}
       create: '/api/v1/cbam/dummy',
-      list: '/행ㅎㅐ ',
+      list: '/api/v1/cbam/dummy',
       get: (id: number) => `/api/v1/cbam/dummy/${id}`,
       update: (id: number) => `/api/v1/cbam/dummy/${id}`,
       delete: (id: number) => `/api/v1/cbam/dummy/${id}`,
@@ -272,13 +272,13 @@ export const apiEndpoints = {
       byProcess: (process_name: string) => `/api/v1/cbam/dummy/search/process/${process_name}`,
       byProduct: (product_name: string) => `/api/v1/cbam/dummy/search/product/${product_name}`,
       count: '/api/v1/cbam/dummy/stats/count',
+      health: '/api/v1/cbam/dummy/health',
+      // 제품명 관련 API
       productNames: '/api/v1/cbam/dummy/products/names',  // 고유 제품명 목록
       productNamesByPeriod: '/api/v1/cbam/dummy/products/names/by-period'  // 기간별 제품명 목록
     },
     
     // Process Chain 관련 API
-
-    
     edge: {
       // Gateway: /api/v1/cbam/edge/{path} → CBAM: /edge/{path}
       create: '/api/v1/cbam/edge',
@@ -345,20 +345,6 @@ export const apiEndpoints = {
       product: {
         calculate: '/api/v1/cbam/calculation/emission/product/calculate'
       }
-    },
-    
-    // Dummy 테이블 API
-    dummy: {
-      // 제품명 관련 API
-      productNames: '/api/v1/cbam/dummy/products/names',
-      productNamesByPeriod: '/api/v1/cbam/dummy/products/names/by-period',
-      // 기타 Dummy API
-      list: '/api/v1/cbam/dummy',
-      get: (id: number) => `/api/v1/cbam/dummy/${id}`,
-      create: '/api/v1/cbam/dummy',
-      update: (id: number) => `/api/v1/cbam/dummy/${id}`,
-      delete: (id: number) => `/api/v1/cbam/dummy/${id}`,
-      health: '/api/v1/cbam/dummy/health'
     }
   },
   // Material Master API (CBAM 통합 서비스 사용) - 경로 패턴 통일
