@@ -156,20 +156,28 @@ export default function InstallProductsPage() {
   };
 
   // 제품별 공정 목록 조회
-  const fetchAvailableProcesses = useCallback(async (productName: string) => {
+  const fetchAvailableProcesses = useCallback(async (productName: string, productId: number) => {
     if (!productName) return;
     
     try {
       // 제품명으로만 공정 목록 조회 (기간 필터링 제거)
-      const processes = await getProcessesByProduct(productName);
+      const allProcesses = await getProcessesByProduct(productName);
       
-      setAvailableProcesses(processes);
-      console.log(`✅ 제품 '${productName}'의 사용 가능한 공정 목록:`, processes);
+      // 이미 제품에 연결된 공정들은 제외
+      const connectedProcesses = productProcessesMap.get(productId) || [];
+      const availableProcesses = allProcesses.filter((process: string) => 
+        !connectedProcesses.includes(process)
+      );
+      
+      setAvailableProcesses(availableProcesses);
+      console.log(`✅ 제품 '${productName}'의 사용 가능한 공정 목록:`, availableProcesses);
+      console.log(`🔍 이미 연결된 공정들:`, connectedProcesses);
+      console.log(`🔍 전체 공정 목록:`, allProcesses);
     } catch (error) {
       console.error(`❌ 제품 '${productName}'의 공정 목록 조회 실패:`, error);
       setAvailableProcesses([]);
     }
-  }, [getProcessesByProduct]);
+  }, [getProcessesByProduct, productProcessesMap]);
 
   // 🔴 수정: 특정 제품의 공정 목록 조회 및 상태 업데이트 (실제 생성된 공정)
   const fetchProductProcesses = useCallback(async (productId: number, productName: string) => {
@@ -201,7 +209,7 @@ export default function InstallProductsPage() {
     
     // 해당 제품의 공정 목록 조회 (기간 정보 제거)
     if (product.product_name) {
-      fetchAvailableProcesses(product.product_name);
+      fetchAvailableProcesses(product.product_name, product.id);
     }
   };
 
@@ -227,6 +235,16 @@ export default function InstallProductsPage() {
       });
     }
   }, [products, fetchProductProcesses]);
+
+  // 🔴 추가: 공정 추가 폼이 열릴 때마다 사용 가능한 공정 목록 새로고침
+  useEffect(() => {
+    if (showProcessFormForProduct) {
+      const product = products.find(p => p.id === showProcessFormForProduct);
+      if (product) {
+        fetchAvailableProcesses(product.product_name, product.id);
+      }
+    }
+  }, [showProcessFormForProduct, products, fetchAvailableProcesses]);
 
   // 기간 변경 시 제품명 목록 업데이트 (useEffect 제거, 수동 호출로 변경)
   // useEffect(() => {
@@ -959,26 +977,29 @@ export default function InstallProductsPage() {
                         <div className="mb-4 p-4 bg-white/5 rounded-lg border border-purple-500/30">
                           <h5 className="text-sm font-medium text-white mb-3">🔄 공정 추가</h5>
                           
-                          {/* 더미 데이터에서 가져온 공정 목록 안내 */}
-                          {availableProcesses.length > 0 ? (
-                            <div className="mb-3 p-2 bg-blue-500/10 border border-blue-500/20 rounded-md">
-                              <p className="text-xs text-blue-300">
-                                📋 <strong>더미 데이터에서 확인된 공정:</strong> {availableProcesses.length}개
-                              </p>
-                              <p className="text-xs text-blue-400 mt-1">
-                                아래 드롭다운에서 해당 제품에 적합한 공정을 선택해주세요.
-                              </p>
-                            </div>
-                          ) : (
-                            <div className="mb-3 p-2 bg-yellow-500/10 border border-yellow-500/20 rounded-md">
-                              <p className="text-xs text-yellow-300">
-                                ⚠️ <strong>사용 가능한 공정이 없습니다.</strong>
-                              </p>
-                              <p className="text-xs text-yellow-400 mt-1">
-                                더미 데이터에서 해당 제품의 공정 정보를 찾을 수 없습니다.
-                              </p>
-                            </div>
-                          )}
+                                                     {/* 더미 데이터에서 가져온 공정 목록 안내 */}
+                           {availableProcesses.length > 0 ? (
+                             <div className="mb-3 p-2 bg-blue-500/10 border border-blue-500/20 rounded-md">
+                               <p className="text-xs text-blue-300">
+                                 📋 <strong>사용 가능한 공정:</strong> {availableProcesses.length}개
+                               </p>
+                               <p className="text-xs text-blue-400 mt-1">
+                                 아래 드롭다운에서 해당 제품에 적합한 공정을 선택해주세요.
+                               </p>
+                             </div>
+                           ) : (
+                             <div className="mb-3 p-2 bg-yellow-500/10 border border-yellow-500/20 rounded-md">
+                               <p className="text-xs text-yellow-300">
+                                 ⚠️ <strong>사용 가능한 공정이 없습니다.</strong>
+                               </p>
+                               <p className="text-xs text-yellow-400 mt-1">
+                                 {productProcessesMap.get(product.id) && productProcessesMap.get(product.id)!.length > 0 
+                                   ? '이미 모든 공정이 연결되어 있습니다.' 
+                                   : '더미 데이터에서 해당 제품의 공정 정보를 찾을 수 없습니다.'
+                                 }
+                               </p>
+                             </div>
+                           )}
                           
                           <form onSubmit={(e) => handleProcessSubmit(e, product.id)} className="space-y-3">
                             <div>
