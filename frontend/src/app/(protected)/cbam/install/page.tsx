@@ -34,6 +34,13 @@ export default function InstallPage() {
     install_name: '',
     reporting_year: new Date().getFullYear() // 현재 년도로 기본값 설정
   });
+  
+  // 🔴 추가: 제품-공정 관계 설정 관련 상태
+  const [activeTab, setActiveTab] = useState<'install' | 'product-process'>('install');
+  const [products, setProducts] = useState<any[]>([]);
+  const [processes, setProcesses] = useState<any[]>([]);
+  const [selectedProduct, setSelectedProduct] = useState<any>(null);
+  const [productProcessRelations, setProductProcessRelations] = useState<Map<number, any[]>>(new Map());
 
   // 사업장 목록 조회
   const fetchInstalls = async () => {
@@ -81,8 +88,57 @@ export default function InstallPage() {
     }
   };
 
+  // 🔴 추가: 제품과 공정 데이터 조회 함수들
+  const fetchProducts = async () => {
+    try {
+      const response = await axiosClient.get(apiEndpoints.cbam.product.list);
+      setProducts(response.data);
+      console.log('✅ 제품 목록 조회 성공:', response.data);
+    } catch (error: any) {
+      console.error('❌ 제품 목록 조회 실패:', error);
+      setToast({
+        message: `제품 목록을 불러오는데 실패했습니다: ${error.response?.data?.detail || error.message}`,
+        type: 'error'
+      });
+    }
+  };
+
+  const fetchProcesses = async () => {
+    try {
+      const response = await axiosClient.get(apiEndpoints.cbam.process.list);
+      setProcesses(response.data);
+      console.log('✅ 공정 목록 조회 성공:', response.data);
+    } catch (error: any) {
+      console.error('❌ 공정 목록 조회 실패:', error);
+      setToast({
+        message: `공정 목록을 불러오는데 실패했습니다: ${error.response?.data?.detail || error.message}`,
+        type: 'error'
+      });
+    }
+  };
+
+  const fetchProductProcessRelations = async () => {
+    try {
+      const response = await axiosClient.get(apiEndpoints.cbam.productProcess.list);
+      const relations = new Map();
+      response.data.forEach((relation: any) => {
+        if (!relations.has(relation.product_id)) {
+          relations.set(relation.product_id, []);
+        }
+        relations.get(relation.product_id).push(relation);
+      });
+      setProductProcessRelations(relations);
+      console.log('✅ 제품-공정 관계 조회 성공:', relations);
+    } catch (error: any) {
+      console.error('❌ 제품-공정 관계 조회 실패:', error);
+    }
+  };
+
   useEffect(() => {
     fetchInstalls();
+    fetchProducts();
+    fetchProcesses();
+    fetchProductProcessRelations();
   }, []);
 
   // 사업장 정렬
@@ -223,6 +279,54 @@ export default function InstallPage() {
     }
   };
 
+  // 🔴 추가: 제품-공정 관계 관리 함수들
+  const handleAddProcessToProduct = async (productId: number, processId: number) => {
+    try {
+      await axiosClient.post(apiEndpoints.cbam.productProcess.create, {
+        product_id: productId,
+        process_id: processId
+      });
+      
+      setToast({
+        message: '제품에 공정이 추가되었습니다.',
+        type: 'success'
+      });
+      
+      fetchProductProcessRelations();
+    } catch (error: any) {
+      console.error('❌ 공정 추가 실패:', error);
+      setToast({
+        message: `공정 추가에 실패했습니다: ${error.response?.data?.detail || error.message}`,
+        type: 'error'
+      });
+    }
+  };
+
+  const handleRemoveProcessFromProduct = async (productId: number, processId: number) => {
+    try {
+      // 제품-공정 관계 삭제
+      const relations = productProcessRelations.get(productId) || [];
+      const relation = relations.find((r: any) => r.process_id === processId);
+      
+      if (relation) {
+        await axiosClient.delete(apiEndpoints.cbam.productProcess.delete(relation.id));
+        
+        setToast({
+          message: '제품에서 공정이 제거되었습니다.',
+          type: 'success'
+        });
+        
+        fetchProductProcessRelations();
+      }
+    } catch (error: any) {
+      console.error('❌ 공정 제거 실패:', error);
+      setToast({
+        message: `공정 제거에 실패했습니다: ${error.response?.data?.detail || error.message}`,
+        type: 'error'
+      });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 p-6">
       <div className="max-w-6xl mx-auto">
@@ -245,11 +349,36 @@ export default function InstallPage() {
           </div>
         )}
 
-        {/* 사업장 생성/수정 폼 */}
-        <div className="bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10">
-          <h2 className="text-2xl font-semibold text-white mb-6 flex items-center gap-2">
-            {editingInstall ? '🏭 사업장 수정' : '🏭 사업장 생성'}
-          </h2>
+        {/* 탭 네비게이션 */}
+        <div className="mb-6 flex gap-2 border-b border-white/10">
+          <button
+            onClick={() => setActiveTab('install')}
+            className={`px-4 py-2 text-sm font-medium transition-colors ${
+              activeTab === 'install'
+                ? 'text-blue-400 border-b-2 border-blue-400'
+                : 'text-gray-400 hover:text-gray-300'
+            }`}
+          >
+            🏭 사업장 관리
+          </button>
+          <button
+            onClick={() => setActiveTab('product-process')}
+            className={`px-4 py-2 text-sm font-medium transition-colors ${
+              activeTab === 'product-process'
+                ? 'text-blue-400 border-b-2 border-blue-400'
+                : 'text-gray-400 hover:text-gray-300'
+            }`}
+          >
+            🔗 제품-공정 관계 설정
+          </button>
+        </div>
+
+        {/* 사업장 관리 탭 */}
+        {activeTab === 'install' && (
+          <div className="bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10">
+            <h2 className="text-2xl font-semibold text-white mb-6 flex items-center gap-2">
+              {editingInstall ? '🏭 사업장 수정' : '🏭 사업장 생성'}
+            </h2>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -391,7 +520,110 @@ export default function InstallPage() {
             </div>
           )}
         </div>
-      </div>
+      )}
+
+      {/* 제품-공정 관계 설정 탭 */}
+      {activeTab === 'product-process' && (
+        <div className="space-y-6">
+          {/* 제품 선택 */}
+          <div className="bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10">
+            <h2 className="text-2xl font-semibold text-white mb-6">🔗 제품-공정 관계 설정</h2>
+            
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                제품 선택
+              </label>
+              <select
+                value={selectedProduct?.id || ''}
+                onChange={(e) => {
+                  const product = products.find(p => p.id === parseInt(e.target.value));
+                  setSelectedProduct(product || null);
+                }}
+                className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">제품을 선택하세요</option>
+                {products.map((product) => (
+                  <option key={product.id} value={product.id}>
+                    {product.product_name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* 선택된 제품의 공정 관계 표시 */}
+            {selectedProduct && (
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-white">
+                  📋 {selectedProduct.product_name}의 공정 관계
+                </h3>
+                
+                {/* 현재 연결된 공정들 */}
+                <div className="bg-white/5 rounded-lg p-4">
+                  <h4 className="text-white font-medium mb-3">✅ 연결된 공정</h4>
+                  {(() => {
+                    const relations = productProcessRelations.get(selectedProduct.id) || [];
+                    return relations.length > 0 ? (
+                      <div className="space-y-2">
+                        {relations.map((relation: any) => {
+                          const process = processes.find(p => p.id === relation.process_id);
+                          const install = installs.find(i => i.id === relation.install_id);
+                          return process ? (
+                            <div key={relation.id} className="flex justify-between items-center p-3 bg-white/10 rounded-lg">
+                              <div>
+                                <span className="text-white font-medium">{process.process_name}</span>
+                                <span className="text-gray-400 ml-2">({install?.install_name || '알 수 없음'})</span>
+                              </div>
+                              <button
+                                onClick={() => handleRemoveProcessFromProduct(selectedProduct.id, process.id)}
+                                className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-sm rounded-md transition-colors duration-200"
+                              >
+                                제거
+                              </button>
+                            </div>
+                          ) : null;
+                        })}
+                      </div>
+                    ) : (
+                      <p className="text-gray-400">연결된 공정이 없습니다.</p>
+                    );
+                  })()}
+                </div>
+
+                {/* 사용 가능한 공정 추가 */}
+                <div className="bg-white/5 rounded-lg p-4">
+                  <h4 className="text-white font-medium mb-3">➕ 공정 추가</h4>
+                  <div className="space-y-2">
+                    {processes.map((process) => {
+                      const relations = productProcessRelations.get(selectedProduct.id) || [];
+                      const isAlreadyConnected = relations.some((r: any) => r.process_id === process.id);
+                      const processInstall = installs.find(i => i.id === process.install_id);
+                      
+                      return (
+                        <div key={process.id} className="flex justify-between items-center p-3 bg-white/10 rounded-lg">
+                          <div>
+                            <span className="text-white font-medium">{process.process_name}</span>
+                            <span className="text-gray-400 ml-2">({processInstall?.install_name || '알 수 없음'})</span>
+                          </div>
+                          {isAlreadyConnected ? (
+                            <span className="text-green-400 text-sm">✓ 연결됨</span>
+                          ) : (
+                            <button
+                              onClick={() => handleAddProcessToProduct(selectedProduct.id, process.id)}
+                              className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-md transition-colors duration-200"
+                            >
+                              추가
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
