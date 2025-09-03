@@ -223,9 +223,17 @@ class EdgeService:
             else:
                 product_emission = product_data['attr_em'] or 0.0
             # 기존 구현은 product_amount로 나눴으나, 실제 분배는 "to_next_process" 대비 할당량 기준이어야 함
-            # 비율 = allocated_amount / to_next_process (to_next_process가 0이면 0)
-            process_ratio = (allocated_amount / to_next_process) if to_next_process > 0 else 0.0
-            process_emission = product_emission * process_ratio
+            if to_next_process > 0:
+                # 일반 케이스: 생산-판매-EU가 양수 → 다음 공정으로 넘어가는 양 기준 분배
+                process_ratio = (allocated_amount / to_next_process)
+                process_emission = product_emission * process_ratio
+            else:
+                # 예외 케이스: DB의 product_amount가 0 등으로 to_next_process<=0 인 경우
+                # 연결된 소비 공정 수 기준으로 제품배출량을 균등 분배(단일 소비 공정이면 전량 배정)
+                consumers = len(consumption_data)
+                safe_ratio = (1.0 / consumers) if consumers > 0 else 0.0
+                process_ratio = safe_ratio if total_consumption == 0 else (consumption_amount / total_consumption)
+                process_emission = product_emission * process_ratio
             
             # 7. 공정의 자체 배출량에 추가
             total_process_emission = process_data['attrdir_em'] + process_emission
