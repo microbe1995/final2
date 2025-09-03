@@ -135,6 +135,15 @@ export default function InstallProductsPage() {
   // 🔴 추가: 제품별 공정 목록 상태 관리
   const [productProcessesMap, setProductProcessesMap] = useState<Map<number, string[]>>(new Map());
 
+  // 🔴 추가: 사업장별 공정 목록 상태 관리
+  const [installProcessesMap, setInstallProcessesMap] = useState<Map<number, string[]>>(new Map());
+
+  // 🔴 추가: 사업장 목록 상태 관리
+  const [installs, setInstalls] = useState<Install[]>([]);
+
+  // 🔴 추가: 공정 추가 시 선택된 사업장 ID 상태
+  const [selectedInstallForProcess, setSelectedInstallForProcess] = useState<number | ''>('');
+
   // 사업장별 제품 목록 조회
   const fetchProducts = async () => {
     try {
@@ -144,6 +153,40 @@ export default function InstallProductsPage() {
       setProducts(filteredProducts);
     } catch (error: any) {
       console.error('❌ 제품 목록 조회 실패:', error);
+    }
+  };
+
+  // 🔴 추가: 사업장별 공정 목록 조회
+  const fetchProcessesByInstall = useCallback(async () => {
+    try {
+      const response = await axiosClient.get(apiEndpoints.cbam.process.list);
+      console.log('🔍 전체 공정 목록 조회 결과:', response.data);
+      
+      // 사업장별로 공정 그룹화
+      const installProcessMap = new Map<number, string[]>();
+      response.data.forEach((process: any) => {
+        const installId = process.install_id || 1;
+        if (!installProcessMap.has(installId)) {
+          installProcessMap.set(installId, []);
+        }
+        installProcessMap.get(installId)!.push(process.process_name);
+      });
+      
+      setInstallProcessesMap(installProcessMap);
+      console.log('✅ 사업장별 공정 목록:', installProcessMap);
+    } catch (error: any) {
+      console.error('❌ 사업장별 공정 목록 조회 실패:', error);
+    }
+  }, []);
+
+  // 🔴 추가: 사업장 목록 조회
+  const fetchInstalls = async () => {
+    try {
+      const response = await axiosClient.get(apiEndpoints.cbam.install.list);
+      console.log('🔍 사업장 목록 조회 결과:', response.data);
+      setInstalls(response.data);
+    } catch (error: any) {
+      console.error('❌ 사업장 목록 조회 실패:', error);
     }
   };
 
@@ -221,6 +264,7 @@ export default function InstallProductsPage() {
       setSelectedProcess('');
       setAvailableProcesses([]);
       setProcessForm({ process_name: '' });
+      setSelectedInstallForProcess(''); // 폼 닫을 때 사업장 선택 초기화
       return;
     }
     
@@ -497,10 +541,20 @@ export default function InstallProductsPage() {
       return;
     }
 
+    // 🔴 추가: 사업장 선택 검증
+    if (!selectedInstallForProcess) {
+      setToast({
+        message: '사업장을 선택해주세요.',
+        type: 'error'
+      });
+      return;
+    }
+
     try {
       // 백엔드 스키마에 맞게 데이터 변환
       const processData = {
         process_name: processForm.process_name,
+        install_id: selectedInstallForProcess,  // 🔴 추가: 선택된 사업장 ID
         start_period: null, // 선택적 필드
         end_period: null,   // 선택적 필드
         product_ids: [productId]  // 다대다 관계를 위해 배열로 전송
@@ -528,7 +582,20 @@ export default function InstallProductsPage() {
             type: 'success'
           });
         } else {
-          throw new Error('수정할 공정을 찾을 수 없습니다.');
+          // 🔴 수정: 기존 공정을 찾을 수 없으면 자동으로 추가 모드로 전환
+          console.log('⚠️ 기존 공정을 찾을 수 없음, 추가 모드로 전환:', selectedProcess);
+          
+          // 추가 모드: 새 공정 생성
+          console.log('➕ 공정 추가 모드 (자동 전환)');
+          console.log('🔍 API 엔드포인트:', apiEndpoints.cbam.process.create);
+          
+          response = await axiosClient.post(apiEndpoints.cbam.process.create, processData);
+          console.log('✅ 프로세스 생성 성공:', response.data);
+          
+          setToast({
+            message: `새 공정 "${processForm.process_name}"이 성공적으로 생성되었습니다.`,
+            type: 'success'
+          });
         }
       } else {
         // 추가 모드: 새 공정 생성
@@ -551,6 +618,7 @@ export default function InstallProductsPage() {
       setSelectedProcess('');
       setAvailableProcesses([]);
       setShowProcessFormForProduct(null);
+      setSelectedInstallForProcess(''); // 폼 닫을 때 사업장 선택 초기화
 
       // 목록 새로고침
       await fetchProcesses();
@@ -1127,6 +1195,38 @@ export default function InstallProductsPage() {
                            )}
                           
                           <form onSubmit={(e) => handleProcessSubmit(e, product.id)} className="space-y-3">
+                            {/* 🔴 추가: 사업장 선택 */}
+                            <div>
+                              <label className="block text-sm font-medium text-gray-300 mb-1">사업장 선택 *</label>
+                              <select
+                                value={selectedInstallForProcess || ''}
+                                onChange={(e) => {
+                                  const installId = parseInt(e.target.value);
+                                  setSelectedInstallForProcess(installId);
+                                  // 선택된 사업장의 공정 목록으로 availableProcesses 업데이트
+                                  if (installId && installProcessesMap.has(installId)) {
+                                    const installProcesses = installProcessesMap.get(installId) || [];
+                                    setAvailableProcesses(installProcesses);
+                                  } else {
+                                    setAvailableProcesses([]);
+                                  }
+                                  setSelectedProcess('');
+                                }}
+                                className="w-full px-3 py-2 border rounded-md text-white bg-gray-800/50 border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                required
+                              >
+                                <option value="">사업장을 선택하세요</option>
+                                {Array.from(installProcessesMap.keys()).map((installId) => {
+                                  const install = installs.find(i => i.id === installId);
+                                  return (
+                                    <option key={installId} value={installId}>
+                                      {install?.install_name || `사업장 ${installId}`} ({installProcessesMap.get(installId)?.length || 0}개 공정)
+                                    </option>
+                                  );
+                                })}
+                              </select>
+                            </div>
+                            
                             <div>
                               <label className="block text-sm font-medium text-gray-300 mb-1">공정명 *</label>
                               
@@ -1174,14 +1274,17 @@ export default function InstallProductsPage() {
                             <div className="flex gap-2">
                                                              <button
                                  type="submit"
-                                 disabled={!selectedProcess || availableProcesses.length === 0}
+                                 disabled={!selectedProcess || !selectedInstallForProcess || availableProcesses.length === 0}
                                  className={`flex-1 px-4 py-2 text-white text-sm font-medium rounded-md transition-colors duration-200 ${
-                                   selectedProcess && availableProcesses.length > 0
+                                   selectedProcess && selectedInstallForProcess && availableProcesses.length > 0
                                      ? 'bg-purple-600 hover:bg-purple-700'
                                      : 'bg-gray-500 cursor-not-allowed'
                                  }`}
                                >
-                                 ➕ 공정 추가
+                                 {selectedProcess && showProcessFormForProduct === product.id 
+                                   ? '🔧 공정 수정' 
+                                   : '➕ 공정 추가'
+                                 }
                                </button>
                              </div>
                           </form>

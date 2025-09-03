@@ -76,6 +76,7 @@ class ProcessRepository:
                         CREATE TABLE process (
                             id SERIAL PRIMARY KEY,
                             process_name TEXT NOT NULL,
+                            install_id INTEGER NOT NULL,  -- 🔴 추가: 사업장 ID
                             start_period DATE,  -- 🔴 수정: NULL 허용
                             end_period DATE,    -- 🔴 수정: NULL 허용
                             created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -85,7 +86,17 @@ class ProcessRepository:
                     logger.info("✅ process 테이블 생성 완료")
                 else:
                     logger.info("✅ process 테이블 확인 완료")
-                    # 🔴 추가: 기존 테이블의 start_period, end_period를 NULL 허용으로 변경
+                    # 🔴 추가: install_id 컬럼이 없으면 추가
+                    try:
+                        await conn.execute("""
+                            ALTER TABLE process 
+                            ADD COLUMN install_id INTEGER NOT NULL DEFAULT 1
+                        """)
+                        logger.info("✅ process 테이블에 install_id 컬럼 추가 완료")
+                    except Exception as e:
+                        logger.info(f"ℹ️ install_id 컬럼은 이미 존재합니다: {e}")
+                    
+                    # 🔴 수정: 기존 테이블의 start_period, end_period를 NULL 허용으로 변경
                     try:
                         await conn.execute("""
                             ALTER TABLE process 
@@ -161,17 +172,18 @@ class ProcessRepository:
             
         try:
             async with self.pool.acquire() as conn:
-                # 1. 공정 생성 (start_period, end_period는 선택적)
+                # 1. 공정 생성 (install_id 포함)
                 params = (
                     process_data['process_name'], 
+                    process_data.get('install_id', 1),  # 🔴 추가: install_id (기본값 1)
                     process_data.get('start_period'), 
                     process_data.get('end_period')
                 )
                 result = await conn.fetchrow("""
                     INSERT INTO process (
-                        process_name, start_period, end_period
+                        process_name, install_id, start_period, end_period
                     ) VALUES (
-                        $1, $2, $3
+                        $1, $2, $3, $4
                     ) RETURNING *
                 """, *params)
                 
@@ -204,11 +216,13 @@ class ProcessRepository:
             
         try:
             async with self.pool.acquire() as conn:
-                # 모든 공정 조회
+                # 모든 공정 조회 (사업장 정보 포함)
                 results = await conn.fetch("""
-                    SELECT id, process_name, start_period, end_period, created_at, updated_at
-                    FROM process
-                    ORDER BY id
+                    SELECT p.id, p.process_name, p.install_id, p.start_period, p.end_period, 
+                           p.created_at, p.updated_at, i.install_name
+                    FROM process p
+                    LEFT JOIN install i ON p.install_id = i.id
+                    ORDER BY p.id
                 """)
                 
                 processes = []
