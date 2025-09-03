@@ -139,13 +139,12 @@ export default function CBAMPage() {
                     <th className='text-left py-3 px-4 font-medium text-white/80'>투입물</th>
                     <th className='text-left py-3 px-4 font-medium text-white/80'>수량</th>
                     <th className='text-left py-3 px-4 font-medium text-white/80'>단위</th>
-                    <th className='text-left py-3 px-4 font-medium text-white/80'>AI추천</th>
                   </tr>
                 </thead>
                 <tbody>
                   {dummyData.length === 0 ? (
                     <tr>
-                      <td colSpan={10} className='text-center py-8 text-white/40'>
+                      <td colSpan={9} className='text-center py-8 text-white/40'>
                         데이터가 없습니다.
                       </td>
                     </tr>
@@ -160,12 +159,7 @@ export default function CBAMPage() {
                         <td className='py-3 px-4 text-white/90'>{item.공정}</td>
                         <td className='py-3 px-4 text-white/90'>{item.투입물명 || '-'}</td>
                         <td className='py-3 px-4 text-white/90'>{item.수량}</td>
-                        <td className='py-3 px-4 text-white/90'>{item.단위}</td>
-                        <td className='py-3 px-4 text-white/90'>
-                          <span className='px-2 py-1 bg-blue-600/20 text-blue-400 rounded-full text-xs'>
-                            추천
-                          </span>
-                        </td>
+                        <td className='py-3 px-4 text-white/90'>ton</td>
                       </tr>
                     ))
                   )}
