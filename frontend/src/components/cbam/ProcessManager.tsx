@@ -144,10 +144,16 @@ function ProcessManagerInner() {
   }, [addProductNode]);
 
   // 제품 노드 클릭 시 복잡한 다대다 관계 공정 선택 모달 열기
-  const handleProductNodeClickComplex = useCallback((productData: Product) => {
+  const handleProductNodeClickComplex = useCallback(async (productData: Product) => {
     setSelectedProduct(productData);
+    // 선택한 제품의 공정들을 모든 사업장 기준으로 로드
+    try {
+      await fetchProcessesByProduct(productData.id);
+    } catch (e) {
+      // 무시하고 모달만 오픈
+    }
     setShowProcessModal(true);
-  }, []);
+  }, [fetchProcessesByProduct]);
 
   // 투입량 입력 모달 열기
   const openInputModal = useCallback((process: Process) => {
@@ -390,7 +396,7 @@ function ProcessManagerInner() {
       {showProcessModal && (
         <ProductProcessModal
           selectedProduct={selectedProduct}
-          allProcesses={allProcesses}
+          allProcesses={processes}
           products={products}
           installs={installs}
           selectedInstall={selectedInstall}

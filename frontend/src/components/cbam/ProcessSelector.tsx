@@ -175,21 +175,18 @@ export const ProductProcessModal: React.FC<{
                     );
                     const productNames = relatedProducts.map((product: Product) => product.product_name).join(', ');
                     
-                    const isExternalProcess = process.products && 
-                      process.products.some((p: Product) => p.install_id !== selectedInstall?.id);
-                    const processInstall = installs.find((install: Install) => 
-                      process.products && process.products.some((p: Product) => p.install_id === install.id)
-                    );
+                    const isExternalProcess = typeof process.install_id === 'number' && process.install_id !== selectedInstall?.id;
+                    const processInstall = installs.find((install: Install) => install.id === process.install_id);
                     
                     return (
                       <div
                         key={process.id}
-                        className={`p-3 border rounded-lg cursor-pointer transition-colors ${
+                        className={`p-3 border rounded-lg transition-colors ${
                           isExternalProcess 
-                            ? 'border-gray-500 bg-gray-700 hover:bg-gray-600' 
-                            : 'border-gray-600 hover:bg-gray-700 hover:border-purple-400'
+                            ? 'border-gray-600 bg-gray-800 text-gray-400 cursor-not-allowed' 
+                            : 'border-gray-600 hover:bg-gray-700 hover:border-purple-400 cursor-pointer'
                         }`}
-                        onClick={() => onProcessSelect(process)}
+                        onClick={() => { if (!isExternalProcess) onProcessSelect(process); }}
                       >
                         <div className="font-medium text-white">{process.process_name}</div>
                         <div className="text-sm text-gray-300">사용 제품: {productNames || 'N/A'}</div>
