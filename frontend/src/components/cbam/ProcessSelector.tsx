@@ -122,6 +122,23 @@ export const ProductProcessModal: React.FC<{
     })();
   }, [selectedProduct?.product_name]);
 
+  // 수량/판매량 탭에 들어올 때도 최신 더미 생산수량으로 동기화
+  React.useEffect(() => {
+    (async () => {
+      if (productModalTab !== 'quantity') return;
+      if (!selectedProduct?.product_name) return;
+      try {
+        const qty = await getProductQuantity(selectedProduct.product_name);
+        setProductQuantityForm(prev => ({
+          ...prev,
+          product_amount: Number.isFinite(qty) ? qty : prev.product_amount
+        }));
+      } catch {
+        // ignore
+      }
+    })();
+  }, [productModalTab, selectedProduct?.product_name]);
+
   // useEffect로 selectedProduct 변경 시 폼 값 업데이트
   React.useEffect(() => {
     if (selectedProduct) {
