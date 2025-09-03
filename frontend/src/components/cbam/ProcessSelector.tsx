@@ -78,7 +78,8 @@ export const ProductProcessModal: React.FC<{
   onClose,
 }) => {
   const [productModalTab, setProductModalTab] = useState<'process' | 'quantity'>('process');
-  const [processFilterMode, setProcessFilterMode] = useState<'all' | 'product'>('all');
+  // 전체 사업장 / 해당 사업장 필터
+  const [processFilterMode, setProcessFilterMode] = useState<'all' | 'install'>('all');
   const [productQuantityForm, setProductQuantityForm] = useState({
     product_amount: selectedProduct?.product_amount || 0,
     product_sell: selectedProduct?.product_sell || 0,
@@ -143,27 +144,27 @@ export const ProductProcessModal: React.FC<{
                     : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                 }`}
               >
-                전체 공정
+                전체 사업장
               </button>
-              {selectedProduct && (
+              {selectedInstall && (
                 <button
-                  onClick={() => setProcessFilterMode('product')}
+                  onClick={() => setProcessFilterMode('install')}
                   className={`px-3 py-1 rounded text-sm transition-colors ${
-                    processFilterMode === 'product'
+                    processFilterMode === 'install'
                       ? 'bg-purple-600 text-white'
                       : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                   }`}
                 >
-                  {selectedProduct.product_name} 공정만
+                  해당 사업장 ({selectedInstall.install_name})
                 </button>
               )}
             </div>
             
             <div className="space-y-2 max-h-96 overflow-y-auto">
               {(() => {
-                const displayProcesses = processFilterMode === 'product' 
+                const displayProcesses = processFilterMode === 'install'
                   ? allProcesses.filter((process: Process) => 
-                      process.products && process.products.some((p: Product) => p.id === selectedProduct?.id)
+                      process.products && process.products.some((p: Product) => p.install_id === selectedInstall?.id)
                     )
                   : allProcesses;
                 
@@ -204,8 +205,8 @@ export const ProductProcessModal: React.FC<{
                   })
                 ) : (
                   <div className="text-center py-4 text-gray-400">
-                    {processFilterMode === 'product' 
-                      ? `${selectedProduct?.product_name}에 등록된 공정이 없습니다.`
+                    {processFilterMode === 'install' 
+                      ? `${selectedInstall?.install_name} 사업장의 공정이 없습니다.`
                       : '등록된 공정이 없습니다.'
                     }
                   </div>
