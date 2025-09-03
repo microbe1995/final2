@@ -246,11 +246,22 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
         }
       }
       if (!data) return;
+      const totalMat = Number(data.total_matdir_emission ?? data.total_matdir ?? 0) || 0;
+      const totalFuel = Number(data.total_fueldir_emission ?? data.total_fueldir ?? 0) || 0;
+      const sumDirect = totalMat + totalFuel;
+      const directFromDb = Number(data.attrdir_em ?? data.attrdir_emission ?? 0) || 0;
+      const directFixed = sumDirect > 0 ? sumDirect : directFromDb;
+
+      // 백그라운드 보정: DB의 attrdir_em이 합계와 다르면 재계산 트리거
+      if (sumDirect > 0 && Math.abs(directFromDb - sumDirect) > 1e-6) {
+        axiosClient.post(apiEndpoints.cbam.calculation.process.attrdir(processId)).catch(() => {});
+      }
+
       const emissionData = {
-        attr_em: data.attrdir_em || data.attrdir_emission || 0,
+        attr_em: directFixed,
         cumulative_emission: data.cumulative_emission || 0,
-        total_matdir_emission: data.total_matdir_emission ?? data.total_matdir ?? 0,
-        total_fueldir_emission: data.total_fueldir_emission ?? data.total_fueldir ?? 0,
+        total_matdir_emission: totalMat,
+        total_fueldir_emission: totalFuel,
         calculation_date: data.calculation_date
       };
       setNodes(prev => prev.map(node => {
@@ -312,6 +323,7 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
               productData: {
                 ...(node.data as any).productData,
                 attr_em: attrEm,
+                production_qty: (node.data as any).productData?.production_qty ?? (node.data as any).product_amount ?? 0
               }
             }
           } as Node;

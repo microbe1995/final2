@@ -317,13 +317,12 @@ export const ProductProcessModal: React.FC<{
                     step="0.01"
                     min="0"
                     value={productQuantityForm.product_amount}
-                    onChange={(e) => setProductQuantityForm(prev => ({
-                      ...prev,
-                      product_amount: parseFloat(e.target.value) || 0
-                    }))}
+                    readOnly
+                    disabled
                     className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                     required
                   />
+                  <p className="mt-1 text-xs text-gray-400">더미 데이터(마지막 종료일 기준)에서 자동 불러옵니다.</p>
                 </div>
                 
                 <div>
