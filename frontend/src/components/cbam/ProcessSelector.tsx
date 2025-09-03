@@ -88,7 +88,7 @@ export const ProductProcessModal: React.FC<{
   });
 
   // 더미 데이터 기반: 선택된 제품에서 허용되는 공정명 목록 강제 적용
-  const { getProcessesByProduct } = useDummyData();
+  const { getProcessesByProduct, getProductQuantity } = useDummyData();
   const [allowedProcessNames, setAllowedProcessNames] = useState<Set<string>>(new Set());
 
   React.useEffect(() => {
@@ -105,6 +105,22 @@ export const ProductProcessModal: React.FC<{
       }
     })();
   }, [selectedProduct, getProcessesByProduct]);
+
+  // 선택된 제품의 최근 생산수량(마지막 행, 종료일 기준)을 자동 세팅
+  React.useEffect(() => {
+    (async () => {
+      if (!selectedProduct?.product_name) return;
+      try {
+        const qty = await getProductQuantity(selectedProduct.product_name);
+        setProductQuantityForm(prev => ({
+          ...prev,
+          product_amount: Number.isFinite(qty) ? qty : 0
+        }));
+      } catch (e) {
+        // 실패 시 0 유지
+      }
+    })();
+  }, [selectedProduct?.product_name, getProductQuantity]);
 
   // useEffect로 selectedProduct 변경 시 폼 값 업데이트
   React.useEffect(() => {
