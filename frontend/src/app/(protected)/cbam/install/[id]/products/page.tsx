@@ -196,6 +196,15 @@ export default function InstallProductsPage() {
       const response = await axiosClient.get(apiEndpoints.cbam.process.list);
       console.log('🔍 전체 공정 목록 조회 결과:', response.data);
       setProcesses(response.data);
+      // 🔴 공정 목록을 제품별 맵에 즉시 반영 (초기 렌더/추가 직후 목록 노출)
+      const updatedMap = new Map<number, string[]>();
+      products.forEach((product) => {
+        const productProcesses = response.data.filter((proc: any) =>
+          Array.isArray(proc.products) && proc.products.some((p: any) => p.id === product.id)
+        );
+        updatedMap.set(product.id, productProcesses.map((p: any) => p.process_name));
+      });
+      setProductProcessesMap(updatedMap);
     } catch (error: any) {
       console.error('❌ 프로세스 목록 조회 실패:', error);
     }
@@ -536,6 +545,9 @@ export default function InstallProductsPage() {
 
   const handleProcessSubmit = async (e: React.FormEvent, productId: number) => {
     e.preventDefault();
+    // 현재 제품 정보를 보존하여 상태 초기화 이후에도 참조 가능하도록 저장
+    const targetProductId = productId;
+    const targetProduct = products.find(p => p.id === targetProductId);
     
     if (!processForm.process_name) {
       setToast({
@@ -627,13 +639,9 @@ export default function InstallProductsPage() {
       // 목록 새로고침
       await fetchProcesses();
       
-      // 🔴 수정: 해당 제품의 공정 목록 새로고침
-      if (showProcessFormForProduct) {
-        const product = products.find(p => p.id === showProcessFormForProduct);
-        if (product) {
-          // 제품별 공정 목록 업데이트
-          await fetchProductProcesses(product.id, product.product_name);
-        }
+      // 🔴 수정: 해당 제품의 공정 목록 새로고침 (상태 초기화 전에 보존한 값 사용)
+      if (targetProduct) {
+        await fetchProductProcesses(targetProduct.id, targetProduct.product_name);
       }
       
       console.log('🔄 공정 목록 새로고침 완료');
