@@ -290,6 +290,11 @@ export const apiEndpoints = {
       get: (id: number) => `/api/v1/cbam/edge/${id}`,
       delete: (id: number) => `/api/v1/cbam/edge/${id}`
     },
+    // Edge propagation helpers
+    edgePropagation: {
+      continue: '/api/v1/cbam/edge/propagate-emissions-continue',
+      processEmission: (process_id: number) => `/api/v1/cbam/edge/process-emission/${process_id}`
+    },
     
     matdir: {
       // Gateway: /api/v1/cbam/matdir/{path} → CBAM: /matdir/{path}

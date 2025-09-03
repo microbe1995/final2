@@ -117,6 +117,12 @@ function ProductNode({
               <span>수출량:</span>
               <span className='font-medium'>{data.productData.export_qty || 0}</span>
             </div>
+            {typeof data.attr_em !== 'undefined' && (
+              <div className='flex justify-between'>
+                <span>배출량:</span>
+                <span className='font-medium'>{Number(data.attr_em).toFixed(2)} tCO2e</span>
+              </div>
+            )}
           </div>
         )}
       </div>

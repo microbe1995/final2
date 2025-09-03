@@ -84,6 +84,8 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
         description: `제품: ${product.product_name}`,
         variant: 'product',  // 🔴 수정: variant를 'product'로 명시적 설정
         productData: product,  // 🔴 수정: productData를 올바르게 설정
+        // 제품 배출량 표시용
+        attr_em: (product as any)?.attr_em || 0,
         install_id: selectedInstall?.id,
         onClick: () => handleProductNodeClick(product),
         // 🔴 추가: ProductNode가 기대하는 추가 데이터
@@ -205,6 +207,31 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
       return newNodes;
     });
   }, [setNodes]);
+
+  // 특정 공정 노드만 배출량 정보 새로고침
+  const refreshProcessEmission = useCallback(async (processId: number) => {
+    try {
+      const emissionData = await fetchProcessEmissionData(processId);
+      if (!emissionData) return;
+      setNodes(prev => prev.map(node => {
+        if (node.type === 'process' && node.data?.id === processId) {
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              processData: {
+                ...(node.data as any).processData,
+                ...emissionData
+              }
+            }
+          } as Node;
+        }
+        return node;
+      }));
+    } catch (e) {
+      console.error('⚠️ 공정 배출량 새로고침 실패:', e);
+    }
+  }, [setNodes, fetchProcessEmissionData]);
 
   // 🔧 4방향 연결을 지원하는 Edge 생성 처리
   const handleEdgeCreate = useCallback(async (params: Connection, updateCallback: () => void = () => {}) => {
@@ -371,6 +398,23 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
         // 콜백 실행
         if (updateCallback) {
           updateCallback();
+        }
+
+        // 배출량 전파 및 영향 노드 갱신 (공정→공정: continue)
+        try {
+          if (edgeData.edge_kind === 'continue') {
+            await axiosClient.post(
+              apiEndpoints.cbam.edgePropagation.continue,
+              null,
+              { params: { source_process_id: sourceId, target_process_id: targetId } }
+            );
+            await Promise.all([
+              refreshProcessEmission(sourceId),
+              refreshProcessEmission(targetId)
+            ]);
+          }
+        } catch (e) {
+          console.error('⚠️ 배출량 전파/갱신 실패:', e);
         }
       }
     } catch (error: any) {

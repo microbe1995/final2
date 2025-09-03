@@ -184,11 +184,7 @@ export const ProductProcessModal: React.FC<{
                     return (
                       <div
                         key={process.id}
-                        className={`p-3 border rounded-lg transition-colors ${
-                          isExternalProcess 
-                            ? 'border-gray-600 bg-gray-800 text-gray-400 cursor-not-allowed' 
-                            : 'border-gray-600 hover:bg-gray-700 hover:border-purple-400 cursor-pointer'
-                        }`}
+                        className={`p-3 border rounded-lg transition-colors border-gray-600 hover:bg-gray-700 hover:border-purple-400 cursor-pointer`}
                         onClick={() => onProcessSelect(process)}
                       >
                         <div className="font-medium text-white">{process.process_name}</div>
