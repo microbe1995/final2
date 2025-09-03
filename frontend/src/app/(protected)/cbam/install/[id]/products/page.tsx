@@ -528,7 +528,20 @@ export default function InstallProductsPage() {
             type: 'success'
           });
         } else {
-          throw new Error('수정할 공정을 찾을 수 없습니다.');
+          // 🔴 수정: 기존 공정을 찾을 수 없으면 자동으로 추가 모드로 전환
+          console.log('⚠️ 기존 공정을 찾을 수 없음, 추가 모드로 전환:', selectedProcess);
+          
+          // 추가 모드: 새 공정 생성
+          console.log('➕ 공정 추가 모드 (자동 전환)');
+          console.log('🔍 API 엔드포인트:', apiEndpoints.cbam.process.create);
+          
+          response = await axiosClient.post(apiEndpoints.cbam.process.create, processData);
+          console.log('✅ 프로세스 생성 성공:', response.data);
+          
+          setToast({
+            message: `새 공정 "${processForm.process_name}"이 성공적으로 생성되었습니다.`,
+            type: 'success'
+          });
         }
       } else {
         // 추가 모드: 새 공정 생성
@@ -1181,7 +1194,10 @@ export default function InstallProductsPage() {
                                      : 'bg-gray-500 cursor-not-allowed'
                                  }`}
                                >
-                                 ➕ 공정 추가
+                                 {selectedProcess && showProcessFormForProduct === product.id 
+                                   ? '🔧 공정 수정' 
+                                   : '➕ 공정 추가'
+                                 }
                                </button>
                              </div>
                           </form>
