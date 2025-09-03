@@ -557,6 +557,44 @@ class DummyRepository:
             logger.error(f"❌ 제품 '{product_name}'의 공정 목록 조회 실패: {e}")
             return []
 
+    async def get_unique_processes_by_product_and_period(self, product_name: str, start_period: str, end_period: str) -> List[str]:
+        """특정 제품의 기간별 고유 공정 목록 조회 (기간 겹침 기준)"""
+        if not self.pool:
+            logger.warning("⚠️ 연결 풀이 초기화되지 않았습니다.")
+            return []
+        try:
+            # 날짜 형식 검증 및 변환
+            from datetime import datetime
+            try:
+                start_period_obj = datetime.strptime(start_period, "%Y-%m-%d").date()
+                end_period_obj = datetime.strptime(end_period, "%Y-%m-%d").date()
+                if start_period_obj > end_period_obj:
+                    logger.warning(f"⚠️ 시작일({start_period})이 종료일({end_period})보다 늦습니다.")
+                    return []
+            except ValueError as e:
+                logger.error(f"❌ 날짜 형식 오류: {start_period} 또는 {end_period} - {e}")
+                return []
+
+            query = """
+                SELECT DISTINCT 공정
+                FROM dummy
+                WHERE 생산품명 = $1
+                  AND 공정 IS NOT NULL
+                  AND (
+                        (투입일 <= $3 AND 종료일 >= $2)  -- 기간이 겹치는 경우
+                        OR (투입일 BETWEEN $2 AND $3)
+                        OR (종료일 BETWEEN $2 AND $3)
+                  )
+                ORDER BY 공정;
+            """
+            rows = await self.pool.fetch(query, product_name, start_period_obj, end_period_obj)
+            processes = [row['공정'] for row in rows if row['공정']]
+            logger.info(f"✅ 제품 '{product_name}' 기간별 공정 목록 조회 성공: {len(processes)}개")
+            return processes
+        except Exception as e:
+            logger.error(f"❌ 제품 '{product_name}' 기간별 공정 목록 조회 실패: {e}")
+            return []
+
     async def close(self):
         """연결 풀 종료"""
         if self.pool:

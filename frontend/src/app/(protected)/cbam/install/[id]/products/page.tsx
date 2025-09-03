@@ -1229,27 +1229,23 @@ export default function InstallProductsPage() {
                                 onChange={(e) => {
                                   const installId = parseInt(e.target.value);
                                   setSelectedInstallForProcess(installId);
-                                  // 선택된 사업장의 공정 목록으로 availableProcesses 업데이트
+                                  // 선택된 사업장에 이미 생성된 공정이 있으면 그 목록을 우선 표시
                                   if (installId && installProcessesMap.has(installId)) {
                                     const installProcesses = installProcessesMap.get(installId) || [];
                                     setAvailableProcesses(installProcesses);
-                                  } else {
-                                    setAvailableProcesses([]);
                                   }
+                                  // 공정이 아직 없다면 기존(더미 기반) 목록을 유지하여 새 공정 생성 가능
                                   setSelectedProcess('');
                                 }}
                                 className="w-full px-3 py-2 border rounded-md text-white bg-gray-800/50 border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500"
                                 required
                               >
                                 <option value="">사업장을 선택하세요</option>
-                                {Array.from(installProcessesMap.keys()).map((installId) => {
-                                  const install = installs.find(i => i.id === installId);
-                                  return (
-                                    <option key={installId} value={installId}>
-                                      {install?.install_name || `사업장 ${installId}`} ({installProcessesMap.get(installId)?.length || 0}개 공정)
-                                    </option>
-                                  );
-                                })}
+                                {installs.map((install) => (
+                                  <option key={install.id} value={install.id}>
+                                    {install.install_name} ({installProcessesMap.get(install.id)?.length || 0}개 공정)
+                                  </option>
+                                ))}
                               </select>
                             </div>
                             
