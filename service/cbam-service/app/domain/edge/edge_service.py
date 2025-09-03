@@ -217,7 +217,11 @@ class EdgeService:
             # 6. 배출량 계산 (제품 배출량 * 소비 비율)
             # 저장된 attr_em 대신 현재 그래프 상태 기준 프리뷰 합계를 우선 사용
             product_emission_preview = await self.compute_product_emission(source_product_id)
-            product_emission = product_emission_preview if product_emission_preview is not None else (product_data['attr_em'] or 0.0)
+            # 프리뷰가 0.0(연결된 공정 없음)일 수 있으므로, 저장된 attr_em으로 폴백
+            if product_emission_preview is not None and product_emission_preview > 0:
+                product_emission = product_emission_preview
+            else:
+                product_emission = product_data['attr_em'] or 0.0
             # 기존 구현은 product_amount로 나눴으나, 실제 분배는 "to_next_process" 대비 할당량 기준이어야 함
             # 비율 = allocated_amount / to_next_process (to_next_process가 0이면 0)
             process_ratio = (allocated_amount / to_next_process) if to_next_process > 0 else 0.0
