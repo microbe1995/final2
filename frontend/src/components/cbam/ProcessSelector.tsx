@@ -189,7 +189,7 @@ export const ProductProcessModal: React.FC<{
                             ? 'border-gray-600 bg-gray-800 text-gray-400 cursor-not-allowed' 
                             : 'border-gray-600 hover:bg-gray-700 hover:border-purple-400 cursor-pointer'
                         }`}
-                        onClick={() => { if (!isExternalProcess) onProcessSelect(process); }}
+                        onClick={() => onProcessSelect(process)}
                       >
                         <div className="font-medium text-white">{process.process_name}</div>
                         <div className="text-sm text-gray-300">사용 제품: {productNames || 'N/A'}</div>

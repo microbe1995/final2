@@ -146,9 +146,9 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
           end_period: process.end_period || 'N/A',
           product_names: relatedProducts.map(p => p.product_name).join(', ') || 'N/A',
           is_many_to_many: relatedProducts.length > 1,
-          install_id: selectedInstall?.id,
-          current_install_id: selectedInstall?.id,
-          is_readonly: false,
+          install_id: (process as any).install_id, // 공정의 실제 소속 사업장
+          current_install_id: selectedInstall?.id, // 현재 캔버스의 사업장
+          is_readonly: (process as any).install_id !== selectedInstall?.id,
           // 배출량 정보 추가
           ...emissionData
         },
