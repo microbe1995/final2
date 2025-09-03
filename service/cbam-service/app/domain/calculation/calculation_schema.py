@@ -28,6 +28,7 @@ class ProcessAttrdirEmissionResponse(BaseModel):
     total_matdir_emission: float = Field(..., description="총 원료직접배출량")
     total_fueldir_emission: float = Field(..., description="총 연료직접배출량")
     attrdir_em: float = Field(..., description="직접귀속배출량")
+    cumulative_emission: float | None = Field(None, description="누적 배출량(continue 전파 반영)")
     calculation_date: Optional[datetime] = Field(None, description="계산 일시")
     created_at: Optional[datetime] = Field(None, description="생성일")
     updated_at: Optional[datetime] = Field(None, description="수정일")

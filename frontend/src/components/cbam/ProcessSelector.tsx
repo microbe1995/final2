@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { Process, Product, Install } from '@/hooks/useProcessManager';
+import { useDummyData } from '@/hooks/useDummyData';
 
 interface ProcessSelectorProps {
   processes: Process[];
@@ -86,6 +87,25 @@ export const ProductProcessModal: React.FC<{
     product_eusell: selectedProduct?.product_eusell || 0
   });
 
+  // 더미 데이터 기반: 선택된 제품에서 허용되는 공정명 목록 강제 적용
+  const { getProcessesByProduct } = useDummyData();
+  const [allowedProcessNames, setAllowedProcessNames] = useState<Set<string>>(new Set());
+
+  React.useEffect(() => {
+    (async () => {
+      if (selectedProduct?.product_name) {
+        try {
+          const names: string[] = await getProcessesByProduct(selectedProduct.product_name);
+          setAllowedProcessNames(new Set(names || []));
+        } catch (e) {
+          setAllowedProcessNames(new Set());
+        }
+      } else {
+        setAllowedProcessNames(new Set());
+      }
+    })();
+  }, [selectedProduct, getProcessesByProduct]);
+
   // useEffect로 selectedProduct 변경 시 폼 값 업데이트
   React.useEffect(() => {
     if (selectedProduct) {
@@ -162,18 +182,18 @@ export const ProductProcessModal: React.FC<{
             
             <div className="space-y-2 max-h-96 overflow-y-auto">
               {(() => {
-                // 1) 먼저 선택된 제품에 속한 공정만 추리기
-                const productFiltered = (allProcesses || []).filter((proc: Process) =>
-                  proc.products && selectedProduct ? proc.products.some((p: Product) => p.id === selectedProduct.id) : false
+                // 1) 더미 데이터에서 허용된 공정명으로 1차 필터링 (제품 기준 강제)
+                const byDummy = (allProcesses || []).filter((proc: Process) =>
+                  allowedProcessNames.size > 0 ? allowedProcessNames.has(proc.process_name) : false
                 );
 
                 // 2) 탭이 '해당 사업장'이면 추가로 install_id로 필터링
                 const displayProcesses = processFilterMode === 'install'
-                  ? productFiltered.filter((proc: Process) => {
+                  ? byDummy.filter((proc: Process) => {
                       const procInstallId = (proc as { install_id?: number }).install_id;
                       return typeof procInstallId === 'number' && procInstallId === selectedInstall?.id;
                     })
-                  : productFiltered;
+                  : byDummy;
                 
                 return displayProcesses.length > 0 ? (
                   displayProcesses.map((process: Process) => {

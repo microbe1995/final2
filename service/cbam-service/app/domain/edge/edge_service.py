@@ -74,7 +74,8 @@ class EdgeService:
                 return False
             
             # 3. 배출량 누적 계산
-            source_cumulative = source_emission['cumulative_emission']
+            #    소스 공정의 누적값이 없으면 자체 직접귀속배출량을 누적으로 간주(체인 시작점)
+            source_cumulative = source_emission['cumulative_emission'] if source_emission['cumulative_emission'] else source_emission['attrdir_em']
             target_own = target_emission['attrdir_em']
             target_cumulative = source_cumulative + target_own
             
@@ -119,13 +120,16 @@ class EdgeService:
             
             # 3. 제품에 연결된 모든 공정들의 배출량 합계 계산
             connected_processes = await self.repository.get_processes_connected_to_product(target_product_id)
-            
+
             total_emission = 0.0
             for proc_data in connected_processes:
-                if proc_data['process_id'] == source_process_id:
-                    # 해당 공정의 누적 배출량을 제품에 전달
-                    total_emission += process_data['cumulative_emission']
-                    break
+                # 각 공정의 누적배출량을 합산. 누적값이 없으면 자체 직접귀속배출량을 사용
+                proc_emission = await self.repository.get_process_emission_data(proc_data['process_id'])
+                if proc_emission:
+                    cumulative = proc_emission.get('cumulative_emission') or 0.0
+                    if cumulative == 0.0:
+                        cumulative = proc_emission.get('attrdir_em') or 0.0
+                    total_emission += cumulative
             
             logger.info(f"🧮 공정→제품 배출량 계산:")
             logger.info(f"  공정 {source_process_id} 누적 배출량: {process_data['cumulative_emission']}")

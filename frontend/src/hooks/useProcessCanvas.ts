@@ -237,13 +237,16 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
       // 우선 조회, 404라면 계산 후 다시 반영
       let data: any = null;
       try {
-        const response = await axiosClient.get(apiEndpoints.cbam.calculation.process.attrdir(processId));
-        data = response?.data;
+        // 누적/직접 동시 조회를 위해 Edge 도메인 조회 사용
+        const resp = await axiosClient.get(apiEndpoints.cbam.edgePropagation.processEmission(processId));
+        data = resp?.data?.data || null;
       } catch (err: any) {
         if (err?.response?.status === 404) {
           try {
             const created = await axiosClient.post(apiEndpoints.cbam.calculation.process.attrdir(processId));
-            data = created?.data;
+            // 생성 직후 누적 포함 최신값 재조회
+            const resp2 = await axiosClient.get(apiEndpoints.cbam.edgePropagation.processEmission(processId));
+            data = resp2?.data?.data || created?.data;
           } catch (calcErr) {
             console.warn('⚠️ 공정 배출량 계산 실패:', calcErr);
             return;
@@ -254,7 +257,8 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
       }
       if (!data) return;
       const emissionData = {
-        attr_em: data.attrdir_em || 0,
+        attr_em: data.attrdir_em || data.attrdir_emission || 0,
+        cumulative_emission: data.cumulative_emission || 0,
         total_matdir_emission: data.total_matdir_emission || 0,
         total_fueldir_emission: data.total_fueldir_emission || 0,
         calculation_date: data.calculation_date

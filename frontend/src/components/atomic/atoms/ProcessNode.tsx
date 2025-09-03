@@ -168,7 +168,7 @@ function ProcessNode({
             )}
             {data.processData.cumulative_emission !== undefined && (
               <div className='flex justify-between'>
-                <span className='text-indigo-600 font-medium'>누적배출량:</span>
+                <span className='text-indigo-600 font-medium'>누적 직접귀속배출량:</span>
                 <span className='text-indigo-600 font-bold'>
                   {typeof data.processData.cumulative_emission === 'number'
                     ? `${data.processData.cumulative_emission.toFixed(2)} tCO2e`
