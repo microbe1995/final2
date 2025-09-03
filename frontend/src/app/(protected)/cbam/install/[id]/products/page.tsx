@@ -592,13 +592,28 @@ export default function InstallProductsPage() {
         // 수정 모드: 기존 공정 업데이트
         console.log('🔧 공정 수정 모드:', selectedProcess, '→', processForm.process_name);
         
-        // 기존 공정 ID 찾기
-        const existingProcess = processes.find(p => p.process_name === selectedProcess);
-        if (existingProcess) {
-          // 공정명만 업데이트
-          response = await axiosClient.put(apiEndpoints.cbam.process.update(existingProcess.id), {
-            process_name: processForm.process_name
+        // 기존 공정 ID 찾기 (이름 + 선택 사업장 + 현재 제품 연결 우선)
+        let existingProcess = processes.find(p => {
+          const nameMatch = p.process_name === selectedProcess;
+          const installMatch = selectedInstallForProcess ? p.install_id === selectedInstallForProcess : true;
+          const linked = Array.isArray(p.products) ? p.products.some(prod => prod.id === targetProductId) : true;
+          return nameMatch && installMatch && linked;
+        });
+        // 2차: 이름 + 제품 연결 기준
+        if (!existingProcess) {
+          existingProcess = processes.find(p => {
+            const nameMatch = p.process_name === selectedProcess;
+            const linked = Array.isArray(p.products) ? p.products.some(prod => prod.id === targetProductId) : false;
+            return nameMatch && linked;
           });
+        }
+        if (existingProcess) {
+          // 공정명 + 선택된 사업장(있으면) 업데이트
+          const updatePayload: any = { process_name: processForm.process_name };
+          if (selectedInstallForProcess) {
+            updatePayload.install_id = selectedInstallForProcess;
+          }
+          response = await axiosClient.put(apiEndpoints.cbam.process.update(existingProcess.id), updatePayload);
           console.log('✅ 공정 수정 성공:', response.data);
           setToast({
             message: `공정이 "${selectedProcess}"에서 "${processForm.process_name}"으로 수정되었습니다.`,
@@ -734,6 +749,19 @@ export default function InstallProductsPage() {
     setSelectedProcess(processName);
     setProcessForm({ process_name: processName });
     setIsEditingProcess(true);
+    
+    // 현재 제품과 연결된 동일명 공정의 사업장을 기본값으로 설정
+    const existingForProduct = processes.find(p => {
+      const nameMatch = p.process_name === processName;
+      const linked = Array.isArray(p.products) && p.products.some(prod => prod.id === productId);
+      return nameMatch && linked;
+    });
+    if (existingForProduct && typeof existingForProduct.install_id === 'number') {
+      setSelectedInstallForProcess(existingForProduct.install_id);
+      if (installProcessesMap.has(existingForProduct.install_id)) {
+        setAvailableProcesses(installProcessesMap.get(existingForProduct.install_id) || []);
+      }
+    }
     
     // 해당 제품의 사용 가능한 공정 목록 새로고침 (수정 모드)
     const product = products.find(p => p.id === productId);
@@ -1229,13 +1257,9 @@ export default function InstallProductsPage() {
                                 onChange={(e) => {
                                   const installId = parseInt(e.target.value);
                                   setSelectedInstallForProcess(installId);
-                                  // 선택된 사업장에 이미 생성된 공정이 있으면 그 목록을 우선 표시
-                                  if (installId && installProcessesMap.has(installId)) {
-                                    const installProcesses = installProcessesMap.get(installId) || [];
-                                    setAvailableProcesses(installProcesses);
+                                  if (!isEditingProcess) {
+                                    setSelectedProcess('');
                                   }
-                                  // 공정이 아직 없다면 기존(더미 기반) 목록을 유지하여 새 공정 생성 가능
-                                  setSelectedProcess('');
                                 }}
                                 className="w-full px-3 py-2 border rounded-md text-white bg-gray-800/50 border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500"
                                 required
