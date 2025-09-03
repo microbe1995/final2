@@ -204,9 +204,15 @@ class EdgeService:
                 consumption_ratio = consumption_amount / total_consumption
                 allocated_amount = to_next_process * consumption_ratio
             else:
-                # 소비량이 설정되지 않았다면 단일 소비 대상으로 간주하여 전량 배분
-                consumption_ratio = 1.0 if len(consumption_data) == 1 and consumption_data[0]['process_id'] == target_process_id else 0.0
-                allocated_amount = to_next_process * consumption_ratio
+                # 소비량이 전부 0인 경우: 연결된 공정 수로 균등 분배(명시적 소비량 없을 때의 기본 정책)
+                consumers = len(consumption_data)
+                if consumers > 0:
+                    consumption_ratio = 1.0 / consumers
+                    allocated_amount = to_next_process * consumption_ratio
+                else:
+                    # 소비자가 없다면 배분 불가
+                    consumption_ratio = 0.0
+                    allocated_amount = 0.0
             
             # 6. 배출량 계산 (제품 배출량 * 소비 비율)
             # 저장된 attr_em 대신 현재 그래프 상태 기준 프리뷰 합계를 우선 사용
@@ -227,7 +233,7 @@ class EdgeService:
             logger.info(f"  제품 {source_product_id} to_next_process: {to_next_process}")
             logger.info(f"  공정 {target_process_id} 소비량: {consumption_amount}")
             logger.info(f"  전체 소비량: {total_consumption}")
-            logger.info(f"  소비 비율(입력 기준): {consumption_ratio if total_consumption > 0 else (1.0 if process_ratio==1.0 else 0.0)}")
+            logger.info(f"  소비 비율(입력/기본): {consumption_ratio}")
             logger.info(f"  할당량: {allocated_amount}")
             logger.info(f"  제품 {source_product_id} 배출량: {product_emission}")
             logger.info(f"  공정 {target_process_id} 기존 배출량: {process_data['attrdir_em']}")
