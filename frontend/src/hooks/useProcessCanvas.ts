@@ -361,10 +361,30 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
       const normalizeNodeId = (id: string) => id.replace(/-(left|right|top|bottom)$/i, '');
       const sourceNodeId = normalizeNodeId(params.source);
       const targetNodeId = normalizeNodeId(params.target);
-      const sourceNode = nodes.find(n => n.id === sourceNodeId);
-      const targetNode = nodes.find(n => n.id === targetNodeId);
-      const sourceNodeType = sourceNode?.type || 'unknown';
-      const targetNodeType = targetNode?.type || 'unknown';
+      const getNodeByAnyId = (candidateId: string) => {
+        return (
+          nodes.find(n => n.id === candidateId) ||
+          nodes.find(n => (n.data as any)?.nodeId === candidateId) ||
+          nodes.find(n => candidateId.startsWith(n.id)) ||
+          nodes.find(n => candidateId.startsWith(((n.data as any)?.nodeId) || '')) ||
+          nodes.find(n => n.id.startsWith(candidateId)) ||
+          nodes.find(n => (((n.data as any)?.nodeId) || '').startsWith(candidateId))
+        );
+      };
+
+      const sourceNode = getNodeByAnyId(sourceNodeId);
+      const targetNode = getNodeByAnyId(targetNodeId);
+      let sourceNodeType = sourceNode?.type || 'unknown';
+      let targetNodeType = targetNode?.type || 'unknown';
+      // 최후 보루: ID 접두사로 타입 추정
+      if (sourceNodeType === 'unknown') {
+        if (/^process-/i.test(sourceNodeId)) sourceNodeType = 'process';
+        if (/^product-/i.test(sourceNodeId)) sourceNodeType = 'product';
+      }
+      if (targetNodeType === 'unknown') {
+        if (/^process-/i.test(targetNodeId)) targetNodeType = 'process';
+        if (/^product-/i.test(targetNodeId)) targetNodeType = 'product';
+      }
       const sourceId = (sourceNode?.data as any)?.id as number | undefined;
       const targetId = (targetNode?.data as any)?.id as number | undefined;
       
@@ -387,7 +407,16 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
         return;
       }
       
-      if (!sourceId || !targetId) {
+      // DB ID 추출: 노드 data.id 우선, 실패 시 타입별 매칭으로 보완
+      const ensureDbId = (nodeObj: any, fallbackId: number | undefined) => {
+        const idFromData = (nodeObj?.data as any)?.id as number | undefined;
+        return idFromData || fallbackId;
+      };
+
+      const finalSourceId = ensureDbId(sourceNode, sourceId);
+      const finalTargetId = ensureDbId(targetNode, targetId);
+
+      if (!finalSourceId || !finalTargetId) {
         console.error('❌ 유효하지 않은 DB ID:', { sourceId, targetId, source: params.source, target: params.target });
         setEdges(prev => prev.filter(edge => edge.id !== tempEdgeId));
         
@@ -397,7 +426,7 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
       }
       
       // 🔴 추가: Edge 생성 전 최종 검증
-      if (sourceId === targetId) {
+      if (finalSourceId === finalTargetId) {
         console.error('❌ 자기 자신과는 연결할 수 없습니다.');
         setEdges(prev => prev.filter(edge => edge.id !== tempEdgeId));
         alert('자기 자신과는 연결할 수 없습니다.');
@@ -423,13 +452,13 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
       try {
         if (resolvedEdgeKind === 'continue') {
           await Promise.all([
-            ensureProcessAttrdirComputed(sourceId),
-            ensureProcessAttrdirComputed(targetId)
+            ensureProcessAttrdirComputed(finalSourceId),
+            ensureProcessAttrdirComputed(finalTargetId)
           ]);
         } else if (resolvedEdgeKind === 'produce') {
-          await ensureProcessAttrdirComputed(sourceId);
+          await ensureProcessAttrdirComputed(finalSourceId);
         } else if (resolvedEdgeKind === 'consume') {
-          await ensureProcessAttrdirComputed(targetId);
+          await ensureProcessAttrdirComputed(finalTargetId);
         }
       } catch (precalcErr) {
         console.warn('⚠️ 전처리(배출량 계산) 실패:', precalcErr);
@@ -438,9 +467,9 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
       // 백엔드에 Edge 생성 요청
       const edgeData = {
         source_node_type: sourceNodeType,
-        source_id: sourceId,
+        source_id: finalSourceId,
         target_node_type: targetNodeType,
-        target_id: targetId,
+        target_id: finalTargetId,
         edge_kind: resolvedEdgeKind
       };
       
@@ -482,8 +511,8 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
               { params: { source_process_id: sourceId, target_process_id: targetId } }
             );
             await Promise.all([
-              refreshProcessEmission(sourceId),
-              refreshProcessEmission(targetId)
+              refreshProcessEmission(finalSourceId),
+              refreshProcessEmission(finalTargetId)
             ]);
           } else if (edgeData.edge_kind === 'produce') {
             // 공정→제품: 제품 배출량 재계산 및 노드 갱신
@@ -498,8 +527,8 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
               console.warn('⚠️ 그래프 재계산 실패(무시 가능):', e);
             }
             await Promise.all([
-              refreshProcessEmission(sourceId),
-              refreshProductEmission(targetId)
+              refreshProcessEmission(finalSourceId),
+              refreshProductEmission(finalTargetId)
             ]);
           } else if (edgeData.edge_kind === 'consume') {
             // 제품→공정: 타겟 공정 갱신
@@ -514,8 +543,8 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
               console.warn('⚠️ 그래프 재계산 실패(무시 가능):', e);
             }
             await Promise.all([
-              refreshProductEmission(sourceId),
-              refreshProcessEmission(targetId)
+              refreshProductEmission(finalSourceId),
+              refreshProcessEmission(finalTargetId)
             ]);
           }
         } catch (e) {
