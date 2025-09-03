@@ -131,6 +131,8 @@ export default function InstallProductsPage() {
   const { getProcessesByProduct, loading: dummyLoading, error: dummyError } = useDummyData();
   const [availableProcesses, setAvailableProcesses] = useState<string[]>([]);
   const [selectedProcess, setSelectedProcess] = useState<string>('');
+  // 🔴 추가: 수정 모드 여부 (수정/추가 명확 분기)
+  const [isEditingProcess, setIsEditingProcess] = useState<boolean>(false);
   
   // 🔴 추가: 제품별 공정 목록 상태 관리
   const [productProcessesMap, setProductProcessesMap] = useState<Map<number, string[]>>(new Map());
@@ -274,11 +276,13 @@ export default function InstallProductsPage() {
       setAvailableProcesses([]);
       setProcessForm({ process_name: '' });
       setSelectedInstallForProcess(''); // 폼 닫을 때 사업장 선택 초기화
+      setIsEditingProcess(false);
       return;
     }
     
     // 새로 폼 열기
     setShowProcessFormForProduct(product.id);
+    setIsEditingProcess(false); // 기본은 추가 모드
     
     // 해당 제품의 공정 목록 조회 (기간 정보 제거)
     if (product.product_name) {
@@ -581,7 +585,7 @@ export default function InstallProductsPage() {
       let response;
       
       // 🔴 수정: 수정 모드인지 추가 모드인지 구분하여 처리
-      if (selectedProcess && showProcessFormForProduct) {
+      if (isEditingProcess && selectedProcess && showProcessFormForProduct) {
         // 수정 모드: 기존 공정 업데이트
         console.log('🔧 공정 수정 모드:', selectedProcess, '→', processForm.process_name);
         
@@ -635,6 +639,7 @@ export default function InstallProductsPage() {
       setAvailableProcesses([]);
       setShowProcessFormForProduct(null);
       setSelectedInstallForProcess(''); // 폼 닫을 때 사업장 선택 초기화
+      setIsEditingProcess(false);
 
       // 목록 새로고침
       await fetchProcesses();
@@ -720,6 +725,7 @@ export default function InstallProductsPage() {
     setShowProcessFormForProduct(productId);
     setSelectedProcess(processName);
     setProcessForm({ process_name: processName });
+    setIsEditingProcess(true);
     
     // 해당 제품의 사용 가능한 공정 목록 새로고침 (수정 모드)
     const product = products.find(p => p.id === productId);
@@ -1176,11 +1182,11 @@ export default function InstallProductsPage() {
                        {isShowingProcessForm && (
                          <div className="mb-4 p-4 bg-white/5 rounded-lg border border-purple-500/30">
                            <h5 className="text-sm font-medium text-white mb-3">
-                             {selectedProcess && showProcessFormForProduct === product.id 
-                               ? '🔧 공정 수정' 
-                               : '➕ 공정 추가'
-                             }
-                           </h5>
+                            {isEditingProcess && selectedProcess && showProcessFormForProduct === product.id 
+                              ? '🔧 공정 수정' 
+                              : '➕ 공정 추가'
+                            }
+                          </h5>
                           
                                                      {/* 더미 데이터에서 가져온 공정 목록 안내 */}
                            {availableProcesses.length > 0 ? (
@@ -1255,7 +1261,7 @@ export default function InstallProductsPage() {
                                 disabled={availableProcesses.length === 0}
                               >
                                 <option value="">
-                                  {selectedProcess && showProcessFormForProduct === product.id
+                                  {isEditingProcess && selectedProcess && showProcessFormForProduct === product.id
                                     ? `현재: ${selectedProcess}`
                                     : availableProcesses.length > 0 
                                       ? '공정을 선택하세요' 
@@ -1293,7 +1299,7 @@ export default function InstallProductsPage() {
                                      : 'bg-gray-500 cursor-not-allowed'
                                  }`}
                                >
-                                 {selectedProcess && showProcessFormForProduct === product.id 
+                                 {isEditingProcess && selectedProcess && showProcessFormForProduct === product.id 
                                    ? '🔧 공정 수정' 
                                    : '➕ 공정 추가'
                                  }
