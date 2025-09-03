@@ -163,9 +163,10 @@ export const ProductProcessModal: React.FC<{
             <div className="space-y-2 max-h-96 overflow-y-auto">
               {(() => {
                 const displayProcesses = processFilterMode === 'install'
-                  ? allProcesses.filter((process: Process) => 
-                      process.products && process.products.some((p: Product) => p.install_id === selectedInstall?.id)
-                    )
+                  ? allProcesses.filter((proc: Process) => {
+                      const procInstallId = (proc as { install_id?: number }).install_id;
+                      return typeof procInstallId === 'number' && procInstallId === selectedInstall?.id;
+                    })
                   : allProcesses;
                 
                 return displayProcesses.length > 0 ? (
@@ -175,13 +176,10 @@ export const ProductProcessModal: React.FC<{
                     );
                     const productNames = relatedProducts.map((product: Product) => product.product_name).join(', ');
                     
-                    // 공정의 소속 사업장을 안전하게 추론 (제품 목록 기반)
-                    const belongsToSelectedInstall = selectedInstall
-                      ? (process.products && process.products.some((p: Product) => p.install_id === selectedInstall.id))
-                      : false;
-                    const isExternalProcess = selectedInstall ? !belongsToSelectedInstall : false;
-                    const firstInstallId = process.products && process.products.length > 0 ? process.products[0].install_id : undefined;
-                    const processInstall = installs.find((install: Install) => install.id === firstInstallId);
+                    // 공정의 실제 소속 사업장 ID (백엔드 응답 필드)
+                    const procInstallId = (process as { install_id?: number }).install_id;
+                    const isExternalProcess = selectedInstall ? (procInstallId !== selectedInstall.id) : false;
+                    const processInstall = installs.find((install: Install) => install.id === procInstallId);
                     
                     return (
                       <div
