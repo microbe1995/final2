@@ -334,6 +334,26 @@ async def propagate_full_graph():
         logger.error(f"❌ 전체 그래프 전파 트리거 실패: {e}")
         raise HTTPException(status_code=500, detail=f"서버 오류: {str(e)}")
 
+@router.post("/propagate/recalculate-from-edges")
+async def recalc_from_edges():
+    """
+    모든 엣지를 기준으로 누적배출량을 다시 계산합니다.
+    - 1) 모든 공정의 cumulative_emission을 0으로 리셋
+    - 2) 전체 그래프 전파 실행
+    제품처럼 연결선 삭제 시 표시가 0으로 돌아오도록 공정 간도 동작 보장
+    """
+    try:
+        logger.info("🔁 엣지 기반 재계산 요청: 누적 리셋 후 전체 전파")
+        edge_service = get_edge_service()
+        # 1) 누적 리셋
+        await edge_service.repository.reset_all_cumulative_emission()
+        # 2) 전체 전파
+        result = await edge_service.propagate_emissions_full_graph()
+        return {"success": result.get('success', True), "data": result}
+    except Exception as e:
+        logger.error(f"❌ 엣지 기반 재계산 실패: {e}")
+        raise HTTPException(status_code=500, detail=f"서버 오류: {str(e)}")
+
 # ============================================================================
 # 📊 제품 표시용 배출량 조회(저장 안 함)
 # ============================================================================

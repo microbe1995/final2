@@ -296,7 +296,8 @@ export const apiEndpoints = {
       processEmission: (process_id: number) => `/api/v1/cbam/edge/process-emission/${process_id}`,
       productPreview: (product_id: number) => `/api/v1/cbam/edge/product-emission/preview/${product_id}`,
       productSave: (product_id: number) => `/api/v1/cbam/edge/product-emission/save/${product_id}`,
-      fullPropagate: '/api/v1/cbam/edge/propagate/full'
+      fullPropagate: '/api/v1/cbam/edge/propagate/full',
+      recalcFromEdges: '/api/v1/cbam/edge/propagate/recalculate-from-edges'
     },
     
     matdir: {

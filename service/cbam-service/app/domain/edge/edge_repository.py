@@ -389,6 +389,22 @@ class EdgeRepository:
         except Exception as e:
             logger.error(f"❌ 공정 {process_id} 누적 배출량 업데이트 실패: {str(e)}")
             return False
+
+    async def reset_all_cumulative_emission(self) -> bool:
+        """모든 공정의 누적 배출량을 0으로 리셋합니다(엣지 삭제 후 정리용)."""
+        try:
+            await self._ensure_pool_initialized()
+            async with self.pool.acquire() as conn:
+                query = """
+                    UPDATE process_attrdir_emission
+                    SET cumulative_emission = 0, calculation_date = NOW(), updated_at = NOW()
+                """
+                await conn.execute(query)
+                logger.info("✅ 모든 공정의 누적 배출량을 0으로 초기화")
+                return True
+        except Exception as e:
+            logger.error(f"❌ 누적 배출량 초기화 실패: {str(e)}")
+            return False
     
     async def get_processes_connected_to_product(self, product_id: int) -> List[Dict[str, Any]]:
         """제품에 연결된 모든 공정들을 조회합니다."""
