@@ -449,21 +449,28 @@ export default function InputManager({ selectedProcess, onClose, onDataSaved }: 
 
   const deleteResult = useCallback(async (result: InputResult) => {
     if (!selectedProcess?.id) return;
-    
+
     if (!confirm('정말로 이 결과를 삭제하시겠습니까?')) return;
-    
+
     try {
-      const endpoint = result.type === 'matdir' 
-        ? apiEndpoints.cbam.matdir.delete 
+      // created_at이 없는 항목은 아직 서버에 저장되지 않은 임시 항목이므로
+      // 서버 DELETE를 호출하지 않고 UI에서만 제거한다.
+      if (!result.created_at) {
+        setInputResults(prev => prev.filter(r => r.id !== result.id));
+        return;
+      }
+
+      const endpoint = result.type === 'matdir'
+        ? apiEndpoints.cbam.matdir.delete
         : apiEndpoints.cbam.fueldir.delete;
-      
+
       const actualId = Number(result.id);
       await axiosClient.delete(endpoint(actualId));
-      
+
       // 결과 목록에서 제거
       setInputResults(prev => prev.filter(r => r.id !== result.id));
       alert('삭제가 완료되었습니다!');
-      
+
     } catch (error: any) {
       console.error('❌ 결과 삭제 실패:', error);
       alert(`삭제에 실패했습니다: ${error.response?.data?.detail || error.message}`);
