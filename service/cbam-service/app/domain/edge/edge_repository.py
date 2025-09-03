@@ -316,7 +316,13 @@ class EdgeRepository:
             
             async with self.pool.acquire() as conn:
                 query = """
-                    SELECT p.id, p.process_name, pae.attrdir_em, pae.cumulative_emission, pae.calculation_date
+                    SELECT p.id,
+                           p.process_name,
+                           pae.attrdir_em,
+                           pae.cumulative_emission,
+                           pae.total_matdir_emission,
+                           pae.total_fueldir_emission,
+                           pae.calculation_date
                     FROM process p
                     LEFT JOIN process_attrdir_emission pae ON p.id = pae.process_id
                     WHERE p.id = $1
@@ -330,6 +336,8 @@ class EdgeRepository:
                         'process_name': row['process_name'],
                         'attrdir_em': float(row['attrdir_em']) if row['attrdir_em'] else 0.0,
                         'cumulative_emission': float(row['cumulative_emission']) if row['cumulative_emission'] else 0.0,
+                        'total_matdir_emission': float(row['total_matdir_emission']) if row['total_matdir_emission'] else 0.0,
+                        'total_fueldir_emission': float(row['total_fueldir_emission']) if row['total_fueldir_emission'] else 0.0,
                         'calculation_date': row['calculation_date'].isoformat() if row['calculation_date'] else None
                     }
                 return None

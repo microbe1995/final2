@@ -45,9 +45,11 @@ export const useDummyData = () => {
     setError(null);
     
     try {
-      // 전체 더미 데이터 조회 (게이트웨이 라우트는 슬래시 없이 동작)
+      // 전체 더미 데이터 조회
       const response = await axiosClient.get('/api/v1/cbam/dummy');
-      const dummyData = response.data.data || [];
+      // 백엔드가 배열 그대로를 반환하므로, data 또는 data.data 모두 대응
+      const payload = response.data;
+      const dummyData = Array.isArray(payload) ? payload : (payload?.data || []);
       
       // 생산품명별로 그룹화하여 기간 계산
       const productPeriods = new Map<string, { startDate: string; endDate: string }>();
@@ -100,9 +102,11 @@ export const useDummyData = () => {
     setError(null);
     
     try {
-      // 전체 더미 데이터 조회 (게이트웨이 라우트는 슬래시 없이 동작)
+      // 전체 더미 데이터 조회
       const response = await axiosClient.get('/api/v1/cbam/dummy');
-      const dummyData = response.data.data || [];
+      // 배열 또는 {data: [...]} 형태 모두 지원
+      const payload = response.data;
+      const dummyData = Array.isArray(payload) ? payload : (payload?.data || []);
       
       // 해당 생산품명의 데이터만 필터링
       const productData = dummyData.filter((item: DummyData) => 

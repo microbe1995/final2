@@ -166,7 +166,7 @@ function ProcessNode({
                 </span>
               </div>
             )}
-            {data.showCumulative !== false && data.processData.cumulative_emission !== undefined && (
+            {data.processData.cumulative_emission !== undefined && (
               <div className='flex justify-between'>
                 <span className='text-indigo-600 font-medium'>누적 직접귀속배출량:</span>
                 <span className='text-indigo-600 font-bold'>

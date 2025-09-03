@@ -72,27 +72,10 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
     ));
   }, [setNodes]);
 
-  // 엣지 연결 여부에 따라 공정 노드의 '누적' 표시만 토글 (직접값은 항상 보임)
+  // 엣지 연결 여부에 상관없이 직접/원료/연료 값은 항상 보이도록 유지
+  // 누적 값은 연결 여부와 무관하게 현재 DB 상태를 표시
   useEffect(() => {
-    const matchId = (nodeId: string, edgeEndId: string, nodeDataId?: string) => {
-      if (!nodeId || !edgeEndId) return false;
-      const norm = (id: string) => id.replace(/-(left|right|top|bottom)$/i, '');
-      const a = norm(nodeId);
-      const b = norm(edgeEndId);
-      const c = nodeDataId ? norm(String(nodeDataId)) : '';
-      return a === b || a.startsWith(b) || b.startsWith(a) || a === c || c === b;
-    };
-    setNodes(prev => prev.map(n => {
-      const nodeDataId = (n.data as any)?.nodeId || (n.data as any)?.id;
-      const connected = edges.some(e => matchId(n.id, e.source, nodeDataId) || matchId(n.id, e.target, nodeDataId));
-      return {
-        ...n,
-        data: {
-          ...n.data,
-          showCumulative: connected
-        }
-      } as Node;
-    }));
+    setNodes(prev => prev.map(n => ({ ...n, data: { ...n.data } }) as Node));
   }, [edges, setNodes]);
 
   
@@ -266,8 +249,8 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
       const emissionData = {
         attr_em: data.attrdir_em || data.attrdir_emission || 0,
         cumulative_emission: data.cumulative_emission || 0,
-        total_matdir_emission: data.total_matdir_emission || 0,
-        total_fueldir_emission: data.total_fueldir_emission || 0,
+        total_matdir_emission: data.total_matdir_emission ?? data.total_matdir ?? 0,
+        total_fueldir_emission: data.total_fueldir_emission ?? data.total_fueldir ?? 0,
         calculation_date: data.calculation_date
       };
       setNodes(prev => prev.map(node => {
