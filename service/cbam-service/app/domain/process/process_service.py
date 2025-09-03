@@ -30,6 +30,7 @@ class ProcessService:
         try:
             process_data = {
                 "process_name": request.process_name,
+                "install_id": request.install_id,
                 "start_period": request.start_period,
                 "end_period": request.end_period,
                 "product_ids": getattr(request, 'product_ids', [])  # 다대다 관계를 위한 제품 ID 목록
@@ -71,6 +72,8 @@ class ProcessService:
             update_data = {}
             if request.process_name is not None:
                 update_data["process_name"] = request.process_name
+            if getattr(request, 'install_id', None) is not None:
+                update_data["install_id"] = request.install_id
             if request.start_period is not None:
                 update_data["start_period"] = request.start_period
             if request.end_period is not None:
