@@ -319,6 +319,22 @@ async def get_process_emission(
         )
 
 # ============================================================================
+# 🔄 전체 그래프 전파 트리거 (표시용 누적 반영 보장)
+# ============================================================================
+
+@router.post("/propagate/full")
+async def propagate_full_graph():
+    """EdgeService의 전체 그래프 전파를 실행해 continue/produce/consume 누적을 확정합니다."""
+    try:
+        logger.info("🔄 전체 그래프 전파 트리거 요청")
+        edge_service = get_edge_service()
+        result = await edge_service.propagate_emissions_full_graph()
+        return {"success": result.get('success', True), "data": result}
+    except Exception as e:
+        logger.error(f"❌ 전체 그래프 전파 트리거 실패: {e}")
+        raise HTTPException(status_code=500, detail=f"서버 오류: {str(e)}")
+
+# ============================================================================
 # 📊 제품 표시용 배출량 조회(저장 안 함)
 # ============================================================================
 
