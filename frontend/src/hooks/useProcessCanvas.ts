@@ -211,8 +211,24 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
   // 특정 공정 노드만 배출량 정보 새로고침
   const refreshProcessEmission = useCallback(async (processId: number) => {
     try {
-      const response = await axiosClient.get(apiEndpoints.cbam.calculation.process.attrdir(processId));
-      const data = response?.data;
+      // 우선 조회, 404라면 계산 후 다시 반영
+      let data: any = null;
+      try {
+        const response = await axiosClient.get(apiEndpoints.cbam.calculation.process.attrdir(processId));
+        data = response?.data;
+      } catch (err: any) {
+        if (err?.response?.status === 404) {
+          try {
+            const created = await axiosClient.post(apiEndpoints.cbam.calculation.process.attrdir(processId));
+            data = created?.data;
+          } catch (calcErr) {
+            console.warn('⚠️ 공정 배출량 계산 실패:', calcErr);
+            return;
+          }
+        } else {
+          throw err;
+        }
+      }
       if (!data) return;
       const emissionData = {
         attr_em: data.attrdir_em || 0,
@@ -239,6 +255,19 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
       console.error('⚠️ 공정 배출량 새로고침 실패:', e);
     }
   }, [setNodes]);
+
+  // 공정 배출량이 없으면 생성까지 보장
+  const ensureProcessAttrdirComputed = useCallback(async (processId: number) => {
+    try {
+      await axiosClient.get(apiEndpoints.cbam.calculation.process.attrdir(processId));
+    } catch (err: any) {
+      if (err?.response?.status === 404) {
+        await axiosClient.post(apiEndpoints.cbam.calculation.process.attrdir(processId));
+      } else {
+        throw err;
+      }
+    }
+  }, []);
 
   // 특정 제품 노드만 배출량 정보 새로고침
   const refreshProductEmission = useCallback(async (productId: number) => {
@@ -327,39 +356,13 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
       setEdges(prev => [...prev, tempEdge]);
       console.log('🔗 임시 Edge 추가됨:', tempEdgeId);
       
-      // 노드 ID에서 숫자 부분만 추출 (예: "product-123-abc" → 123)
-      const extractNodeId = (nodeId: string): number => {
-        const match = nodeId.match(/(?:product|process|group)-(\d+)/);
-        if (!match) {
-          console.error('❌ 노드 ID 형식이 올바르지 않음:', nodeId);
-          return 0;
-        }
-        
-        const extractedId = parseInt(match[1]);
-        
-        // 🔴 추가: int32 범위 검증
-        if (extractedId > 2147483647 || extractedId < -2147483648) {
-          console.error('❌ 노드 ID가 int32 범위를 초과:', extractedId);
-          return 0;
-        }
-        
-        return extractedId;
-      };
-      
-      // 노드 타입 추출
-      const extractNodeType = (nodeId: string): string => {
-        if (nodeId.startsWith('product-')) return 'product';
-        if (nodeId.startsWith('process-')) return 'process';
-        if (nodeId.startsWith('group-')) return 'group';
-        
-        console.error('❌ 알 수 없는 노드 타입:', nodeId);
-        return 'unknown';
-      };
-      
-      const sourceId = extractNodeId(params.source);
-      const targetId = extractNodeId(params.target);
-      const sourceNodeType = extractNodeType(params.source);
-      const targetNodeType = extractNodeType(params.target);
+      // ✅ 실제 DB ID/타입은 노드의 data와 type에서 가져온다
+      const sourceNode = nodes.find(n => n.id === params.source);
+      const targetNode = nodes.find(n => n.id === params.target);
+      const sourceNodeType = sourceNode?.type || 'unknown';
+      const targetNodeType = targetNode?.type || 'unknown';
+      const sourceId = (sourceNode?.data as any)?.id as number | undefined;
+      const targetId = (targetNode?.data as any)?.id as number | undefined;
       
       console.log('🔍 추출된 정보:', {
         source: params.source,
@@ -380,8 +383,8 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
         return;
       }
       
-      if (sourceId === 0 || targetId === 0) {
-        console.error('❌ 유효하지 않은 노드 ID:', { source: params.source, target: params.target });
+      if (!sourceId || !targetId) {
+        console.error('❌ 유효하지 않은 DB ID:', { sourceId, targetId, source: params.source, target: params.target });
         setEdges(prev => prev.filter(edge => edge.id !== tempEdgeId));
         
         // 🔴 추가: 사용자에게 오류 알림
@@ -410,6 +413,22 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
         setEdges(prev => prev.filter(edge => edge.id !== tempEdgeId));
         alert('지원되지 않는 연결 유형입니다. 제품↔공정 또는 공정↔공정만 연결할 수 있습니다.');
         return;
+      }
+
+      // 엣지 생성 전에 필요한 배출량을 미리 계산하여 전파 실패 방지
+      try {
+        if (resolvedEdgeKind === 'continue') {
+          await Promise.all([
+            ensureProcessAttrdirComputed(sourceId),
+            ensureProcessAttrdirComputed(targetId)
+          ]);
+        } else if (resolvedEdgeKind === 'produce') {
+          await ensureProcessAttrdirComputed(sourceId);
+        } else if (resolvedEdgeKind === 'consume') {
+          await ensureProcessAttrdirComputed(targetId);
+        }
+      } catch (precalcErr) {
+        console.warn('⚠️ 전처리(배출량 계산) 실패:', precalcErr);
       }
 
       // 백엔드에 Edge 생성 요청
