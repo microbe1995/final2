@@ -624,8 +624,9 @@ export default function InstallPage() {
               </div>
             )}
           </div>
-        </div>
+          </div>
       )}
+        </div>
     </div>
   );
 }
