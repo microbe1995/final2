@@ -204,13 +204,18 @@ class EdgeService:
                 consumption_ratio = consumption_amount / total_consumption
                 allocated_amount = to_next_process * consumption_ratio
             else:
-                allocated_amount = 0.0
+                # 소비량이 설정되지 않았다면 단일 소비 대상으로 간주하여 전량 배분
+                consumption_ratio = 1.0 if len(consumption_data) == 1 and consumption_data[0]['process_id'] == target_process_id else 0.0
+                allocated_amount = to_next_process * consumption_ratio
             
             # 6. 배출량 계산 (제품 배출량 * 소비 비율)
             # 저장된 attr_em 대신 현재 그래프 상태 기준 프리뷰 합계를 우선 사용
             product_emission_preview = await self.compute_product_emission(source_product_id)
             product_emission = product_emission_preview if product_emission_preview is not None else (product_data['attr_em'] or 0.0)
-            process_emission = product_emission * (consumption_amount / product_amount) if product_amount > 0 else 0.0
+            # 기존 구현은 product_amount로 나눴으나, 실제 분배는 "to_next_process" 대비 할당량 기준이어야 함
+            # 비율 = allocated_amount / to_next_process (to_next_process가 0이면 0)
+            process_ratio = (allocated_amount / to_next_process) if to_next_process > 0 else 0.0
+            process_emission = product_emission * process_ratio
             
             # 7. 공정의 자체 배출량에 추가
             total_process_emission = process_data['attrdir_em'] + process_emission
@@ -222,11 +227,11 @@ class EdgeService:
             logger.info(f"  제품 {source_product_id} to_next_process: {to_next_process}")
             logger.info(f"  공정 {target_process_id} 소비량: {consumption_amount}")
             logger.info(f"  전체 소비량: {total_consumption}")
-            logger.info(f"  소비 비율: {consumption_ratio if total_consumption > 0 else 0.0}")
+            logger.info(f"  소비 비율(입력 기준): {consumption_ratio if total_consumption > 0 else (1.0 if process_ratio==1.0 else 0.0)}")
             logger.info(f"  할당량: {allocated_amount}")
             logger.info(f"  제품 {source_product_id} 배출량: {product_emission}")
             logger.info(f"  공정 {target_process_id} 기존 배출량: {process_data['attrdir_em']}")
-            logger.info(f"  공정 {target_process_id} 추가 배출량: {process_emission}")
+            logger.info(f"  공정 {target_process_id} 추가 배출량: {process_emission} (분배비율 {process_ratio})")
             logger.info(f"  공정 {target_process_id} 최종 배출량: {total_process_emission}")
             
             # 8. 공정의 배출량 업데이트

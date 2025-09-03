@@ -333,37 +333,14 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
     }
   }, []);
 
-  // 공정 기준 재계산 트리거 + 영향 노드 부분 갱신 (refresh* 정의 이후에 위치해야 함)
-  const recalcFromProcess = useCallback(async (processId: number) => {
-    try {
-      const resp = await axiosClient.post(
-        apiEndpoints.cbam.calculation.process.recalculate(processId)
-      );
-      const updatedProcessIds: number[] = resp?.data?.updated_process_ids || [];
-      const updatedProductIds: number[] = resp?.data?.updated_product_ids || [];
-
-      await Promise.all([
-        ...updatedProcessIds.map(id => refreshProcessEmission(id)),
-        ...updatedProductIds.map(id => refreshProductEmission(id))
-      ]);
-    } catch (e) {
-      console.error('⚠️ 재계산 트리거 실패:', e);
-      await refreshProcessEmission(processId);
-    }
-  }, [refreshProcessEmission, refreshProductEmission]);
-
-  
-
-  // 특정 제품 노드만 배출량 정보 새로고침
+  // 특정 제품 노드만 배출량 정보 새로고침 (recalcFromProcess보다 먼저 선언)
   const refreshProductEmission = useCallback(async (productId: number) => {
     try {
-      // 표시용 합계(그래프 연결 기준)를 먼저 조회
       let attrEm = 0;
       try {
         const preview = await axiosClient.get(apiEndpoints.cbam.edgePropagation.productPreview(productId));
         attrEm = preview?.data?.preview_attr_em ?? 0;
       } catch {
-        // 프리뷰 실패 시 저장된 attr_em으로 폴백
         const response = await axiosClient.get(apiEndpoints.cbam.product.get(productId));
         const product = response?.data;
         attrEm = product?.attr_em || 0;
@@ -389,6 +366,27 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
       console.error('⚠️ 제품 배출량 새로고침 실패:', e);
     }
   }, [setNodes]);
+
+  // 공정 기준 재계산 트리거 + 영향 노드 부분 갱신 (refresh* 정의 이후에 위치해야 함)
+  const recalcFromProcess = useCallback(async (processId: number) => {
+    try {
+      const resp = await axiosClient.post(
+        apiEndpoints.cbam.calculation.process.recalculate(processId)
+      );
+      const updatedProcessIds: number[] = resp?.data?.updated_process_ids || [];
+      const updatedProductIds: number[] = resp?.data?.updated_product_ids || [];
+
+      await Promise.all([
+        ...updatedProcessIds.map(id => refreshProcessEmission(id)),
+        ...updatedProductIds.map(id => refreshProductEmission(id))
+      ]);
+    } catch (e) {
+      console.error('⚠️ 재계산 트리거 실패:', e);
+      await refreshProcessEmission(processId);
+    }
+  }, [refreshProcessEmission, refreshProductEmission]);
+
+
 
   // 엣지 삭제 동기화: UI에서 삭제되면 서버 edge도 삭제하고 관련 노드 새로고침
   const onEdgesChange = useCallback(async (changes: EdgeChange[]) => {
