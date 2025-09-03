@@ -255,8 +255,7 @@ export default function InputManager({ selectedProcess, onClose, onDataSaved }: 
         oxyfactor: matdirForm.oxyfactor,
         emission: calculationResult.matdir_em,
         calculation_formula: calculationResult.calculation_formula,
-        type: 'matdir',
-        created_at: new Date().toISOString()
+        type: 'matdir'
       };
 
       setInputResults(prev => [newResult, ...prev]);
@@ -350,8 +349,7 @@ export default function InputManager({ selectedProcess, onClose, onDataSaved }: 
         oxyfactor: fueldirForm.oxyfactor,
         emission: calculationResult.fueldir_em,
         calculation_formula: calculationResult.calculation_formula,
-        type: 'fueldir',
-        created_at: new Date().toISOString()
+        type: 'fueldir'
       };
 
       setInputResults(prev => [newResult, ...prev]);
@@ -490,6 +488,8 @@ export default function InputManager({ selectedProcess, onClose, onDataSaved }: 
 
       // 이미 DB에 저장된 데이터는 건너뛰기
       const newResults = inputResults.filter(result => !result.created_at);
+      // created_at이 없는 임시 항목을 저장 대상으로 간주
+      // 혹시 과거 버전에서 created_at이 들어간 항목이 섞여 있다면, 서버 저장 여부를 한 번 더 확인하도록 개선 필요
       
       if (newResults.length === 0) {
         alert('모든 데이터가 이미 저장되어 있습니다.');
