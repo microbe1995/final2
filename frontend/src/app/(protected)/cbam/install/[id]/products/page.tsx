@@ -164,10 +164,11 @@ export default function InstallProductsPage() {
       const response = await axiosClient.get(apiEndpoints.cbam.process.list);
       console.log('🔍 전체 공정 목록 조회 결과:', response.data);
       
-      // 사업장별로 공정 그룹화
+      // 사업장별로 공정 그룹화 (install_id가 없는 항목은 스킵)
       const installProcessMap = new Map<number, string[]>();
       response.data.forEach((process: any) => {
-        const installId = process.install_id || 1;
+        const installId = process.install_id;
+        if (!installId) return;
         if (!installProcessMap.has(installId)) {
           installProcessMap.set(installId, []);
         }
