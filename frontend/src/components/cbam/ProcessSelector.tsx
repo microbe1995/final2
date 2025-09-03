@@ -120,16 +120,17 @@ export const ProductProcessModal: React.FC<{
         // 실패 시 0 유지
       }
     })();
-  }, [selectedProduct?.product_name, getProductQuantity]);
+  }, [selectedProduct?.product_name]);
 
   // useEffect로 selectedProduct 변경 시 폼 값 업데이트
   React.useEffect(() => {
     if (selectedProduct) {
-      setProductQuantityForm({
-        product_amount: selectedProduct.product_amount || 0,
+      // 수량(product_amount)은 더미에서 가장 최신값을 가져오므로 여기서 덮어쓰지 않는다
+      setProductQuantityForm(prev => ({
+        ...prev,
         product_sell: selectedProduct.product_sell || 0,
         product_eusell: selectedProduct.product_eusell || 0
-      });
+      }));
     }
   }, [selectedProduct]);
 
