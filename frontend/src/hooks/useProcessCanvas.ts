@@ -57,6 +57,9 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
     }
   }, [selectedInstall?.id, installCanvases, setNodes, setEdges]);
 
+  // 제품 수량 업데이트 브로드캐스트 수신 → 해당 제품 노드 프리뷰 갱신
+  // (핸들러는 업데이트 함수 정의 이후에 등록되어야 하므로 아래로 이동)
+
   // 사업장 선택 시 캔버스 상태 복원 (이제 useEffect에서 자동 처리)
   const handleInstallSelect = useCallback((install: Install) => {
     // 이 함수는 이제 사용되지 않지만, 호환성을 위해 유지
@@ -71,6 +74,39 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
         : node
     ));
   }, [setNodes]);
+
+  // 제품 ID로 제품 노드의 수량/프리뷰 값을 업데이트
+  const updateProductNodeByProductId = useCallback((productId: number, newFields: any) => {
+    setNodes(prev => prev.map(node => {
+      if (node.type === 'product' && (node.data as any)?.id === productId) {
+        const prevProductData = (node.data as any).productData || {};
+        return {
+          ...node,
+          data: {
+            ...node.data,
+            ...newFields,
+            product_amount: newFields.product_amount ?? (node.data as any).product_amount,
+            productData: {
+              ...prevProductData,
+              production_qty: newFields.product_amount ?? prevProductData.production_qty
+            }
+          }
+        } as Node;
+      }
+      return node;
+    }));
+  }, [setNodes]);
+
+  // 이제 업데이트 함수가 정의되었으므로 이벤트 리스너 등록
+  useEffect(() => {
+    const handler = (e: any) => {
+      const { productId, product_amount } = e.detail || {};
+      if (!productId) return;
+      updateProductNodeByProductId(productId, { product_amount });
+    };
+    window.addEventListener('cbam:updateProductAmount' as any, handler);
+    return () => window.removeEventListener('cbam:updateProductAmount' as any, handler);
+  }, [updateProductNodeByProductId]);
 
   // 엣지 연결 여부에 상관없이 직접/원료/연료 값은 항상 보이도록 유지
   // 누적 값은 연결 여부와 무관하게 현재 DB 상태를 표시

@@ -111,7 +111,7 @@ function ProductNode({
           <div className='text-xs opacity-60 mt-2'>
             <div className='flex justify-between'>
               <span>생산량:</span>
-              <span className='font-medium'>{(data.productData.production_qty ?? data.product_amount ?? 0)} ton</span>
+              <span className='font-medium'>{Number(data.product_amount ?? data.productData?.production_qty ?? 0).toLocaleString()} ton</span>
             </div>
             <div className='flex justify-between'>
               <span>수출량:</span>

@@ -151,6 +151,20 @@ export const ProductProcessModal: React.FC<{
     }
   }, [selectedProduct]);
 
+  // 더미 수량이 계산되면 캔버스 제품 노드 프리뷰에 반영
+  React.useEffect(() => {
+    if (!selectedProduct?.id) return;
+    // product_amount가 세팅되면 해당 제품 노드에 반영 (production_qty 프리뷰 포함)
+    if (typeof productQuantityForm.product_amount === 'number') {
+      // 전역 캔버스 훅에 직접 접근할 수 없으므로 window 이벤트로 브로드캐스트
+      const detail = {
+        productId: selectedProduct.id,
+        product_amount: productQuantityForm.product_amount,
+      };
+      window.dispatchEvent(new CustomEvent('cbam:updateProductAmount', { detail }));
+    }
+  }, [selectedProduct?.id, productQuantityForm.product_amount]);
+
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black/60 z-50">
       <div className="bg-gray-800 p-6 rounded-lg shadow-lg max-w-4xl w-full mx-4 border border-gray-700">
