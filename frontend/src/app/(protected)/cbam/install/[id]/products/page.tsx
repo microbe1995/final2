@@ -35,6 +35,8 @@ interface Product {
 interface Process {
   id: number;
   process_name: string;
+  install_id?: number;
+  install_name?: string;
   start_period?: string;
   end_period?: string;
   created_at?: string;
@@ -655,8 +657,13 @@ export default function InstallProductsPage() {
       console.error('❌ 프로세스 처리 실패:', error);
       console.error('❌ 에러 응답 데이터:', error.response?.data);
       console.error('❌ 에러 상태 코드:', error.response?.status);
+      const status = error.response?.status;
+      const backendDetail = error.response?.data?.detail;
+      const friendlyMessage = status === 409
+        ? (backendDetail || '동일 사업장에 동일한 공정명이 이미 존재합니다.')
+        : (backendDetail || error.message);
       setToast({
-        message: `프로세스 처리에 실패했습니다: ${error.response?.data?.detail || error.message}`,
+        message: `프로세스 처리에 실패했습니다: ${friendlyMessage}`,
         type: 'error'
       });
     }

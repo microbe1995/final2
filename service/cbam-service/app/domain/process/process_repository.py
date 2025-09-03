@@ -8,6 +8,11 @@ from app.domain.process.process_schema import ProcessCreateRequest, ProcessUpdat
 
 logger = logging.getLogger(__name__)
 
+# 도메인 전용 예외
+class DuplicateProcessError(Exception):
+    """동일 사업장 내 공정명이 중복될 때 발생하는 예외"""
+    pass
+
 class ProcessRepository:
     """공정 데이터 접근 클래스"""
     
@@ -172,10 +177,24 @@ class ProcessRepository:
             
         try:
             async with self.pool.acquire() as conn:
+                # 0. 사전 중복 체크 (동일 install 내 동일 이름 방지)
+                install_id = process_data.get('install_id', 1)
+                existing = await conn.fetchrow(
+                    """
+                    SELECT id FROM process 
+                    WHERE process_name = $1 AND install_id = $2
+                    LIMIT 1
+                    """,
+                    process_data['process_name'], install_id
+                )
+                if existing:
+                    msg = f"동일 사업장(ID: {install_id})에 공정명 '{process_data['process_name']}'이 이미 존재합니다."
+                    logger.error(f"❌ 공정 생성 실패(중복): {msg}")
+                    raise DuplicateProcessError(msg)
                 # 1. 공정 생성 (install_id 포함)
                 params = (
                     process_data['process_name'], 
-                    process_data.get('install_id', 1),  # 🔴 추가: install_id (기본값 1)
+                    install_id,  # 🔴 추가: install_id (기본값 1)
                     process_data.get('start_period'), 
                     process_data.get('end_period')
                 )
@@ -205,6 +224,10 @@ class ProcessRepository:
                 # 3. 생성된 공정 정보 반환 (제품 정보 포함)
                 return await self._get_process_with_products_db(process_id)
                 
+        except asyncpg.UniqueViolationError as e:
+            # 경쟁 조건 등으로 유니크 제약 위반 시 도메인 예외로 변환
+            logger.error(f"❌ 공정 생성 실패(유니크 제약 위반): {str(e)}")
+            raise DuplicateProcessError("동일 사업장에 동일한 공정명이 이미 존재합니다.")
         except Exception as e:
             logger.error(f"❌ 공정 생성 실패: {str(e)}")
             raise

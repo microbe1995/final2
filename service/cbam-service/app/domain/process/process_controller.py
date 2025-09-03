@@ -7,6 +7,7 @@ import logging
 from typing import List, Optional
 
 from app.domain.process.process_service import ProcessService
+from app.domain.process.process_repository import DuplicateProcessError
 from app.domain.process.process_schema import (
     ProcessCreateRequest, ProcessResponse, ProcessUpdateRequest
 )
@@ -72,6 +73,10 @@ async def create_process(request: ProcessCreateRequest):
         process = await process_service.create_process(request)
         logger.info(f"✅ 프로세스 생성 성공: ID {process.id}")
         return process
+    except DuplicateProcessError as e:
+        # 동일 사업장 내 공정명 중복 → 409 Conflict
+        logger.warning(f"⚠️ 프로세스 생성 중복: {str(e)}")
+        raise HTTPException(status_code=409, detail=str(e))
     except Exception as e:
         logger.error(f"❌ 프로세스 생성 실패: {str(e)}")
         raise HTTPException(status_code=500, detail=f"프로세스 생성 중 오류가 발생했습니다: {str(e)}")
