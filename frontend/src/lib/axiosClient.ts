@@ -353,6 +353,10 @@ export const apiEndpoints = {
       // Product 배출량 계산 API
       product: {
         calculate: '/api/v1/cbam/calculation/emission/product/calculate'
+      },
+      // Graph 재계산
+      graph: {
+        recalc: '/api/v1/cbam/calculation/emission/graph/recalculate'
       }
     }
   },

@@ -211,8 +211,15 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
   // 특정 공정 노드만 배출량 정보 새로고침
   const refreshProcessEmission = useCallback(async (processId: number) => {
     try {
-      const emissionData = await fetchProcessEmissionData(processId);
-      if (!emissionData) return;
+      const response = await axiosClient.get(apiEndpoints.cbam.calculation.process.attrdir(processId));
+      const data = response?.data;
+      if (!data) return;
+      const emissionData = {
+        attr_em: data.attrdir_em || 0,
+        total_matdir_emission: data.total_matdir_emission || 0,
+        total_fueldir_emission: data.total_fueldir_emission || 0,
+        calculation_date: data.calculation_date
+      };
       setNodes(prev => prev.map(node => {
         if (node.type === 'process' && node.data?.id === processId) {
           return {
@@ -231,7 +238,35 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
     } catch (e) {
       console.error('⚠️ 공정 배출량 새로고침 실패:', e);
     }
-  }, [setNodes, fetchProcessEmissionData]);
+  }, [setNodes]);
+
+  // 특정 제품 노드만 배출량 정보 새로고침
+  const refreshProductEmission = useCallback(async (productId: number) => {
+    try {
+      const response = await axiosClient.get(apiEndpoints.cbam.product.get(productId));
+      const product = response?.data;
+      if (!product) return;
+      const attrEm = product?.attr_em || 0;
+      setNodes(prev => prev.map(node => {
+        if (node.type === 'product' && node.data?.id === productId) {
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              attr_em: attrEm,
+              productData: {
+                ...(node.data as any).productData,
+                attr_em: attrEm,
+              }
+            }
+          } as Node;
+        }
+        return node;
+      }));
+    } catch (e) {
+      console.error('⚠️ 제품 배출량 새로고침 실패:', e);
+    }
+  }, [setNodes]);
 
   // 🔧 4방향 연결을 지원하는 Edge 생성 처리
   const handleEdgeCreate = useCallback(async (params: Connection, updateCallback: () => void = () => {}) => {
@@ -362,13 +397,28 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
         return;
       }
       
+      // Edge 종류 판정
+      let resolvedEdgeKind: string = 'continue';
+      if (sourceNodeType === 'process' && targetNodeType === 'process') {
+        resolvedEdgeKind = 'continue';
+      } else if (sourceNodeType === 'process' && targetNodeType === 'product') {
+        resolvedEdgeKind = 'produce';
+      } else if (sourceNodeType === 'product' && targetNodeType === 'process') {
+        resolvedEdgeKind = 'consume';
+      } else {
+        console.error('❌ 지원되지 않는 연결 유형입니다:', { sourceNodeType, targetNodeType });
+        setEdges(prev => prev.filter(edge => edge.id !== tempEdgeId));
+        alert('지원되지 않는 연결 유형입니다. 제품↔공정 또는 공정↔공정만 연결할 수 있습니다.');
+        return;
+      }
+
       // 백엔드에 Edge 생성 요청
       const edgeData = {
         source_node_type: sourceNodeType,
         source_id: sourceId,
         target_node_type: targetNodeType,
         target_id: targetId,
-        edge_kind: 'continue'
+        edge_kind: resolvedEdgeKind
       };
       
       console.log('🔗 Edge 생성 요청:', edgeData);
@@ -400,7 +450,7 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
           updateCallback();
         }
 
-        // 배출량 전파 및 영향 노드 갱신 (공정→공정: continue)
+        // 배출량 전파 및 영향 노드 갱신 (edge_kind별 분기)
         try {
           if (edgeData.edge_kind === 'continue') {
             await axiosClient.post(
@@ -410,6 +460,38 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
             );
             await Promise.all([
               refreshProcessEmission(sourceId),
+              refreshProcessEmission(targetId)
+            ]);
+          } else if (edgeData.edge_kind === 'produce') {
+            // 공정→제품: 제품 배출량 재계산 및 노드 갱신
+            try {
+              const recalc = await axiosClient.post(apiEndpoints.cbam.calculation.graph.recalc, {
+                trigger_edge_id: newEdge.id,
+                recalculate_all: false,
+                include_validation: false
+              });
+              console.log('🔄 그래프 부분 재계산:', recalc.data);
+            } catch (e) {
+              console.warn('⚠️ 그래프 재계산 실패(무시 가능):', e);
+            }
+            await Promise.all([
+              refreshProcessEmission(sourceId),
+              refreshProductEmission(targetId)
+            ]);
+          } else if (edgeData.edge_kind === 'consume') {
+            // 제품→공정: 타겟 공정 갱신
+            try {
+              const recalc = await axiosClient.post(apiEndpoints.cbam.calculation.graph.recalc, {
+                trigger_edge_id: newEdge.id,
+                recalculate_all: false,
+                include_validation: false
+              });
+              console.log('🔄 그래프 부분 재계산:', recalc.data);
+            } catch (e) {
+              console.warn('⚠️ 그래프 재계산 실패(무시 가능):', e);
+            }
+            await Promise.all([
+              refreshProductEmission(sourceId),
               refreshProcessEmission(targetId)
             ]);
           }
