@@ -241,6 +241,7 @@ class CalculationRepository:
                             total_matdir_emission NUMERIC(15, 6) DEFAULT 0,
                             total_fueldir_emission NUMERIC(15, 6) DEFAULT 0,
                             attrdir_em NUMERIC(15, 6) DEFAULT 0,
+                            cumulative_emission NUMERIC(15, 6) DEFAULT 0,
                             calculation_date TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
                             created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
                             updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),

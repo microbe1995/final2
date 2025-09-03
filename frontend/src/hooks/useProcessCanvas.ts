@@ -67,6 +67,29 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
     ));
   }, [setNodes]);
 
+  // 엣지 연결 여부에 따라 노드의 배출량 표시 토글
+  useEffect(() => {
+    const matchId = (nodeId: string, edgeEndId: string, nodeDataId?: string) => {
+      if (!nodeId || !edgeEndId) return false;
+      const norm = (id: string) => id.replace(/-(left|right|top|bottom)$/i, '');
+      const a = norm(nodeId);
+      const b = norm(edgeEndId);
+      const c = nodeDataId ? norm(String(nodeDataId)) : '';
+      return a === b || a.startsWith(b) || b.startsWith(a) || a === c || c === b;
+    };
+    setNodes(prev => prev.map(n => {
+      const nodeDataId = (n.data as any)?.nodeId || (n.data as any)?.id;
+      const connected = edges.some(e => matchId(n.id, e.source, nodeDataId) || matchId(n.id, e.target, nodeDataId));
+      return {
+        ...n,
+        data: {
+          ...n.data,
+          showEmissions: connected
+        }
+      } as Node;
+    }));
+  }, [edges, setNodes]);
+
   // 제품 노드 추가 (안전한 상태 업데이트)
   const addProductNode = useCallback((product: Product, handleProductNodeClick: (product: Product) => void) => {
     // 🔴 수정: 더 작은 ID 생성 (int32 범위 내)

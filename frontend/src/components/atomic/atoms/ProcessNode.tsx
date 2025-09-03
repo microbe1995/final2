@@ -125,7 +125,7 @@ function ProcessNode({
         )}
 
         {/* 공정 정보 미리보기 */}
-        {data.processData && finalVariant === 'process' && (
+        {data.processData && finalVariant === 'process' && data.showEmissions !== false && (
           <div className='text-xs opacity-60 mt-2'>
             {data.product_names && (
               <div className='flex justify-between'>
@@ -154,7 +154,7 @@ function ProcessNode({
               <span className='font-medium'>{data.processData.end_period || 'N/A'}</span>
             </div>
             
-            {/* 직접귀속배출량 표시 */}
+            {/* 직접귀속배출량 / 누적배출량 표시 */}
             {data.processData.attr_em !== undefined && (
               <div className='flex justify-between mt-1 pt-1 border-t border-gray-200'>
                 <span className='text-green-600 font-medium'>직접귀속배출량:</span>
@@ -163,6 +163,16 @@ function ProcessNode({
                     ? `${data.processData.attr_em.toFixed(2)} tCO2e`
                     : data.processData.attr_em || '0.00 tCO2e'
                   }
+                </span>
+              </div>
+            )}
+            {data.processData.cumulative_emission !== undefined && (
+              <div className='flex justify-between'>
+                <span className='text-indigo-600 font-medium'>누적배출량:</span>
+                <span className='text-indigo-600 font-bold'>
+                  {typeof data.processData.cumulative_emission === 'number'
+                    ? `${data.processData.cumulative_emission.toFixed(2)} tCO2e`
+                    : data.processData.cumulative_emission || '0.00 tCO2e'}
                 </span>
               </div>
             )}
@@ -190,7 +200,7 @@ function ProcessNode({
         )}
 
         {/* 투입량 입력 버튼 */}
-        {data.processData && finalVariant === 'process' && !isExternalProcess && (
+        {data.processData && finalVariant === 'process' && data.showEmissions !== false && !isExternalProcess && (
           <div className='mt-2 pt-2 border-t border-gray-300'>
             <button
               onClick={(e) => {
