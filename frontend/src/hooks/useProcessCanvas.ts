@@ -450,6 +450,14 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
         console.warn('⚠️ 엣지 삭제 후 새로고침 실패:', e);
       }
     }
+
+    // 엣지 삭제 후 누적값을 원상 복구시키기 위해 서버에 전체 재계산을 요청
+    // (모든 공정의 cumulative_emission을 0으로 리셋 후 현재 그래프 기준으로 재전파)
+    try {
+      await axiosClient.post(apiEndpoints.cbam.edgePropagation.recalcFromEdges, {});
+    } catch (e) {
+      console.warn('⚠️ 엣지 삭제 후 재계산 트리거 실패(무시 가능):', e);
+    }
   }, [edges, baseOnEdgesChange, refreshProcessEmission, refreshProductEmission]);
 
   // 🔧 4방향 연결을 지원하는 Edge 생성 처리
