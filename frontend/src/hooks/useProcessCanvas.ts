@@ -618,7 +618,19 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
               refreshProcessEmission(finalTargetId)
             ]);
           } else if (edgeData.edge_kind === 'produce') {
-            // 공정→제품: EdgeService가 전체 그래프 전파를 수행하므로 프론트는 조회만 갱신
+            // 공정→제품: 제품 프리뷰는 소스 공정의 '누적'을 사용하므로,
+            // 직전의 continue 누적이 DB에 반영되도록 그래프 부분 재계산을 먼저 호출
+            try {
+              await axiosClient.post(apiEndpoints.cbam.calculation.graph.recalc, {
+                trigger_edge_id: newEdge.id,
+                recalculate_all: false,
+                include_validation: false
+              });
+            } catch (e) {
+              // 재계산 실패는 치명적이지 않으므로 경고만
+              console.warn('⚠️ 그래프 재계산 실패(무시 가능):', e);
+            }
+            // 그 다음 공정/제품 갱신
             await Promise.all([
               refreshProcessEmission(finalSourceId),
               refreshProductEmission(finalTargetId)
