@@ -140,14 +140,18 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
         label: process.process_name,  // 🔴 수정: label을 올바르게 설정
         description: `공정: ${process.process_name}`,
         variant: 'process',  // 🔴 수정: variant를 'process'로 명시적 설정
+        // 읽기전용/외부 사업장 판정에 사용하는 상위 레벨 메타데이터
+        install_id: (process as any).install_id, // 공정 소속 사업장
+        current_install_id: selectedInstall?.id, // 현재 캔버스 사업장
+        is_readonly: (process as any).install_id !== selectedInstall?.id,
         processData: {
           ...process,
           start_period: process.start_period || 'N/A',
           end_period: process.end_period || 'N/A',
           product_names: relatedProducts.map(p => p.product_name).join(', ') || 'N/A',
           is_many_to_many: relatedProducts.length > 1,
-          install_id: (process as any).install_id, // 공정의 실제 소속 사업장
-          current_install_id: selectedInstall?.id, // 현재 캔버스의 사업장
+          install_id: (process as any).install_id,
+          current_install_id: selectedInstall?.id,
           is_readonly: (process as any).install_id !== selectedInstall?.id,
           // 배출량 정보 추가
           ...emissionData
