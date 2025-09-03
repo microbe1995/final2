@@ -375,6 +375,7 @@ export default function InstallPage() {
 
         {/* 사업장 관리 탭 */}
         {activeTab === 'install' && (
+          <>
           <div className="bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10">
             <h2 className="text-2xl font-semibold text-white mb-6 flex items-center gap-2">
               {editingInstall ? '🏭 사업장 수정' : '🏭 사업장 생성'}
@@ -520,6 +521,7 @@ export default function InstallPage() {
             </div>
           )}
         </div>
+          </>
       )}
 
       {/* 제품-공정 관계 설정 탭 */}
