@@ -538,33 +538,13 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
               refreshProcessEmission(finalTargetId)
             ]);
           } else if (edgeData.edge_kind === 'produce') {
-            // 공정→제품: 제품 배출량 재계산 및 노드 갱신
-            try {
-              const recalc = await axiosClient.post(apiEndpoints.cbam.calculation.graph.recalc, {
-                trigger_edge_id: newEdge.id,
-                recalculate_all: false,
-                include_validation: false
-              });
-              console.log('🔄 그래프 부분 재계산:', recalc.data);
-            } catch (e) {
-              console.warn('⚠️ 그래프 재계산 실패(무시 가능):', e);
-            }
+            // 공정→제품: EdgeService가 전체 그래프 전파를 수행하므로 프론트는 조회만 갱신
             await Promise.all([
               refreshProcessEmission(finalSourceId),
               refreshProductEmission(finalTargetId)
             ]);
           } else if (edgeData.edge_kind === 'consume') {
             // 제품→공정: 타겟 공정 갱신
-            try {
-              const recalc = await axiosClient.post(apiEndpoints.cbam.calculation.graph.recalc, {
-                trigger_edge_id: newEdge.id,
-                recalculate_all: false,
-                include_validation: false
-              });
-              console.log('🔄 그래프 부분 재계산:', recalc.data);
-            } catch (e) {
-              console.warn('⚠️ 그래프 재계산 실패(무시 가능):', e);
-            }
             await Promise.all([
               refreshProductEmission(finalSourceId),
               refreshProcessEmission(finalTargetId)

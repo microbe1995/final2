@@ -162,12 +162,18 @@ export const ProductProcessModal: React.FC<{
             
             <div className="space-y-2 max-h-96 overflow-y-auto">
               {(() => {
+                // 1) 먼저 선택된 제품에 속한 공정만 추리기
+                const productFiltered = (allProcesses || []).filter((proc: Process) =>
+                  proc.products && selectedProduct ? proc.products.some((p: Product) => p.id === selectedProduct.id) : false
+                );
+
+                // 2) 탭이 '해당 사업장'이면 추가로 install_id로 필터링
                 const displayProcesses = processFilterMode === 'install'
-                  ? allProcesses.filter((proc: Process) => {
+                  ? productFiltered.filter((proc: Process) => {
                       const procInstallId = (proc as { install_id?: number }).install_id;
                       return typeof procInstallId === 'number' && procInstallId === selectedInstall?.id;
                     })
-                  : allProcesses;
+                  : productFiltered;
                 
                 return displayProcesses.length > 0 ? (
                   displayProcesses.map((process: Process) => {
