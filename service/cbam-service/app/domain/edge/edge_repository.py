@@ -397,7 +397,7 @@ class EdgeRepository:
             
             async with self.pool.acquire() as conn:
                 query = """
-                    SELECT e.source_id as process_id, e.edge_kind
+                    SELECT DISTINCT e.source_id as process_id, e.edge_kind
                     FROM edge e
                     WHERE e.target_id = $1 AND e.edge_kind = 'produce'
                     ORDER BY e.source_id

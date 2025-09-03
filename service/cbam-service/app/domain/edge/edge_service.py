@@ -101,7 +101,7 @@ class EdgeService:
     async def propagate_emissions_produce(self, source_process_id: int, target_product_id: int) -> bool:
         """
         규칙 2: 공정→제품 배출량 전달 (edge_kind = "produce")
-        product.attr_em = sum(connected_processes.attr_em)
+        저장 없이 계산만 수행(표시용). 실제 저장은 별도 save API에서 처리.
         """
         try:
             logger.info(f"🔗 공정 {source_process_id} → 제품 {target_product_id} 배출량 전달 시작")
@@ -118,37 +118,43 @@ class EdgeService:
                 logger.error(f"제품 {target_product_id}의 데이터를 찾을 수 없습니다.")
                 return False
             
-            # 3. 제품에 연결된 모든 공정들의 배출량 합계 계산
-            connected_processes = await self.repository.get_processes_connected_to_product(target_product_id)
-
-            total_emission = 0.0
-            for proc_data in connected_processes:
-                # 각 공정의 누적배출량을 합산. 누적값이 없으면 자체 직접귀속배출량을 사용
-                proc_emission = await self.repository.get_process_emission_data(proc_data['process_id'])
-                if proc_emission:
-                    cumulative = proc_emission.get('cumulative_emission') or 0.0
-                    if cumulative == 0.0:
-                        cumulative = proc_emission.get('attrdir_em') or 0.0
-                    total_emission += cumulative
+            # 3. 제품에 연결된 모든 공정들의 배출량 합계 계산(표시용)
+            total_emission = await self.compute_product_emission(target_product_id)
             
             logger.info(f"🧮 공정→제품 배출량 계산:")
             logger.info(f"  공정 {source_process_id} 누적 배출량: {process_data['cumulative_emission']}")
             logger.info(f"  제품 {target_product_id} 기존 배출량: {product_data['attr_em']}")
             logger.info(f"  제품 {target_product_id} 최종 배출량: {total_emission}")
             
-            # 4. 제품의 배출량 업데이트
-            success = await self.repository.update_product_emission(target_product_id, total_emission)
-            
-            if success:
-                logger.info(f"✅ 공정 {source_process_id} → 제품 {target_product_id} 배출량 전달 완료")
-                return True
-            else:
-                logger.error(f"❌ 제품 {target_product_id} 배출량 업데이트 실패")
-                return False
+            # 4. 저장은 하지 않음
+            logger.info(f"✅ 공정 {source_process_id} → 제품 {target_product_id} 배출량 계산 완료(표시용): {total_emission}")
+            return True
                 
         except Exception as e:
             logger.error(f"공정 {source_process_id} → 제품 {target_product_id} 배출량 전달 실패: {e}")
             return False
+
+    async def compute_product_emission(self, product_id: int) -> float:
+        """현재 연결 상태 기준 제품 배출량(표시용)을 합산해 반환."""
+        try:
+            connected_processes = await self.repository.get_processes_connected_to_product(product_id)
+            seen = set()
+            total_emission = 0.0
+            for proc_data in connected_processes:
+                pid = proc_data['process_id']
+                if pid in seen:
+                    continue
+                seen.add(pid)
+                proc_emission = await self.repository.get_process_emission_data(pid)
+                if proc_emission:
+                    cumulative = proc_emission.get('cumulative_emission') or 0.0
+                    if cumulative == 0.0:
+                        cumulative = proc_emission.get('attrdir_em') or 0.0
+                    total_emission += cumulative
+            return float(total_emission)
+        except Exception as e:
+            logger.error(f"제품 {product_id} 표시용 배출량 합산 실패: {e}")
+            return 0.0
     
     async def propagate_emissions_consume(self, source_product_id: int, target_process_id: int) -> bool:
         """

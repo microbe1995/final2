@@ -318,6 +318,42 @@ async def get_process_emission(
             detail=f"서버 오류: {str(e)}"
         )
 
+# ============================================================================
+# 📊 제품 표시용 배출량 조회(저장 안 함)
+# ============================================================================
+
+@router.get("/product-emission/preview/{product_id}")
+async def get_product_emission_preview(product_id: int):
+    """현재 연결 상태 기준 제품 배출량(표시용) 합계를 반환합니다."""
+    try:
+        logger.info(f"📊 제품 {product_id} 표시용 배출량 조회 요청")
+        edge_service = get_edge_service()
+        total = await edge_service.compute_product_emission(product_id)
+        return {"success": True, "product_id": product_id, "preview_attr_em": total}
+    except Exception as e:
+        logger.error(f"❌ 제품 {product_id} 표시용 배출량 조회 실패: {e}")
+        raise HTTPException(status_code=500, detail=f"서버 오류: {str(e)}")
+
+# ============================================================================
+# 💾 제품 배출량 저장(사용자 확정값)
+# ============================================================================
+
+@router.post("/product-emission/save/{product_id}")
+async def save_product_emission(product_id: int):
+    """표시용 합계를 계산해 제품 attr_em에 저장합니다."""
+    try:
+        logger.info(f"💾 제품 {product_id} 배출량 저장 요청")
+        edge_service = get_edge_service()
+        total = await edge_service.compute_product_emission(product_id)
+        success = await edge_service.repository.update_product_emission(product_id, total)
+        if not success:
+            raise HTTPException(status_code=500, detail="제품 배출량 저장 실패")
+        return {"success": True, "product_id": product_id, "saved_attr_em": total}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"❌ 제품 {product_id} 배출량 저장 실패: {e}")
+        raise HTTPException(status_code=500, detail=f"서버 오류: {str(e)}")
 @router.get("/continue-edges/{process_id}")
 async def get_continue_edges(
     process_id: int

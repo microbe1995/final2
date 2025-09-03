@@ -1,12 +1,12 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { useNodesState, useEdgesState, Node, Edge, Connection } from '@xyflow/react';
+import { useNodesState, useEdgesState, Node, Edge, Connection, EdgeChange } from '@xyflow/react';
 import axiosClient, { apiEndpoints } from '@/lib/axiosClient';
 import { Install, Product, Process } from './useProcessManager';
 
 export const useProcessCanvas = (selectedInstall: Install | null) => {
   // ReactFlow 상태
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
-  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
+  const [edges, setEdges, baseOnEdgesChange] = useEdgesState<Edge>([]);
 
   // 다중 사업장 캔버스 관리
   const [installCanvases, setInstallCanvases] = useState<{[key: number]: {nodes: Node[], edges: Edge[]}}>({});
@@ -94,6 +94,70 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
       } as Node;
     }));
   }, [edges, setNodes]);
+
+  // 엣지 삭제 동기화: UI에서 삭제되면 서버 edge도 삭제하고 관련 노드 새로고침
+  const onEdgesChange = useCallback(async (changes: EdgeChange[]) => {
+    // 기존 상태 업데이트
+    baseOnEdgesChange(changes);
+
+    // 삭제된 엣지들 수집
+    const removedIds = new Set(
+      changes.filter((c: any) => c.type === 'remove').map((c: any) => c.id)
+    );
+    if (removedIds.size === 0) return;
+
+    // 현재 스냅샷에서 삭제된 엣지 상세 찾기
+    const removedEdges = edges.filter(e => removedIds.has(e.id));
+
+    // 유틸: 노드 탐색
+    const normalizeNodeId = (id: string) => id.replace(/-(left|right|top|bottom)$/i, '');
+    const getNodeByAnyId = (candidateId: string) => {
+      const id = normalizeNodeId(candidateId);
+      return (
+        prevNodesRef.current.find(n => n.id === id) ||
+        prevNodesRef.current.find(n => (n.data as any)?.nodeId === id) ||
+        prevNodesRef.current.find(n => id.startsWith(n.id)) ||
+        prevNodesRef.current.find(n => id.startsWith(((n.data as any)?.nodeId) || '')) ||
+        prevNodesRef.current.find(n => n.id.startsWith(id)) ||
+        prevNodesRef.current.find(n => ((((n.data as any)?.nodeId) || '') as string).startsWith(id))
+      );
+    };
+
+    // 백엔드 삭제 + 관련 노드 갱신
+    for (const edge of removedEdges) {
+      try {
+        const m = /^e-(\d+)/.exec(edge.id);
+        if (m) {
+          const edgeId = parseInt(m[1], 10);
+          await axiosClient.delete(apiEndpoints.cbam.edge.delete(edgeId));
+        }
+      } catch (err) {
+        console.warn('⚠️ 서버 엣지 삭제 실패(무시 가능):', err);
+      }
+
+      // 영향 노드 새로고침
+      const sourceNode = getNodeByAnyId(edge.source);
+      const targetNode = getNodeByAnyId(edge.target);
+      const sourceType = sourceNode?.type;
+      const targetType = targetNode?.type;
+      const sourceId = (sourceNode?.data as any)?.id as number | undefined;
+      const targetId = (targetNode?.data as any)?.id as number | undefined;
+
+      try {
+        if (sourceType === 'process' && targetType === 'process') {
+          if (sourceId) await refreshProcessEmission(sourceId);
+          if (targetId) await refreshProcessEmission(targetId);
+        } else if (sourceType === 'process' && targetType === 'product') {
+          if (targetId) await refreshProductEmission(targetId);
+        } else if (sourceType === 'product' && targetType === 'process') {
+          if (sourceId) await refreshProductEmission(sourceId);
+          if (targetId) await refreshProcessEmission(targetId);
+        }
+      } catch (e) {
+        console.warn('⚠️ 엣지 삭제 후 새로고침 실패:', e);
+      }
+    }
+  }, [edges, baseOnEdgesChange, refreshProcessEmission, refreshProductEmission]);
 
   // 제품 노드 추가 (안전한 상태 업데이트)
   const addProductNode = useCallback((product: Product, handleProductNodeClick: (product: Product) => void) => {
@@ -304,10 +368,17 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
   // 특정 제품 노드만 배출량 정보 새로고침
   const refreshProductEmission = useCallback(async (productId: number) => {
     try {
-      const response = await axiosClient.get(apiEndpoints.cbam.product.get(productId));
-      const product = response?.data;
-      if (!product) return;
-      const attrEm = product?.attr_em || 0;
+      // 표시용 합계(그래프 연결 기준)를 먼저 조회
+      let attrEm = 0;
+      try {
+        const preview = await axiosClient.get(apiEndpoints.cbam.edgePropagation.productPreview(productId));
+        attrEm = preview?.data?.preview_attr_em ?? 0;
+      } catch {
+        // 프리뷰 실패 시 저장된 attr_em으로 폴백
+        const response = await axiosClient.get(apiEndpoints.cbam.product.get(productId));
+        const product = response?.data;
+        attrEm = product?.attr_em || 0;
+      }
       setNodes(prev => prev.map(node => {
         if (node.type === 'product' && node.data?.id === productId) {
           return {
