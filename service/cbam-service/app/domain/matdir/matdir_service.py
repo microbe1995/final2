@@ -11,6 +11,7 @@ from app.domain.matdir.matdir_schema import (
     MatDirCreateRequest, MatDirResponse, MatDirUpdateRequest, 
     MatDirCalculationRequest, MatDirCalculationResponse
 )
+from app.domain.calculation.calculation_service import CalculationService
 
 logger = logging.getLogger(__name__)
 
@@ -19,6 +20,7 @@ class MatDirService:
     
     def __init__(self):
         self.matdir_repository = MatDirRepository()
+        self._calc_service = CalculationService()
         logger.info("✅ MatDir 서비스 초기화 완료")
     
     # ============================================================================
@@ -73,6 +75,11 @@ class MatDirService:
                 logger.info("🔄 MatDirResponse 변환 시작")
                 response = MatDirResponse(**saved_matdir)
                 logger.info(f"✅ MatDirResponse 변환 완료: {response}")
+                # 투입 생성 후 해당 공정 기준 재계산 트리거
+                try:
+                    await self._calc_service.recalculate_from_process(request.process_id)
+                except Exception as e:
+                    logger.warning(f"⚠️ 재계산 트리거 실패(생성 후): {e}")
                 return response
             else:
                 raise Exception("원료직접배출량 저장에 실패했습니다.")
@@ -145,6 +152,12 @@ class MatDirService:
             
             updated_matdir = await self.matdir_repository.update_matdir(matdir_id, update_data)
             if updated_matdir:
+                # 투입 업데이트 후 재계산 트리거
+                try:
+                    process_id = update_data.get('process_id', existing_matdir['process_id'])
+                    await self._calc_service.recalculate_from_process(process_id)
+                except Exception as e:
+                    logger.warning(f"⚠️ 재계산 트리거 실패(업데이트 후): {e}")
                 return MatDirResponse(**updated_matdir)
             return None
         except Exception as e:

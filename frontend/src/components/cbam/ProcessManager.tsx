@@ -72,6 +72,9 @@ function ProcessManagerInner() {
     addProcessNode,
     addGroupNode,
     updateNodeData,
+    refreshProcessEmission,
+    refreshProductEmission,
+    recalcFromProcess,
   } = useProcessCanvas(selectedInstall);
 
   // 공정별 직접귀속배출량 정보 가져오기
@@ -409,7 +412,14 @@ function ProcessManagerInner() {
         <InputManager
           selectedProcess={selectedProcessForInput}
           onClose={() => setShowInputModal(false)}
-          onDataSaved={refreshAllProcessEmissions} // 데이터 저장 후 배출량 정보 새로고침
+          onDataSaved={async () => {
+            // 입력 저장 후 해당 공정을 기준으로 재계산 → 영향 노드 부분 갱신
+            if (selectedProcessForInput?.id) {
+              await recalcFromProcess(selectedProcessForInput.id);
+            } else {
+              await refreshAllProcessEmissions();
+            }
+          }}
         />
       )}
 

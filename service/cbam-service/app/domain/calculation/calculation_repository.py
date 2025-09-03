@@ -456,7 +456,7 @@ class CalculationRepository:
                     }
                     await self.create_process_chain_link(link_data)
                 
-                # 그룹 길이 업데이트
+                # 길이 업데이트
                 await self.update_chain_length(chain_id)
                 
         except Exception as e:
@@ -513,8 +513,6 @@ class CalculationRepository:
         except Exception as e:
             logger.error(f"❌ 통합 그룹 배출량 계산 실패: {str(e)}")
             raise e
-
-
 
     # ============================================================================
     # 📊 배출량 계산 관련 Repository 메서드
@@ -654,6 +652,45 @@ class CalculationRepository:
                 
         except Exception as e:
             logger.error(f"❌ 제품별 총 배출량 계산 실패: {str(e)}")
+            raise e
+
+    async def get_products_by_process(self, process_id: int) -> List[int]:
+        """특정 공정과 연결된 제품 ID 목록 조회 (product_process 기준)"""
+        await self._ensure_pool_initialized()
+        try:
+            async with self.pool.acquire() as conn:
+                rows = await conn.fetch(
+                    """
+                    SELECT DISTINCT pp.product_id
+                    FROM product_process pp
+                    WHERE pp.process_id = $1
+                    ORDER BY pp.product_id
+                    """,
+                    process_id,
+                )
+                return [r["product_id"] for r in rows]
+        except Exception as e:
+            logger.error(f"❌ 공정 {process_id} 연결 제품 조회 실패: {str(e)}")
+            raise e
+
+    async def update_product_attr_emission(self, product_id: int, total_emission: float) -> bool:
+        """제품 테이블의 attr_em(누적 배출량) 갱신"""
+        await self._ensure_pool_initialized()
+        try:
+            async with self.pool.acquire() as conn:
+                result = await conn.execute(
+                    """
+                    UPDATE product
+                    SET attr_em = $2,
+                        updated_at = NOW()
+                    WHERE id = $1
+                    """,
+                    product_id,
+                    total_emission,
+                )
+                return result == "UPDATE 1"
+        except Exception as e:
+            logger.error(f"❌ 제품 {product_id} attr_em 업데이트 실패: {str(e)}")
             raise e
 
     # ============================================================================

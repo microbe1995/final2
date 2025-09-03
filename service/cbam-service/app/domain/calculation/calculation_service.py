@@ -307,6 +307,68 @@ class CalculationService:
         except Exception as e:
             logger.error(f"❌ 전체 그래프 재계산 실패: {str(e)}")
             raise e
+
+    async def recalculate_from_process(self, process_id: int) -> Dict[str, Any]:
+        """특정 공정에서 시작해 배출량을 재계산하고 하류 공정/제품까지 반영
+
+        순서
+        1) 해당 공정의 원료/연료 합산으로 attrdir_em 재계산 및 저장
+        2) continue 엣지를 따라 하류 공정으로 누적 전파 (간단 합산)
+        3) 해당 공정이 연결된 제품들의 총 배출량을 재집계해 product.attr_em 갱신
+        반환: {'updated_process_ids': [...], 'updated_product_ids': [...], 'date': utc}
+        """
+        try:
+            updated_process_ids: List[int] = []
+            updated_product_ids: List[int] = []
+
+            # 1) 현재 공정 직접귀속 재계산
+            await self.calc_repository.calculate_process_attrdir_emission(process_id)
+            updated_process_ids.append(process_id)
+
+            # 2) continue 엣지를 따라 간단 전파(소스 배출량을 타겟에 누적)
+            #    BFS로 진행 (깊이 제한 없이, 순환은 Repository 유틸 사용)
+            queue = [process_id]
+            visited = set([process_id])
+
+            while queue:
+                current = queue.pop(0)
+                current_emission = await self.calc_repository.get_process_attrdir_emission(current)
+                if not current_emission:
+                    continue
+                current_attr = float(current_emission['attrdir_em'])
+
+                outgoing = await self.calc_repository.get_outgoing_continue_edges(current)
+                for edge in outgoing:
+                    target_id = edge['target_id']
+                    if target_id in visited:
+                        continue
+
+                    # 타겟 현재 값 조회 후 누적
+                    target_emission = await self.calc_repository.get_process_attrdir_emission(target_id)
+                    if target_emission:
+                        target_attr = float(target_emission['attrdir_em'])
+                        await self.calc_repository.update_process_attrdir_emission(
+                            target_id, {"attrdir_em": target_attr + current_attr}
+                        )
+                        updated_process_ids.append(target_id)
+                    visited.add(target_id)
+                    queue.append(target_id)
+
+            # 3) 해당 공정이 소속된 제품들의 총 배출량을 다시 계산하여 product.attr_em에 저장
+            product_ids = await self.calc_repository.get_products_by_process(process_id)
+            for pid in product_ids:
+                pdata = await self.calc_repository.calculate_product_total_emission(pid)
+                await self.calc_repository.update_product_attr_emission(pid, float(pdata['total_emission']))
+                updated_product_ids.append(pid)
+
+            return {
+                "updated_process_ids": list(dict.fromkeys(updated_process_ids)),
+                "updated_product_ids": list(dict.fromkeys(updated_product_ids)),
+                "date": datetime.utcnow(),
+            }
+        except Exception as e:
+            logger.error(f"❌ 공정 {process_id} 기준 재계산 실패: {str(e)}")
+            raise e
     
     # ============================================================================
     # 🔍 내부 헬퍼 메서드들

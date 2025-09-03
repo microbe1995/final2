@@ -28,7 +28,8 @@ class MatDir(Base):
     def to_dict(self):
         return {
             "id": self.id,
-            "process_id": self.process_id,
+
+
             "mat_name": self.mat_name,
             "mat_factor": float(self.mat_factor) if self.mat_factor is not None else 0.0,
             "mat_amount": float(self.mat_amount) if self.mat_amount is not None else 0.0,

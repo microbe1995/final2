@@ -13,6 +13,7 @@ from app.domain.fueldir.fueldir_schema import (
     FuelMasterSearchRequest, FuelMasterResponse, 
     FuelMasterListResponse, FuelMasterFactorResponse
 )
+from app.domain.calculation.calculation_service import CalculationService
 
 logger = logging.getLogger(__name__)
 
@@ -21,6 +22,7 @@ class FuelDirService:
     
     def __init__(self):
         self.fueldir_repository = FuelDirRepository()
+        self._calc_service = CalculationService()
         logger.info("✅ FuelDir 서비스 초기화 완료")
     
     # ============================================================================
@@ -53,6 +55,11 @@ class FuelDirService:
             
             saved_fueldir = await self.fueldir_repository.create_fueldir(fueldir_data)
             if saved_fueldir:
+                # 투입 생성 후 재계산 트리거
+                try:
+                    await self._calc_service.recalculate_from_process(request.process_id)
+                except Exception as e:
+                    logger.warning(f"⚠️ 재계산 트리거 실패(연료 생성 후): {e}")
                 return FuelDirResponse(**saved_fueldir)
             else:
                 raise Exception("연료직접배출량 저장에 실패했습니다.")
@@ -123,6 +130,16 @@ class FuelDirService:
             
             updated_fueldir = await self.fueldir_repository.update_fueldir(fueldir_id, update_data)
             if updated_fueldir:
+                try:
+                    process_id = update_data.get('process_id', existing_fueldir['process_id']) if 'existing_fueldir' in locals() else None
+                    if process_id is None:
+                        # 기존 값 조회
+                        existing_fueldir = await self.fueldir_repository.get_fueldir(fueldir_id)
+                        process_id = existing_fueldir['process_id'] if existing_fueldir else None
+                    if process_id is not None:
+                        await self._calc_service.recalculate_from_process(process_id)
+                except Exception as e:
+                    logger.warning(f"⚠️ 재계산 트리거 실패(연료 업데이트 후): {e}")
                 return FuelDirResponse(**updated_fueldir)
             return None
         except Exception as e:

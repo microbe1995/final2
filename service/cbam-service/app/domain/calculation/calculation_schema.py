@@ -77,6 +77,12 @@ class GraphRecalculationResponse(BaseModel):
     calculation_date: datetime = Field(..., description="계산 일시")
     status: str = Field(..., description="계산 상태")
 
+class RecalculateFromProcessResponse(BaseModel):
+    """특정 공정 기준 재계산 응답"""
+    updated_process_ids: List[int] = Field(..., description="업데이트된 공정 ID 목록")
+    updated_product_ids: List[int] = Field(..., description="업데이트된 제품 ID 목록")
+    date: datetime = Field(..., description="재계산 시각")
+
 class CircularReferenceError(BaseModel):
     """순환 참조 오류"""
     error_type: str = Field(..., description="오류 유형")

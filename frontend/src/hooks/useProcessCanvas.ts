@@ -333,6 +333,27 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
     }
   }, []);
 
+  // 공정 기준 재계산 트리거 + 영향 노드 부분 갱신
+  const recalcFromProcess = useCallback(async (processId: number) => {
+    try {
+      const resp = await axiosClient.post(
+        apiEndpoints.cbam.calculation.process.recalculate(processId)
+      );
+      const updatedProcessIds: number[] = resp?.data?.updated_process_ids || [];
+      const updatedProductIds: number[] = resp?.data?.updated_product_ids || [];
+
+      // 영향 받은 공정/제품만 부분 새로고침
+      await Promise.all([
+        ...updatedProcessIds.map(id => refreshProcessEmission(id)),
+        ...updatedProductIds.map(id => refreshProductEmission(id))
+      ]);
+    } catch (e) {
+      console.error('⚠️ 재계산 트리거 실패:', e);
+      // 폴백: 최소 현재 공정만 갱신
+      await refreshProcessEmission(processId);
+    }
+  }, [refreshProcessEmission, refreshProductEmission]);
+
   
 
   // 특정 제품 노드만 배출량 정보 새로고침
@@ -728,5 +749,9 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
     addProcessNode,
     addGroupNode,
     updateNodeData,
+    // 노출: 부분 새로고침/재계산 유틸
+    refreshProcessEmission,
+    refreshProductEmission,
+    recalcFromProcess,
   };
 };

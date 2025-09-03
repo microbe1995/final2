@@ -352,7 +352,8 @@ export const apiEndpoints = {
       process: {
         calculate: '/api/v1/cbam/calculation/emission/process/calculate',
         attrdir: (process_id: number) => `/api/v1/cbam/calculation/emission/process/${process_id}/attrdir`,
-        attrdirAll: '/api/v1/cbam/calculation/emission/process/attrdir/all'
+        attrdirAll: '/api/v1/cbam/calculation/emission/process/attrdir/all',
+        recalculate: (process_id: number) => `/api/v1/cbam/calculation/emission/process/${process_id}/recalculate`
       },
       // Product 배출량 계산 API
       product: {

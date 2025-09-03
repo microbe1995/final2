@@ -13,7 +13,8 @@ from app.domain.calculation.calculation_schema import (
     ProcessEmissionCalculationRequest, ProcessEmissionCalculationResponse,
     ProductEmissionCalculationRequest, ProductEmissionCalculationResponse,
     EmissionPropagationRequest, EmissionPropagationResponse,
-    GraphRecalculationRequest, GraphRecalculationResponse
+    GraphRecalculationRequest, GraphRecalculationResponse,
+    RecalculateFromProcessResponse
 )
 
 logger = logging.getLogger(__name__)
@@ -119,6 +120,16 @@ async def recalculate_entire_graph(request: GraphRecalculationRequest):
     except Exception as e:
         logger.error(f"❌ 전체 그래프 재계산 실패: {str(e)}")
         raise HTTPException(status_code=500, detail=f"전체 그래프 재계산 중 오류가 발생했습니다: {str(e)}")
+
+@router.post("/emission/process/{process_id}/recalculate", response_model=RecalculateFromProcessResponse)
+async def recalculate_from_process(process_id: int):
+    """특정 공정에서 시작해 하류까지 재계산하고 제품 누적에 반영"""
+    try:
+        result = await calculation_service.recalculate_from_process(process_id)
+        return RecalculateFromProcessResponse(**result)
+    except Exception as e:
+        logger.error(f"❌ 공정 {process_id} 기준 재계산 실패: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"재계산 중 오류: {str(e)}")
 
 # ============================================================================
 # 📦 Router Export
