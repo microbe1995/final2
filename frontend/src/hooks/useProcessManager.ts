@@ -23,6 +23,10 @@ export interface Product {
 export interface Process {
   id: number;
   process_name: string;
+  // 공정 소속 사업장 ID (백엔드 응답 포함)
+  install_id?: number;
+  // 선택적으로 내려오는 사업장명
+  install_name?: string;
   start_period?: string;
   end_period?: string;
   products?: Product[];

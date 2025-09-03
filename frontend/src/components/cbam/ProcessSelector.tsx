@@ -175,8 +175,13 @@ export const ProductProcessModal: React.FC<{
                     );
                     const productNames = relatedProducts.map((product: Product) => product.product_name).join(', ');
                     
-                    const isExternalProcess = typeof process.install_id === 'number' && process.install_id !== selectedInstall?.id;
-                    const processInstall = installs.find((install: Install) => install.id === process.install_id);
+                    // 공정의 소속 사업장을 안전하게 추론 (제품 목록 기반)
+                    const belongsToSelectedInstall = selectedInstall
+                      ? (process.products && process.products.some((p: Product) => p.install_id === selectedInstall.id))
+                      : false;
+                    const isExternalProcess = selectedInstall ? !belongsToSelectedInstall : false;
+                    const firstInstallId = process.products && process.products.length > 0 ? process.products[0].install_id : undefined;
+                    const processInstall = installs.find((install: Install) => install.id === firstInstallId);
                     
                     return (
                       <div
