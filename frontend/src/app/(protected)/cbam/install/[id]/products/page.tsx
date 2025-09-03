@@ -287,6 +287,7 @@ export default function InstallProductsPage() {
     if (installId) {
       fetchProducts();
       fetchProcesses();
+      fetchInstalls();
       setIsLoading(false);
     }
   }, [installId]);
@@ -311,8 +312,11 @@ export default function InstallProductsPage() {
       if (product) {
         fetchAvailableProcesses(product.product_name, product.id);
       }
+      // 🔴 폼이 열릴 때 사업장/공정 목록도 동기화
+      fetchInstalls();
+      fetchProcessesByInstall();
     }
-  }, [showProcessFormForProduct, products, fetchAvailableProcesses]);
+  }, [showProcessFormForProduct, products, fetchAvailableProcesses, fetchProcessesByInstall]);
 
   // 기간 변경 시 제품명 목록 업데이트 (useEffect 제거, 수동 호출로 변경)
   // useEffect(() => {
