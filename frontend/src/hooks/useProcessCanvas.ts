@@ -357,16 +357,20 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
       console.log('🔗 임시 Edge 추가됨:', tempEdgeId);
       
       // ✅ 실제 DB ID/타입은 노드의 data와 type에서 가져온다
-      const sourceNode = nodes.find(n => n.id === params.source);
-      const targetNode = nodes.find(n => n.id === params.target);
+      // 일부 환경에서 params.source/target에 핸들 접미사(-left/-right/-top/-bottom)가 붙는 경우가 있어 정규화
+      const normalizeNodeId = (id: string) => id.replace(/-(left|right|top|bottom)$/i, '');
+      const sourceNodeId = normalizeNodeId(params.source);
+      const targetNodeId = normalizeNodeId(params.target);
+      const sourceNode = nodes.find(n => n.id === sourceNodeId);
+      const targetNode = nodes.find(n => n.id === targetNodeId);
       const sourceNodeType = sourceNode?.type || 'unknown';
       const targetNodeType = targetNode?.type || 'unknown';
       const sourceId = (sourceNode?.data as any)?.id as number | undefined;
       const targetId = (targetNode?.data as any)?.id as number | undefined;
       
       console.log('🔍 추출된 정보:', {
-        source: params.source,
-        target: params.target,
+        source: sourceNodeId,
+        target: targetNodeId,
         sourceId,
         targetId,
         sourceNodeType,
