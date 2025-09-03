@@ -6,6 +6,7 @@ from typing import Optional, List, Dict, Any
 class ProcessCreateRequest(BaseModel):
     """프로세스 생성 요청"""
     process_name: str = Field(..., description="공정명")
+    install_id: int = Field(..., description="사업장 ID (공정이 속한 사업장)")
     start_period: Optional[date] = Field(None, description="시작일")
     end_period: Optional[date] = Field(None, description="종료일")
     product_ids: Optional[List[int]] = Field([], description="연결할 제품 ID 목록 (다대다 관계)")
@@ -14,6 +15,8 @@ class ProcessResponse(BaseModel):
     """프로세스 응답"""
     id: int = Field(..., description="공정 ID")
     process_name: str = Field(..., description="공정명")
+    install_id: int = Field(..., description="사업장 ID")
+    install_name: Optional[str] = Field(None, description="사업장명")
     start_period: Optional[date] = Field(None, description="시작일")
     end_period: Optional[date] = Field(None, description="종료일")
     created_at: Optional[datetime] = Field(None, description="생성일")
@@ -24,6 +27,7 @@ class ProcessResponse(BaseModel):
 class ProcessUpdateRequest(BaseModel):
     """프로세스 수정 요청"""
     process_name: Optional[str] = Field(None, description="공정명")
+    install_id: Optional[int] = Field(None, description="사업장 ID")
     start_period: Optional[date] = Field(None, description="시작일")
     end_period: Optional[date] = Field(None, description="종료일")
     
