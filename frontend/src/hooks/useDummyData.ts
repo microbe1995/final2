@@ -45,8 +45,8 @@ export const useDummyData = () => {
     setError(null);
     
     try {
-      // 전체 더미 데이터 조회
-      const response = await axiosClient.get('/api/v1/cbam/dummy/');
+      // 전체 더미 데이터 조회 (게이트웨이 라우트는 슬래시 없이 동작)
+      const response = await axiosClient.get('/api/v1/cbam/dummy');
       const dummyData = response.data.data || [];
       
       // 생산품명별로 그룹화하여 기간 계산
@@ -100,8 +100,8 @@ export const useDummyData = () => {
     setError(null);
     
     try {
-      // 전체 더미 데이터 조회
-      const response = await axiosClient.get('/api/v1/cbam/dummy/');
+      // 전체 더미 데이터 조회 (게이트웨이 라우트는 슬래시 없이 동작)
+      const response = await axiosClient.get('/api/v1/cbam/dummy');
       const dummyData = response.data.data || [];
       
       // 해당 생산품명의 데이터만 필터링
