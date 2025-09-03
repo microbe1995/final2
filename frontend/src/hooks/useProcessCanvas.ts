@@ -29,6 +29,11 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
     }
   }, [nodes, edges, activeInstallId]);
 
+  // 최신 nodes 스냅샷을 ref에 유지하여 콜백에서 stale closure 방지
+  useEffect(() => {
+    prevNodesRef.current = nodes;
+  }, [nodes]);
+
   // selectedInstall 변경 시 캔버스 상태 복원 (안전한 상태 업데이트)
   useEffect(() => {
     if (selectedInstall && selectedInstall.id !== prevInstallIdRef.current) {
@@ -67,7 +72,7 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
     ));
   }, [setNodes]);
 
-  // 엣지 연결 여부에 따라 노드의 배출량 표시 토글
+  // 엣지 연결 여부에 따라 공정 노드의 '누적' 표시만 토글 (직접값은 항상 보임)
   useEffect(() => {
     const matchId = (nodeId: string, edgeEndId: string, nodeDataId?: string) => {
       if (!nodeId || !edgeEndId) return false;
@@ -84,7 +89,7 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
         ...n,
         data: {
           ...n.data,
-          showEmissions: connected
+          showCumulative: connected
         }
       } as Node;
     }));
@@ -388,14 +393,16 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
       const normalizeNodeId = (id: string) => id.replace(/-(left|right|top|bottom)$/i, '');
       const sourceNodeId = normalizeNodeId(params.source);
       const targetNodeId = normalizeNodeId(params.target);
+      // 항상 최신 스냅샷에서 노드를 찾는다
+      const nodesSnapshot = prevNodesRef.current;
       const getNodeByAnyId = (candidateId: string) => {
         return (
-          nodes.find(n => n.id === candidateId) ||
-          nodes.find(n => (n.data as any)?.nodeId === candidateId) ||
-          nodes.find(n => candidateId.startsWith(n.id)) ||
-          nodes.find(n => candidateId.startsWith(((n.data as any)?.nodeId) || '')) ||
-          nodes.find(n => n.id.startsWith(candidateId)) ||
-          nodes.find(n => (((n.data as any)?.nodeId) || '').startsWith(candidateId))
+          nodesSnapshot.find(n => n.id === candidateId) ||
+          nodesSnapshot.find(n => (n.data as any)?.nodeId === candidateId) ||
+          nodesSnapshot.find(n => candidateId.startsWith(n.id)) ||
+          nodesSnapshot.find(n => candidateId.startsWith(((n.data as any)?.nodeId) || '')) ||
+          nodesSnapshot.find(n => n.id.startsWith(candidateId)) ||
+          nodesSnapshot.find(n => (((n.data as any)?.nodeId) || '').startsWith(candidateId))
         );
       };
 
@@ -426,12 +433,9 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
       
       // 🔴 추가: 노드 타입 검증
       if (sourceNodeType === 'unknown' || targetNodeType === 'unknown') {
-        console.error('❌ 유효하지 않은 노드 타입:', { sourceNodeType, targetNodeType });
+        console.warn('❌ 유효하지 않은 노드 타입:', { sourceNodeType, targetNodeType });
         setEdges(prev => prev.filter(edge => edge.id !== tempEdgeId));
-        
-        // 🔴 추가: 사용자에게 오류 알림
-        alert('연결할 수 없는 노드 타입입니다. 노드를 다시 선택해주세요.');
-        return;
+        return; // 초기 드래그 타이밍 이슈 시 조용히 무시
       }
       
       // DB ID 추출: 노드 data.id 우선, 실패 시 타입별 매칭으로 보완
@@ -444,12 +448,9 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
       const finalTargetId = ensureDbId(targetNode, targetId);
 
       if (!finalSourceId || !finalTargetId) {
-        console.error('❌ 유효하지 않은 DB ID:', { sourceId, targetId, source: params.source, target: params.target });
+        console.warn('❌ 유효하지 않은 DB ID:', { sourceId, targetId, source: params.source, target: params.target });
         setEdges(prev => prev.filter(edge => edge.id !== tempEdgeId));
-        
-        // 🔴 추가: 사용자에게 오류 알림
-        alert('연결할 수 없는 노드입니다. 노드를 다시 선택해주세요.');
-        return;
+        return; // 조용히 무시하여 첫 연결 알럿 제거
       }
       
       // 🔴 추가: Edge 생성 전 최종 검증
@@ -535,7 +536,7 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
             await axiosClient.post(
               apiEndpoints.cbam.edgePropagation.continue,
               null,
-              { params: { source_process_id: sourceId, target_process_id: targetId } }
+              { params: { source_process_id: finalSourceId, target_process_id: finalTargetId } }
             );
             await Promise.all([
               refreshProcessEmission(finalSourceId),

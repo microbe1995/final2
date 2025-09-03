@@ -128,6 +128,26 @@ class EdgeRepository:
             await self._ensure_pool_initialized()
             
             async with self.pool.acquire() as conn:
+                # 중복 방지: 동일 (source_node_type, source_id, target_node_type, target_id, edge_kind) 존재 여부 확인
+                dup_row = await conn.fetchrow(
+                    """
+                    SELECT id, source_node_type, source_id, target_node_type, target_id, edge_kind, created_at, updated_at
+                    FROM edge
+                    WHERE source_node_type = $1 AND source_id = $2 AND target_node_type = $3 AND target_id = $4 AND edge_kind = $5
+                    LIMIT 1
+                    """,
+                    edge_data['source_node_type'],
+                    edge_data['source_id'],
+                    edge_data['target_node_type'],
+                    edge_data['target_id'],
+                    edge_data['edge_kind']
+                )
+                if dup_row:
+                    logger.info(
+                        f"⚠️ 중복 엣지 감지: {dup_row['id']} (생성 건은 무시하고 기존 레코드 반환)"
+                    )
+                    return dict(dup_row)
+                
                 query = """
                     INSERT INTO edge (source_node_type, source_id, target_node_type, target_id, edge_kind)
                     VALUES ($1, $2, $3, $4, $5)

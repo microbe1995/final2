@@ -125,7 +125,7 @@ function ProcessNode({
         )}
 
         {/* 공정 정보 미리보기 */}
-        {data.processData && finalVariant === 'process' && data.showEmissions !== false && (
+        {data.processData && finalVariant === 'process' && (
           <div className='text-xs opacity-60 mt-2'>
             {data.product_names && (
               <div className='flex justify-between'>
@@ -166,7 +166,7 @@ function ProcessNode({
                 </span>
               </div>
             )}
-            {data.processData.cumulative_emission !== undefined && (
+            {data.showCumulative !== false && data.processData.cumulative_emission !== undefined && (
               <div className='flex justify-between'>
                 <span className='text-indigo-600 font-medium'>누적 직접귀속배출량:</span>
                 <span className='text-indigo-600 font-bold'>
@@ -200,7 +200,7 @@ function ProcessNode({
         )}
 
         {/* 투입량 입력 버튼 */}
-        {data.processData && finalVariant === 'process' && data.showEmissions !== false && !isExternalProcess && (
+        {data.processData && finalVariant === 'process' && !isExternalProcess && (
           <div className='mt-2 pt-2 border-t border-gray-300'>
             <button
               onClick={(e) => {
