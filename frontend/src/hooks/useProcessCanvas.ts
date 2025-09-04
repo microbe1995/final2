@@ -807,53 +807,29 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
               null,
               { params: { source_process_id: finalSourceId, target_process_id: finalTargetId } }
             );
-            // 전체 그래프 전파로 누적→제품 프리뷰까지 일관 반영
-            try {
-              await axiosClient.post(apiEndpoints.cbam.edgePropagation.fullPropagate, {});
-            } catch (e) {
-              console.warn('⚠️ 전체 전파 트리거 실패(무시 가능):', e);
-            }
-            await Promise.all([
-              refreshProcessEmission(finalSourceId),
-              refreshProcessEmission(finalTargetId)
-            ]);
-            // 연결된 모든 제품 프리뷰 동기화
+            // 1) 전체 전파 → 2) 소스 갱신 → 3) 타겟 갱신 → 4) 타겟이 생산하는 제품 프리뷰 갱신(순차)
+            try { await axiosClient.post(apiEndpoints.cbam.edgePropagation.fullPropagate, {}); } catch (e) { console.warn('⚠️ 전체 전파 실패:', e); }
+            await refreshProcessEmission(finalSourceId);
+            await refreshProcessEmission(finalTargetId);
             try {
               const productIds = (prevNodesRef.current || [])
                 .filter(n => n.type === 'product' && (n.data as any)?.id)
                 .map(n => (n.data as any).id as number);
-              if (productIds.length > 0) {
-                await Promise.all(productIds.map(id => refreshProductEmission(id)));
-              }
+              for (const id of productIds) { await refreshProductEmission(id); }
             } catch (_) {}
           } else if (edgeData.edge_kind === 'produce') {
-            // 공정→제품: 제품 프리뷰는 소스 공정의 '누적'을 사용하므로,
-            // 직전의 continue 누적이 DB에 반영되도록 그래프 부분 재계산을 먼저 호출
-            try {
-              // Edge 도메인의 전체 전파 트리거로 누적 반영 보장
-              await axiosClient.post(apiEndpoints.cbam.edgePropagation.fullPropagate, {});
-            } catch (e) {
-              console.warn('⚠️ 전체 전파 트리거 실패(무시 가능):', e);
-            }
-            // 그 다음 공정/제품 갱신
-            await Promise.all([
-              refreshProcessEmission(finalSourceId),
-              refreshProductEmission(finalTargetId)
-            ]);
+            // 공정→제품: 누적을 확정 후 제품 프리뷰를 직렬로 갱신
+            try { await axiosClient.post(apiEndpoints.cbam.edgePropagation.fullPropagate, {}); } catch (e) { console.warn('⚠️ 전체 전파 실패:', e); }
+            await refreshProcessEmission(finalSourceId);
+            await refreshProductEmission(finalTargetId);
             setProductProduceFlag(finalTargetId, true);
           } else if (edgeData.edge_kind === 'consume') {
-            // 제품→공정: 누적 분배가 반영되도록 전체 전파 트리거 후 갱신
-            try {
-              await axiosClient.post(apiEndpoints.cbam.edgePropagation.fullPropagate, {});
-            } catch (e) {
-              console.warn('⚠️ 전체 전파 트리거 실패(무시 가능):', e);
-            }
-            await Promise.all([
-              refreshProductEmission(finalSourceId),
-              refreshProcessEmission(finalTargetId)
-            ]);
+            // 제품→공정: 전체 전파 후 타겟 공정 누적을 먼저 갱신, 이후 해당 공정이 생산하는 제품을 마지막에 갱신(레이스 방지)
+            try { await axiosClient.post(apiEndpoints.cbam.edgePropagation.fullPropagate, {}); } catch (e) { console.warn('⚠️ 전체 전파 실패:', e); }
+            await refreshProductEmission(finalSourceId);
+            await refreshProcessEmission(finalTargetId);
 
-            // 타겟 공정(예: 압연)이 생산하는 제품들(예: 형강)도 프리뷰 갱신
+            // 타겟 공정(예: 압연)이 생산하는 제품들(예: 형강)도 프리뷰 갱신(순차)
             try {
               const normalize = (id?: string) => (id || '').replace(/-(left|right|top|bottom)$/i, '');
               const processNode = (prevNodesRef.current || []).find(n => n.type === 'process' && (n.data as any)?.id === finalTargetId);
@@ -866,9 +842,7 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
                     return typeof pid === 'number' ? pid : undefined;
                   })
                   .filter((pid): pid is number => typeof pid === 'number');
-                if (producedProductIds.length) {
-                  await Promise.all(producedProductIds.map(pid => refreshProductEmission(pid)));
-                }
+                for (const pid of producedProductIds) { await refreshProductEmission(pid); }
               }
             } catch (_) {}
           }
