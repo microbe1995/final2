@@ -112,7 +112,7 @@ class EdgeService:
                 logger.error(f"공정 {source_process_id}의 배출량 데이터를 찾을 수 없습니다.")
                 return False
             
-            # 2. 제품의 현재 데이터 조회
+            # 2. 제품의 현재 데이터 조회 (정확한 판매량/수량 반영)
             product_data = await self.repository.get_product_data(target_product_id)
             if not product_data:
                 logger.error(f"제품 {target_product_id}의 데이터를 찾을 수 없습니다.")

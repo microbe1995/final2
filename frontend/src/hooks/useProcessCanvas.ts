@@ -554,7 +554,18 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
         } else if (sourceType === 'process' && targetType === 'product') {
           if (targetId) {
             setProductProduceFlag(targetId, false);
-            await refreshProductEmission(targetId);
+            // 연결 잔여 여부 확인 후 프리뷰 리셋 또는 재조회
+            try {
+              const byNode = await axiosClient.get(apiEndpoints.cbam.edge.byNode(targetId));
+              const hasProduce = Array.isArray(byNode?.data) && byNode.data.some((e: any) => e.edge_kind === 'produce' && e.target_id === targetId);
+              if (!hasProduce) {
+                updateProductNodeByProductId(targetId, { attr_em: 0, productData: { ...(targetNode?.data as any)?.productData, attr_em: 0 } });
+              } else {
+                await refreshProductEmission(targetId);
+              }
+            } catch {
+              await refreshProductEmission(targetId);
+            }
           }
         } else if (sourceType === 'product' && targetType === 'process') {
           if (sourceId) await refreshProductEmission(sourceId);
@@ -818,7 +829,12 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
             ]);
             setProductProduceFlag(finalTargetId, true);
           } else if (edgeData.edge_kind === 'consume') {
-            // 제품→공정: 타겟 공정 갱신
+            // 제품→공정: 누적 분배가 반영되도록 전체 전파 트리거 후 갱신
+            try {
+              await axiosClient.post(apiEndpoints.cbam.edgePropagation.fullPropagate, {});
+            } catch (e) {
+              console.warn('⚠️ 전체 전파 트리거 실패(무시 가능):', e);
+            }
             await Promise.all([
               refreshProductEmission(finalSourceId),
               refreshProcessEmission(finalTargetId)

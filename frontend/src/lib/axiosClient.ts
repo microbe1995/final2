@@ -288,7 +288,8 @@ export const apiEndpoints = {
       create: '/api/v1/cbam/edge',
       list: '/api/v1/cbam/edge',
       get: (id: number) => `/api/v1/cbam/edge/${id}`,
-      delete: (id: number) => `/api/v1/cbam/edge/${id}`
+      delete: (id: number) => `/api/v1/cbam/edge/${id}`,
+      byNode: (node_id: number) => `/api/v1/cbam/edge/node/${node_id}`
     },
     // Edge propagation helpers
     edgePropagation: {
