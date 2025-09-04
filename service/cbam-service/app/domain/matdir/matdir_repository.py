@@ -568,17 +568,20 @@ class MatDirRepository:
             raise
 
     async def _delete_matdir_db(self, matdir_id) -> bool:
-        """원료직접배출량 데이터 삭제 (DB 작업) - BIGINT ID 지원"""
+        """원료직접배출량 데이터 삭제 (DB 작업)
+        - PostgreSQL의 id 컬럼 타입(INT/BIGINT)에 맞춰 정수로 전달한다.
+        - Python의 int는 가변 정밀도를 지원하므로 BIGINT도 안전하게 처리된다.
+        """
         if not self.pool:
             raise Exception("데이터베이스 연결 풀이 초기화되지 않았습니다.")
             
         try:
             async with self.pool.acquire() as conn:
-                # ID를 문자열로 변환하여 BIGINT 범위 지원
-                matdir_id_str = str(matdir_id)
+                # 정수로 안전 캐스팅하여 타입 불일치 오류 방지
+                matdir_id_int = int(matdir_id)
                 result = await conn.execute("""
                     DELETE FROM matdir WHERE id = $1
-                """, matdir_id_str)
+                """, matdir_id_int)
                 
                 return result != "DELETE 0"
                 
