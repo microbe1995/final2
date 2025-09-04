@@ -118,9 +118,17 @@ function ProcessManagerInner() {
 
   // 캔버스 새로고침: 모든 공정 노드의 배출량/표시값 재계산
   const handleCanvasRefresh = useCallback(async () => {
+    // 공정 배출량 최신화
     await refreshAllProcessEmissions();
+    // 제품 프리뷰도 최신화
+    try {
+      const productNodeIds = nodes.filter(n => n.type === 'product').map(n => (n.data as any)?.id).filter((id): id is number => typeof id === 'number');
+      for (const pid of productNodeIds) {
+        await refreshProductEmission(pid);
+      }
+    } catch {}
     console.log('🔄 캔버스 새로고침 완료');
-  }, [refreshAllProcessEmissions]);
+  }, [refreshAllProcessEmissions, nodes, refreshProductEmission]);
 
   // 모달 상태
   const [showProductModal, setShowProductModal] = useState(false);

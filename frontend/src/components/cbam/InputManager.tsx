@@ -158,12 +158,29 @@ export default function InputManager({ selectedProcess, onClose, onDataSaved }: 
   // ============================================================================
 
   const handleMatdirNameChange = useCallback(async (name: string) => {
-    // 드롭다운 선택 시: 더미에서 수량 자동 설정 + 마스터에서 배출계수 자동 설정
+    // 선택한 항목이 연료(Fuel Master 매칭)인지 확인 → 연료면 자동 매핑 금지
+    let isFuel = false;
+    try {
+      const fuel = await getFuelFactor(name);
+      isFuel = !!(fuel && (fuel as any).found);
+    } catch {
+      isFuel = false;
+    }
+
+    if (isFuel) {
+      // 연료는 원료 탭에서 자동반영 금지
+      setMatdirForm(prev => ({ ...prev, name, factor: 0, amount: 0, oxyfactor: 1.0000 }));
+      setMaterialAutoFactorStatus(`⚠️ '${name}'은(는) 연료로 분류되어 원료 탭에서는 자동 설정되지 않습니다.`);
+      return;
+    }
+
+    // 원료: 더미에서 수량 자동 설정 + Material Master에서 배출계수 자동 설정
     const matched = materialOptions.find(opt => opt.name === name);
     setMatdirForm(prev => ({
       ...prev,
       name,
-      amount: matched ? Number(matched.amount) || 0 : prev.amount,
+      amount: matched ? Number(matched.amount) || 0 : 0,
+      oxyfactor: 1.0000,
     }));
     try {
       const factor = await autoMapMaterialFactor(name);
@@ -171,12 +188,14 @@ export default function InputManager({ selectedProcess, onClose, onDataSaved }: 
         setMatdirForm(prev => ({ ...prev, factor }));
         setMaterialAutoFactorStatus(`✅ 자동 설정: ${name} (배출계수: ${factor})`);
       } else {
+        setMatdirForm(prev => ({ ...prev, factor: 0 }));
         setMaterialAutoFactorStatus(`⚠️ 배출계수를 찾을 수 없음: ${name}`);
       }
     } catch {
+      setMatdirForm(prev => ({ ...prev, factor: 0 }));
       setMaterialAutoFactorStatus(`❌ 배출계수 조회 실패: ${name}`);
     }
-  }, [materialOptions, autoMapMaterialFactor]);
+  }, [materialOptions, autoMapMaterialFactor, getFuelFactor]);
 
   const handleMatdirNameBlur = useCallback(async () => {
     // 드롭다운 선택이므로 blur 시 추가 조회 없음
@@ -452,7 +471,7 @@ export default function InputManager({ selectedProcess, onClose, onDataSaved }: 
                   <select
                     value={matdirForm.name}
                     onChange={(e) => handleMatdirNameChange(e.target.value)}
-                    className="w-full px-3 py-2 bg-yellow-500/20 border border-yellow-500/30 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                    className="w-full px-3 py-2 bg-gray-800/60 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:border-blue-500"
                   >
                     <option value="">원료를 선택하세요</option>
                     {materialOptions.map((opt) => (
@@ -466,11 +485,11 @@ export default function InputManager({ selectedProcess, onClose, onDataSaved }: 
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">배출계수 <span className="text-xs text-red-400 ml-2">(수정 불가)</span></label>
                   <input type="number" step="0.000001" min="0" value={matdirForm.factor} readOnly className="w-full px-3 py-2 bg-gray-500 border border-gray-400 rounded-md text-gray-300 cursor-not-allowed" placeholder="Master Table에서 자동 설정됨" />
-                  <div className="text-xs text-gray-400 mt-1">💡 배출계수는 Master Table의 값만 사용 가능합니다</div>
+                  <div className="text-xs text-gray-400 mt-1">💡 배출계수는 원료 선택 시 자동 설정됩니다</div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">투입된 원료량</label>
-                  <input type="number" step="0.000001" min="0" value={matdirForm.amount} onChange={(e) => setMatdirForm(prev => ({ ...prev, amount: parseFloat(e.target.value) || 0 }))} className="w-full px-3 py-2 bg-gray-600 border border-gray-500 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="0.000000" />
+                  <label className="block text-sm font-medium text-gray-300 mb-2">투입된 원료량 <span className="text-xs text-red-400 ml-2">(수정 불가)</span></label>
+                  <input type="number" step="0.000001" min="0" value={matdirForm.amount} readOnly className="w-full px-3 py-2 bg-gray-500 border border-gray-400 rounded-md text-gray-300 cursor-not-allowed" placeholder="원료 선택 시 자동 설정" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">산화계수</label>
@@ -486,7 +505,7 @@ export default function InputManager({ selectedProcess, onClose, onDataSaved }: 
                   <select
                     value={fueldirForm.name}
                     onChange={(e) => handleFuelDropdownChange(e.target.value)}
-                    className="w-full px-3 py-2 bg-yellow-500/20 border border-yellow-500/30 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                    className="w-full px-3 py-2 bg-gray-800/60 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:border-blue-500"
                   >
                     <option value="">연료를 선택하세요</option>
                     {fuelOptions.map((opt) => (
@@ -532,8 +551,79 @@ export default function InputManager({ selectedProcess, onClose, onDataSaved }: 
               <div className="space-y-3 max-h-96 overflow-y-auto">
                 {inputResults.map((result) => (
                   <div key={result.id} className="bg-gray-600 rounded-lg p-3">
-                    {/* 수정/표시 모드 */}
-                    {/* (기존 코드 유지) */}
+                    {editingResult && editingResult.id === result.id ? (
+                      <div className="space-y-2">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                          <div>
+                            <label className="block text-xs text-gray-300 mb-1">이름</label>
+                            <input
+                              type="text"
+                              className="w-full px-2 py-1 bg-gray-700 border border-gray-500 rounded text-white"
+                              value={editForm.name}
+                              onChange={(e) => setEditForm(prev => ({ ...prev, name: e.target.value }))}
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs text-gray-300 mb-1">배출계수</label>
+                            <input
+                              type="number"
+                              step="0.000001"
+                              className="w-full px-2 py-1 bg-gray-700 border border-gray-500 rounded text-white"
+                              value={editForm.factor}
+                              onChange={(e) => setEditForm(prev => ({ ...prev, factor: parseFloat(e.target.value) || 0 }))}
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs text-gray-300 mb-1">투입량</label>
+                            <input
+                              type="number"
+                              step="0.000001"
+                              className="w-full px-2 py-1 bg-gray-700 border border-gray-500 rounded text-white"
+                              value={editForm.amount}
+                              onChange={(e) => setEditForm(prev => ({ ...prev, amount: parseFloat(e.target.value) || 0 }))}
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs text-gray-300 mb-1">산화계수</label>
+                            <input
+                              type="number"
+                              step="0.0001"
+                              className="w-full px-2 py-1 bg-gray-700 border border-gray-500 rounded text-white"
+                              value={editForm.oxyfactor}
+                              onChange={(e) => setEditForm(prev => ({ ...prev, oxyfactor: parseFloat(e.target.value) || 1 }))}
+                            />
+                          </div>
+                        </div>
+                        <div className="flex gap-2 justify-end">
+                          <button onClick={saveEdit} className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded">저장</button>
+                          <button onClick={cancelEditing} className="px-3 py-1 bg-gray-500 hover:bg-gray-600 text-white text-sm rounded">취소</button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className={`text-xs px-2 py-0.5 rounded ${result.type === 'matdir' ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30' : 'bg-orange-500/20 text-orange-300 border border-orange-500/30'}`}>
+                              {result.type === 'matdir' ? '원료직접' : '연료직접'}
+                            </span>
+                            <span className="text-white font-medium">{result.name}</span>
+                          </div>
+                          <div className="flex gap-2">
+                            <button onClick={() => startEditing(result)} className="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded">수정</button>
+                            <button onClick={() => deleteResult(result)} className="px-2 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded">삭제</button>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs text-gray-200">
+                          <div className="bg-gray-700 rounded p-2"><div className="text-gray-400">배출계수</div><div className="font-semibold">{result.factor}</div></div>
+                          <div className="bg-gray-700 rounded p-2"><div className="text-gray-400">투입량</div><div className="font-semibold">{result.amount}</div></div>
+                          <div className="bg-gray-700 rounded p-2"><div className="text-gray-400">산화계수</div><div className="font-semibold">{result.oxyfactor}</div></div>
+                          <div className="bg-gray-700 rounded p-2"><div className="text-gray-400">계산결과</div><div className="font-semibold">{typeof result.emission === 'number' ? result.emission.toFixed(6) : result.emission}</div></div>
+                        </div>
+                        {result.calculation_formula && (
+                          <div className="text-[11px] text-gray-300">{result.calculation_formula}</div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

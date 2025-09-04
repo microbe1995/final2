@@ -156,10 +156,17 @@ export const useDummyData = () => {
         const start = startDate ? new Date(startDate) : null;
         const end = endDate ? new Date(endDate) : null;
 
-        // 필터링: 공정, 기간, 제품명(옵션), 투입물명 존재
+        // 필터링: 공정(유연 매칭), 기간, 제품명(옵션), 투입물명 존재
         const filtered = dummyData.filter((row) => {
           if (!row.투입물명) return false;
-          if (processName && row.공정 !== processName) return false;
+          if (processName) {
+            const rowProc = String(row.공정 || '').trim();
+            const proc = String(processName || '').trim();
+            const rowNorm = rowProc.replace(/\s+/g, '');
+            const procNorm = proc.replace(/\s+/g, '');
+            const procMatched = rowNorm === procNorm || rowNorm.includes(procNorm) || procNorm.includes(rowNorm);
+            if (!procMatched) return false;
+          }
           if (start && row.투입일 && new Date(row.투입일) < start) return false;
           if (end && row.종료일 && new Date(row.종료일) > end) return false;
           if (productNames && productNames.length > 0) {
