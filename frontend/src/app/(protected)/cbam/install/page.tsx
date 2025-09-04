@@ -6,6 +6,7 @@ import Input from '@/components/atomic/atoms/Input';
 import axiosClient, { apiEndpoints } from '@/lib/axiosClient';
 import { useRouter } from 'next/navigation';
 import CbamLayout from '@/components/cbam/CbamLayout';
+import ProductManager from '@/components/cbam/ProductManager';
 
 // ============================================================================
 // 🏭 시설군 관리 페이지
@@ -36,6 +37,8 @@ export default function InstallPage() {
     install_name: '',
     reporting_year: new Date().getFullYear() // 현재 년도로 기본값 설정
   });
+  // 제품 관리 인라인 표시 상태
+  const [showProductManagerFor, setShowProductManagerFor] = useState<number | null>(null);
   
   // 탭/제품-공정 관계 설정은 제거
 
@@ -122,15 +125,12 @@ export default function InstallPage() {
 
   // 시설군 클릭 시 제품 관리 페이지로 이동 (산정경계설정과 유사한 전환 UX 적용)
   const handleInstallClick = (installId: number) => {
-    try {
-      setIsNavigating(true);
-      // 부드러운 페이드/스케일 전환 후 라우팅 (경로는 기존 유지)
-      setTimeout(() => {
-        router.push(`/cbam/install/${installId}/products`);
-      }, 180);
-    } catch (_) {
-      router.push(`/cbam/install/${installId}/products`);
+    // 동일 버튼 토글: 열려있으면 닫기
+    if (showProductManagerFor === installId) {
+      setShowProductManagerFor(null);
+      return;
     }
+    setShowProductManagerFor(installId);
   };
 
   // 폼 초기화
@@ -264,7 +264,7 @@ export default function InstallPage() {
           <>
           <div className="bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10">
             <h2 className="text-2xl font-semibold text-white mb-6 flex items-center gap-2">
-              {editingInstall ? '🏭 시설군 수정' : '🏭 시설군 생성'}
+              {editingInstall ? '군 수정' : '군 생성'}
             </h2>
 
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -397,6 +397,13 @@ export default function InstallPage() {
                       삭제
                     </button>
                   </div>
+
+                  {/* 선택된 시설군의 제품관리 섹션을 같은 페이지에서 표시 */}
+                  {showProductManagerFor === install.id && (
+                    <div className="mt-6 border-t border-white/10 pt-6">
+                      <ProductManager installId={install.id} />
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

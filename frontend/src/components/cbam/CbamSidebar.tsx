@@ -11,7 +11,7 @@ import {
 
 const menuItems = [
   { name: '투입물', href: '/cbam', icon: ClipboardList, description: '투입 데이터 관리' },
-  { name: '사업장관리', href: '/cbam/install', icon: Factory, description: '시설군 생성 및 관리' },
+  { name: '사업장관리', href: '/cbam/install', icon: Factory, description: ' 및 관리' },
   { name: '산정경계설정', href: '/cbam/process-manager', icon: Workflow, description: '경계 설정 및 노드' },
   { name: '보고서', href: '/cbam/report', icon: FileText, description: 'CBAM 보고서' },
 ];
