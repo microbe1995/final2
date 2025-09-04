@@ -283,6 +283,13 @@ class EdgeService:
         """전체 그래프에 대해 배출량 전파를 실행합니다."""
         try:
             logger.info("🔄 전체 그래프 배출량 전파 시작")
+            # 중요: 전파를 여러 번 호출해도 결과가 누적되지 않도록
+            # 모든 공정의 누적값을 먼저 0으로 초기화한다(아이들포턴시 확보)
+            try:
+                await self.repository.reset_all_cumulative_emission()
+                logger.info("🧹 누적 배출량 초기화 완료 (전파 시작 전)")
+            except Exception as e:
+                logger.warning(f"⚠️ 누적 초기화 경고(무시 가능): {e}")
             
             # 모든 엣지를 조회
             all_edges = await self.repository.get_edges()
