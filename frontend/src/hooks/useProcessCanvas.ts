@@ -397,20 +397,67 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
         ...updatedProductIds.map(id => refreshProductEmission(id))
       ]);
 
-      // 보강: 현재 캔버스 상에서 해당 공정과 produce로 연결된 제품 프리뷰를 강제 동기화
+      // 보강 1: 현재 캔버스 상에서 해당 공정과 produce로 연결된 제품 프리뷰를 강제 동기화
       try {
         // 해당 공정의 리액트플로우 노드 ID 찾기
         const processNode = (prevNodesRef.current || []).find(n => n.type === 'process' && (n.data as any)?.id === processId);
         if (processNode) {
-          const producedProductIds = (edges || [])
-            .filter(e => e.source === processNode.id && (e.data as any)?.edgeData?.edge_kind === 'produce')
-            .map(e => {
+          const normalize = (id?: string) => (id || '').replace(/-(left|right|top|bottom)$/i, '');
+          const producedProductIds: number[] = (edges || [])
+            .filter((e: any) => normalize(e.source) === processNode.id && (e.data as any)?.edgeData?.edge_kind === 'produce')
+            .map((e: any) => {
               const targetNode = (prevNodesRef.current || []).find(n => n.id === e.target);
-              return (targetNode?.data as any)?.id as number | undefined;
+              const pid = (targetNode?.data as any)?.id;
+              return typeof pid === 'number' ? pid : undefined;
             })
-            .filter((pid): pid is number => typeof pid === 'number');
+            .filter((pid: any): pid is number => typeof pid === 'number');
           if (producedProductIds.length) {
             await Promise.all(producedProductIds.map(pid => refreshProductEmission(pid)));
+          }
+
+          // 보강 2: 위에서 갱신된 제품을 소비(consume)하는 공정들까지 동기화하고
+          // 그 공정이 생산하는 제품(예: 형강)까지 연쇄로 동기화
+          // produced products를 소비하는 공정들 추출
+          const producedProductNodeIds = producedProductIds
+            .map(pid => (prevNodesRef.current || []).find(n => n.type === 'product' && (n.data as any)?.id === pid)?.id)
+            .filter((nid): nid is string => typeof nid === 'string');
+
+          const consumerProcessIdSet = new Set<number>();
+          for (const e of (edges || [])) {
+            const isConsume = (e as any)?.data?.edgeData?.edge_kind === 'consume';
+            if (!isConsume) continue;
+            const srcNorm = normalize(e.source);
+            if (!producedProductNodeIds.includes(srcNorm)) continue;
+            const targetNode = (prevNodesRef.current || []).find(n => normalize(n.id) === normalize(e.target));
+            const procId = (targetNode?.data as any)?.id;
+            if (typeof procId === 'number') consumerProcessIdSet.add(procId);
+          }
+          const consumerProcessIds = Array.from(consumerProcessIdSet);
+
+          if (consumerProcessIds.length) {
+            await Promise.all(consumerProcessIds.map(pid => refreshProcessEmission(pid)));
+
+            // 각 소비 공정이 produce로 연결한 제품들도 갱신 (예: 압연 → 형강)
+            // 소비 공정이 생산하는 제품들(예: 압연→형강)
+            const consumerProcessNodeIds = consumerProcessIds
+              .map(cp => (prevNodesRef.current || []).find(n => n.type === 'process' && (n.data as any)?.id === cp)?.id)
+              .filter((nid): nid is string => typeof nid === 'string');
+
+            const downstreamProductIdSet = new Set<number>();
+            for (const e of (edges || [])) {
+              const isProduce = (e as any)?.data?.edgeData?.edge_kind === 'produce';
+              if (!isProduce) continue;
+              const srcNorm = normalize(e.source);
+              if (!consumerProcessNodeIds.includes(srcNorm)) continue;
+              const targetNode = (prevNodesRef.current || []).find(n => normalize(n.id) === normalize(e.target));
+              const pid = (targetNode?.data as any)?.id;
+              if (typeof pid === 'number') downstreamProductIdSet.add(pid);
+            }
+            const downstreamProductIds = Array.from(downstreamProductIdSet);
+
+            if (downstreamProductIds.length) {
+              await Promise.all(downstreamProductIds.map(pid => refreshProductEmission(pid)));
+            }
           }
         }
       } catch (_) {}
