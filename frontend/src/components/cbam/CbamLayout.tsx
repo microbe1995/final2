@@ -98,7 +98,7 @@ export default function CbamLayout({ children }: Props) {
     <div className="min-h-screen bg-ecotrace-background text-ecotrace-text">
       {/* 상단 네비게이션 바 */}
       <header className="border-b border-ecotrace-border bg-ecotrace-background/95 backdrop-blur-sm sticky top-0 z-50">
-        <div className="px-0 py-4">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             {/* 로고 및 브랜드 */}
             <div className="flex items-center gap-4">
@@ -214,7 +214,7 @@ export default function CbamLayout({ children }: Props) {
 
         {/* 메인 콘텐츠 */}
         <main className="flex-1 lg:ml-0">
-          <div className="px-0 py-8">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
             {children}
           </div>
         </main>
