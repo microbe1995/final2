@@ -160,7 +160,7 @@ export default function LandingPage() {
             <div className='flex justify-center'>
               <Button
                 type='submit'
-                className='w-full bg-primary text-primary-foreground hover:bg-primary/90 transition-colors'
+                className='w-full bg-blue-600 text-white hover:bg-blue-700 transition-colors'
               >
                 로그인
               </Button>
@@ -183,7 +183,7 @@ export default function LandingPage() {
               <Button
                 type='button'
                 onClick={handleEnter}
-                className='w-full bg-primary text-primary-foreground hover:bg-primary/90 transition-colors'
+                className='w-full bg-blue-600 text-white hover:bg-blue-700 transition-colors'
               >
                 들어가기
               </Button>
