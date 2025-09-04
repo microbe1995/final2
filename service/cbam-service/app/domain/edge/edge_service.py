@@ -136,8 +136,8 @@ class EdgeService:
 
     async def compute_product_emission(self, product_id: int) -> float:
         """현재 연결 상태 기준 제품 배출량(표시용)을 합산해 반환.
-        - 핵심: 판매량/ EU 판매량을 제외한 잔여(to_next) 비율을 반영한다.
-        - 한 소비자만 있을 때 제품 프리뷰 값과 소비 공정 누적이 1:1로 일치하도록 한다.
+        - 프리뷰: 연결된 공정의 누적 합계를 그대로 노출(잔여 비율 미적용)
+        - 잔여(to_next) 비율은 consume 전파에서 적용한다.
         """
         try:
             connected_processes = await self.repository.get_processes_connected_to_product(product_id)
@@ -154,16 +154,6 @@ class EdgeService:
                     if cumulative == 0.0:
                         cumulative = proc_emission.get('attrdir_em') or 0.0
                     total_emission += cumulative
-
-            # 잔여 비율(to_next / product_amount) 반영
-            product = await self.repository.get_product_data(product_id)
-            if product:
-                product_amount = float(product.get('product_amount') or 0.0)
-                product_sell = float(product.get('product_sell') or 0.0)
-                product_eusell = float(product.get('product_eusell') or 0.0)
-                to_next = max(0.0, product_amount - product_sell - product_eusell)
-                share = (to_next / product_amount) if product_amount > 0 else 0.0
-                total_emission = total_emission * share
 
             return float(total_emission)
         except Exception as e:
