@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import axiosClient, { apiEndpoints } from '@/lib/axiosClient';
+import InstallProductsPage from '@/app/(protected)/cbam/install/[id]/products/page';
 import { useMappingAPI, HSCNMappingResponse } from '@/hooks/useMappingAPI';
 import { useProductNames } from '@/hooks/useProductNames';
 import { useDummyData } from '@/hooks/useDummyData';
@@ -976,6 +977,21 @@ export default function ProductManager({ installId, embedded = true }: ProductMa
             </div>
           )}
         </div>
+
+        {/* 모달: 전체 제품관리 page.tsx 임베드 */}
+        {showProductForm && (
+          <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center">
+            <div className="max-w-6xl w-full mx-4 bg-gray-900 border border-gray-700 rounded-lg shadow-xl overflow-hidden">
+              <div className="flex items-center justify-between p-4 border-b border-gray-700">
+                <h4 className="text-white font-semibold">제품 관리</h4>
+                <button onClick={() => setShowProductForm(false)} className="text-gray-300 hover:text-white">✕</button>
+              </div>
+              <div className="h-[70vh] overflow-y-auto">
+                <InstallProductsPage overrideInstallId={installId} />
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -78,10 +78,17 @@ interface ProductForm {
   product_eusell: number;
 }
 
-export default function InstallProductsPage() {
+interface InstallProductsPageProps {
+  overrideInstallId?: number;
+}
+
+export default function InstallProductsPage(props: InstallProductsPageProps = {}) {
   const router = useRouter();
   const params = useParams();
-  const installId = parseInt(params.id as string);
+  const derivedId = params?.id ? parseInt(params.id as string) : NaN;
+  const installId = (typeof props.overrideInstallId === 'number' && !Number.isNaN(props.overrideInstallId))
+    ? props.overrideInstallId
+    : derivedId;
 
   const [products, setProducts] = useState<Product[]>([]);
   const [processes, setProcesses] = useState<Process[]>([]);
