@@ -457,7 +457,15 @@ export const ProductProcessModal: React.FC<{
                       // 2) 누적 전파(제품→공정 분배 반영)
                       try { await axiosClient.post(apiEndpoints.cbam.edgePropagation.fullPropagate, {}); } catch {}
                       // 3) 캔버스에 갱신 이벤트 브로드캐스트 (제품 및 하류 체인 동기화)
-                      window.dispatchEvent(new CustomEvent('cbam:refreshProduct', { detail: { productId: selectedProduct.id } }));
+                      //    입력값을 함께 전달해 즉시 프리뷰가 반영되도록 한다(서버 GET 이전에 낙관적 갱신)
+                      window.dispatchEvent(new CustomEvent('cbam:refreshProduct', { 
+                        detail: { 
+                          productId: selectedProduct.id,
+                          product_amount: amt,
+                          product_sell: sell,
+                          product_eusell: eu
+                        } 
+                      }));
                       setIsEditingQty(false);
                       alert('저장되었습니다.');
                     } catch (e: any) {

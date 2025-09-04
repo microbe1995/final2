@@ -390,19 +390,27 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
   // 제품 저장 후 강제 새로고침(제품 → 소비공정 → 하류제품까지)
   useEffect(() => {
     const handler = async (e: any) => {
-      const { productId } = e.detail || {};
+      const { productId, product_amount, product_sell, product_eusell } = e.detail || {};
       if (!productId) return;
       try {
+        // 0) 낙관적 갱신: 모달에서 넘어온 값이 있으면 즉시 반영
+        if (typeof product_amount === 'number' || typeof product_sell === 'number' || typeof product_eusell === 'number') {
+          updateProductNodeByProductId(productId, {
+            ...(typeof product_amount === 'number' ? { product_amount } : {}),
+            ...(typeof product_sell === 'number' ? { product_sell } : {}),
+            ...(typeof product_eusell === 'number' ? { product_eusell } : {}),
+          });
+        }
         // 1) 제품 프리뷰(배출량) 갱신
         await refreshProductEmission(productId);
-        // 2) 제품 판매량/유럽판매량 등 메타데이터 동기화
+        // 2) 제품 판매량/유럽판매량 등 메타데이터 동기화(서버 확정값)
         try {
           const prodResp = await axiosClient.get(apiEndpoints.cbam.product.get(productId));
           const p = prodResp?.data || {};
           updateProductNodeByProductId(productId, {
-            product_amount: Number(p.product_amount ?? 0),
-            product_sell: Number(p.product_sell ?? 0),
-            product_eusell: Number(p.product_eusell ?? 0),
+            product_amount: Number(p.product_amount ?? product_amount ?? 0),
+            product_sell: Number(p.product_sell ?? product_sell ?? 0),
+            product_eusell: Number(p.product_eusell ?? product_eusell ?? 0),
           });
         } catch (_) {}
         // 이 제품을 consume하는 공정들 찾아 새로고침
