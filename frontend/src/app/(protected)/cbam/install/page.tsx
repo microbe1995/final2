@@ -7,7 +7,7 @@ import axiosClient, { apiEndpoints } from '@/lib/axiosClient';
 import { useRouter } from 'next/navigation';
 
 // ============================================================================
-// 🏭 사업장 관리 페이지
+// 🏭 시설군 관리 페이지
 // ============================================================================
 
 interface Install {
@@ -37,13 +37,13 @@ export default function InstallPage() {
   
   // 탭/제품-공정 관계 설정은 제거
 
-  // 사업장 목록 조회
+  // 시설군 목록 조회
   const fetchInstalls = async () => {
     try {
       setIsLoadingInstalls(true);
       
       // 🔴 추가: 상세 디버깅 로그
-      console.log('🚀 Install 목록 조회 시작');
+      console.log('🚀 시설군 목록 조회 시작');
       console.log('📍 API 엔드포인트:', apiEndpoints.cbam.install.list);
       console.log('🌐 Base URL:', process.env.NEXT_PUBLIC_API_BASE_URL || '환경변수 없음');
       console.log('🔑 인증 토큰:', localStorage.getItem('auth_token') ? '존재함' : '없음');
@@ -58,10 +58,10 @@ export default function InstallPage() {
       });
       
       setInstalls(response.data);
-      console.log('📋 사업장 목록:', response.data);
+      console.log('📋 시설군 목록:', response.data);
       
     } catch (error: any) {
-      console.error('❌❌ 사업장 목록 조회 실패:', {
+      console.error('❌❌ 시설군 목록 조회 실패:', {
         message: error.message,
         status: error.response?.status,
         statusText: error.response?.statusText,
@@ -75,7 +75,7 @@ export default function InstallPage() {
       });
       
       setToast({
-        message: `사업장 목록을 불러오는데 실패했습니다: ${error.response?.data?.detail || error.message}`,
+        message: `시설군 목록을 불러오는데 실패했습니다: ${error.response?.data?.detail || error.message}`,
         type: 'error'
       });
     } finally {
@@ -89,7 +89,7 @@ export default function InstallPage() {
     fetchInstalls();
   }, []);
 
-  // 사업장 정렬
+  // 시설군 정렬
   const sortedInstalls = [...installs].sort((a, b) => {
     let aValue, bValue;
     
@@ -118,7 +118,7 @@ export default function InstallPage() {
     }));
   };
 
-  // 사업장 클릭 시 제품 관리 페이지로 이동
+  // 시설군 클릭 시 제품 관리 페이지로 이동
   const handleInstallClick = (installId: number) => {
     router.push(`/cbam/install/${installId}/products`);
   };
@@ -154,7 +154,7 @@ export default function InstallPage() {
       // 데이터 검증
       if (!installForm.install_name.trim()) {
         setToast({
-          message: '사업장명을 입력해주세요.',
+          message: '시설군명을 입력해주세요.',
           type: 'error'
         });
         setLoading(false);
@@ -163,20 +163,20 @@ export default function InstallPage() {
 
       if (editingInstall) {
         // 수정
-        console.log('📤 사업장 수정 요청 데이터:', installForm);
+        console.log('📤 시설군 수정 요청 데이터:', installForm);
         await axiosClient.put(apiEndpoints.cbam.install.update(editingInstall.id), installForm);
-        console.log('✅ 사업장 수정 성공');
+        console.log('✅ 시설군 수정 성공');
         setToast({
-          message: '사업장이 성공적으로 수정되었습니다!',
+          message: '시설군이 성공적으로 수정되었습니다!',
           type: 'success'
         });
       } else {
         // 생성
-        console.log('📤 사업장 생성 요청 데이터:', installForm);
+        console.log('📤 시설군 생성 요청 데이터:', installForm);
         const response = await axiosClient.post(apiEndpoints.cbam.install.create, installForm);
-        console.log('✅ 사업장 생성 성공:', response.data);
+        console.log('✅ 시설군 생성 성공:', response.data);
         setToast({
-          message: '사업장이 성공적으로 생성되었습니다!',
+          message: '시설군이 성공적으로 생성되었습니다!',
           type: 'success'
         });
       }
@@ -184,14 +184,14 @@ export default function InstallPage() {
       // 폼 초기화
       resetForm();
 
-      // 사업장 목록 새로고침
+      // 시설군 목록 새로고침
       await fetchInstalls();
 
     } catch (error: any) {
-      console.error('❌ 사업장 저장 실패:', error);
+      console.error('❌ 시설군 저장 실패:', error);
       
       setToast({
-        message: `사업장 저장에 실패했습니다: ${error.response?.data?.detail || error.message}`,
+        message: `시설군 저장에 실패했습니다: ${error.response?.data?.detail || error.message}`,
         type: 'error'
       });
     } finally {
@@ -199,27 +199,27 @@ export default function InstallPage() {
     }
   };
 
-  // 사업장 삭제
+  // 시설군 삭제
   const handleDeleteInstall = async (id: number, install_name: string) => {
-    if (!confirm(`"${install_name}" 사업장을 삭제하시겠습니까?\n\n⚠️ 주의: 이 사업장과 연결된 모든 제품, 프로세스, 입력 데이터가 함께 삭제됩니다.`)) {
+    if (!confirm(`"${install_name}" 시설군을 삭제하시겠습니까?\n\n⚠️ 주의: 이 시설군과 연결된 모든 제품, 프로세스, 입력 데이터가 함께 삭제됩니다.`)) {
       return;
     }
 
     try {
       setLoading(true);
               await axiosClient.delete(apiEndpoints.cbam.install.delete(id));
-      console.log('✅ 사업장 삭제 성공');
+      console.log('✅ 시설군 삭제 성공');
       
       setToast({
-        message: `"${install_name}" 사업장이 성공적으로 삭제되었습니다.`,
+        message: `"${install_name}" 시설군이 성공적으로 삭제되었습니다.`,
         type: 'success'
       });
 
       fetchInstalls();
     } catch (error: any) {
-      console.error('❌ 사업장 삭제 실패:', error);
+      console.error('❌ 시설군 삭제 실패:', error);
       setToast({
-        message: `사업장 삭제에 실패했습니다: ${error.response?.data?.detail || error.message}`,
+        message: `시설군 삭제에 실패했습니다: ${error.response?.data?.detail || error.message}`,
         type: 'error'
       });
     } finally {
@@ -234,9 +234,9 @@ export default function InstallPage() {
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-white mb-2">🏭 사업장 관리</h1>
+          <h1 className="text-4xl font-bold text-white mb-2">🏭 시설군 관리</h1>
           <p className="text-gray-300">
-            CBAM 적용 대상 사업장 정보를 생성하고 관리합니다
+            CBAM 적용 대상 시설군 정보를 생성하고 관리합니다
           </p>
         </div>
 
@@ -253,19 +253,19 @@ export default function InstallPage() {
 
         {/* 탭 제거: 사업장 관리 단일 페이지 */}
 
-        {/* 사업장 관리 */}
+        {/* 시설군 관리 */}
           <>
           <div className="bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10">
             <h2 className="text-2xl font-semibold text-white mb-6 flex items-center gap-2">
-              {editingInstall ? '🏭 사업장 수정' : '🏭 사업장 생성'}
+              {editingInstall ? '🏭 시설군 수정' : '🏭 시설군 생성'}
             </h2>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* 사업장명 */}
+              {/* 시설군명 */}
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
-                  사업장명 *
+                  시설군명 *
                 </label>
                 <Input
                   type="text"
@@ -308,16 +308,16 @@ export default function InstallPage() {
                 disabled={loading}
                 className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors duration-200 disabled:opacity-50"
               >
-                {loading ? '저장 중...' : (editingInstall ? '수정' : '사업장 생성')}
+                {loading ? '저장 중...' : (editingInstall ? '수정' : '시설군 생성')}
               </Button>
             </div>
           </form>
         </div>
 
-        {/* 사업장 목록 */}
+        {/* 시설군 목록 */}
         <div className="mt-8 bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10">
           <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-semibold text-white">📋 등록된 사업장 목록 ({installs.length}개)</h3>
+            <h3 className="text-lg font-semibold text-white">📋 등록된 시설군 목록 ({installs.length}개)</h3>
             <div className="flex gap-2">
               {/* 정렬 옵션 */}
               <select
@@ -350,7 +350,7 @@ export default function InstallPage() {
           {isLoadingInstalls ? (
             <div className="text-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-400 mx-auto"></div>
-              <p className="text-gray-300 mt-2">사업장 목록을 불러오는 중...</p>
+              <p className="text-gray-300 mt-2">시설군 목록을 불러오는 중...</p>
             </div>
           ) : sortedInstalls.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -395,8 +395,8 @@ export default function InstallPage() {
             </div>
           ) : (
             <div className="text-center py-8">
-              <p className="text-gray-300">등록된 사업장이 없습니다.</p>
-              <p className="text-gray-400 text-sm mt-1">위에서 사업장을 등록해보세요.</p>
+              <p className="text-gray-300">등록된 시설군이 없습니다.</p>
+              <p className="text-gray-400 text-sm mt-1">위에서 시설군을 등록해보세요.</p>
             </div>
           )}
         </div>
