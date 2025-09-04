@@ -393,7 +393,18 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
       const { productId } = e.detail || {};
       if (!productId) return;
       try {
+        // 1) 제품 프리뷰(배출량) 갱신
         await refreshProductEmission(productId);
+        // 2) 제품 판매량/유럽판매량 등 메타데이터 동기화
+        try {
+          const prodResp = await axiosClient.get(apiEndpoints.cbam.product.get(productId));
+          const p = prodResp?.data || {};
+          updateProductNodeByProductId(productId, {
+            product_amount: Number(p.product_amount ?? 0),
+            product_sell: Number(p.product_sell ?? 0),
+            product_eusell: Number(p.product_eusell ?? 0),
+          });
+        } catch (_) {}
         // 이 제품을 consume하는 공정들 찾아 새로고침
         const productNode = (prevNodesRef.current || []).find(n => n.type === 'product' && (n.data as any)?.id === productId);
         if (!productNode) return;
