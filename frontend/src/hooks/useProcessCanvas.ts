@@ -839,6 +839,25 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
               refreshProductEmission(finalSourceId),
               refreshProcessEmission(finalTargetId)
             ]);
+
+            // 타겟 공정(예: 압연)이 생산하는 제품들(예: 형강)도 프리뷰 갱신
+            try {
+              const normalize = (id?: string) => (id || '').replace(/-(left|right|top|bottom)$/i, '');
+              const processNode = (prevNodesRef.current || []).find(n => n.type === 'process' && (n.data as any)?.id === finalTargetId);
+              if (processNode) {
+                const producedProductIds: number[] = (edges || [])
+                  .filter(e => normalize(e.source) === processNode.id && (e.data as any)?.edgeData?.edge_kind === 'produce')
+                  .map(e => {
+                    const targetNode = (prevNodesRef.current || []).find(n => n.id === e.target);
+                    const pid = (targetNode?.data as any)?.id;
+                    return typeof pid === 'number' ? pid : undefined;
+                  })
+                  .filter((pid): pid is number => typeof pid === 'number');
+                if (producedProductIds.length) {
+                  await Promise.all(producedProductIds.map(pid => refreshProductEmission(pid)));
+                }
+              }
+            } catch (_) {}
           }
         } catch (e) {
           console.error('⚠️ 배출량 전파/갱신 실패:', e);
