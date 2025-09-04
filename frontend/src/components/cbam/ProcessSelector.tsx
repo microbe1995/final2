@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import axiosClient, { apiEndpoints } from '@/lib/axiosClient';
 import { Process, Product, Install } from '@/hooks/useProcessManager';
 import { useDummyData } from '@/hooks/useDummyData';
 
@@ -86,6 +87,7 @@ export const ProductProcessModal: React.FC<{
     product_sell: selectedProduct?.product_sell || 0,
     product_eusell: selectedProduct?.product_eusell || 0
   });
+  const [saving, setSaving] = useState(false);
 
   // 더미 데이터 기반: 선택된 제품에서 허용되는 공정명 목록 강제 적용
   const { getProcessesByProduct, getProductQuantity } = useDummyData();
@@ -390,6 +392,58 @@ export const ProductProcessModal: React.FC<{
                   <div className="text-sm text-purple-300 mb-1">EU 판매량</div>
                   <div className="text-2xl font-bold text-white">{productQuantityForm.product_eusell.toLocaleString()} ton</div>
                 </div>
+              </div>
+
+              {/* 저장 액션 */}
+              <div className="mt-4 flex gap-3">
+                <button
+                  disabled={saving || !selectedProduct}
+                  onClick={async () => {
+                    if (!selectedProduct?.id) return;
+                    // 기본 검증: 판매량 합이 수량보다 크지 않게
+                    const sell = Number(productQuantityForm.product_sell) || 0;
+                    const eu = Number(productQuantityForm.product_eusell) || 0;
+                    const amt = Number(productQuantityForm.product_amount) || 0;
+                    if (sell < 0 || eu < 0) {
+                      alert('판매량은 0 이상이어야 합니다.');
+                      return;
+                    }
+                    if (sell + eu > amt) {
+                      if (!confirm('판매량 합이 수량을 초과합니다. 그래도 저장하시겠습니까?')) {
+                        return;
+                      }
+                    }
+                    try {
+                      setSaving(true);
+                      // 1) 제품 판매량 저장
+                      await axiosClient.put(
+                        apiEndpoints.cbam.product.update(selectedProduct.id),
+                        {
+                          product_sell: sell,
+                          product_eusell: eu,
+                        }
+                      );
+                      // 2) 누적 전파(제품→공정 분배 반영)
+                      try { await axiosClient.post(apiEndpoints.cbam.edgePropagation.fullPropagate, {}); } catch {}
+                      // 3) 캔버스에 갱신 이벤트 브로드캐스트 (제품 및 하류 체인 동기화)
+                      window.dispatchEvent(new CustomEvent('cbam:refreshProduct', { detail: { productId: selectedProduct.id } }));
+                      alert('저장되었습니다.');
+                    } catch (e: any) {
+                      alert(`저장 실패: ${e?.response?.data?.detail || e?.message || '알 수 없는 오류'}`);
+                    } finally {
+                      setSaving(false);
+                    }
+                  }}
+                  className={`px-4 py-2 rounded-md text-white font-medium ${saving ? 'bg-gray-500' : 'bg-green-600 hover:bg-green-700'}`}
+                >
+                  {saving ? '저장 중...' : '저장'}
+                </button>
+                <button
+                  onClick={onClose}
+                  className="px-4 py-2 rounded-md text-white font-medium bg-gray-600 hover:bg-gray-700"
+                >
+                  닫기
+                </button>
               </div>
             </div>
           </div>

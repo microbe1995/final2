@@ -124,6 +124,8 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
     return () => window.removeEventListener('cbam:updateProductAmount' as any, handler);
   }, [updateProductNodeByProductId]);
 
+  
+
   // 엣지 연결 여부에 상관없이 직접/원료/연료 값은 항상 보이도록 유지
   // 누적 값은 연결 여부와 무관하게 현재 DB 상태를 표시
   useEffect(() => {
@@ -382,6 +384,34 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
       console.error('⚠️ 제품 배출량 새로고침 실패:', e);
     }
   }, [setNodes]);
+
+  // 제품 저장 후 강제 새로고침(제품 → 소비공정 → 하류제품까지)
+  useEffect(() => {
+    const handler = async (e: any) => {
+      const { productId } = e.detail || {};
+      if (!productId) return;
+      try {
+        await refreshProductEmission(productId);
+        // 이 제품을 consume하는 공정들 찾아 새로고침
+        const productNode = (prevNodesRef.current || []).find(n => n.type === 'product' && (n.data as any)?.id === productId);
+        if (!productNode) return;
+        const normalize = (id?: string) => (id || '').replace(/-(left|right|top|bottom)$/i, '');
+        const consumerProcessIds = (edges || [])
+          .filter((e: any) => normalize(e.source) === productNode.id && (e.data as any)?.edgeData?.edge_kind === 'consume')
+          .map((e: any) => {
+            const targetNode = (prevNodesRef.current || []).find(n => normalize(n.id) === normalize(e.target));
+            const pid = (targetNode?.data as any)?.id;
+            return typeof pid === 'number' ? pid : undefined;
+          })
+          .filter((id: any): id is number => typeof id === 'number');
+        if (consumerProcessIds.length) {
+          await Promise.all(consumerProcessIds.map(pid => refreshProcessEmission(pid)));
+        }
+      } catch {}
+    };
+    window.addEventListener('cbam:refreshProduct' as any, handler);
+    return () => window.removeEventListener('cbam:refreshProduct' as any, handler);
+  }, [edges, refreshProductEmission, refreshProcessEmission]);
 
   // 공정 기준 재계산 트리거 + 영향 노드 부분 갱신 (refresh* 정의 이후에 위치해야 함)
   const recalcFromProcess = useCallback(async (processId: number) => {
