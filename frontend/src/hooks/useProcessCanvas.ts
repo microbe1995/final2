@@ -1025,6 +1025,8 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
                 null,
                 { params: { source_product_id: finalSourceId, target_process_id: finalTargetId } }
               );
+              // 전용 전파 직후 1차 반영 확인
+              await refreshProcessEmission(finalTargetId);
             } catch (e) {
               console.warn('⚠️ consume 전파 실패, 전체 전파로 폴백:', e);
             }
