@@ -688,11 +688,17 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
               null,
               { params: { source_process_id: finalSourceId, target_process_id: finalTargetId } }
             );
+            // 전체 그래프 전파로 누적→제품 프리뷰까지 일관 반영
+            try {
+              await axiosClient.post(apiEndpoints.cbam.edgePropagation.fullPropagate, {});
+            } catch (e) {
+              console.warn('⚠️ 전체 전파 트리거 실패(무시 가능):', e);
+            }
             await Promise.all([
               refreshProcessEmission(finalSourceId),
               refreshProcessEmission(finalTargetId)
             ]);
-            // 공정 누적이 변하면 해당 제품 프리뷰도 변해야 하므로, 현재 캔버스의 제품 노드 프리뷰를 함께 갱신
+            // 연결된 모든 제품 프리뷰 동기화
             try {
               const productIds = (prevNodesRef.current || [])
                 .filter(n => n.type === 'product' && (n.data as any)?.id)
