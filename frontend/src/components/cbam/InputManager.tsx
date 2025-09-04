@@ -3,7 +3,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import axiosClient, { apiEndpoints } from '@/lib/axiosClient';
 import { useFuelMasterAPI } from '@/hooks/useFuelMasterAPI';
-import { FuelMaster } from '@/lib/types';
 import { useDummyData } from '@/hooks/useDummyData';
 
 interface InputManagerProps {
@@ -34,8 +33,8 @@ interface InputResult {
 
 export default function InputManager({ selectedProcess, onClose, onDataSaved }: InputManagerProps) {
   // Fuel Master API Hook
-  const { searchFuels, getFuelFactor } = useFuelMasterAPI();
-  const { getMaterialsFor } = useDummyData();
+  const { getFuelFactor } = useFuelMasterAPI();
+  const { getMaterialsFor, getFuelsFor } = useDummyData();
 
   // 현재 활성 탭
   const [activeTab, setActiveTab] = useState<'matdir' | 'fueldir'>('matdir');
@@ -60,11 +59,6 @@ export default function InputManager({ selectedProcess, onClose, onDataSaved }: 
   const [isCalculating, setIsCalculating] = useState(false);
   const [isLoadingData, setIsLoadingData] = useState(false);
 
-  // Fuel Master 자동 배출계수 관련 상태
-  const [fuelSuggestions, setFuelSuggestions] = useState<FuelMaster[]>([]);
-  const [showSuggestions, setShowSuggestions] = useState(false);
-  const [autoFactorStatus, setAutoFactorStatus] = useState<string>('');
-  
   // Material Master 자동 배출계수 관련 상태 (이제 사용 최소화)
   const [materialSuggestions, setMaterialSuggestions] = useState<any[]>([]);
   const [showMaterialSuggestions, setShowMaterialSuggestions] = useState(false);
@@ -72,6 +66,7 @@ export default function InputManager({ selectedProcess, onClose, onDataSaved }: 
 
   // Dummy 기반 원료 옵션
   const [materialOptions, setMaterialOptions] = useState<{ name: string; amount: number; unit: string }[]>([]);
+  const [fuelOptions, setFuelOptions] = useState<{ name: string; amount: number; unit: string }[]>([]);
 
   // 수정 모드 상태
   const [editingResult, setEditingResult] = useState<InputResult | null>(null);
@@ -192,6 +187,25 @@ export default function InputManager({ selectedProcess, onClose, onDataSaved }: 
     })();
   }, [selectedProcess, getMaterialsFor]);
 
+  // 선택된 공정/기간/제품명 기준으로 더미 연료 옵션 로드
+  useEffect(() => {
+    (async () => {
+      if (!selectedProcess) return;
+      try {
+        const processName = selectedProcess?.process_name || selectedProcess?.processData?.process_name || selectedProcess?.label;
+        const startDate = selectedProcess?.start_period || selectedProcess?.processData?.start_period || selectedProcess?.startDate;
+        const endDate = selectedProcess?.end_period || selectedProcess?.processData?.end_period || selectedProcess?.endDate;
+        const productNames: string[] | undefined = selectedProcess?.product_names
+          ? String(selectedProcess.product_names).split(',').map((s: string) => s.trim()).filter(Boolean)
+          : undefined;
+        const options = await getFuelsFor({ processName, startDate, endDate, productNames });
+        setFuelOptions(options);
+      } catch {
+        setFuelOptions([]);
+      }
+    })();
+  }, [selectedProcess, getFuelsFor]);
+
   const calculateMatdirEmission = useCallback(async () => {
     if (!matdirForm.name || matdirForm.factor <= 0 || matdirForm.amount <= 0) {
       alert('모든 필드를 입력해주세요.');
@@ -239,49 +253,22 @@ export default function InputManager({ selectedProcess, onClose, onDataSaved }: 
   }, [matdirForm]);
 
   // ============================================================================
-  // ⛽ 연료직접배출량 관련 함수들 (기존 그대로)
+  // ⛽ 연료직접배출량: 더미 기반 드롭다운 + Master에서 배출계수 자동 설정
   // ============================================================================
 
-  const handleFueldirNameChange = useCallback(async (name: string) => {
+  const handleFuelDropdownChange = useCallback(async (name: string) => {
     setFueldirForm(prev => ({ ...prev, name }));
-    
-    if (name.trim().length >= 1) {
-      const suggestions = await searchFuels(name);
-      if (suggestions) {
-        setFuelSuggestions(suggestions);
-        setShowSuggestions(true);
+    if (!name) return;
+    try {
+      const factorResponse = await getFuelFactor(name);
+      if (factorResponse && factorResponse.found && factorResponse.fuel_factor !== null) {
+        const factor = factorResponse.fuel_factor;
+        setFueldirForm(prev => ({ ...prev, factor }));
       }
-    } else {
-      setFuelSuggestions([]);
-      setShowSuggestions(false);
+    } catch {
+      // no-op: 자동 설정 실패 시 사용자 입력 대기
     }
-  }, [searchFuels]);
-
-  const handleFuelSelect = useCallback((fuel: FuelMaster) => {
-    setFuelSuggestions([]);
-    setShowSuggestions(false);
-    setFueldirForm(prev => ({ ...prev, factor: fuel.fuel_factor || 0 }));
-    setAutoFactorStatus(`✅ 자동 설정: ${fuel.fuel_name} (배출계수: ${fuel.fuel_factor || 0})`);
-  }, []);
-
-  const handleFueldirNameBlur = useCallback(async () => {
-    if (fueldirForm.name && fueldirForm.factor === 0) {
-      setAutoFactorStatus('🔍 배출계수 조회 중...');
-      try {
-        const factorResponse = await getFuelFactor(fueldirForm.name);
-        
-        if (factorResponse && factorResponse.found && factorResponse.fuel_factor !== null) {
-          const factor = factorResponse.fuel_factor;
-          setFueldirForm(prev => ({ ...prev, factor }));
-          setAutoFactorStatus(`✅ 자동 조회: ${fueldirForm.name} (배출계수: ${factor})`);
-        } else {
-          setAutoFactorStatus(`⚠️ 배출계수를 찾을 수 없음: ${fueldirForm.name}`);
-        }
-      } catch (err) {
-        setAutoFactorStatus(`❌ 배출계수 조회 실패: ${fueldirForm.name}`);
-      }
-    }
-  }, [fueldirForm.name, fueldirForm.factor, getFuelFactor]);
+  }, [getFuelFactor]);
 
   const calculateFueldirEmission = useCallback(async () => {
     if (!fueldirForm.name || fueldirForm.factor <= 0 || fueldirForm.amount <= 0) {
@@ -313,7 +300,6 @@ export default function InputManager({ selectedProcess, onClose, onDataSaved }: 
       setInputResults(prev => [newResult, ...prev]);
 
       setFueldirForm({ name: '', factor: 0, amount: 0, oxyfactor: 1.0000 });
-      setAutoFactorStatus('');
 
     } catch (error: any) {
       alert(`연료직접배출량 계산에 실패했습니다: ${error.response?.data?.detail || error.message}`);
@@ -475,11 +461,22 @@ export default function InputManager({ selectedProcess, onClose, onDataSaved }: 
                 <button onClick={calculateMatdirEmission} disabled={isCalculating} className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white font-medium py-2 px-4 rounded-md transition-colors">{isCalculating ? '계산 중...' : '🧮 원료직접배출량 계산'}</button>
               </div>
             ) : (
-              // 연료직접배출량 입력 폼 유지
+              // 연료직접배출량: 더미 기반 드롭다운 선택
               <div className="space-y-4">
                 <div className="relative">
-                  <label className="block text-sm font-medium text-gray-300 mb-2">투입된 연료명 <span className="text-xs text-gray-400 ml-2">(자유 입력 가능)</span></label>
-                  <input type="text" value={fueldirForm.name} onChange={(e) => handleFueldirNameChange(e.target.value)} onBlur={handleFueldirNameBlur} className="w-full px-3 py-2 bg-yellow-500/20 border border-yellow-500/30 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-yellow-500" placeholder="예: 원유, 휘발유, 등유" />
+                  <label className="block text-sm font-medium text-gray-300 mb-2">투입된 연료명</label>
+                  <select
+                    value={fueldirForm.name}
+                    onChange={(e) => handleFuelDropdownChange(e.target.value)}
+                    className="w-full px-3 py-2 bg-yellow-500/20 border border-yellow-500/30 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                  >
+                    <option value="">연료를 선택하세요</option>
+                    {fuelOptions.map((opt) => (
+                      <option key={opt.name} value={opt.name}>
+                        {opt.name} {opt.unit ? `(${opt.unit})` : ''}
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">배출계수 <span className="text-xs text-red-400 ml-2">(수정 불가)</span></label>

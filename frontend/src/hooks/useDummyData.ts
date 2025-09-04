@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { useFuelMasterAPI } from '@/hooks/useFuelMasterAPI';
 import axiosClient from '@/lib/axiosClient';
 
 export interface DummyData {
@@ -19,6 +20,7 @@ export interface DummyData {
 export const useDummyData = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { searchFuels } = useFuelMasterAPI();
 
   // 제품별 공정 목록 조회
   const getProcessesByProduct = useCallback(async (productName: string) => {
@@ -189,6 +191,82 @@ export const useDummyData = () => {
     []
   );
 
+  // 🔴 추가: 기간/공정/제품명 기준으로 더미 투입물 중 "연료" 후보만 추출
+  const getFuelsFor = useCallback(
+    async (
+      params: {
+        processName?: string;
+        startDate?: string | null;
+        endDate?: string | null;
+        productNames?: string[];
+      }
+    ) => {
+      setLoading(true);
+      setError(null);
+      try {
+        const response = await axiosClient.get('/api/v1/cbam/dummy');
+        const payload = response.data;
+        const dummyData: DummyData[] = Array.isArray(payload) ? payload : (payload?.data || []);
+
+        const { processName, startDate, endDate, productNames } = params || {};
+        const start = startDate ? new Date(startDate) : null;
+        const end = endDate ? new Date(endDate) : null;
+
+        // 1) 더미 데이터 1차 필터링
+        const filtered = dummyData.filter((row) => {
+          if (!row.투입물명) return false;
+          if (processName && row.공정 !== processName) return false;
+          if (start && row.투입일 && new Date(row.투입일) < start) return false;
+          if (end && row.종료일 && new Date(row.종료일) > end) return false;
+          if (productNames && productNames.length > 0) {
+            if (!row.생산품명 || !productNames.includes(row.생산품명)) return false;
+          }
+          return true;
+        });
+
+        // 2) 이름 기준 집계 (총량/단위 대표값)
+        const map = new Map<string, { name: string; amount: number; unit: string }>();
+        for (const row of filtered) {
+          const key = row.투입물명 as string;
+          const prev = map.get(key);
+          if (prev) {
+            map.set(key, { name: key, amount: prev.amount + (row.수량 || 0), unit: prev.unit || row.단위 || '' });
+          } else {
+            map.set(key, { name: key, amount: row.수량 || 0, unit: row.단위 || '' });
+          }
+        }
+
+        // 3) Fuel Master 기준으로 실제 연료만 선별
+        const names = Array.from(map.keys());
+        const checks = await Promise.all(
+          names.map(async (n) => {
+            try {
+              const suggestions = await searchFuels(n);
+              return { name: n, isFuel: Array.isArray(suggestions) && suggestions.length > 0 };
+            } catch {
+              return { name: n, isFuel: false };
+            }
+          })
+        );
+
+        const fuels = checks
+          .filter((c) => c.isFuel)
+          .map((c) => map.get(c.name)!)
+          .filter(Boolean);
+
+        return fuels;
+      } catch (err: any) {
+        const errorMessage = err.response?.data?.detail || err.message || '연료 목록 조회에 실패했습니다.';
+        setError(errorMessage);
+        console.error('❌ 연료(더미) 조회 실패:', err);
+        return [] as { name: string; amount: number; unit: string }[];
+      } finally {
+        setLoading(false);
+      }
+    },
+    [searchFuels]
+  );
+
   return {
     loading,
     error,
@@ -196,6 +274,7 @@ export const useDummyData = () => {
     getProductPeriods,
     getProductPeriod,
     getProductQuantity,
-    getMaterialsFor
+    getMaterialsFor,
+    getFuelsFor
   };
 };
