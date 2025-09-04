@@ -70,6 +70,7 @@ export const ProductProcessModal: React.FC<{
   selectedInstall: Install | null;
   onProcessSelect: (process: Process) => void;
   onClose: () => void;
+  onSaveQuantity?: (form: { product_amount: number; product_sell: number; product_eusell: number; }) => Promise<boolean>;
 }> = ({
   selectedProduct,
   allProcesses,
@@ -78,6 +79,7 @@ export const ProductProcessModal: React.FC<{
   selectedInstall,
   onProcessSelect,
   onClose,
+  onSaveQuantity,
 }) => {
   const [productModalTab, setProductModalTab] = useState<'process' | 'quantity'>('process');
   // 전체 사업장 / 해당 사업장 필터
@@ -123,7 +125,7 @@ export const ProductProcessModal: React.FC<{
         // 실패 시 0 유지
       }
     })();
-  }, [selectedProduct?.product_name]);
+  }, [selectedProduct?.product_name, getProductQuantity]);
 
   // 수량/판매량 탭에 들어올 때도 최신 더미 생산수량으로 동기화
   React.useEffect(() => {
@@ -140,7 +142,7 @@ export const ProductProcessModal: React.FC<{
         // ignore
       }
     })();
-  }, [productModalTab, selectedProduct?.product_name]);
+  }, [productModalTab, selectedProduct?.product_name, getProductQuantity]);
 
   // useEffect로 selectedProduct 변경 시 폼 값 업데이트
   React.useEffect(() => {
@@ -426,14 +428,20 @@ export const ProductProcessModal: React.FC<{
                     }
                     try {
                       setSaving(true);
-                      // 1) 제품 판매량 저장
-                      await axiosClient.put(
-                        apiEndpoints.cbam.product.update(selectedProduct.id),
-                        {
+                      // 1) 제품 판매량 저장 (상위 훅에 상태도 동기화)
+                      if (onSaveQuantity) {
+                        const ok = await onSaveQuantity({
+                          product_amount: amt,
                           product_sell: sell,
                           product_eusell: eu,
-                        }
-                      );
+                        });
+                        if (!ok) throw new Error('저장 실패');
+                      } else {
+                        await axiosClient.put(
+                          apiEndpoints.cbam.product.update(selectedProduct.id),
+                          { product_sell: sell, product_eusell: eu }
+                        );
+                      }
                       // 저장 후 DB값 재반영
                       try {
                         const getResp = await axiosClient.get(apiEndpoints.cbam.product.get(selectedProduct.id));

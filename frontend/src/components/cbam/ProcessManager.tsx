@@ -407,6 +407,15 @@ function ProcessManagerInner() {
           selectedInstall={selectedInstall}
           onProcessSelect={handleProcessSelect}
           onClose={() => setShowProcessModal(false)}
+          onSaveQuantity={async (form) => {
+            if (!selectedProduct) return false;
+            const ok = await handleProductQuantityUpdate({
+              product_amount: form.product_amount,
+              product_sell: form.product_sell,
+              product_eusell: form.product_eusell,
+            });
+            return ok;
+          }}
         />
       )}
 
