@@ -401,83 +401,84 @@ export const ProductProcessModal: React.FC<{
 
               {/* 저장 액션 */}
               <div className="mt-4 flex gap-3">
-                {!isEditingQty && (
+                {!isEditingQty ? (
                   <button
                     onClick={() => setIsEditingQty(true)}
                     className="px-4 py-2 rounded-md text-white font-medium bg-blue-600 hover:bg-blue-700"
                   >
                     수정
                   </button>
-                )}
-                <button
-                  disabled={saving || !selectedProduct}
-                  onClick={async () => {
-                    if (!selectedProduct?.id) return;
-                    // 기본 검증: 판매량 합이 수량보다 크지 않게
-                    const sell = Number(productQuantityForm.product_sell) || 0;
-                    const eu = Number(productQuantityForm.product_eusell) || 0;
-                    const amt = Number(productQuantityForm.product_amount) || 0;
-                    if (sell < 0 || eu < 0) {
-                      alert('판매량은 0 이상이어야 합니다.');
-                      return;
-                    }
-                    if (sell + eu > amt) {
-                      if (!confirm('판매량 합이 수량을 초과합니다. 그래도 저장하시겠습니까?')) {
+                ) : null}
+                {isEditingQty ? (
+                  <button
+                    disabled={saving || !selectedProduct}
+                    onClick={async () => {
+                      if (!selectedProduct?.id) return;
+                      // 기본 검증: 판매량 합이 수량보다 크지 않게
+                      const sell = Number(productQuantityForm.product_sell) || 0;
+                      const eu = Number(productQuantityForm.product_eusell) || 0;
+                      const amt = Number(productQuantityForm.product_amount) || 0;
+                      if (sell < 0 || eu < 0) {
+                        alert('판매량은 0 이상이어야 합니다.');
                         return;
                       }
-                    }
-                    try {
-                      setSaving(true);
-                      // 1) 제품 판매량 저장 (상위 훅에 상태도 동기화)
-                      if (onSaveQuantity) {
-                        const ok = await onSaveQuantity({
-                          product_amount: amt,
-                          product_sell: sell,
-                          product_eusell: eu,
-                        });
-                        if (!ok) throw new Error('저장 실패');
-                      } else {
-                        await axiosClient.put(
-                          apiEndpoints.cbam.product.update(selectedProduct.id),
-                          { product_sell: sell, product_eusell: eu }
-                        );
-                      }
-                      // 저장 후 DB값 재반영
-                      try {
-                        const getResp = await axiosClient.get(apiEndpoints.cbam.product.get(selectedProduct.id));
-                        const p = getResp?.data;
-                        if (p) {
-                          setProductQuantityForm(prev => ({
-                            ...prev,
-                            product_sell: Number(p.product_sell) || sell,
-                            product_eusell: Number(p.product_eusell) || eu,
-                          }));
+                      if (sell + eu > amt) {
+                        if (!confirm('판매량 합이 수량을 초과합니다. 그래도 저장하시겠습니까?')) {
+                          return;
                         }
-                      } catch {}
-                      // 2) 누적 전파(제품→공정 분배 반영)
-                      try { await axiosClient.post(apiEndpoints.cbam.edgePropagation.fullPropagate, {}); } catch {}
-                      // 3) 캔버스에 갱신 이벤트 브로드캐스트 (제품 및 하류 체인 동기화)
-                      //    입력값을 함께 전달해 즉시 프리뷰가 반영되도록 한다(서버 GET 이전에 낙관적 갱신)
-                      window.dispatchEvent(new CustomEvent('cbam:refreshProduct', { 
-                        detail: { 
-                          productId: selectedProduct.id,
-                          product_amount: amt,
-                          product_sell: sell,
-                          product_eusell: eu
-                        } 
-                      }));
-                      setIsEditingQty(false);
-                      alert('저장되었습니다.');
-                    } catch (e: any) {
-                      alert(`저장 실패: ${e?.response?.data?.detail || e?.message || '알 수 없는 오류'}`);
-                    } finally {
-                      setSaving(false);
-                    }
-                  }}
-                  className={`px-4 py-2 rounded-md text-white font-medium ${saving ? 'bg-gray-500' : 'bg-green-600 hover:bg-green-700'}`}
-                >
-                  {saving ? '저장 중...' : '저장'}
-                </button>
+                      }
+                      try {
+                        setSaving(true);
+                        // 1) 제품 판매량 저장 (상위 훅에 상태도 동기화)
+                        if (onSaveQuantity) {
+                          const ok = await onSaveQuantity({
+                            product_amount: amt,
+                            product_sell: sell,
+                            product_eusell: eu,
+                          });
+                          if (!ok) throw new Error('저장 실패');
+                        } else {
+                          await axiosClient.put(
+                            apiEndpoints.cbam.product.update(selectedProduct.id),
+                            { product_sell: sell, product_eusell: eu }
+                          );
+                        }
+                        // 저장 후 DB값 재반영
+                        try {
+                          const getResp = await axiosClient.get(apiEndpoints.cbam.product.get(selectedProduct.id));
+                          const p = getResp?.data;
+                          if (p) {
+                            setProductQuantityForm(prev => ({
+                              ...prev,
+                              product_sell: Number(p.product_sell) || sell,
+                              product_eusell: Number(p.product_eusell) || eu,
+                            }));
+                          }
+                        } catch {}
+                        // 2) 누적 전파(제품→공정 분배 반영)
+                        try { await axiosClient.post(apiEndpoints.cbam.edgePropagation.fullPropagate, {}); } catch {}
+                        // 3) 캔버스에 갱신 이벤트 브로드캐스트
+                        window.dispatchEvent(new CustomEvent('cbam:refreshProduct', { 
+                          detail: { 
+                            productId: selectedProduct.id,
+                            product_amount: amt,
+                            product_sell: sell,
+                            product_eusell: eu
+                          } 
+                        }));
+                        setIsEditingQty(false);
+                        alert('저장되었습니다.');
+                      } catch (e: any) {
+                        alert(`저장 실패: ${e?.response?.data?.detail || e?.message || '알 수 없는 오류'}`);
+                      } finally {
+                        setSaving(false);
+                      }
+                    }}
+                    className={`px-4 py-2 rounded-md text-white font-medium ${saving ? 'bg-gray-500' : 'bg-green-600 hover:bg-green-700'}`}
+                  >
+                    {saving ? '저장 중...' : '저장'}
+                  </button>
+                ) : null}
                 <button
                   onClick={onClose}
                   className="px-4 py-2 rounded-md text-white font-medium bg-gray-600 hover:bg-gray-700"

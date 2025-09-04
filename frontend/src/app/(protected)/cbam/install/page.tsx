@@ -24,6 +24,7 @@ interface InstallForm {
 export default function InstallPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [isNavigating, setIsNavigating] = useState(false);
   const [installs, setInstalls] = useState<any[]>([]);
   const [isLoadingInstalls, setIsLoadingInstalls] = useState(true);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
@@ -118,9 +119,17 @@ export default function InstallPage() {
     }));
   };
 
-  // 시설군 클릭 시 제품 관리 페이지로 이동
+  // 시설군 클릭 시 제품 관리 페이지로 이동 (산정경계설정과 유사한 전환 UX 적용)
   const handleInstallClick = (installId: number) => {
-    router.push(`/cbam/install/${installId}/products`);
+    try {
+      setIsNavigating(true);
+      // 부드러운 페이드/스케일 전환 후 라우팅 (경로는 기존 유지)
+      setTimeout(() => {
+        router.push(`/cbam/install/${installId}/products`);
+      }, 180);
+    } catch (_) {
+      router.push(`/cbam/install/${installId}/products`);
+    }
   };
 
   // 폼 초기화
@@ -231,7 +240,11 @@ export default function InstallPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 p-6">
-      <div className="max-w-6xl mx-auto">
+      <div
+        className={`max-w-6xl mx-auto transition-all duration-200 ease-out ${
+          isNavigating ? 'opacity-0 scale-[0.99]' : 'opacity-100 scale-100'
+        }`}
+      >
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-white mb-2">🏭 시설군 관리</h1>
