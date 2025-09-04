@@ -23,13 +23,14 @@ interface ProcessNodeProps {
 }
 
 const variantStyles = {
-  default: 'bg-white border-gray-800 text-gray-800',
-  primary: 'bg-blue-50 border-blue-600 text-blue-900',
-  success: 'bg-green-50 border-green-600 text-green-900',
-  warning: 'bg-yellow-50 border-yellow-600 text-yellow-900',
-  danger: 'bg-red-50 border-red-600 text-red-900',
-  process: 'bg-orange-50 border-orange-300 text-orange-800',
-  readonly: 'bg-gray-100 border-gray-400 text-gray-600', // 읽기 전용 공정용 스타일
+  // 대시보드 다크톤 + 블루 악센트
+  default: 'bg-gray-800 border-blue-500 text-white',
+  primary: 'bg-blue-500/10 border-blue-500 text-blue-100',
+  success: 'bg-green-500/10 border-green-500 text-green-100',
+  warning: 'bg-yellow-500/10 border-yellow-500 text-yellow-100',
+  danger: 'bg-red-500/10 border-red-500 text-red-100',
+  process: 'bg-blue-600/10 border-blue-500 text-blue-100',
+  readonly: 'bg-gray-700 border-gray-500 text-gray-300', // 읽기 전용 공정용 스타일
 };
 
 const sizeStyles = {
@@ -71,9 +72,10 @@ function ProcessNode({
   const effectiveVariant = isExternalProcess ? 'readonly' : finalVariant;
 
   const nodeClasses = `
-    ${variantStyles[effectiveVariant as keyof typeof variantStyles]} 
+    ${variantStyles[effectiveVariant as keyof typeof variantStyles]}
     ${sizeStyles[finalSize as keyof typeof sizeStyles]}
-    border-2 rounded-lg shadow-md relative hover:shadow-lg transition-all duration-200
+    border-2 rounded-lg shadow-md relative transition-all duration-200
+    ring-1 ring-blue-400/20 hover:ring-blue-400/60 hover:shadow-lg
     ${isReadOnly || isExternalProcess ? 'opacity-75' : 'hover:scale-105'}
   `.trim();
 

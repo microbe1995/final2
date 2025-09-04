@@ -2,7 +2,7 @@
 
 import React, { useState, useCallback, useEffect } from 'react';
 import Button from '@/components/atomic/atoms/Button';
-import { Plus } from 'lucide-react';
+import { Plus, RefreshCcw } from 'lucide-react';
 import axiosClient, { apiEndpoints } from '@/lib/axiosClient';
 
 import ProductNode from '@/components/atomic/atoms/ProductNode';
@@ -115,6 +115,12 @@ function ProcessManagerInner() {
       }
     }
   }, [nodes, fetchProcessEmissionData, updateNodeData]);
+
+  // 캔버스 새로고침: 모든 공정 노드의 배출량/표시값 재계산
+  const handleCanvasRefresh = useCallback(async () => {
+    await refreshAllProcessEmissions();
+    console.log('🔄 캔버스 새로고침 완료');
+  }, [refreshAllProcessEmissions]);
 
   // 모달 상태
   const [showProductModal, setShowProductModal] = useState(false);
@@ -306,6 +312,12 @@ function ProcessManagerInner() {
           className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg flex items-center gap-2"
         >
           <Plus className="h-4 w-4" /> 공정 노드
+        </Button>
+        <Button
+          onClick={handleCanvasRefresh}
+          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+        >
+          <RefreshCcw className="h-4 w-4" /> 새로고침
         </Button>
         {/* 그룹 노드 버튼, 배출량 정보 새로고침 버튼 제거 */}
 

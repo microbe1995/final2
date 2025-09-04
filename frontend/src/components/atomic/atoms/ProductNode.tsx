@@ -23,12 +23,13 @@ interface ProductNodeProps {
 }
 
 const variantStyles = {
-  default: 'bg-white border-gray-800 text-gray-800',
-  primary: 'bg-blue-50 border-blue-600 text-blue-900',
-  success: 'bg-green-50 border-green-600 text-green-900',
-  warning: 'bg-yellow-50 border-yellow-600 text-yellow-900',
-  danger: 'bg-red-50 border-red-600 text-red-900',
-  product: 'bg-purple-50 border-purple-300 text-purple-800',
+  // 대시보드 다크톤 + 블루 악센트
+  default: 'bg-gray-800 border-blue-500 text-white',
+  primary: 'bg-blue-500/10 border-blue-500 text-blue-100',
+  success: 'bg-green-500/10 border-green-500 text-green-100',
+  warning: 'bg-yellow-500/10 border-yellow-500 text-yellow-100',
+  danger: 'bg-red-500/10 border-red-500 text-red-100',
+  product: 'bg-purple-500/10 border-purple-400 text-purple-100',
 };
 
 const sizeStyles = {
@@ -61,7 +62,8 @@ function ProductNode({
   const nodeClasses = `
     ${variantStyles[finalVariant as keyof typeof variantStyles]} 
     ${sizeStyles[finalSize as keyof typeof sizeStyles]}
-    border-2 rounded-lg shadow-md relative hover:shadow-lg transition-all duration-200
+    border-2 rounded-lg shadow-md relative transition-all duration-200
+    ring-1 ring-blue-400/20 hover:ring-blue-400/60 hover:shadow-lg
     hover:scale-105 cursor-pointer
   `.trim();
 

@@ -6,7 +6,7 @@ import { Handle, Position } from '@xyflow/react';
 const color = {
   bg: '!bg-blue-600',
   hoverBg: 'hover:!bg-blue-700',
-  shadow: 'drop-shadow(0 0 8px rgba(59,130,246,.3))',
+  shadow: 'drop-shadow(0 0 10px rgba(37, 99, 235, .45))',
 };
 
 const baseCls = '!w-4 !h-4 !border-2 !border-white pointer-events-auto transition-all duration-200';
@@ -15,7 +15,7 @@ const cls = `${baseCls} ${color.bg} ${color.hoverBg} hover:scale-125 hover:shado
 const handleStyle: React.CSSProperties = { 
   filter: color.shadow, 
   zIndex: 10,
-  background: '#3b82f6',
+  background: '#2563eb',
   border: '2px solid white',
   cursor: 'crosshair'
 };

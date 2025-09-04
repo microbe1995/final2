@@ -63,7 +63,8 @@ const CustomEdge: React.FC<CustomEdgeProps> = ({
   }
 
   // 색상 설정
-  const strokeColor = selected ? '#3b82f6' : isTemporary ? '#6b7280' : '#64748b';
+  // 대시보드 블루 톤으로 통일
+  const strokeColor = selected ? '#2563eb' : isTemporary ? 'rgba(148,163,184,0.7)' : '#64748b';
   const strokeWidth = selected ? 8 : isTemporary ? 6 : 6;
 
   return (
@@ -80,7 +81,7 @@ const CustomEdge: React.FC<CustomEdgeProps> = ({
         fill="none" 
         style={{
           transition: 'all 0.2s ease-in-out',
-          filter: selected ? 'drop-shadow(0 0 6px rgba(59, 130, 246, 0.6))' : 'none'
+          filter: selected ? 'drop-shadow(0 0 8px rgba(37, 99, 235, 0.7))' : 'drop-shadow(0 0 4px rgba(15, 23, 42, 0.4))'
         }}
       />
       
@@ -90,7 +91,8 @@ const CustomEdge: React.FC<CustomEdgeProps> = ({
         fill={strokeColor}
         stroke="none"
         style={{
-          transition: 'all 0.2s ease-in-out'
+          transition: 'all 0.2s ease-in-out',
+          filter: selected ? 'drop-shadow(0 0 6px rgba(37, 99, 235, 0.7))' : 'none'
         }}
       />
     </>
