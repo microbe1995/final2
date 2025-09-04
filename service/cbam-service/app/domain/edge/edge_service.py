@@ -222,22 +222,27 @@ class EdgeService:
                 product_emission = product_emission_preview
             else:
                 product_emission = product_data['attr_em'] or 0.0
-            # 기존 구현은 product_amount로 나눴으나, 실제 분배는 "to_next_process" 대비 할당량 기준이어야 함
-            if to_next_process > 0:
-                # 일반 케이스: 생산-판매-EU가 양수 → 다음 공정으로 넘어가는 양 기준 분배
-                process_ratio = (allocated_amount / to_next_process)
-                process_emission = product_emission * process_ratio
+
+            # 요구사항: 분배 비율은 (생산량-판매량-EU판매량)/생산량 비율이 아니라
+            # "allocated_amount / product_amount"를 사용한다. 단, product_amount=0은 안전 처리.
+            if product_amount and product_amount > 0:
+                process_ratio = allocated_amount / product_amount
             else:
-                # 예외 케이스: DB의 product_amount가 0 등으로 to_next_process<=0 인 경우
-                # 연결된 소비 공정 수 기준으로 제품배출량을 균등 분배(단일 소비 공정이면 전량 배정)
+                # product_amount가 0 또는 None인 안전 처리: 소비 입력이 있으면 그 비율을, 없으면 균등분배
                 consumers = len(consumption_data)
-                safe_ratio = (1.0 / consumers) if consumers > 0 else 0.0
-                process_ratio = safe_ratio if total_consumption == 0 else (consumption_amount / total_consumption)
-                process_emission = product_emission * process_ratio
-            
-            # 7. 공정의 자체 배출량에 추가
-            total_process_emission = process_data['attrdir_em'] + process_emission
-            
+                if total_consumption > 0:
+                    process_ratio = (consumption_amount / total_consumption)
+                elif consumers > 0:
+                    process_ratio = 1.0 / consumers
+                else:
+                    process_ratio = 0.0
+
+            process_emission = product_emission * process_ratio
+
+            # 7. 공정 누적 배출량은 덮어쓰기 대신 가산한다
+            current_cumulative = process_data.get('cumulative_emission') or process_data['attrdir_em']
+            total_process_emission = current_cumulative + process_emission
+
             logger.info(f"🧮 제품→공정 배출량 계산 (dataallocation.mdc 규칙 3번):")
             logger.info(f"  제품 {source_product_id} 총량: {product_amount}")
             logger.info(f"  제품 {source_product_id} 판매량: {product_sell}")
@@ -248,9 +253,9 @@ class EdgeService:
             logger.info(f"  소비 비율(입력/기본): {consumption_ratio}")
             logger.info(f"  할당량: {allocated_amount}")
             logger.info(f"  제품 {source_product_id} 배출량: {product_emission}")
-            logger.info(f"  공정 {target_process_id} 기존 배출량: {process_data['attrdir_em']}")
+            logger.info(f"  공정 {target_process_id} 기존 누적/자체: {current_cumulative}")
             logger.info(f"  공정 {target_process_id} 추가 배출량: {process_emission} (분배비율 {process_ratio})")
-            logger.info(f"  공정 {target_process_id} 최종 배출량: {total_process_emission}")
+            logger.info(f"  공정 {target_process_id} 최종 누적 배출량: {total_process_emission}")
             
             # 8. 공정의 배출량 업데이트
             success = await self.repository.update_process_cumulative_emission(target_process_id, total_process_emission)
