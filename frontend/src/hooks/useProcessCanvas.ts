@@ -298,6 +298,10 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
         productData: product,  // 🔴 수정: productData를 올바르게 설정
         // 제품 배출량 표시용
         attr_em: (product as any)?.attr_em || 0,
+        // 프리뷰 수치(생산량/판매량) 초기값을 즉시 세팅하여 0 표시를 방지
+        product_amount: Number((product as any)?.product_amount ?? 0),
+        product_sell: Number((product as any)?.product_sell ?? 0),
+        product_eusell: Number((product as any)?.product_eusell ?? 0),
         install_id: selectedInstall?.id,
         onClick: () => handleProductNodeClick(product),
         // 🔴 추가: ProductNode가 기대하는 추가 데이터
