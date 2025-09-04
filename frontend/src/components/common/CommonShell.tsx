@@ -55,10 +55,10 @@ const CommonShell: React.FC<CommonShellProps> = ({ children }) => {
       current: pathname.startsWith('/cbam'),
       description: 'CBAM 보고서 및 계산',
       children: [
-        { name: '투입물', href: '/cbam?tab=overview', key: 'overview', icon: ClipboardList },
-        { name: '사업장관리', href: '/cbam?tab=install', key: 'install', icon: Factory },
-        { name: '산정경계설정', href: '/cbam?tab=boundary', key: 'boundary', icon: Workflow },
-        { name: '보고서', href: '/cbam?tab=reports', key: 'reports', icon: FileText },
+        { name: '투입물', href: '/cbam', key: 'overview', icon: ClipboardList },
+        { name: '사업장관리', href: '/cbam/install', key: 'install', icon: Factory },
+        { name: '산정경계설정', href: '/cbam/process-manager', key: 'boundary', icon: Workflow },
+        { name: '보고서', href: '/cbam/report', key: 'reports', icon: FileText },
       ],
     },
     {

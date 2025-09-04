@@ -27,15 +27,7 @@ export default function CBAMPage() {
   // 산정경계설정 내부 전환 플래그
   const [showBoundaryInline, setShowBoundaryInline] = useState(false);
 
-  // 쿼리 파라미터(tab) 동기화 - 브라우저에서만 읽기(SSG시 Suspense 회피)
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const tab = (new URLSearchParams(window.location.search).get('tab') || '').toLowerCase();
-      if (tab === 'overview' || tab === 'install' || tab === 'boundary' || tab === 'reports' || tab === 'settings') {
-        setActiveTab(tab as any);
-      }
-    }
-  }, []);
+  // 기본 탭은 투입물
 
   // 🔴 추가: 데이터 타입 변환 함수
   const normalizeDummyData = (rawData: any[]): DummyData[] => {
