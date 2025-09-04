@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import CommonShell from '@/components/common/CommonShell';
 import axiosClient from '@/lib/axiosClient';
 import { RefreshCw, ArrowRight } from 'lucide-react';
@@ -8,13 +9,13 @@ import { DummyData } from '@/hooks/useDummyData';
 // 시설군 관리 페이지(클라이언트 컴포넌트)를 내부 뷰로 임베드
 import InstallPage from './install/page';
 import ProcessManager from '@/components/cbam/ProcessManager';
-import CbamSidebar from '@/components/cbam/CbamSidebar';
 
 // ============================================================================
 // 🎯 CBAM 관리 페이지
 // ============================================================================
 
 export default function CBAMPage() {
+  const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState<
     'overview' | 'install' | 'boundary' | 'reports' | 'settings'
   >('overview');
@@ -27,6 +28,14 @@ export default function CBAMPage() {
   const [showInstallInline, setShowInstallInline] = useState(false);
   // 산정경계설정 내부 전환 플래그
   const [showBoundaryInline, setShowBoundaryInline] = useState(false);
+
+  // 쿼리 파라미터(tab)에 따라 활성 탭 동기화
+  useEffect(() => {
+    const tab = (searchParams.get('tab') || '').toLowerCase();
+    if (tab === 'overview' || tab === 'install' || tab === 'boundary' || tab === 'reports' || tab === 'settings') {
+      setActiveTab(tab as any);
+    }
+  }, [searchParams]);
 
   // 🔴 추가: 데이터 타입 변환 함수
   const normalizeDummyData = (rawData: any[]): DummyData[] => {
@@ -290,28 +299,21 @@ export default function CBAMPage() {
 
   return (
     <CommonShell>
-      <div className="flex">
-        {/* 좌측 사이드바 */}
-        <CbamSidebar activeTab={activeTab} onSelect={setActiveTab} />
-        {/* 메인 콘텐츠 */}
-        <main className="flex-1">
-          <div className='space-y-6 px-4 sm:px-6 lg:px-8 py-6'>
-            {/* 페이지 헤더 */}
-            <div className='flex flex-col gap-3'>
-              <h1 className='stitch-h1 text-3xl font-bold'>CBAM 관리</h1>
-              <p className='stitch-caption'>
-                탄소국경조정메커니즘(CBAM) 프로세스 및 계산 관리
-              </p>
-            </div>
+      <div className='space-y-6 px-4 sm:px-6 lg:px-8 py-6'>
+        {/* 페이지 헤더 */}
+        <div className='flex flex-col gap-3'>
+          <h1 className='stitch-h1 text-3xl font-bold'>CBAM 관리</h1>
+          <p className='stitch-caption'>
+            탄소국경조정메커니즘(CBAM) 프로세스 및 계산 관리
+          </p>
+        </div>
 
-            {/* 탭 콘텐츠 */}
-            {activeTab === 'overview' && renderOverview()}
-            {activeTab === 'install' && renderInstall()}
-            {activeTab === 'boundary' && renderBoundary()}
-            {activeTab === 'reports' && renderReports()}
-            {activeTab === 'settings' && renderSettings()}
-          </div>
-        </main>
+        {/* 콘텐츠 */}
+        {activeTab === 'overview' && renderOverview()}
+        {activeTab === 'install' && renderInstall()}
+        {activeTab === 'boundary' && renderBoundary()}
+        {activeTab === 'reports' && renderReports()}
+        {activeTab === 'settings' && renderSettings()}
       </div>
     </CommonShell>
   );

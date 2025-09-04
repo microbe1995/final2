@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import {
   Menu,
@@ -16,6 +16,9 @@ import {
   LogOut,
   Bell,
   Search,
+  ClipboardList,
+  Factory,
+  Workflow,
 } from 'lucide-react';
 
 interface CommonShellProps {
@@ -25,6 +28,7 @@ interface CommonShellProps {
 const CommonShell: React.FC<CommonShellProps> = ({ children }) => {
   const pathname = usePathname();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
@@ -50,6 +54,12 @@ const CommonShell: React.FC<CommonShellProps> = ({ children }) => {
       icon: FileText,
       current: pathname.startsWith('/cbam'),
       description: 'CBAM 보고서 및 계산',
+      children: [
+        { name: '투입물', href: '/cbam?tab=overview', key: 'overview', icon: ClipboardList },
+        { name: '사업장관리', href: '/cbam?tab=install', key: 'install', icon: Factory },
+        { name: '산정경계설정', href: '/cbam?tab=boundary', key: 'boundary', icon: Workflow },
+        { name: '보고서', href: '/cbam?tab=reports', key: 'reports', icon: FileText },
+      ],
     },
     {
       name: '데이터 업로드',
@@ -76,6 +86,10 @@ const CommonShell: React.FC<CommonShellProps> = ({ children }) => {
   const handleGoHome = () => {
     router.push('/');
   };
+
+  const cbamActiveTab = pathname.startsWith('/cbam')
+    ? (searchParams.get('tab') || 'overview')
+    : null;
 
   // 모바일에서 사이드바 외부 클릭 시 닫기
   useEffect(() => {
@@ -229,29 +243,51 @@ const CommonShell: React.FC<CommonShellProps> = ({ children }) => {
             {/* 사이드바 네비게이션 */}
             <nav className='flex-1 p-4 space-y-2'>
               {navigation.map(item => (
-                <button
-                  key={item.name}
-                  onClick={() => handleNavigation(item.href)}
-                  className={cn(
-                    'w-full text-left p-3 rounded-lg transition-all duration-200 flex items-center gap-3 group',
-                    item.current
-                      ? 'bg-ecotrace-accent text-white'
-                      : 'text-ecotrace-textSecondary hover:text-white hover:bg-ecotrace-secondary/50'
-                  )}
-                >
-                  <item.icon
+                <div key={item.name}>
+                  <button
+                    onClick={() => handleNavigation(item.href)}
                     className={cn(
-                      'w-5 h-5',
+                      'w-full text-left p-3 rounded-lg transition-all duration-200 flex items-center gap-3 group',
                       item.current
-                        ? 'text-white'
-                        : 'text-ecotrace-textSecondary group-hover:text-white'
+                        ? 'bg-ecotrace-accent text-white'
+                        : 'text-ecotrace-textSecondary hover:text-white hover:bg-ecotrace-secondary/50'
                     )}
-                  />
-                  <div className='flex-1'>
-                    <div className='font-medium'>{item.name}</div>
-                    <div className='text-xs opacity-75'>{item.description}</div>
-                  </div>
-                </button>
+                  >
+                    <item.icon
+                      className={cn(
+                        'w-5 h-5',
+                        item.current
+                          ? 'text-white'
+                          : 'text-ecotrace-textSecondary group-hover:text-white'
+                      )}
+                    />
+                    <div className='flex-1'>
+                      <div className='font-medium'>{item.name}</div>
+                      <div className='text-xs opacity-75'>{item.description}</div>
+                    </div>
+                  </button>
+
+                  {/* 하위 메뉴: CBAM 활성 시 표시 */}
+                  {item.children && item.current && (
+                    <div className='mt-1 space-y-1 pl-10'>
+                      {item.children.map((child: any) => (
+                        <button
+                          key={child.key}
+                          onClick={() => handleNavigation(child.href)}
+                          className={cn(
+                            'w-full text-left px-3 py-2 rounded-md text-sm transition-all duration-200 flex items-center gap-2',
+                            cbamActiveTab === child.key
+                              ? 'bg-ecotrace-accent/60 text-white'
+                              : 'text-ecotrace-textSecondary hover:text-white hover:bg-ecotrace-secondary/40'
+                          )}
+                        >
+                          <child.icon className='w-4 h-4' />
+                          {child.name}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
               ))}
             </nav>
 

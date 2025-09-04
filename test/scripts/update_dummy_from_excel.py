@@ -39,44 +39,67 @@ def load_rows_from_excel(excel_path: str) -> List[Tuple[int, str, int]]:
 
     candidates = []
     for ws in wb.worksheets:
-        # Find header row (assume first non-empty row)
+        # Find header row robustly: look up to 30 rows for a row containing likely header tokens
         header_row = None
-        for row in ws.iter_rows(min_row=1, max_row=10, values_only=True):
-            if row and any(cell is not None for cell in row):
-                header_row = [str(c).strip() if c is not None else '' for c in row]
+        def _norm(s):
+            s = str(s) if s is not None else ''
+            return s.replace('\n', ' ').replace('\r', ' ').replace('\t', ' ').strip()
+        header_candidates = []
+        for row in ws.iter_rows(min_row=1, max_row=30, values_only=True):
+            if not row or all(c is None for c in row):
+                continue
+            norm = [_norm(c) for c in row]
+            header_candidates.append(norm)
+            tokens = set(norm)
+            likely = {'id', 'ID', '주문처명', '주문처', '발주처', '오더번호', '로트번호', '로트 번호', 'LOT', 'Lot', 'lot'}
+            if tokens.intersection(likely):
+                header_row = norm
                 break
-        if not header_row:
-            continue
+        if not header_row and header_candidates:
+            # fallback: first non-empty
+            header_row = header_candidates[0]
 
-        # Required headers
+        # Build header map with synonyms
         header_to_idx = {name: i for i, name in enumerate(header_row)}
-        required = ['id', '주문처명', '오더번호']
-        if not all(k in header_to_idx for k in required):
-            continue
+        def _find_idx(names):
+            for n in names:
+                if n in header_to_idx:
+                    return header_to_idx[n]
+            return None
 
-        id_idx = header_to_idx['id']
-        buyer_idx = header_to_idx['주문처명']
-        order_idx = header_to_idx['오더번호']
+        id_idx = _find_idx(['id', 'ID'])
+        buyer_idx = _find_idx(['주문처명', '주문처', '발주처', '고객사', '거래처', '주문처 명'])
+        order_idx = _find_idx(['오더번호', '오더 번호', '로트번호', '로트 번호', 'LOT', 'Lot', 'lot', 'Lot No', 'LOT No', 'LotNo', 'Lot Number', 'lot number'])
+
+        # Require id and at least one of buyer/order
+        if id_idx is None or (buyer_idx is None and order_idx is None):
+            continue
 
         for row in ws.iter_rows(min_row=2, values_only=True):
             if row is None:
                 continue
             try:
                 rid = row[id_idx]
-                buyer = row[buyer_idx]
-                order_no = row[order_idx]
+                buyer = row[buyer_idx] if buyer_idx is not None else None
+                order_no = row[order_idx] if order_idx is not None else None
 
                 if rid is None:
                     continue
                 rid_int = int(str(rid).strip())
                 buyer_str = None if buyer is None else str(buyer).strip()
-                # allow empty buyer; still update order if provided
+                # parse order number flexibly (allow strings with spaces/newlines)
                 if order_no is None or str(order_no).strip() == '':
                     # treat empty as NULL -> skip setting numeric if not provided
                     # we still include in batch with None to set NULL
                     order_int = None
                 else:
-                    order_int = int(str(order_no).strip())
+                    s = str(order_no).strip()
+                    # if it's purely digits, cast; otherwise try to extract digits
+                    if s.isdigit():
+                        order_int = int(s)
+                    else:
+                        digits = ''.join(ch for ch in s if ch.isdigit())
+                        order_int = int(digits) if digits else None
 
                 candidates.append((rid_int, buyer_str, order_int))
             except Exception:
@@ -91,7 +114,7 @@ def load_rows_from_excel(excel_path: str) -> List[Tuple[int, str, int]]:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description='Update public.dummy from Excel (id, 주문처명, 오더번호).')
+    parser = argparse.ArgumentParser(description='Update public.dummy from Excel (id, 주문처명/주문처, 오더번호/로트번호).')
     parser.add_argument('--excel', required=True, help='Path to Excel file (e.g., masterdb/시연용(인풋)_CBAM 최종.xlsx)')
     parser.add_argument('--database-url', default=os.getenv('DATABASE_URL'), help='PostgreSQL URL')
     args = parser.parse_args()
@@ -107,7 +130,7 @@ def main() -> int:
 
     rows = load_rows_from_excel(excel_path)
     if not rows:
-        print('ERROR: No updatable rows found (requires headers: id, 주문처명, 오더번호).', file=sys.stderr)
+        print('ERROR: No updatable rows found (need id and one of 주문처명/주문처 or 오더번호/로트번호).', file=sys.stderr)
         return 3
 
     affected = asyncio.run(update_dummy_columns(args.database_url, rows))
