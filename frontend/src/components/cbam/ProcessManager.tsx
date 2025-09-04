@@ -120,6 +120,7 @@ function ProcessManagerInner() {
   const [showProductModal, setShowProductModal] = useState(false);
   const [showProcessModalForProduct, setShowProcessModalForProduct] = useState(false);
   const [showProcessModal, setShowProcessModal] = useState(false);
+  const [showPlainProcessModal, setShowPlainProcessModal] = useState(false);
   const [showInputModal, setShowInputModal] = useState(false);
   const [selectedProcessForInput, setSelectedProcessForInput] = useState<Process | null>(null);
 
@@ -169,6 +170,7 @@ function ProcessManagerInner() {
     await addProcessNode(process, products, openInputModal, openInputModal);
     setShowProcessModal(false);
     setShowProcessModalForProduct(false);
+    setShowPlainProcessModal(false);
   }, [addProcessNode, products, openInputModal]);
 
 
@@ -292,6 +294,19 @@ function ProcessManagerInner() {
         >
           <Plus className="h-4 w-4" /> 제품 노드
         </Button>
+        <Button
+          onClick={() => {
+            if (!selectedInstall) {
+              alert('먼저 사업장을 선택해주세요.');
+              return;
+            }
+            setShowPlainProcessModal(true);
+          }}
+          disabled={!selectedInstall}
+          className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg flex items-center gap-2"
+        >
+          <Plus className="h-4 w-4" /> 공정 노드
+        </Button>
         {/* 그룹 노드 버튼, 배출량 정보 새로고침 버튼 제거 */}
 
       </div>
@@ -392,6 +407,19 @@ function ProcessManagerInner() {
           selectedInstall={selectedInstall}
           onProcessSelect={handleProcessSelect}
           onClose={() => setShowProcessModal(false)}
+        />
+      )}
+
+      {showPlainProcessModal && (
+        <ProcessSelector
+          processes={(allProcesses || []).filter((p: any) => p?.install_id === selectedInstall?.id)}
+          allProcesses={allProcesses}
+          products={products}
+          installs={installs}
+          selectedProduct={null as any}
+          selectedInstall={selectedInstall}
+          onProcessSelect={handleProcessSelect}
+          onClose={() => setShowPlainProcessModal(false)}
         />
       )}
 

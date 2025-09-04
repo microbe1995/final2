@@ -88,7 +88,9 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
             product_amount: newFields.product_amount ?? (node.data as any).product_amount,
             productData: {
               ...prevProductData,
-              production_qty: newFields.product_amount ?? prevProductData.production_qty
+              production_qty: newFields.product_amount ?? prevProductData.production_qty,
+              product_sell: newFields.product_sell ?? prevProductData.product_sell,
+              product_eusell: newFields.product_eusell ?? prevProductData.product_eusell
             }
           }
         } as Node;

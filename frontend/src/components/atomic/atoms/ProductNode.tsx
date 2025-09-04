@@ -114,8 +114,12 @@ function ProductNode({
               <span className='font-medium'>{Number(data.product_amount ?? data.productData?.production_qty ?? 0).toLocaleString()} ton</span>
             </div>
             <div className='flex justify-between'>
-              <span>수출량:</span>
-              <span className='font-medium'>{data.productData.export_qty || 0}</span>
+              <span>제품 판매량:</span>
+              <span className='font-medium'>{Number(data.product_sell ?? data.productData?.product_sell ?? 0).toLocaleString()} ton</span>
+            </div>
+            <div className='flex justify-between'>
+              <span>EU 판매량:</span>
+              <span className='font-medium'>{Number(data.product_eusell ?? data.productData?.product_eusell ?? 0).toLocaleString()} ton</span>
             </div>
             {data.has_produce_edge && typeof data.attr_em !== 'undefined' && (
               <div className='flex justify-between'>

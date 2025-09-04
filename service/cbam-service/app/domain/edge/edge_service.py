@@ -222,9 +222,9 @@ class EdgeService:
             else:
                 product_emission = product_data['attr_em'] or 0.0
 
-            # 최종 가중치 = 각 소비자 비율(consumption_ratio)
-            # 제품 프리뷰(product_emission)는 이미 to_next 비율이 반영된 값
-            process_ratio = consumption_ratio
+            # 최종 가중치 = (실투입비율 to_next/product_amount) × (소비자 분배 비율)
+            to_next_share = (to_next_process / product_amount) if product_amount > 0 else 0.0
+            process_ratio = to_next_share * consumption_ratio
             process_emission = product_emission * process_ratio
 
             # 7. 공정 누적 배출량은 덮어쓰기 대신 가산한다
@@ -239,7 +239,8 @@ class EdgeService:
             logger.info(f"  공정 {target_process_id} 소비량: {consumption_amount}")
             logger.info(f"  전체 소비량: {total_consumption}")
             logger.info(f"  소비 비율(입력/기본): {consumption_ratio}")
-            logger.info(f"  최종 분배비율(process_ratio): {process_ratio} (제품 프리뷰는 to_next 반영)")
+            logger.info(f"  실투입비율(to_next/amount): {to_next_share}")
+            logger.info(f"  최종 분배비율(process_ratio): {process_ratio}")
             logger.info(f"  할당량: {allocated_amount}")
             logger.info(f"  제품 {source_product_id} 배출량: {product_emission}")
             logger.info(f"  공정 {target_process_id} 기존 누적/자체: {current_cumulative}")
