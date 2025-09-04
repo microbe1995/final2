@@ -361,6 +361,18 @@ class CalculationService:
                 await self.calc_repository.update_product_attr_emission(pid, float(pdata['total_emission']))
                 updated_product_ids.append(pid)
 
+            # 권장 수정: 누적값 일관 반영을 위해 Edge 도메인의 전체 전파를 호출한다.
+            # 이유: 프런트는 제품 프리뷰 계산 시 누적(cumulative_emission)을 우선 사용하며,
+            # 계산 서비스의 재계산은 attrdir_em(직접값)만 갱신하므로
+            # 연결 그래프를 따라 누적을 다시 써 주어야 한다.
+            try:
+                from app.domain.edge.edge_service import EdgeService  # 지연 임포트로 순환 참조 방지
+                edge_service = EdgeService(None)
+                await edge_service.initialize()
+                await edge_service.propagate_emissions_full_graph()
+            except Exception as e:
+                logger.warning(f"⚠️ Edge 전파 호출 실패(재계산 후 누적 반영): {e}")
+
             return {
                 "updated_process_ids": list(dict.fromkeys(updated_process_ids)),
                 "updated_product_ids": list(dict.fromkeys(updated_product_ids)),

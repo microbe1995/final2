@@ -507,8 +507,15 @@ class EdgeService:
             
             if success:
                 logger.info(f"✅ 엣지 {edge_id} 삭제 완료")
-                
-                # 엣지 삭제 후 전체 그래프 배출량 전파 실행
+                # 권장 수정: 삭제 직후 모든 공정의 누적값을 0으로 초기화 후 전파
+                # (이전 연결로 인해 DB에 남아 있는 누적값이 제품 프리뷰에 반영되는 문제 방지)
+                try:
+                    logger.info("🧹 누적 배출량 초기화 시작 (모든 공정)")
+                    await self.repository.reset_all_cumulative_emission()
+                except Exception as e:
+                    logger.warning(f"⚠️ 누적 배출량 초기화 중 경고: {e}")
+
+                # 초기화 후, 현재 그래프 기준으로 다시 전파하여 일관된 상태 보장
                 logger.info("🔄 엣지 변경으로 인한 전체 그래프 배출량 전파 시작")
                 propagation_result = await self.propagate_emissions_full_graph()
                 
