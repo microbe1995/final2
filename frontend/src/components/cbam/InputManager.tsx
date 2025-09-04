@@ -34,7 +34,7 @@ interface InputResult {
 
 export default function InputManager({ selectedProcess, onClose, onDataSaved }: InputManagerProps) {
   // Fuel Master API Hook
-  const { getFuelFactor } = useFuelMasterAPI();
+  const { getFuelFactor, searchFuels } = useFuelMasterAPI();
   const { autoMapMaterialFactor } = useMaterialMasterAPI();
   const { getMaterialsFor, getFuelsFor } = useDummyData();
 
@@ -161,8 +161,8 @@ export default function InputManager({ selectedProcess, onClose, onDataSaved }: 
     // 선택한 항목이 연료(Fuel Master 매칭)인지 확인 → 연료면 자동 매핑 금지
     let isFuel = false;
     try {
-      const fuel = await getFuelFactor(name);
-      isFuel = !!(fuel && (fuel as any).found);
+      const suggestions = await searchFuels(name);
+      isFuel = Array.isArray(suggestions) && suggestions.length > 0;
     } catch {
       isFuel = false;
     }
@@ -195,7 +195,7 @@ export default function InputManager({ selectedProcess, onClose, onDataSaved }: 
       setMatdirForm(prev => ({ ...prev, factor: 0 }));
       setMaterialAutoFactorStatus(`❌ 배출계수 조회 실패: ${name}`);
     }
-  }, [materialOptions, autoMapMaterialFactor, getFuelFactor]);
+  }, [materialOptions, autoMapMaterialFactor, searchFuels]);
 
   const handleMatdirNameBlur = useCallback(async () => {
     // 드롭다운 선택이므로 blur 시 추가 조회 없음
@@ -609,7 +609,6 @@ export default function InputManager({ selectedProcess, onClose, onDataSaved }: 
                             <span className="text-white font-medium">{result.name}</span>
                           </div>
                           <div className="flex gap-2">
-                            <button onClick={() => startEditing(result)} className="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded">수정</button>
                             <button onClick={() => deleteResult(result)} className="px-2 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded">삭제</button>
                           </div>
                         </div>
