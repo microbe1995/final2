@@ -69,8 +69,9 @@ function ProductNode({
     // data에 onClick 함수가 있으면 먼저 실행
     if (data.onClick) {
       data.onClick();
+      return;
     }
-    // 그 다음 일반적인 onClick 핸들러 실행
+    // onClick이 없는 경우 기본 동작 없음 (향후 필요 시 확장)
     if (onClick) onClick({ data, selected });
   };
 

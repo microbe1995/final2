@@ -61,7 +61,11 @@ function ProcessNode({
 
   // 읽기 전용 공정인지 확인
   const isReadOnly = data.is_readonly || false;
-  const isExternalProcess = data.install_id !== data.current_install_id;
+  // 두 값이 모두 정의된 경우에만 외부 사업장으로 판단 (undefined로 인해 클릭이 막히는 문제 방지)
+  const isExternalProcess =
+    typeof data.install_id === 'number' && typeof data.current_install_id === 'number'
+      ? data.install_id !== data.current_install_id
+      : false;
   
   // 외부 사업장의 공정이면 읽기 전용으로 설정
   const effectiveVariant = isExternalProcess ? 'readonly' : finalVariant;
@@ -82,6 +86,12 @@ function ProcessNode({
     // data에 onClick 함수가 있으면 먼저 실행
     if (data.onClick) {
       data.onClick();
+      return;
+    }
+    // onClick이 없는 경우 투입량 입력 핸들러를 기본 동작으로 사용
+    if (!data.onClick && data.onMatDirClick && data.processData) {
+      data.onMatDirClick(data.processData);
+      return;
     }
     // 그 다음 일반적인 onClick 핸들러 실행
     if (onClick) onClick({ data, selected });

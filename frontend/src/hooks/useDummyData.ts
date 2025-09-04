@@ -131,12 +131,71 @@ export const useDummyData = () => {
     }
   }, []);
 
+  // 🔴 추가: 기간/공정/제품명 기준으로 더미 투입물(원료 중심) 목록 조회
+  const getMaterialsFor = useCallback(
+    async (
+      params: {
+        processName?: string;
+        startDate?: string | null;
+        endDate?: string | null;
+        productNames?: string[];
+      }
+    ) => {
+      setLoading(true);
+      setError(null);
+      try {
+        const response = await axiosClient.get('/api/v1/cbam/dummy');
+        const payload = response.data;
+        const dummyData: DummyData[] = Array.isArray(payload) ? payload : (payload?.data || []);
+
+        const { processName, startDate, endDate, productNames } = params || {};
+        const start = startDate ? new Date(startDate) : null;
+        const end = endDate ? new Date(endDate) : null;
+
+        // 필터링: 공정, 기간, 제품명(옵션), 투입물명 존재
+        const filtered = dummyData.filter((row) => {
+          if (!row.투입물명) return false;
+          if (processName && row.공정 !== processName) return false;
+          if (start && row.투입일 && new Date(row.투입일) < start) return false;
+          if (end && row.종료일 && new Date(row.종료일) > end) return false;
+          if (productNames && productNames.length > 0) {
+            if (!row.생산품명 || !productNames.includes(row.생산품명)) return false;
+          }
+          return true;
+        });
+
+        // 이름 기준 유니크 목록과 대표 수량/단위 집계
+        const map = new Map<string, { name: string; amount: number; unit: string }>();
+        for (const row of filtered) {
+          const key = row.투입물명 as string;
+          const prev = map.get(key);
+          if (prev) {
+            map.set(key, { name: key, amount: prev.amount + (row.수량 || 0), unit: prev.unit || row.단위 || '' });
+          } else {
+            map.set(key, { name: key, amount: row.수량 || 0, unit: row.단위 || '' });
+          }
+        }
+
+        return Array.from(map.values());
+      } catch (err: any) {
+        const errorMessage = err.response?.data?.detail || err.message || '투입물 조회에 실패했습니다.';
+        setError(errorMessage);
+        console.error('❌ 투입물(원료) 조회 실패:', err);
+        return [] as { name: string; amount: number; unit: string }[];
+      } finally {
+        setLoading(false);
+      }
+    },
+    []
+  );
+
   return {
     loading,
     error,
     getProcessesByProduct,
     getProductPeriods,
     getProductPeriod,
-    getProductQuantity
+    getProductQuantity,
+    getMaterialsFor
   };
 };

@@ -6,7 +6,7 @@ import Input from '@/components/atomic/atoms/Input';
 import axiosClient, { apiEndpoints } from '@/lib/axiosClient';
 import { useRouter } from 'next/navigation';
 import CbamLayout from '@/components/cbam/CbamLayout';
-import ProductManager from '@/components/cbam/ProductManager';
+import InstallProductsPage from '@/app/(protected)/cbam/install/[id]/products/page';
 
 // ============================================================================
 // 🏭 시설군 관리 페이지
@@ -424,7 +424,7 @@ export default function InstallPage() {
                 </button>
               </div>
               <div className="h-[70vh] overflow-y-auto">
-                <ProductManager installId={showProductManagerFor as number} />
+                <InstallProductsPage overrideInstallId={showProductManagerFor as number} />
               </div>
             </div>
           </div>
