@@ -189,10 +189,12 @@ class EdgeService:
                     break
             
             # 4. to_next_process 계산 (dataallocation.mdc 규칙 3번)
-            product_amount = product_data['product_amount']
-            product_sell = product_data['product_sell']
-            product_eusell = product_data['product_eusell']
+            product_amount = float(product_data['product_amount'] or 0.0)
+            product_sell = float(product_data['product_sell'] or 0.0)
+            product_eusell = float(product_data['product_eusell'] or 0.0)
             to_next_process = product_amount - product_sell - product_eusell
+            if to_next_process < 0:
+                to_next_process = 0.0
             
             # 5. 여러 공정으로 소비될 경우 생산량 비율에 따라 분배
             total_consumption = sum([
@@ -201,18 +203,11 @@ class EdgeService:
             ])
             
             if total_consumption > 0:
-                consumption_ratio = consumption_amount / total_consumption
-                allocated_amount = to_next_process * consumption_ratio
+                consumption_ratio = (consumption_amount / total_consumption) if total_consumption > 0 else 0.0
             else:
-                # 소비량이 전부 0인 경우: 연결된 공정 수로 균등 분배(명시적 소비량 없을 때의 기본 정책)
                 consumers = len(consumption_data)
-                if consumers > 0:
-                    consumption_ratio = 1.0 / consumers
-                    allocated_amount = to_next_process * consumption_ratio
-                else:
-                    # 소비자가 없다면 배분 불가
-                    consumption_ratio = 0.0
-                    allocated_amount = 0.0
+                consumption_ratio = (1.0 / consumers) if consumers > 0 else 0.0
+            allocated_amount = to_next_process * consumption_ratio
             
             # 6. 배출량 계산 (제품 배출량 * 소비 비율)
             # 저장된 attr_em 대신 현재 그래프 상태 기준 프리뷰 합계를 우선 사용
@@ -223,20 +218,12 @@ class EdgeService:
             else:
                 product_emission = product_data['attr_em'] or 0.0
 
-            # 요구사항: 분배 비율은 (생산량-판매량-EU판매량)/생산량 비율이 아니라
-            # "allocated_amount / product_amount"를 사용한다. 단, product_amount=0은 안전 처리.
-            if product_amount and product_amount > 0:
-                process_ratio = allocated_amount / product_amount
+            # 최종 가중치 = (to_next_process / product_amount) * (각 소비자 비율)
+            if product_amount > 0:
+                to_next_share = to_next_process / product_amount
             else:
-                # product_amount가 0 또는 None인 안전 처리: 소비 입력이 있으면 그 비율을, 없으면 균등분배
-                consumers = len(consumption_data)
-                if total_consumption > 0:
-                    process_ratio = (consumption_amount / total_consumption)
-                elif consumers > 0:
-                    process_ratio = 1.0 / consumers
-                else:
-                    process_ratio = 0.0
-
+                to_next_share = 0.0
+            process_ratio = to_next_share * consumption_ratio
             process_emission = product_emission * process_ratio
 
             # 7. 공정 누적 배출량은 덮어쓰기 대신 가산한다
@@ -251,6 +238,8 @@ class EdgeService:
             logger.info(f"  공정 {target_process_id} 소비량: {consumption_amount}")
             logger.info(f"  전체 소비량: {total_consumption}")
             logger.info(f"  소비 비율(입력/기본): {consumption_ratio}")
+            logger.info(f"  to_next 비율: {(to_next_process / product_amount) if product_amount > 0 else 0.0}")
+            logger.info(f"  최종 분배비율(process_ratio): {process_ratio}")
             logger.info(f"  할당량: {allocated_amount}")
             logger.info(f"  제품 {source_product_id} 배출량: {product_emission}")
             logger.info(f"  공정 {target_process_id} 기존 누적/자체: {current_cumulative}")
