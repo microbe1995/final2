@@ -1,6 +1,14 @@
 {
   "extends": ["next/core-web-vitals"],
   "rules": {
+    "no-console": ["warn", { "allow": ["warn", "error"] }],
+    "react-hooks/exhaustive-deps": "off"
+  }
+}
+
+{
+  "extends": ["next/core-web-vitals"],
+  "rules": {
     "no-console": "warn"
   }
 }

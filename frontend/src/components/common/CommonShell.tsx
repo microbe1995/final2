@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import {
   Menu,
@@ -28,10 +28,10 @@ interface CommonShellProps {
 const CommonShell: React.FC<CommonShellProps> = ({ children }) => {
   const pathname = usePathname();
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
+  const [cbamActiveTab, setCbamActiveTab] = useState<string | null>(null);
 
   const navigation = [
     {
@@ -87,9 +87,15 @@ const CommonShell: React.FC<CommonShellProps> = ({ children }) => {
     router.push('/');
   };
 
-  const cbamActiveTab = pathname.startsWith('/cbam')
-    ? (searchParams.get('tab') || 'overview')
-    : null;
+  // Safely read query on client to avoid Suspense requirement during SSG
+  useEffect(() => {
+    if (typeof window !== 'undefined' && pathname.startsWith('/cbam')) {
+      const tab = new URLSearchParams(window.location.search).get('tab') || 'overview';
+      setCbamActiveTab(tab);
+    } else {
+      setCbamActiveTab(null);
+    }
+  }, [pathname]);
 
   // 모바일에서 사이드바 외부 클릭 시 닫기
   useEffect(() => {
