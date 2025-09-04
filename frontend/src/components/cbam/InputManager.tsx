@@ -3,6 +3,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import axiosClient, { apiEndpoints } from '@/lib/axiosClient';
 import { useFuelMasterAPI } from '@/hooks/useFuelMasterAPI';
+import { useMaterialMasterAPI } from '@/hooks/useMaterialMasterAPI';
 import { useDummyData } from '@/hooks/useDummyData';
 
 interface InputManagerProps {
@@ -34,6 +35,7 @@ interface InputResult {
 export default function InputManager({ selectedProcess, onClose, onDataSaved }: InputManagerProps) {
   // Fuel Master API Hook
   const { getFuelFactor } = useFuelMasterAPI();
+  const { autoMapMaterialFactor } = useMaterialMasterAPI();
   const { getMaterialsFor, getFuelsFor } = useDummyData();
 
   // 현재 활성 탭
@@ -156,9 +158,25 @@ export default function InputManager({ selectedProcess, onClose, onDataSaved }: 
   // ============================================================================
 
   const handleMatdirNameChange = useCallback(async (name: string) => {
-    // 드롭다운 선택만 허용하되, 상태 업데이트는 그대로 유지
-    setMatdirForm(prev => ({ ...prev, name }));
-  }, []);
+    // 드롭다운 선택 시: 더미에서 수량 자동 설정 + 마스터에서 배출계수 자동 설정
+    const matched = materialOptions.find(opt => opt.name === name);
+    setMatdirForm(prev => ({
+      ...prev,
+      name,
+      amount: matched ? Number(matched.amount) || 0 : prev.amount,
+    }));
+    try {
+      const factor = await autoMapMaterialFactor(name);
+      if (factor !== null) {
+        setMatdirForm(prev => ({ ...prev, factor }));
+        setMaterialAutoFactorStatus(`✅ 자동 설정: ${name} (배출계수: ${factor})`);
+      } else {
+        setMaterialAutoFactorStatus(`⚠️ 배출계수를 찾을 수 없음: ${name}`);
+      }
+    } catch {
+      setMaterialAutoFactorStatus(`❌ 배출계수 조회 실패: ${name}`);
+    }
+  }, [materialOptions, autoMapMaterialFactor]);
 
   const handleMatdirNameBlur = useCallback(async () => {
     // 드롭다운 선택이므로 blur 시 추가 조회 없음
