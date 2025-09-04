@@ -398,12 +398,7 @@ export default function InstallPage() {
                     </button>
                   </div>
 
-                  {/* 선택된 시설군의 제품관리 섹션을 같은 페이지에서 표시 */}
-                  {showProductManagerFor === install.id && (
-                    <div className="mt-6 border-t border-white/10 pt-6">
-                      <ProductManager installId={install.id} />
-                    </div>
-                  )}
+                  {/* 버튼만 유지; 모달은 카드 외부에서 렌더링 */}
                 </div>
               ))}
             </div>
@@ -414,6 +409,26 @@ export default function InstallPage() {
             </div>
           )}
         </div>
+
+        {/* 제품 관리 모달 */}
+        {showProductManagerFor !== null && (
+          <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center">
+            <div className="max-w-6xl w-full mx-4 bg-gray-900 border border-gray-700 rounded-lg shadow-xl overflow-hidden">
+              <div className="flex items-center justify-between p-4 border-b border-gray-700">
+                <h4 className="text-white font-semibold">제품 관리</h4>
+                <button
+                  onClick={() => setShowProductManagerFor(null)}
+                  className="text-gray-300 hover:text-white"
+                >
+                  ✕
+                </button>
+              </div>
+              <div className="h-[70vh] overflow-y-auto">
+                <ProductManager installId={showProductManagerFor as number} />
+              </div>
+            </div>
+          </div>
+        )}
           </>
         </div>
       </CbamLayout>

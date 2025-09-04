@@ -221,21 +221,31 @@ export const useProcessManager = () => {
   useEffect(() => {
     if (selectedInstall) {
       console.log(`🔄 사업장 선택됨: ${selectedInstall.install_name} (ID: ${selectedInstall.id})`);
+      // 제품은 별도로 불러오고
       fetchProductsByInstall(selectedInstall.id);
     }
   }, [selectedInstall, fetchProductsByInstall]);
 
+  // 선택된 사업장이 바뀌면, 제품 연결 여부와 관계없이 해당 사업장의 전체 공정을 먼저 로드
   useEffect(() => {
-    if (selectedInstall && products.length > 0) {
-      console.log(`🔄 제품 ${products.length}개 로드됨, 공정 목록 로드 시작`);
-      const timer = setTimeout(() => {
-        fetchProcessesByInstall(selectedInstall.id);
-        fetchAllProcessesByInstall(selectedInstall.id);
-        fetchAllCrossInstallProcesses();
-      }, 100);
-      return () => clearTimeout(timer);
+    if (selectedInstall) {
+      fetchAllProcessesByInstall(selectedInstall.id);
     }
-  }, [selectedInstall, products, fetchProcessesByInstall, fetchAllProcessesByInstall, fetchAllCrossInstallProcesses]);
+  }, [selectedInstall, fetchAllProcessesByInstall]);
+
+  // 제품이 로드되면 제품-연결 공정 및 크로스 공정도 갱신
+  useEffect(() => {
+    if (selectedInstall) {
+      if (products.length > 0) {
+        console.log(`🔄 제품 ${products.length}개 로드됨, 공정 목록 로드 시작`);
+        fetchProcessesByInstall(selectedInstall.id);
+        fetchAllCrossInstallProcesses();
+      } else {
+        // 제품이 없으면 제품-연결 공정 목록은 비워두되, install 전체 공정은 이미 위에서 로드됨
+        setProcesses([]);
+      }
+    }
+  }, [selectedInstall, products, fetchProcessesByInstall, fetchAllCrossInstallProcesses]);
 
   // 컴포넌트 마운트 시 사업장 목록 불러오기
   useEffect(() => {
