@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Download, FileText, Globe, Languages } from 'lucide-react';
+import CommonShell from '@/components/common/CommonShell';
 
 // ============================================================================
 // 🎯 Gas Emission Report 페이지 - 독립적인 완전한 구현
@@ -295,15 +296,19 @@ export default function GasEmissionReportPage() {
 
   const t = texts[language];
 
+  const inputSm = 'w-32 px-2 py-1 bg-white/10 border border-white/20 rounded text-white';
+  const input = 'w-full px-3 py-2 bg-white/10 border border-white/20 rounded text-white';
+  const inputInline = 'px-3 py-2 bg-white/10 border border-white/20 rounded text-white';
+
   return (
-    <div className="min-h-screen bg-white">
-      {/* 헤더 */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
+    <CommonShell>
+      <div className='space-y-6 px-4 sm:px-6 lg:px-8 py-6'>
+        {/* 헤더 카드 */}
+        <div className='stitch-card p-6'>
+          <div className="flex items-center justify-between">
             <div className="flex items-center">
-              <FileText className="h-8 w-8 text-blue-600 mr-3" />
-              <h1 className="text-2xl font-bold text-gray-900">{t.title}</h1>
+              <FileText className="h-8 w-8 text-white mr-3" />
+              <h1 className="text-2xl font-bold text-white">{t.title}</h1>
             </div>
             <div className="flex space-x-3">
               <button
@@ -330,23 +335,21 @@ export default function GasEmissionReportPage() {
             </div>
           </div>
         </div>
-      </div>
 
-      {/* 메인 콘텐츠 */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-white shadow-lg rounded-lg p-8">
+        {/* 메인 카드 */}
+        <div className="bg-white/5 border border-white/10 rounded-lg p-8">
           
           {/* 보고서 헤더 */}
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-4">{t.title}</h1>
-            <div className="flex justify-end space-x-8 text-sm text-gray-600">
+            <h1 className="text-3xl font-bold text-white mb-4">{t.title}</h1>
+            <div className="flex justify-end space-x-8 text-sm text-white/70">
               <div className="flex items-center space-x-2">
                 <span>{t.companyName}</span>
                 <input
                   type="text"
                   value={HARDCODED_DATA.installation[language]}
                   readOnly
-                  className="w-32 px-2 py-1 border border-gray-300 rounded bg-gray-50 text-gray-800"
+                  className={inputSm}
                 />
               </div>
               <div className="flex items-center space-x-2">
@@ -355,7 +358,7 @@ export default function GasEmissionReportPage() {
                   type="date"
                   value="2024-01-15"
                   readOnly
-                  className="w-32 px-2 py-1 border border-gray-300 rounded bg-gray-50 text-gray-800"
+                  className={inputSm}
                 />
               </div>
             </div>
@@ -363,47 +366,47 @@ export default function GasEmissionReportPage() {
 
           {/* 1. 생산 기간 & 시설군 정보 */}
           <div className="mb-8">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">
+            <h2 className="text-xl font-semibold text-white mb-4">
               {t.productionPeriod} & {t.facilityInfo}
             </h2>
             
             {/* 생산 기간 */}
             <div className="mb-6">
-              <h3 className="text-lg font-medium text-gray-800 mb-3">{t.productionPeriod}</h3>
+              <h3 className="text-lg font-medium text-white mb-3">{t.productionPeriod}</h3>
               <div className="flex items-center space-x-4">
                 <input
                   type="date"
                   value="2024-01-01"
                   readOnly
-                  className="px-3 py-2 border border-gray-300 rounded bg-gray-50 text-gray-800"
+                  className={inputInline}
                 />
                 <span>~</span>
                 <input
                   type="date"
                   value="2024-12-31"
                   readOnly
-                  className="px-3 py-2 border border-gray-300 rounded bg-gray-50 text-gray-800"
+                  className={inputInline}
                 />
               </div>
             </div>
 
             {/* 시설군 정보 */}
             <div className="mb-6">
-              <h3 className="text-lg font-medium text-gray-800 mb-3">1. {t.facilityInfo}</h3>
+              <h3 className="text-lg font-medium text-white mb-3">1. {t.facilityInfo}</h3>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-600 mb-1">
+                  <label className="block text-sm font-medium text-white/70 mb-1">
                     {t.workplaceName}
                   </label>
                   <input
                     type="text"
                     value={HARDCODED_DATA.installation[language]}
                     readOnly
-                    className="w-full px-3 py-2 border border-gray-300 rounded bg-gray-50 text-gray-800"
+                    className={input}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-600 mb-1">
+                  <label className="block text-sm font-medium text-white/70 mb-1">
                     {t.address}
                   </label>
                   <div className="space-y-2">
@@ -411,20 +414,20 @@ export default function GasEmissionReportPage() {
                       type="text"
                       value={HARDCODED_DATA.contact.street[language]}
                       readOnly
-                      className="w-full px-3 py-2 border border-gray-300 rounded bg-gray-50 text-gray-800"
+                      className={input}
                     />
                     <div className="grid grid-cols-2 gap-2">
                       <input
                         type="text"
                         value={HARDCODED_DATA.location.country[language]}
                         readOnly
-                        className="px-3 py-2 border border-gray-300 rounded bg-gray-50 text-gray-800"
+                        className={inputInline}
                       />
                       <input
                         type="text"
                         value={HARDCODED_DATA.location.city[language]}
                         readOnly
-                        className="px-3 py-2 border border-gray-300 rounded bg-gray-50 text-gray-800"
+                        className={inputInline}
                       />
                     </div>
                     <div className="grid grid-cols-3 gap-2">
@@ -432,26 +435,26 @@ export default function GasEmissionReportPage() {
                         type="text"
                         value={HARDCODED_DATA.contact.postcode}
                         readOnly
-                        className="px-3 py-2 border border-gray-300 rounded bg-gray-50 text-gray-800"
+                        className={inputInline}
                       />
                       <input
                         type="text"
                         value={HARDCODED_DATA.contact.number[language]}
                         readOnly
-                        className="px-3 py-2 border border-gray-300 rounded bg-gray-50 text-gray-800"
+                        className={inputInline}
                       />
                       <input
                         type="text"
                         value={HARDCODED_DATA.location.unlocode}
                         readOnly
-                        className="px-3 py-2 border border-gray-300 rounded bg-gray-50 text-gray-800"
+                        className={inputInline}
                       />
                     </div>
                     <input
                       type="text"
                       value={`${HARDCODED_DATA.location.coordinates.latitude}, ${HARDCODED_DATA.location.coordinates.longitude}`}
                       readOnly
-                      className="w-full px-3 py-2 border border-gray-300 rounded bg-gray-50 text-gray-800"
+                      className={input}
                     />
                   </div>
                 </div>
@@ -464,30 +467,30 @@ export default function GasEmissionReportPage() {
                          
           {/* 2. 연락처 */}
           <div className="mb-8">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">
+            <h2 className="text-xl font-semibold text-white mb-4">
               2. {t.contact}
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-600 mb-2">
+                <label className="block text-sm font-medium text-white/70 mb-2">
                   {t.email}
                 </label>
                 <input
                   type="email"
                   value={HARDCODED_DATA.contact.email}
                   readOnly
-                  className="w-full px-3 py-2 border border-gray-300 rounded bg-gray-50 text-gray-800"
+                  className={input}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-600 mb-2">
+                <label className="block text-sm font-medium text-white/70 mb-2">
                   {t.representativeNumber}
                 </label>
                 <input
                   type="text"
                   value={HARDCODED_DATA.contact.telephone}
                   readOnly
-                  className="w-full px-3 py-2 border border-gray-300 rounded bg-gray-50 text-gray-800"
+                  className={input}
                 />
               </div>
             </div>
@@ -495,16 +498,16 @@ export default function GasEmissionReportPage() {
 
           {/* 푸터 */}
           <div className="flex justify-between items-end">
-            <div className="text-xs text-gray-500 max-w-md">
+            <div className="text-xs text-white/60 max-w-md">
               {t.disclaimer}
             </div>
             <div className="text-center">
-              <div className="border border-gray-300 w-32 h-20 mb-2"></div>
-              <p className="text-sm text-gray-600">{t.companySeal}</p>
+              <div className="border border-white/30 w-32 h-20 mb-2"></div>
+              <p className="text-sm text-white/70">{t.companySeal}</p>
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </CommonShell>
   );
 }

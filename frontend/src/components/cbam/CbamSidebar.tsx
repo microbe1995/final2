@@ -29,7 +29,7 @@ export default function CbamSidebar({ embedded = false }: Props) {
               <Link
                 key={item.name}
                 href={item.href}
-                className={`w-full text-left p-3 rounded-lg transition-all duration-200 flex items-center gap-3 group ${
+                className={`w-full text-left p-4 rounded-lg transition-all duration-200 flex items-center gap-3 group min-h-[56px] ${
                   isActive
                     ? 'bg-ecotrace-accent text-white'
                     : 'text-ecotrace-textSecondary hover:text-white hover:bg-ecotrace-secondary/50'
