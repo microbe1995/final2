@@ -10,6 +10,8 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
 
   // 다중 사업장 캔버스 관리
   const [installCanvases, setInstallCanvases] = useState<{[key: number]: {nodes: Node[], edges: Edge[]}}>({});
+  // 서버 복원: 마지막 저장된 포지션/구성(없으면 그리드 배치)
+  const fetchingRef = useRef<boolean>(false);
   
   // activeInstallId를 selectedInstall에서 계산
   const activeInstallId = selectedInstall?.id || null;
@@ -54,6 +56,93 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
       }
       
       prevInstallIdRef.current = selectedInstall.id;
+
+      // 서버에서 노드/엣지 복원(초기 진입이거나 저장본이 없을 때)
+      if ((!canvasData.nodes.length && !canvasData.edges.length) && !fetchingRef.current) {
+        fetchingRef.current = true;
+        (async () => {
+          try {
+            // 1) 설치의 제품/공정 목록
+            const [productsResp, processesResp, edgesResp] = await Promise.all([
+              axiosClient.get(`${apiEndpoints.cbam.product.list}?install_id=${selectedInstall.id}`),
+              axiosClient.get(apiEndpoints.cbam.process.list),
+              axiosClient.get(apiEndpoints.cbam.edge.list)
+            ]);
+            const products: any[] = (productsResp?.data || []).filter((p: any) => p.install_id === selectedInstall.id);
+            const processes: any[] = (processesResp?.data || []).filter((pr: any) => (pr.products || []).some((p: any) => products.find(pp => pp.id === p.id)));
+            const edgesAll: any[] = edgesResp?.data || [];
+
+            // 2) 그리드 배치(간단): 제품 왼쪽, 공정 오른쪽으로 나열
+            const baseX = 200; const baseY = 300; const gapX = 420; const gapY = 180;
+            const productNodes: Node[] = products.map((p, idx) => ({
+              id: `product-${p.id}-${idx}`,
+              type: 'product',
+              position: { x: baseX, y: baseY + idx * gapY },
+              data: {
+                id: p.id,
+                nodeId: `product-${p.id}-${idx}`,
+                label: p.product_name,
+                description: `제품: ${p.product_name}`,
+                variant: 'product',
+                productData: p,
+                product_amount: p.product_amount,
+                product_sell: p.product_sell,
+                product_eusell: p.product_eusell,
+                attr_em: p.attr_em || 0,
+                install_id: selectedInstall.id,
+              }
+            }));
+            const processNodes: Node[] = processes.map((pr, idx) => ({
+              id: `process-${pr.id}-${idx}`,
+              type: 'process',
+              position: { x: baseX + gapX, y: baseY + idx * gapY },
+              data: {
+                id: pr.id,
+                nodeId: `process-${pr.id}-${idx}`,
+                label: pr.process_name,
+                description: `공정: ${pr.process_name}`,
+                variant: 'default',
+                processData: pr,
+              }
+            }));
+
+            // 3) 엣지 복원: 설치 범위의 제품/공정만 연결 생성
+            const nodeIdBy = (type: 'product'|'process', id: number) => {
+              const list = type === 'product' ? productNodes : processNodes;
+              const found = list.find(n => (n.data as any)?.id === id);
+              return found?.id;
+            };
+            const edgesRestored: Edge[] = edgesAll
+              .filter((e: any) => ['continue','produce','consume'].includes(e.edge_kind))
+              .map((e: any, i: number) => {
+                const sType = e.source_node_type as 'process'|'product';
+                const tType = e.target_node_type as 'process'|'product';
+                const sid = nodeIdBy(sType, e.source_id);
+                const tid = nodeIdBy(tType, e.target_id);
+                if (!sid || !tid) return null as any;
+                return {
+                  id: `edge-${e.id}-${i}`,
+                  source: sid,
+                  target: tid,
+                  type: 'custom',
+                  data: { edgeData: e },
+                } as Edge;
+              })
+              .filter(Boolean) as Edge[];
+
+            const restoredNodes = [...productNodes, ...processNodes];
+            setNodes(restoredNodes);
+            setEdges(edgesRestored);
+            prevNodesRef.current = restoredNodes;
+            prevEdgesRef.current = edgesRestored;
+            setInstallCanvases(prev => ({ ...prev, [selectedInstall.id]: { nodes: restoredNodes, edges: edgesRestored } }));
+          } catch (e) {
+            console.warn('⚠️ 서버 복원 실패:', e);
+          } finally {
+            fetchingRef.current = false;
+          }
+        })();
+      }
     }
   }, [selectedInstall?.id, installCanvases, setNodes, setEdges]);
 
