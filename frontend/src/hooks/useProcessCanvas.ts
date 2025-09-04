@@ -457,6 +457,26 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
         }
       }
       if (!data) return;
+
+      // 실제 입력 테이블 기준 총합과 DB 저장값 차이를 교차검증하여 정합성 보장
+      try {
+        const [matTotResp, fuelTotResp] = await Promise.all([
+          axiosClient.get(apiEndpoints.cbam.matdir.totalByProcess(processId)).catch(() => null),
+          axiosClient.get(apiEndpoints.cbam.fueldir.totalByProcess(processId)).catch(() => null)
+        ]);
+        const latestMatTotal = Number(matTotResp?.data?.total_matdir_emission ?? 0) || 0;
+        const latestFuelTotal = Number(fuelTotResp?.data?.total_fueldir_emission ?? 0) || 0;
+        const savedMatTotal = Number(data.total_matdir_emission ?? data.total_matdir ?? 0) || 0;
+        const savedFuelTotal = Number(data.total_fueldir_emission ?? data.total_fueldir ?? 0) || 0;
+        const mismatch = Math.abs(latestMatTotal - savedMatTotal) > 1e-6 || Math.abs(latestFuelTotal - savedFuelTotal) > 1e-6;
+        if (mismatch) {
+          try {
+            await axiosClient.post(apiEndpoints.cbam.calculation.process.attrdir(processId));
+            const latest = await axiosClient.get(apiEndpoints.cbam.edgePropagation.processEmission(processId));
+            data = latest?.data?.data || data;
+          } catch (_) {}
+        }
+      } catch (_) {}
       // 합계가 0이어도 실제 계산 결과일 수 있으므로
       // "값 존재 여부"를 기준으로 표시값을 결정한다.
       const hasMatPart = ('total_matdir_emission' in data) || ('total_matdir' in data);
@@ -994,7 +1014,16 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
             await refreshProductEmission(finalTargetId);
             setProductProduceFlag(finalTargetId, true);
           } else if (edgeData.edge_kind === 'consume') {
-            // 제품→공정: 전체 전파 후 타겟 공정 누적을 먼저 갱신, 이후 해당 공정이 생산하는 제품을 마지막에 갱신(레이스 방지)
+            // 제품→공정: 전용 전파 API로 즉시 누적 반영 후, 전체 전파로 일관성 확보
+            try {
+              await axiosClient.post(
+                apiEndpoints.cbam.edgePropagation.consume,
+                null,
+                { params: { source_product_id: finalSourceId, target_process_id: finalTargetId } }
+              );
+            } catch (e) {
+              console.warn('⚠️ consume 전파 실패, 전체 전파로 폴백:', e);
+            }
             try { await axiosClient.post(apiEndpoints.cbam.edgePropagation.fullPropagate, {}); } catch (e) { console.warn('⚠️ 전체 전파 실패:', e); }
             await refreshProductEmission(finalSourceId);
             await refreshProcessEmission(finalTargetId);

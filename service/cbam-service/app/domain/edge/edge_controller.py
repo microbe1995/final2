@@ -283,6 +283,47 @@ async def propagate_emissions_continue(
             detail=f"서버 오류: {str(e)}"
         )
 
+@router.post("/propagate-emissions-consume")
+async def propagate_emissions_consume(
+    source_product_id: int,
+    target_process_id: int
+) -> Dict[str, Any]:
+    """
+    제품→공정 배출량 전달을 즉시 수행합니다.
+    (edge_kind = "consume")
+    """
+    try:
+        logger.info(f"🔄 제품 {source_product_id} → 공정 {target_process_id} 배출량 전파 요청")
+
+        edge_service = get_edge_service()
+        success = await edge_service.propagate_emissions_consume(source_product_id, target_process_id)
+
+        if not success:
+            raise HTTPException(
+                status_code=400,
+                detail=f"제품 {source_product_id} → 공정 {target_process_id} 배출량 전달 실패"
+            )
+
+        logger.info(f"✅ 제품 {source_product_id} → 공정 {target_process_id} 배출량 전달 완료")
+        return {
+            "success": True,
+            "message": f"제품 {source_product_id} → 공정 {target_process_id} 배출량 전달 완료",
+            "data": {
+                "source_product_id": source_product_id,
+                "target_process_id": target_process_id,
+                "propagation_time": datetime.now().isoformat()
+            }
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"❌ 제품 {source_product_id} → 공정 {target_process_id} 배출량 전달 실패: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"서버 오류: {str(e)}"
+        )
+
 @router.get("/process-emission/{process_id}")
 async def get_process_emission(
     process_id: int

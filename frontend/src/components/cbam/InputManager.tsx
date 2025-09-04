@@ -434,8 +434,16 @@ export default function InputManager({ selectedProcess, onClose, onDataSaved }: 
           : result
       ));
       
+      // 수정 반영 후 공정 직접귀속배출량 재계산(원료/연료 합계가 변했을 수 있음)
+      try {
+        await axiosClient.post(
+          apiEndpoints.cbam.calculation.process.attrdir(selectedProcess.id)
+        );
+      } catch (_) {}
+
       setEditingResult(null);
       alert('수정이 완료되었습니다!');
+      if (onDataSaved) onDataSaved();
       
     } catch (error: any) {
       console.error('❌ 결과 수정 실패:', error);
@@ -470,6 +478,14 @@ export default function InputManager({ selectedProcess, onClose, onDataSaved }: 
       // 결과 목록에서 제거
       setInputResults(prev => prev.filter(r => r.id !== result.id));
       alert('삭제가 완료되었습니다!');
+
+      // 삭제 후 공정 직접귀속배출량 재계산하여 0으로 정리되도록 보장
+      try {
+        await axiosClient.post(
+          apiEndpoints.cbam.calculation.process.attrdir(selectedProcess.id)
+        );
+      } catch (_) {}
+      if (onDataSaved) onDataSaved();
 
     } catch (error: any) {
       console.error('❌ 결과 삭제 실패:', error);
