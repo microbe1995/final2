@@ -21,13 +21,14 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
   const prevNodesRef = useRef<Node[]>([]);
   const prevEdgesRef = useRef<Edge[]>([]);
 
-  // 캔버스 상태 변경 시 해당 사업장의 캔버스 데이터 업데이트
+  // 캔버스 상태 변경 시 해당 사업장의 캔버스 데이터 업데이트(+ 위치 서버 저장 훅)
   useEffect(() => {
     if (activeInstallId) {
       setInstallCanvases(prev => ({
         ...prev,
         [activeInstallId]: { nodes, edges }
       }));
+      // TODO 서버에 좌표 저장 API가 준비되면 여기서 debounce하여 저장 호출
     }
   }, [nodes, edges, activeInstallId]);
 
@@ -56,6 +57,23 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
       }
       
       prevInstallIdRef.current = selectedInstall.id;
+
+      // 로컬 레이아웃(좌표) 보조 복원
+      try {
+        const key = `cbam:layout:${selectedInstall.id}`;
+        const raw = localStorage.getItem(key);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed?.nodes && parsed?.edges) {
+            setNodes(parsed.nodes);
+            setEdges(parsed.edges);
+            prevNodesRef.current = parsed.nodes;
+            prevEdgesRef.current = parsed.edges;
+            setInstallCanvases(prev => ({ ...prev, [selectedInstall.id]: { nodes: parsed.nodes, edges: parsed.edges } }));
+            return;
+          }
+        }
+      } catch {}
 
       // 서버에서 노드/엣지 복원(초기 진입이거나 저장본이 없을 때)
       if ((!canvasData.nodes.length && !canvasData.edges.length) && !fetchingRef.current) {
@@ -261,6 +279,12 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
       console.log('🔍 노드 상태 업데이트:', newNodes); // 🔴 추가: 디버깅 로그
       return newNodes;
     });
+    // 위치 저장: 서버 API 없으므로 일단 로컬스토리지로 보조 저장
+    try {
+      const key = `cbam:layout:${selectedInstall?.id}`;
+      const payload = { nodes: [...(installCanvases[selectedInstall?.id || 0]?.nodes || []), newNode], edges };
+      localStorage.setItem(key, JSON.stringify(payload));
+    } catch {}
   }, [setNodes, selectedInstall?.id]);
 
   // 공정 노드 추가 (안전한 상태 업데이트)
@@ -332,6 +356,12 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
       console.log('🔍 노드 상태 업데이트:', newNodes); // 🔴 추가: 디버깅 로그
       return newNodes;
     });
+    // 위치 저장 보조
+    try {
+      const key = `cbam:layout:${selectedInstall?.id}`;
+      const payload = { nodes: [...(installCanvases[selectedInstall?.id || 0]?.nodes || []), newNode], edges };
+      localStorage.setItem(key, JSON.stringify(payload));
+    } catch {}
   }, [setNodes, selectedInstall?.id]);
 
   // 그룹 노드 추가 (안전한 상태 업데이트)
