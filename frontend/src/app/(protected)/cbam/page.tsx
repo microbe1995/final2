@@ -6,6 +6,8 @@ import CommonShell from '@/components/common/CommonShell';
 import axiosClient from '@/lib/axiosClient';
 import { RefreshCw, ArrowRight } from 'lucide-react';
 import { DummyData } from '@/hooks/useDummyData';
+// 시설군 관리 페이지(클라이언트 컴포넌트)를 내부 뷰로 임베드
+import InstallPage from './install/page';
 
 // ============================================================================
 // 🎯 CBAM 관리 페이지
@@ -20,6 +22,8 @@ export default function CBAMPage() {
   const [dummyData, setDummyData] = useState<DummyData[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // 사업장관리 내부 전환 플래그
+  const [showInstallInline, setShowInstallInline] = useState(false);
 
   // 🔴 추가: 데이터 타입 변환 함수
   const normalizeDummyData = (rawData: any[]): DummyData[] => {
@@ -174,22 +178,40 @@ export default function CBAMPage() {
 
   const renderInstall = () => (
     <div className='space-y-6'>
-      <div className='stitch-card p-6'>
-        <h3 className='stitch-h1 text-lg font-semibold mb-4'>
-          CBAM 사업장 관리
-        </h3>
-        <p className='stitch-caption text-white/60'>
-          CBAM 적용 대상 사업장 정보를 생성하고 관리합니다.
-        </p>
-        <div className='mt-6'>
-          <Link 
-            href='/cbam/install'
-            className='inline-flex items-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors'
-          >
-            🏭 사업장 관리 페이지로 이동
-          </Link>
+      {showInstallInline ? (
+        <div className='space-y-4'>
+          <div className='flex items-center justify-between'>
+            <h3 className='stitch-h1 text-lg font-semibold'>CBAM 사업장 관리</h3>
+            <button
+              onClick={() => setShowInstallInline(false)}
+              className='px-3 py-1.5 rounded-md text-sm bg-white/10 hover:bg-white/20 transition-colors'
+            >
+              ← 돌아가기
+            </button>
+          </div>
+          {/* 시설군 관리 화면을 동일 레이아웃 내에서 임베드 */}
+          <div className='stitch-card p-0 overflow-hidden'>
+            <InstallPage />
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className='stitch-card p-6'>
+          <h3 className='stitch-h1 text-lg font-semibold mb-4'>
+            CBAM 사업장 관리
+          </h3>
+          <p className='stitch-caption text-white/60'>
+            CBAM 적용 대상 사업장 정보를 생성하고 관리합니다.
+          </p>
+          <div className='mt-6'>
+            <button
+              onClick={() => setShowInstallInline(true)}
+              className='inline-flex items-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors'
+            >
+              🏭 사업장 관리 페이지로 이동
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 
