@@ -292,20 +292,7 @@ function ProcessManagerInner() {
         >
           <Plus className="h-4 w-4" /> 제품 노드
         </Button>
-        <Button 
-          onClick={addGroupNode} 
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
-        >
-          <Plus className="h-4 w-4" /> 그룹 노드
-        </Button>
-
-        
-        <Button 
-          onClick={refreshAllProcessEmissions} 
-          className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
-        >
-          📊 배출량 정보 새로고침
-        </Button>
+        {/* 그룹 노드 버튼, 배출량 정보 새로고침 버튼 제거 */}
 
       </div>
       

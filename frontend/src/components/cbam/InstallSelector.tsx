@@ -28,14 +28,7 @@ export const InstallSelector: React.FC<InstallSelectorProps> = ({
       {/* 사업장 선택 카드 */}
       <div className="bg-gray-800 p-4">
         <div className="flex items-center gap-4">
-          {/* 사업장 추가 카드 */}
-          <div 
-            className="w-48 h-24 bg-gray-700 border-2 border-dashed border-gray-500 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-blue-400 hover:bg-gray-600 transition-colors"
-            onClick={onAddInstall}
-          >
-            <div className="text-4xl text-gray-400 mb-1">+</div>
-            <div className="text-sm text-gray-300">사업장 추가</div>
-          </div>
+          {/* 사업장 추가 카드 제거 */}
           
           {/* 모든 사업장 카드들 */}
           {installs.map((install) => {

@@ -88,6 +88,7 @@ export const ProductProcessModal: React.FC<{
     product_eusell: selectedProduct?.product_eusell || 0
   });
   const [saving, setSaving] = useState(false);
+  const [isEditingQty, setIsEditingQty] = useState(true);
 
   // 더미 데이터 기반: 선택된 제품에서 허용되는 공정명 목록 강제 적용
   const { getProcessesByProduct, getProductQuantity } = useDummyData();
@@ -350,6 +351,7 @@ export const ProductProcessModal: React.FC<{
                     step="0.01"
                     min="0"
                     value={productQuantityForm.product_sell}
+                    disabled={!isEditingQty}
                     onChange={(e) => setProductQuantityForm(prev => ({
                       ...prev,
                       product_sell: parseFloat(e.target.value) || 0
@@ -368,6 +370,7 @@ export const ProductProcessModal: React.FC<{
                     step="0.01"
                     min="0"
                     value={productQuantityForm.product_eusell}
+                    disabled={!isEditingQty}
                     onChange={(e) => setProductQuantityForm(prev => ({
                       ...prev,
                       product_eusell: parseFloat(e.target.value) || 0
@@ -396,6 +399,14 @@ export const ProductProcessModal: React.FC<{
 
               {/* 저장 액션 */}
               <div className="mt-4 flex gap-3">
+                {!isEditingQty && (
+                  <button
+                    onClick={() => setIsEditingQty(true)}
+                    className="px-4 py-2 rounded-md text-white font-medium bg-blue-600 hover:bg-blue-700"
+                  >
+                    수정
+                  </button>
+                )}
                 <button
                   disabled={saving || !selectedProduct}
                   onClick={async () => {
@@ -423,10 +434,23 @@ export const ProductProcessModal: React.FC<{
                           product_eusell: eu,
                         }
                       );
+                      // 저장 후 DB값 재반영
+                      try {
+                        const getResp = await axiosClient.get(apiEndpoints.cbam.product.get(selectedProduct.id));
+                        const p = getResp?.data;
+                        if (p) {
+                          setProductQuantityForm(prev => ({
+                            ...prev,
+                            product_sell: Number(p.product_sell) || sell,
+                            product_eusell: Number(p.product_eusell) || eu,
+                          }));
+                        }
+                      } catch {}
                       // 2) 누적 전파(제품→공정 분배 반영)
                       try { await axiosClient.post(apiEndpoints.cbam.edgePropagation.fullPropagate, {}); } catch {}
                       // 3) 캔버스에 갱신 이벤트 브로드캐스트 (제품 및 하류 체인 동기화)
                       window.dispatchEvent(new CustomEvent('cbam:refreshProduct', { detail: { productId: selectedProduct.id } }));
+                      setIsEditingQty(false);
                       alert('저장되었습니다.');
                     } catch (e: any) {
                       alert(`저장 실패: ${e?.response?.data?.detail || e?.message || '알 수 없는 오류'}`);
