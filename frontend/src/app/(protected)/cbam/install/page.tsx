@@ -332,7 +332,7 @@ export default function InstallPage() {
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as 'install_name' | 'id')}
-                className="px-3 py-2 bg-white/10 border border-white/20 rounded-md text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="px-3 py-2 bg-white/10 border border-white/20 rounded-md text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 [&>option]:bg-slate-800 [&>option]:text-white"
               >
                 <option value="install_name">이름순</option>
                 <option value="id">ID순</option>

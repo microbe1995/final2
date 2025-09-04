@@ -253,7 +253,7 @@ const CommonShell: React.FC<CommonShellProps> = ({ children }) => {
             {pathname.startsWith('/lca') ? (
               <LcaSidebar />
             ) : pathname.startsWith('/cbam') ? (
-              <CbamSidebar />
+              <CbamSidebar embedded />
             ) : (
               <nav className='flex-1 p-4 space-y-2'>
                 {navigation.map(item => (
