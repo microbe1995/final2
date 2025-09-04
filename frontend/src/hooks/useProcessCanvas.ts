@@ -12,6 +12,8 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
   const [installCanvases, setInstallCanvases] = useState<{[key: number]: {nodes: Node[], edges: Edge[]}}>({});
   // 서버 복원: 마지막 저장된 포지션/구성(없으면 그리드 배치)
   const fetchingRef = useRef<boolean>(false);
+  // 시작은 빈 캔버스: 서버 자동 복원 비활성화(필요 시 true로 변경)
+  const ENABLE_SERVER_AUTORESTORE = false;
   
   // activeInstallId를 selectedInstall에서 계산
   const activeInstallId = selectedInstall?.id || null;
@@ -75,8 +77,8 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
         }
       } catch {}
 
-      // 서버에서 노드/엣지 복원(초기 진입이거나 저장본이 없을 때)
-      if ((!canvasData.nodes.length && !canvasData.edges.length) && !fetchingRef.current) {
+      // 서버에서 노드/엣지 복원(옵션): 기본은 비활성화 → 빈 캔버스로 시작
+      if (ENABLE_SERVER_AUTORESTORE && (!canvasData.nodes.length && !canvasData.edges.length) && !fetchingRef.current) {
         fetchingRef.current = true;
         (async () => {
           try {
