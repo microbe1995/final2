@@ -20,6 +20,8 @@ import {
   Factory,
   Workflow,
 } from 'lucide-react';
+import LcaSidebar from '@/components/lca/LcaSidebar';
+import CbamSidebar from '@/components/cbam/CbamSidebar';
 
 interface CommonShellProps {
   children: React.ReactNode;
@@ -31,7 +33,6 @@ const CommonShell: React.FC<CommonShellProps> = ({ children }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
-  const [cbamActiveTab, setCbamActiveTab] = useState<string | null>(null);
 
   const navigation = [
     {
@@ -87,15 +88,8 @@ const CommonShell: React.FC<CommonShellProps> = ({ children }) => {
     router.push('/');
   };
 
-  // Safely read query on client to avoid Suspense requirement during SSG
-  useEffect(() => {
-    if (typeof window !== 'undefined' && pathname.startsWith('/cbam')) {
-      const tab = new URLSearchParams(window.location.search).get('tab') || 'overview';
-      setCbamActiveTab(tab);
-    } else {
-      setCbamActiveTab(null);
-    }
-  }, [pathname]);
+  // no-op effect (reserved)
+  useEffect(() => {}, [pathname]);
 
   // 모바일에서 사이드바 외부 클릭 시 닫기
   useEffect(() => {
@@ -247,10 +241,16 @@ const CommonShell: React.FC<CommonShellProps> = ({ children }) => {
             </div>
 
             {/* 사이드바 네비게이션 */}
-            <nav className='flex-1 p-4 space-y-2'>
-              {navigation.map(item => (
-                <div key={item.name}>
+            {/* 라우트에 따라 모듈 전용 사이드바로 교체 */}
+            {pathname.startsWith('/lca') ? (
+              <LcaSidebar />
+            ) : pathname.startsWith('/cbam') ? (
+              <CbamSidebar />
+            ) : (
+              <nav className='flex-1 p-4 space-y-2'>
+                {navigation.map(item => (
                   <button
+                    key={item.name}
                     onClick={() => handleNavigation(item.href)}
                     className={cn(
                       'w-full text-left p-3 rounded-lg transition-all duration-200 flex items-center gap-3 group',
@@ -272,30 +272,9 @@ const CommonShell: React.FC<CommonShellProps> = ({ children }) => {
                       <div className='text-xs opacity-75'>{item.description}</div>
                     </div>
                   </button>
-
-                  {/* 하위 메뉴: CBAM 활성 시 표시 */}
-                  {item.children && item.current && (
-                    <div className='mt-1 space-y-1 pl-10'>
-                      {item.children.map((child: any) => (
-                        <button
-                          key={child.key}
-                          onClick={() => handleNavigation(child.href)}
-                          className={cn(
-                            'w-full text-left px-3 py-2 rounded-md text-sm transition-all duration-200 flex items-center gap-2',
-                            cbamActiveTab === child.key
-                              ? 'bg-ecotrace-accent/60 text-white'
-                              : 'text-ecotrace-textSecondary hover:text-white hover:bg-ecotrace-secondary/40'
-                          )}
-                        >
-                          <child.icon className='w-4 h-4' />
-                          {child.name}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </nav>
+                ))}
+              </nav>
+            )}
 
             {/* 사이드바 푸터 */}
             <div className='p-4 border-t border-ecotrace-border'>
