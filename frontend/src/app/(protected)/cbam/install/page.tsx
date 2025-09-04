@@ -5,6 +5,8 @@ import Button from '@/components/atomic/atoms/Button';
 import Input from '@/components/atomic/atoms/Input';
 import axiosClient, { apiEndpoints } from '@/lib/axiosClient';
 import { useRouter } from 'next/navigation';
+import CommonShell from '@/components/common/CommonShell';
+import CbamLayout from '@/components/cbam/CbamLayout';
 
 // ============================================================================
 // 🏭 시설군 관리 페이지
@@ -239,12 +241,13 @@ export default function InstallPage() {
   // 관계 관리 UI/로직 제거
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 p-6">
-      <div
-        className={`max-w-6xl mx-auto transition-all duration-200 ease-out ${
-          isNavigating ? 'opacity-0 scale-[0.99]' : 'opacity-100 scale-100'
-        }`}
-      >
+    <CommonShell>
+      <CbamLayout>
+        <div
+          className={`max-w-6xl mx-auto transition-all duration-200 ease-out ${
+            isNavigating ? 'opacity-0 scale-[0.99]' : 'opacity-100 scale-100'
+          }`}
+        >
         
         {/* Toast 메시지 */}
         {toast && (
@@ -408,6 +411,7 @@ export default function InstallPage() {
         </div>
           </>
         </div>
-    </div>
+      </CbamLayout>
+    </CommonShell>
   );
 }

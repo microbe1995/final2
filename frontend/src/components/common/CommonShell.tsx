@@ -37,7 +37,7 @@ const CommonShell: React.FC<CommonShellProps> = ({ children }) => {
   const navigation = [
     {
       name: '홈',
-      href: '/dashboard',
+      href: 'https://www.greensteel.site/dashboard',
       icon: Home,
       current: pathname === '/dashboard',
       description: 'ESG 요약 및 최근 활동',
@@ -79,6 +79,13 @@ const CommonShell: React.FC<CommonShellProps> = ({ children }) => {
   ];
 
   const handleNavigation = (href: string) => {
+    // 외부 링크는 전체 페이지 이동
+    if (href.startsWith('http://') || href.startsWith('https://')) {
+      if (typeof window !== 'undefined') {
+        window.location.href = href;
+      }
+      return;
+    }
     router.push(href);
     setIsSidebarOpen(false);
     setIsMobileMenuOpen(false);
@@ -231,7 +238,9 @@ const CommonShell: React.FC<CommonShellProps> = ({ children }) => {
           <div className='flex flex-col h-full'>
             {/* 사이드바 헤더 */}
             <div className='flex items-center justify-between p-4 border-b border-ecotrace-border'>
-              <h2 className='text-lg font-semibold text-white'>메뉴</h2>
+              <h2 className='text-lg font-semibold text-white'>
+                {pathname.startsWith('/cbam') ? 'CBAM 모듈' : pathname.startsWith('/lca') ? 'LCA 모듈' : '메뉴'}
+              </h2>
               <button
                 onClick={() => setIsSidebarOpen(false)}
                 className='lg:hidden p-1 rounded-lg hover:bg-ecotrace-secondary/50'

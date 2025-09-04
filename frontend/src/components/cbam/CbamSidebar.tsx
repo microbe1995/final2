@@ -38,7 +38,6 @@ export default function CbamSidebar({ embedded = false }: Props) {
                 <Icon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-ecotrace-textSecondary group-hover:text-white'}`} />
                 <div className="flex-1">
                   <div className="font-medium">{item.name}</div>
-                  <div className="text-xs opacity-75">{item.description}</div>
                 </div>
               </Link>
             );
