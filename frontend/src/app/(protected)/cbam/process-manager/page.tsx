@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import CommonShell from '@/components/common/CommonShell';
+import CbamLayout from '@/components/cbam/CbamLayout';
 import ProcessManager from '@/components/cbam/ProcessManager';
 
 // ============================================================================
@@ -10,14 +10,14 @@ import ProcessManager from '@/components/cbam/ProcessManager';
 
 export default function ProcessManagerPage() {
   return (
-    <CommonShell>
-      <div className="w-full h-screen flex flex-col">
+    <CbamLayout>
+      <div className="w-full h-[80vh] min-h-[560px] flex flex-col">
         {/* 헤더 문구 제거 (중복 방지) */}
         
         <div className="flex-1 min-h-0">
           <ProcessManager />
         </div>
       </div>
-    </CommonShell>
+    </CbamLayout>
   );
 }

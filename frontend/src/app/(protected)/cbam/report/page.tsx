@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Download, FileText, Globe, Languages } from 'lucide-react';
-import CommonShell from '@/components/common/CommonShell';
+import CbamLayout from '@/components/cbam/CbamLayout';
 
 // ============================================================================
 // 🎯 Gas Emission Report 페이지 - 독립적인 완전한 구현
@@ -301,8 +301,8 @@ export default function GasEmissionReportPage() {
   const inputInline = 'px-3 py-2 bg-white/10 border border-white/20 rounded text-white';
 
   return (
-    <CommonShell>
-      <div className='space-y-6 px-4 sm:px-6 lg:px-8 py-6'>
+    <CbamLayout>
+      <div className='space-y-6'>
         {/* 헤더 카드 */}
         <div className='stitch-card p-6'>
           <div className="flex items-center justify-between">
@@ -508,6 +508,6 @@ export default function GasEmissionReportPage() {
           </div>
         </div>
       </div>
-    </CommonShell>
+    </CbamLayout>
   );
 }

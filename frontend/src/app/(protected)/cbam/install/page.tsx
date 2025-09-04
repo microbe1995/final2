@@ -5,7 +5,6 @@ import Button from '@/components/atomic/atoms/Button';
 import Input from '@/components/atomic/atoms/Input';
 import axiosClient, { apiEndpoints } from '@/lib/axiosClient';
 import { useRouter } from 'next/navigation';
-import CommonShell from '@/components/common/CommonShell';
 import CbamLayout from '@/components/cbam/CbamLayout';
 
 // ============================================================================
@@ -241,8 +240,7 @@ export default function InstallPage() {
   // 관계 관리 UI/로직 제거
 
   return (
-    <CommonShell>
-      <CbamLayout>
+    <CbamLayout>
         <div
           className={`max-w-6xl mx-auto transition-all duration-200 ease-out ${
             isNavigating ? 'opacity-0 scale-[0.99]' : 'opacity-100 scale-100'
@@ -412,6 +410,5 @@ export default function InstallPage() {
           </>
         </div>
       </CbamLayout>
-    </CommonShell>
   );
 }

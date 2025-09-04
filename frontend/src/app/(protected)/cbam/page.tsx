@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import CommonShell from '@/components/common/CommonShell';
+import CbamLayout from '@/components/cbam/CbamLayout';
 import axiosClient from '@/lib/axiosClient';
 import { RefreshCw, ArrowRight } from 'lucide-react';
 import { DummyData } from '@/hooks/useDummyData';
@@ -291,8 +291,8 @@ export default function CBAMPage() {
   );
 
   return (
-    <CommonShell>
-      <div className='space-y-6 px-4 sm:px-6 lg:px-8 py-6'>
+    <CbamLayout>
+      <div className='space-y-6'>
         {/* 페이지 헤더 */}
         <div className='flex flex-col gap-3'>
           <h1 className='stitch-h1 text-3xl font-bold'>CBAM 관리</h1>
@@ -308,6 +308,6 @@ export default function CBAMPage() {
         {activeTab === 'reports' && renderReports()}
         {activeTab === 'settings' && renderSettings()}
       </div>
-    </CommonShell>
+    </CbamLayout>
   );
 }
