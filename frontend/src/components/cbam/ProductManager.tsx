@@ -549,6 +549,34 @@ export default function ProductManager({ installId, embedded = true }: ProductMa
     }
   };
 
+  // 공정 수정 모드 시작 (제품별 공정 목록에서 진입)
+  const handleEditProcess = (processName: string, productId: number) => {
+    // 폼을 해당 제품에 대해 열고 수정 모드로 설정
+    setShowProcessFormForProduct(productId);
+    setSelectedProcess(processName);
+    setProcessForm({ process_name: processName });
+    setIsEditingProcess(true);
+
+    // 현재 제품과 연결된 동일명 공정의 사업장을 기본값으로 설정
+    const existingForProduct = processes.find((p) => {
+      const nameMatch = p.process_name === processName;
+      const linked = Array.isArray(p.products) && p.products.some((prod) => prod.id === productId);
+      return nameMatch && linked;
+    });
+    if (existingForProduct && typeof existingForProduct.install_id === 'number') {
+      setSelectedInstallForProcess(existingForProduct.install_id);
+      if (installProcessesMap.has(existingForProduct.install_id)) {
+        setAvailableProcesses(installProcessesMap.get(existingForProduct.install_id) || []);
+      }
+    }
+
+    // 사용 가능한 공정 목록을 최신으로 로드
+    const product = products.find((p) => p.id === productId);
+    if (product) {
+      fetchAvailableProcesses(product.product_name, productId);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="p-6">

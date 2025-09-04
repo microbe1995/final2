@@ -135,23 +135,19 @@ export const useProcessManager = () => {
     }
   }, [products]);
 
-  // 선택된 사업장의 모든 공정 목록 불러오기
+  // 선택된 사업장의 모든 공정 목록 불러오기 (제품 연결 여부와 무관하게 install_id 기준)
   const fetchAllProcessesByInstall = useCallback(async (installId: number) => {
     try {
       const response = await axiosClient.get(apiEndpoints.cbam.process.list);
-      const installProducts = products.filter((product: Product) => product.install_id === installId);
-      const productIds = installProducts.map((product: Product) => product.id);
-      const allProcesses = response.data.filter((process: Process) => 
-        process.products && process.products.some((p: Product) => productIds.includes(p.id))
-      );
-      setAllProcesses(allProcesses);
+      const all = (response.data || []).filter((process: Process) => (process as any)?.install_id === installId);
+      setAllProcesses(all);
     } catch (error) {
       if (process.env.NODE_ENV === 'development') {
         console.error('전체 공정 목록 조회 실패:', error);
       }
       setAllProcesses([]);
     }
-  }, [products]);
+  }, []);
 
   // 크로스 사업장 공정 목록 불러오기
   const fetchAllCrossInstallProcesses = useCallback(async () => {
