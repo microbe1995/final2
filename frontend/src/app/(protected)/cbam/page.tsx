@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 import CommonShell from '@/components/common/CommonShell';
-import CbamLayout from '@/components/cbam/CbamLayout';
 import axiosClient from '@/lib/axiosClient';
 import { RefreshCw, ArrowRight } from 'lucide-react';
 import { DummyData } from '@/hooks/useDummyData';
@@ -293,24 +292,22 @@ export default function CBAMPage() {
 
   return (
     <CommonShell>
-      <CbamLayout>
-        <div className='space-y-6'>
-          {/* 페이지 헤더 */}
-          <div className='flex flex-col gap-3'>
-            <h1 className='stitch-h1 text-3xl font-bold'>CBAM 관리</h1>
-            <p className='stitch-caption'>
-              탄소국경조정메커니즘(CBAM) 프로세스 및 계산 관리
-            </p>
-          </div>
-
-          {/* 콘텐츠 */}
-          {activeTab === 'overview' && renderOverview()}
-          {activeTab === 'install' && renderInstall()}
-          {activeTab === 'boundary' && renderBoundary()}
-          {activeTab === 'reports' && renderReports()}
-          {activeTab === 'settings' && renderSettings()}
+      <div className='space-y-6 px-4 sm:px-6 lg:px-8 py-6'>
+        {/* 페이지 헤더 */}
+        <div className='flex flex-col gap-3'>
+          <h1 className='stitch-h1 text-3xl font-bold'>CBAM 관리</h1>
+          <p className='stitch-caption'>
+            탄소국경조정메커니즘(CBAM) 프로세스 및 계산 관리
+          </p>
         </div>
-      </CbamLayout>
+
+        {/* 콘텐츠 */}
+        {activeTab === 'overview' && renderOverview()}
+        {activeTab === 'install' && renderInstall()}
+        {activeTab === 'boundary' && renderBoundary()}
+        {activeTab === 'reports' && renderReports()}
+        {activeTab === 'settings' && renderSettings()}
+      </div>
     </CommonShell>
   );
 }

@@ -250,13 +250,8 @@ const CommonShell: React.FC<CommonShellProps> = ({ children }) => {
             </div>
 
             {/* 사이드바 네비게이션 */}
-            {/* 라우트에 따라 모듈 전용 사이드바로 교체 */}
-            {pathname.startsWith('/lca') ? (
-              <LcaSidebar />
-            ) : pathname.startsWith('/cbam') ? (
-              <CbamSidebar />
-            ) : (
-              <nav className='flex-1 p-4 space-y-2'>
+            {/* 라우트 전용 사이드바는 상단 제목만 교체하고 항목은 공통으로 유지 */}
+            <nav className='flex-1 p-4 space-y-2'>
                 {navigation.map(item => (
                   <button
                     key={item.name}
@@ -282,8 +277,7 @@ const CommonShell: React.FC<CommonShellProps> = ({ children }) => {
                     </div>
                   </button>
                 ))}
-              </nav>
-            )}
+            </nav>
 
             {/* 사이드바 푸터 */}
             <div className='p-4 border-t border-ecotrace-border'>
