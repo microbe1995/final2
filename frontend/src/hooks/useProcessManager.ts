@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
+import { useDummyData } from '@/hooks/useDummyData';
 import axiosClient, { apiEndpoints } from '@/lib/axiosClient';
 
 export interface Install {
@@ -35,6 +36,7 @@ export interface Process {
 
 
 export const useProcessManager = () => {
+  const { getProductQuantity } = useDummyData();
   // 사업장 관련 상태
   const [installs, setInstalls] = useState<Install[]>([]);
   const [selectedInstall, setSelectedInstall] = useState<Install | null>(null);
@@ -73,15 +75,47 @@ export const useProcessManager = () => {
     try {
       // install_id로 필터링하여 특정 사업장의 제품만 가져오기
       const response = await axiosClient.get(`${apiEndpoints.cbam.product.list}?install_id=${installId}`);
-      setProducts(response.data);
-      console.log(`✅ 사업장 ${installId}의 제품 ${response.data.length}개 로드됨:`, response.data);
+      const baseProducts: Product[] = response.data || [];
+
+      // 제품 상세(DB)와 더미 생산수량을 병렬 조회하여 풍부화
+      const enrichedProducts: Product[] = await Promise.all(
+        baseProducts.map(async (p: Product) => {
+          const [detail, dummyQty] = await Promise.all([
+            (async () => {
+              try {
+                const detailResp = await axiosClient.get(apiEndpoints.cbam.product.get(p.id));
+                return detailResp?.data || {};
+              } catch {
+                return {} as any;
+              }
+            })(),
+            (async () => {
+              try {
+                return await getProductQuantity(p.product_name);
+              } catch {
+                return undefined as unknown as number;
+              }
+            })()
+          ]);
+
+          const amountFromDummy = Number.isFinite(dummyQty as number) ? Number(dummyQty as number) : undefined;
+          const product_amount = amountFromDummy ?? Number(detail.product_amount ?? p.product_amount ?? 0);
+          const product_sell = Number(detail.product_sell ?? p.product_sell ?? 0);
+          const product_eusell = Number(detail.product_eusell ?? p.product_eusell ?? 0);
+
+          return { ...p, product_amount, product_sell, product_eusell } as Product;
+        })
+      );
+
+      setProducts(enrichedProducts);
+      console.log(`✅ 사업장 ${installId}의 제품 ${enrichedProducts.length}개 로드됨(수량 포함)`, enrichedProducts);
     } catch (error) {
       if (process.env.NODE_ENV === 'development') {
         console.error('제품 목록 조회 실패:', error);
       }
       setProducts([]);
     }
-  }, []);
+  }, [getProductQuantity]);
 
   // 선택된 사업장의 공정 목록 불러오기
   const fetchProcessesByInstall = useCallback(async (installId: number) => {
@@ -172,6 +206,9 @@ export const useProcessManager = () => {
         ...selectedProduct,
         ...productQuantityForm
       });
+
+      // 제품 목록 내 해당 아이템도 동기화
+      setProducts(prev => prev.map(p => p.id === selectedProduct.id ? { ...p, ...productQuantityForm } : p));
       
       return true;
     } catch (error: any) {

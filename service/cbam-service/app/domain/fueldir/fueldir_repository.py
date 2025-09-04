@@ -498,17 +498,20 @@ class FuelDirRepository:
             raise
 
     async def _delete_fueldir_db(self, fueldir_id) -> bool:
-        """연료직접배출량 데이터 삭제 (DB 작업) - BIGINT ID 지원"""
+        """연료직접배출량 데이터 삭제 (DB 작업)
+        - asyncpg는 정수 파라미터를 기대하므로, 문자열로 전달하면 타입 오류가 발생합니다.
+        - Python의 int는 가변 정밀도를 가지므로 BIGINT도 안전하게 처리됩니다.
+        """
         if not self.pool:
             raise Exception("데이터베이스 연결 풀이 초기화되지 않았습니다.")
             
         try:
             async with self.pool.acquire() as conn:
-                # ID를 문자열로 변환하여 BIGINT 범위 지원
-                fueldir_id_str = str(fueldir_id)
+                # 정수로 보장 (문자열이 들어와도 안전 변환)
+                fueldir_id_int = int(fueldir_id)
                 result = await conn.execute("""
                     DELETE FROM fueldir WHERE id = $1
-                """, fueldir_id_str)
+                """, fueldir_id_int)
                 
                 return result != "DELETE 0"
                 
