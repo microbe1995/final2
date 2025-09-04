@@ -97,6 +97,22 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
     }));
   }, [setNodes]);
 
+  // 특정 제품 노드의 produce 연결 여부를 표시 (배출량 프리뷰 표시 제어용)
+  const setProductProduceFlag = useCallback((productId: number, hasProduce: boolean) => {
+    setNodes(prev => prev.map(node => {
+      if (node.type === 'product' && (node.data as any)?.id === productId) {
+        return {
+          ...node,
+          data: {
+            ...node.data,
+            has_produce_edge: hasProduce
+          }
+        } as Node;
+      }
+      return node;
+    }));
+  }, [setNodes]);
+
   // 이제 업데이트 함수가 정의되었으므로 이벤트 리스너 등록
   useEffect(() => {
     const handler = (e: any) => {
@@ -441,7 +457,10 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
           if (sourceId) await refreshProcessEmission(sourceId);
           if (targetId) await refreshProcessEmission(targetId);
         } else if (sourceType === 'process' && targetType === 'product') {
-          if (targetId) await refreshProductEmission(targetId);
+          if (targetId) {
+            setProductProduceFlag(targetId, false);
+            await refreshProductEmission(targetId);
+          }
         } else if (sourceType === 'product' && targetType === 'process') {
           if (sourceId) await refreshProductEmission(sourceId);
           if (targetId) await refreshProcessEmission(targetId);
@@ -696,6 +715,7 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
               refreshProcessEmission(finalSourceId),
               refreshProductEmission(finalTargetId)
             ]);
+            setProductProduceFlag(finalTargetId, true);
           } else if (edgeData.edge_kind === 'consume') {
             // 제품→공정: 타겟 공정 갱신
             await Promise.all([
