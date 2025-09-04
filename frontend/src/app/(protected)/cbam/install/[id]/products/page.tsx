@@ -41,8 +41,8 @@ interface Process {
   end_period?: string;
   created_at?: string;
   updated_at?: string;
-  // 🔴 추가: 백엔드에서 반환하는 실제 데이터 구조
   products?: Array<{
+
     id: number;
     install_id: number;
     product_name: string;
@@ -62,33 +62,33 @@ interface Process {
   }>;
 }
 
+interface InstallProductsPageProps {
+  overrideInstallId?: number;
+}
+
+// Re-introduced: form shape for product editor
 interface ProductForm {
   product_name: string;
   product_category: string;
   prostart_period: string;
   proend_period: string;
   product_amount: number;
-  product_hscode: string; // HS 코드 추가
+  product_hscode: string;
   cncode_total: string;
   goods_name: string;
-  goods_engname: string; // 품목영문명 추가
+  goods_engname: string;
   aggrgoods_name: string;
-  aggrgoods_engname: string; // 품목군영문명 추가
+  aggrgoods_engname: string;
   product_sell: number;
   product_eusell: number;
 }
 
-interface InstallProductsPageProps {
-  overrideInstallId?: number;
-}
-
-export default function InstallProductsPage(props: InstallProductsPageProps = {}) {
+export default function InstallProductsPage(props: any) {
   const router = useRouter();
   const params = useParams();
   const derivedId = params?.id ? parseInt(params.id as string) : NaN;
-  const installId = (typeof props.overrideInstallId === 'number' && !Number.isNaN(props.overrideInstallId))
-    ? props.overrideInstallId
-    : derivedId;
+  const overrideId = (props && typeof props.overrideInstallId === 'number') ? props.overrideInstallId : undefined;
+  const installId = (typeof overrideId === 'number' && !Number.isNaN(overrideId)) ? overrideId : derivedId;
 
   const [products, setProducts] = useState<Product[]>([]);
   const [processes, setProcesses] = useState<Process[]>([]);
@@ -99,18 +99,18 @@ export default function InstallProductsPage(props: InstallProductsPageProps = {}
   const [showProcessFormForProduct, setShowProcessFormForProduct] = useState<number | null>(null);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
-  const [productForm, setProductForm] = useState<ProductForm>({
+  const [productForm, setProductForm] = useState({
     product_name: '',
     product_category: '',
     prostart_period: '',
     proend_period: '',
     product_amount: 0,
-    product_hscode: '', // HS 코드 초기값 추가
+    product_hscode: '',
     cncode_total: '',
     goods_name: '',
-    goods_engname: '', // 품목영문명 초기값 추가
+    goods_engname: '',
     aggrgoods_name: '',
-    aggrgoods_engname: '', // 품목군영문명 초기값 추가
+    aggrgoods_engname: '',
     product_sell: 0,
     product_eusell: 0
   });
