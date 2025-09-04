@@ -16,18 +16,12 @@ const menuItems = [
   { name: '보고서', href: '/cbam/report', icon: FileText, description: 'CBAM 보고서' },
 ];
 
-export default function CbamSidebar() {
+interface Props { embedded?: boolean }
+
+export default function CbamSidebar({ embedded = false }: Props) {
   const pathname = usePathname();
-
-  return (
-    <div className="w-64 bg-ecotrace-secondary border-r border-ecotrace-border h-screen flex-shrink-0">
-      <div className="flex flex-col h-full">
-        <div className="flex items-center justify-between p-4 border-b border-ecotrace-border">
-          <h2 className="text-lg font-semibold text-white">CBAM 모듈</h2>
-          <span className="text-xs text-ecotrace-textSecondary">프로세스/계산</span>
-        </div>
-
-        <nav className="flex-1 p-4 space-y-2">
+  const Nav = (
+    <nav className="flex-1 p-4 space-y-2">
           {menuItems.map((item) => {
             const isActive = pathname === item.href;
             const Icon = item.icon;
@@ -49,8 +43,21 @@ export default function CbamSidebar() {
               </Link>
             );
           })}
-        </nav>
+    </nav>
+  );
 
+  if (embedded) {
+    return Nav;
+  }
+
+  return (
+    <div className="w-64 bg-ecotrace-secondary border-r border-ecotrace-border h-screen flex-shrink-0">
+      <div className="flex flex-col h-full">
+        <div className="flex items-center justify-between p-4 border-b border-ecotrace-border">
+          <h2 className="text-lg font-semibold text-white">CBAM 모듈</h2>
+          <span className="text-xs text-ecotrace-textSecondary">프로세스/계산</span>
+        </div>
+        {Nav}
         <div className="p-4 border-t border-ecotrace-border">
           <div className="text-xs text-ecotrace-textSecondary text-center">GreenSteel CBAM v1.0.0</div>
         </div>

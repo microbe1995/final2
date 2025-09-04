@@ -8,6 +8,7 @@ import { DummyData } from '@/hooks/useDummyData';
 // 시설군 관리 페이지(클라이언트 컴포넌트)를 내부 뷰로 임베드
 import InstallPage from './install/page';
 import ProcessManager from '@/components/cbam/ProcessManager';
+import CbamSidebar from '@/components/cbam/CbamSidebar';
 
 // ============================================================================
 // 🎯 CBAM 관리 페이지
@@ -291,21 +292,28 @@ export default function CBAMPage() {
 
   return (
     <CommonShell>
-      <div className='space-y-6 px-4 sm:px-6 lg:px-8 py-6'>
-        {/* 페이지 헤더 */}
-        <div className='flex flex-col gap-3'>
-          <h1 className='stitch-h1 text-3xl font-bold'>CBAM 관리</h1>
-          <p className='stitch-caption'>
-            탄소국경조정메커니즘(CBAM) 프로세스 및 계산 관리
-          </p>
+      <div className="flex">
+        <div className='hidden lg:block w-64'>
+          <CbamSidebar embedded />
         </div>
+        <main className='flex-1 px-4 sm:px-6 lg:px-8 py-6'>
+          <div className='space-y-6'>
+            {/* 페이지 헤더 */}
+            <div className='flex flex-col gap-3'>
+              <h1 className='stitch-h1 text-3xl font-bold'>CBAM 관리</h1>
+              <p className='stitch-caption'>
+                탄소국경조정메커니즘(CBAM) 프로세스 및 계산 관리
+              </p>
+            </div>
 
-        {/* 콘텐츠 */}
-        {activeTab === 'overview' && renderOverview()}
-        {activeTab === 'install' && renderInstall()}
-        {activeTab === 'boundary' && renderBoundary()}
-        {activeTab === 'reports' && renderReports()}
-        {activeTab === 'settings' && renderSettings()}
+            {/* 콘텐츠 */}
+            {activeTab === 'overview' && renderOverview()}
+            {activeTab === 'install' && renderInstall()}
+            {activeTab === 'boundary' && renderBoundary()}
+            {activeTab === 'reports' && renderReports()}
+            {activeTab === 'settings' && renderSettings()}
+          </div>
+        </main>
       </div>
     </CommonShell>
   );
