@@ -245,14 +245,7 @@ export default function InstallPage() {
           isNavigating ? 'opacity-0 scale-[0.99]' : 'opacity-100 scale-100'
         }`}
       >
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-white mb-2">🏭 시설군 관리</h1>
-          <p className="text-gray-300">
-            CBAM 적용 대상 시설군 정보를 생성하고 관리합니다
-          </p>
-        </div>
-
+        
         {/* Toast 메시지 */}
         {toast && (
           <div className={`mb-6 p-4 rounded-lg ${

@@ -1,13 +1,14 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
 import CommonShell from '@/components/common/CommonShell';
 import axiosClient from '@/lib/axiosClient';
 import { RefreshCw, ArrowRight } from 'lucide-react';
 import { DummyData } from '@/hooks/useDummyData';
 // 시설군 관리 페이지(클라이언트 컴포넌트)를 내부 뷰로 임베드
 import InstallPage from './install/page';
+import ProcessManager from '@/components/cbam/ProcessManager';
+import CbamSidebar from '@/components/cbam/CbamSidebar';
 
 // ============================================================================
 // 🎯 CBAM 관리 페이지
@@ -24,6 +25,8 @@ export default function CBAMPage() {
   const [error, setError] = useState<string | null>(null);
   // 사업장관리 내부 전환 플래그
   const [showInstallInline, setShowInstallInline] = useState(false);
+  // 산정경계설정 내부 전환 플래그
+  const [showBoundaryInline, setShowBoundaryInline] = useState(false);
 
   // 🔴 추가: 데이터 타입 변환 함수
   const normalizeDummyData = (rawData: any[]): DummyData[] => {
@@ -217,22 +220,41 @@ export default function CBAMPage() {
 
   const renderBoundary = () => (
     <div className='space-y-6'>
-      <div className='stitch-card p-6'>
-        <h3 className='stitch-h1 text-lg font-semibold mb-4'>
-          CBAM 산정경계설정
-        </h3>
-        <p className='stitch-caption text-white/60'>
-          CBAM 배출량 산정을 위한 경계를 설정하고 노드를 생성합니다.
-        </p>
-        <div className='mt-6'>
-          <Link 
-            href='/cbam/process-manager'
-            className='inline-flex items-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors'
-          >
-            🔄 산정경계 설정 페이지로 이동
-          </Link>
+      {showBoundaryInline ? (
+        <div className='space-y-4'>
+          <div className='flex items-center justify-between'>
+            <h3 className='stitch-h1 text-lg font-semibold'>CBAM 산정경계설정</h3>
+            <button
+              onClick={() => setShowBoundaryInline(false)}
+              className='px-3 py-1.5 rounded-md text-sm bg-white/10 hover:bg-white/20 transition-colors'
+            >
+              ← 돌아가기
+            </button>
+          </div>
+          <div className='stitch-card p-0 overflow-hidden'>
+            <div className="w-full h-[70vh] min-h-[560px] flex flex-col">
+              <ProcessManager />
+            </div>
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className='stitch-card p-6'>
+          <h3 className='stitch-h1 text-lg font-semibold mb-4'>
+            CBAM 산정경계설정
+          </h3>
+          <p className='stitch-caption text-white/60'>
+            CBAM 배출량 산정을 위한 경계를 설정하고 노드를 생성합니다.
+          </p>
+          <div className='mt-6'>
+            <button
+              onClick={() => setShowBoundaryInline(true)}
+              className='inline-flex items-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors'
+            >
+              🔄 산정경계 설정 열기
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 
@@ -268,75 +290,28 @@ export default function CBAMPage() {
 
   return (
     <CommonShell>
-      <div className='space-y-6'>
-        {/* 페이지 헤더 */}
-        <div className='flex flex-col gap-3'>
-          <h1 className='stitch-h1 text-3xl font-bold'>CBAM 관리</h1>
-          <p className='stitch-caption'>
-            탄소국경조정메커니즘(CBAM) 프로세스 및 계산 관리
-          </p>
-        </div>
+      <div className="flex">
+        {/* 좌측 사이드바 */}
+        <CbamSidebar activeTab={activeTab} onSelect={setActiveTab} />
+        {/* 메인 콘텐츠 */}
+        <main className="flex-1">
+          <div className='space-y-6 px-4 sm:px-6 lg:px-8 py-6'>
+            {/* 페이지 헤더 */}
+            <div className='flex flex-col gap-3'>
+              <h1 className='stitch-h1 text-3xl font-bold'>CBAM 관리</h1>
+              <p className='stitch-caption'>
+                탄소국경조정메커니즘(CBAM) 프로세스 및 계산 관리
+              </p>
+            </div>
 
-        {/* 탭 네비게이션 */}
-        <div className='flex space-x-1 p-1 bg-white/5 rounded-lg'>
-          <button
-            onClick={() => setActiveTab('overview')}
-            className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-              activeTab === 'overview'
-                ? 'bg-primary text-white'
-                : 'text-white/60 hover:text-white hover:bg-white/5'
-            }`}
-          >
-            투입물
-          </button>
-          <button
-            onClick={() => setActiveTab('install')}
-            className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-              activeTab === 'install'
-                ? 'bg-primary text-white'
-                : 'text-white/60 hover:text-white hover:bg-white/5'
-            }`}
-          >
-            사업장관리
-          </button>
-          <button
-            onClick={() => setActiveTab('boundary')}
-            className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-              activeTab === 'boundary'
-                ? 'bg-primary text-white'
-                : 'text-white/60 hover:text-white hover:bg-white/5'
-            }`}
-          >
-            산정경계설정
-          </button>
-          <button
-            onClick={() => setActiveTab('reports')}
-            className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-              activeTab === 'reports'
-                ? 'bg-primary text-white'
-                : 'text-white/60 hover:text-white hover:bg-white/5'
-            }`}
-          >
-            보고서
-          </button>
-          <button
-            onClick={() => setActiveTab('settings')}
-            className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-              activeTab === 'settings'
-                ? 'bg-primary text-white'
-                : 'text-white/60 hover:text-white hover:bg-white/5'
-            }`}
-          >
-            설정
-          </button>
-        </div>
-
-        {/* 탭 콘텐츠 */}
-        {activeTab === 'overview' && renderOverview()}
-        {activeTab === 'install' && renderInstall()}
-        {activeTab === 'boundary' && renderBoundary()}
-        {activeTab === 'reports' && renderReports()}
-        {activeTab === 'settings' && renderSettings()}
+            {/* 탭 콘텐츠 */}
+            {activeTab === 'overview' && renderOverview()}
+            {activeTab === 'install' && renderInstall()}
+            {activeTab === 'boundary' && renderBoundary()}
+            {activeTab === 'reports' && renderReports()}
+            {activeTab === 'settings' && renderSettings()}
+          </div>
+        </main>
       </div>
     </CommonShell>
   );

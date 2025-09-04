@@ -129,7 +129,7 @@
   - install_pkey (UNIQUE) on (id)
   - uk_install_name (UNIQUE) on (install_name)
 
-### public.matdir (b'r', 72.0KB)
+### public.matdir (b'r', 80.0KB)
 - 컬럼:
   - id: integer (NOT NULL) default=nextval('matdir_id_seq'::regclass)
   - process_id: integer (NOT NULL)
