@@ -396,6 +396,24 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
         ...updatedProcessIds.map(id => refreshProcessEmission(id)),
         ...updatedProductIds.map(id => refreshProductEmission(id))
       ]);
+
+      // 보강: 현재 캔버스 상에서 해당 공정과 produce로 연결된 제품 프리뷰를 강제 동기화
+      try {
+        // 해당 공정의 리액트플로우 노드 ID 찾기
+        const processNode = (prevNodesRef.current || []).find(n => n.type === 'process' && (n.data as any)?.id === processId);
+        if (processNode) {
+          const producedProductIds = (edges || [])
+            .filter(e => e.source === processNode.id && (e.data as any)?.edgeData?.edge_kind === 'produce')
+            .map(e => {
+              const targetNode = (prevNodesRef.current || []).find(n => n.id === e.target);
+              return (targetNode?.data as any)?.id as number | undefined;
+            })
+            .filter((pid): pid is number => typeof pid === 'number');
+          if (producedProductIds.length) {
+            await Promise.all(producedProductIds.map(pid => refreshProductEmission(pid)));
+          }
+        }
+      } catch (_) {}
     } catch (e) {
       console.error('⚠️ 재계산 트리거 실패:', e);
       await refreshProcessEmission(processId);
