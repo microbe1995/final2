@@ -38,6 +38,40 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
   useEffect(() => {
     prevNodesRef.current = nodes;
   }, [nodes]);
+  // 최신 edges 스냅샷도 유지
+  useEffect(() => {
+    prevEdgesRef.current = edges;
+  }, [edges]);
+
+  // 노드/엣지 변경 시 레이아웃을 로컬스토리지에 보조 저장(디바운스)
+  const saveTimerRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (!activeInstallId) return;
+    try {
+      if (saveTimerRef.current) {
+        window.clearTimeout(saveTimerRef.current);
+      }
+      saveTimerRef.current = window.setTimeout(() => {
+        const key = `cbam:layout:${activeInstallId}`;
+        const payload = { nodes, edges };
+        localStorage.setItem(key, JSON.stringify(payload));
+      }, 300);
+    } catch {}
+  }, [nodes, edges, activeInstallId]);
+
+  // 페이지 이탈(새로고침/라우팅) 전에 마지막 스냅샷 저장
+  useEffect(() => {
+    const handler = () => {
+      if (!activeInstallId) return;
+      try {
+        const key = `cbam:layout:${activeInstallId}`;
+        const payload = { nodes: prevNodesRef.current, edges: prevEdgesRef.current };
+        localStorage.setItem(key, JSON.stringify(payload));
+      } catch {}
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [activeInstallId]);
 
   // selectedInstall 변경 시 캔버스 상태 복원 (안전한 상태 업데이트)
   useEffect(() => {
@@ -423,14 +457,21 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
         }
       }
       if (!data) return;
+      // 합계가 0이어도 실제 계산 결과일 수 있으므로
+      // "값 존재 여부"를 기준으로 표시값을 결정한다.
+      const hasMatPart = ('total_matdir_emission' in data) || ('total_matdir' in data);
+      const hasFuelPart = ('total_fueldir_emission' in data) || ('total_fueldir' in data);
+      const hasDirectParts = hasMatPart || hasFuelPart;
+
       const totalMat = Number(data.total_matdir_emission ?? data.total_matdir ?? 0) || 0;
       const totalFuel = Number(data.total_fueldir_emission ?? data.total_fueldir ?? 0) || 0;
       const sumDirect = totalMat + totalFuel;
       const directFromDb = Number(data.attrdir_em ?? data.attrdir_emission ?? 0) || 0;
-      const directFixed = sumDirect > 0 ? sumDirect : directFromDb;
+      // 부분 값이 존재하면 합계를 우선(0 포함), 없으면 DB 값을 사용
+      const directFixed = hasDirectParts ? sumDirect : directFromDb;
 
-      // 백그라운드 보정: DB의 attrdir_em이 합계와 다르면 재계산 트리거
-      if (sumDirect > 0 && Math.abs(directFromDb - sumDirect) > 1e-6) {
+      // 백그라운드 보정: 부분 값이 존재하고 DB와 차이가 나면 재계산 트리거
+      if (hasDirectParts && Math.abs(directFromDb - sumDirect) > 1e-6) {
         axiosClient.post(apiEndpoints.cbam.calculation.process.attrdir(processId)).catch(() => {});
       }
 
