@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { useFuelMasterAPI } from '@/hooks/useFuelMasterAPI';
+import { useMaterialMasterAPI } from '@/hooks/useMaterialMasterAPI';
 import axiosClient from '@/lib/axiosClient';
 
 export interface DummyData {
@@ -21,6 +22,7 @@ export const useDummyData = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { searchFuels } = useFuelMasterAPI();
+  const { lookupMaterialByName } = useMaterialMasterAPI();
 
   // 제품별 공정 목록 조회
   const getProcessesByProduct = useCallback(async (productName: string) => {
@@ -178,7 +180,27 @@ export const useDummyData = () => {
           }
         }
 
-        return Array.from(map.values());
+        // Material Master 매칭 결과 우선 + 미매칭 fallback 함께 반환
+        const names = Array.from(map.keys());
+        const checks = await Promise.all(
+          names.map(async (n) => {
+            try {
+              const res = await lookupMaterialByName(n);
+              const ok = !!res && res.success && Array.isArray(res.data) && res.data.length > 0;
+              return { name: n, isMaterial: ok };
+            } catch {
+              return { name: n, isMaterial: false };
+            }
+          })
+        );
+
+        const matchedNames = checks.filter((c) => c.isMaterial).map((c) => c.name);
+        const unmatchedNames = checks.filter((c) => !c.isMaterial).map((c) => c.name);
+
+        const matched = matchedNames.map((n) => map.get(n)!).filter(Boolean);
+        const unmatched = unmatchedNames.map((n) => map.get(n)!).filter(Boolean);
+
+        return [...matched, ...unmatched];
       } catch (err: any) {
         const errorMessage = err.response?.data?.detail || err.message || '투입물 조회에 실패했습니다.';
         setError(errorMessage);
@@ -188,7 +210,7 @@ export const useDummyData = () => {
         setLoading(false);
       }
     },
-    []
+    [lookupMaterialByName]
   );
 
   // 🔴 추가: 기간/공정/제품명 기준으로 더미 투입물 중 "연료" 후보만 추출
@@ -236,7 +258,7 @@ export const useDummyData = () => {
           }
         }
 
-        // 3) Fuel Master 기준으로 실제 연료만 선별
+        // 3) Fuel Master 기준으로 실제 연료 우선 + 미매칭 항목은 fallback 으로 함께 노출
         const names = Array.from(map.keys());
         const checks = await Promise.all(
           names.map(async (n) => {
@@ -249,12 +271,14 @@ export const useDummyData = () => {
           })
         );
 
-        const fuels = checks
-          .filter((c) => c.isFuel)
-          .map((c) => map.get(c.name)!)
-          .filter(Boolean);
+        const matchedNames = checks.filter((c) => c.isFuel).map((c) => c.name);
+        const unmatchedNames = checks.filter((c) => !c.isFuel).map((c) => c.name);
 
-        return fuels;
+        const matched = matchedNames.map((n) => map.get(n)!).filter(Boolean);
+        const unmatched = unmatchedNames.map((n) => map.get(n)!).filter(Boolean);
+
+        // 매칭된 연료를 상단에 배치하고, 미매칭(더미 기준)도 후순위로 함께 반환
+        return [...matched, ...unmatched];
       } catch (err: any) {
         const errorMessage = err.response?.data?.detail || err.message || '연료 목록 조회에 실패했습니다.';
         setError(errorMessage);
