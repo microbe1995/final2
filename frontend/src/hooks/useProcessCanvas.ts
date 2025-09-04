@@ -673,6 +673,15 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
               refreshProcessEmission(finalSourceId),
               refreshProcessEmission(finalTargetId)
             ]);
+            // 공정 누적이 변하면 해당 제품 프리뷰도 변해야 하므로, 현재 캔버스의 제품 노드 프리뷰를 함께 갱신
+            try {
+              const productIds = (prevNodesRef.current || [])
+                .filter(n => n.type === 'product' && (n.data as any)?.id)
+                .map(n => (n.data as any).id as number);
+              if (productIds.length > 0) {
+                await Promise.all(productIds.map(id => refreshProductEmission(id)));
+              }
+            } catch (_) {}
           } else if (edgeData.edge_kind === 'produce') {
             // 공정→제품: 제품 프리뷰는 소스 공정의 '누적'을 사용하므로,
             // 직전의 continue 누적이 DB에 반영되도록 그래프 부분 재계산을 먼저 호출
