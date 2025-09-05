@@ -116,7 +116,14 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
               }
               if (n.type === 'process') {
                 const processData = data?.processData || { id: data?.id, process_name: data?.label, start_period: data?.start_period, end_period: data?.end_period, product_names: data?.product_names };
+                // 클릭은 사용하지 않지만, 호환성 위해 CustomEvent 트리거 유지
                 data.onClick = () => {
+                  try {
+                    window.dispatchEvent(new CustomEvent('cbam:node:process:input' as any, { detail: { processData } }));
+                  } catch {}
+                };
+                // 버튼이 호출하는 onMatDirClick도 복원 (콜백 유실 방지)
+                data.onMatDirClick = (_pd?: any) => {
                   try {
                     window.dispatchEvent(new CustomEvent('cbam:node:process:input' as any, { detail: { processData } }));
                   } catch {}
@@ -222,6 +229,7 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
               if (n.type === 'process') {
                 const processData = data?.processData || { id: data?.id, process_name: data?.label, start_period: data?.start_period, end_period: data?.end_period, product_names: data?.product_names };
                 data.onClick = () => { try { window.dispatchEvent(new CustomEvent('cbam:node:process:input' as any, { detail: { processData } })); } catch {} };
+                data.onMatDirClick = (_pd?: any) => { try { window.dispatchEvent(new CustomEvent('cbam:node:process:input' as any, { detail: { processData } })); } catch {} };
                 return { ...n, data } as Node;
               }
               return n as Node;
