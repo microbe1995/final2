@@ -21,9 +21,17 @@ class InstallRepository:
             logger.warning("DATABASE_URL 환경변수가 설정되지 않았습니다. 데이터베이스 기능이 제한됩니다.")
             return
         
-        # asyncpg 연결 풀 초기화
-        self.pool = None
-        self._initialization_attempted = False
+        # asyncpg 연결 풀 초기화 (요청 간 풀 공유)
+        # 여러 요청이 동시에 들어올 때 매번 새 풀을 만들면 DB 커넥션 초과가 발생한다.
+        # 클래스 레벨의 공유 풀을 사용해 모든 인스턴스가 재사용하도록 한다.
+        if not hasattr(InstallRepository, "_shared_pool"):
+            InstallRepository._shared_pool = None  # type: ignore[attr-defined]
+        if not hasattr(InstallRepository, "_shared_init_attempted"):
+            InstallRepository._shared_init_attempted = False  # type: ignore[attr-defined]
+
+        # 인스턴스는 클래스 공유 상태를 참조
+        self.pool = InstallRepository._shared_pool  # type: ignore[attr-defined]
+        self._initialization_attempted = InstallRepository._shared_init_attempted  # type: ignore[attr-defined]
     
     async def initialize(self):
         """데이터베이스 연결 풀 초기화"""
@@ -36,9 +44,16 @@ class InstallRepository:
             return
         
         self._initialization_attempted = True
+        InstallRepository._shared_init_attempted = True  # type: ignore[attr-defined]
         
         try:
             # asyncpg 연결 풀 생성
+            # 이미 공유 풀 존재 시 재사용
+            if InstallRepository._shared_pool is not None:  # type: ignore[attr-defined]
+                self.pool = InstallRepository._shared_pool  # type: ignore[attr-defined]
+                logger.info("♻️ Install 공유 커넥션 풀 재사용")
+                return
+
             self.pool = await asyncpg.create_pool(
                 self.database_url,
                 min_size=1,
@@ -50,6 +65,7 @@ class InstallRepository:
             )
             
             logger.info("✅ Install 데이터베이스 연결 풀 생성 성공")
+            InstallRepository._shared_pool = self.pool  # type: ignore[attr-defined]
             
             # 테이블 생성은 선택적으로 실행
             try:

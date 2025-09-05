@@ -101,9 +101,33 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
         if (raw) {
           const parsed = JSON.parse(raw);
           if (parsed?.nodes && parsed?.edges) {
-            setNodes(parsed.nodes);
+            // 🔁 함수 유실 복구: 노드 콜백 재주입
+            const rehydratedNodes: Node[] = (parsed.nodes as Node[]).map((n: any) => {
+              const data = { ...(n.data || {}) } as any;
+              if (n.type === 'product') {
+                const productId = data?.id;
+                data.onClick = undefined;
+                data.onDoubleClick = () => {
+                  try {
+                    window.dispatchEvent(new CustomEvent('cbam:node:product:open' as any, { detail: { productId, productData: data?.productData || null } }));
+                  } catch {}
+                };
+                return { ...n, data } as Node;
+              }
+              if (n.type === 'process') {
+                const processData = data?.processData || { id: data?.id, process_name: data?.label, start_period: data?.start_period, end_period: data?.end_period, product_names: data?.product_names };
+                data.onClick = () => {
+                  try {
+                    window.dispatchEvent(new CustomEvent('cbam:node:process:input' as any, { detail: { processData } }));
+                  } catch {}
+                };
+                return { ...n, data } as Node;
+              }
+              return n as Node;
+            });
+            setNodes(rehydratedNodes);
             setEdges(parsed.edges);
-            prevNodesRef.current = parsed.nodes;
+            prevNodesRef.current = rehydratedNodes;
             prevEdgesRef.current = parsed.edges;
             setInstallCanvases(prev => ({ ...prev, [selectedInstall.id]: { nodes: parsed.nodes, edges: parsed.edges } }));
             return;
@@ -184,7 +208,24 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
               })
               .filter(Boolean) as Edge[];
 
-            const restoredNodes = [...productNodes, ...processNodes];
+            // 🔁 서버 복원 시에도 콜백 주입
+            const restoredNodes: Node[] = [...productNodes, ...processNodes].map((n: any) => {
+              const data = { ...(n.data || {}) } as any;
+              if (n.type === 'product') {
+                const productId = data?.id;
+                data.onClick = undefined;
+                data.onDoubleClick = () => {
+                  try { window.dispatchEvent(new CustomEvent('cbam:node:product:open' as any, { detail: { productId, productData: data?.productData || null } })); } catch {}
+                };
+                return { ...n, data } as Node;
+              }
+              if (n.type === 'process') {
+                const processData = data?.processData || { id: data?.id, process_name: data?.label, start_period: data?.start_period, end_period: data?.end_period, product_names: data?.product_names };
+                data.onClick = () => { try { window.dispatchEvent(new CustomEvent('cbam:node:process:input' as any, { detail: { processData } })); } catch {} };
+                return { ...n, data } as Node;
+              }
+              return n as Node;
+            });
             setNodes(restoredNodes);
             setEdges(edgesRestored);
             prevNodesRef.current = restoredNodes;
@@ -312,13 +353,10 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
       },
     };
 
-    console.log('🔍 제품 노드 생성:', newNode); // 🔴 추가: 디버깅 로그
-
     // setNodes를 사용하여 안전하게 노드 추가
     setNodes(prev => {
       const newNodes = [...prev, newNode];
       prevNodesRef.current = newNodes;
-      console.log('🔍 노드 상태 업데이트:', newNodes); // 🔴 추가: 디버깅 로그
       return newNodes;
     });
     // 위치 저장: 서버 API 없으므로 일단 로컬스토리지로 보조 저장
@@ -349,7 +387,7 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
         };
       }
     } catch (error) {
-      console.log(`⚠️ 공정 ${process.id}의 배출량 정보가 아직 없습니다.`);
+      /* noop */
     }
 
     // 🔴 수정: 더 작은 ID 생성 (int32 범위 내)
@@ -391,13 +429,10 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
       },
     };
 
-    console.log('🔍 공정 노드 생성:', newNode); // 🔴 추가: 디버깅 로그
-
     // setNodes를 사용하여 안전하게 노드 추가
     setNodes(prev => {
       const newNodes = [...prev, newNode];
       prevNodesRef.current = newNodes;
-      console.log('🔍 노드 상태 업데이트:', newNodes); // 🔴 추가: 디버깅 로그
       return newNodes;
     });
     // 위치 저장 보조
@@ -429,13 +464,10 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
       },
     };
 
-    console.log('🔍 그룹 노드 생성:', newNode); // 🔴 추가: 디버깅 로그
-
     // setNodes를 사용하여 안전하게 노드 추가
     setNodes(prev => {
       const newNodes = [...prev, newNode];
       prevNodesRef.current = newNodes;
-      console.log('🔍 노드 상태 업데이트:', newNodes); // 🔴 추가: 디버깅 로그
       return newNodes;
     });
   }, [setNodes]);
@@ -801,11 +833,8 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
     let tempEdgeId: string | null = null;
     
     try {
-      console.log('🔗 Edge 연결 시도:', params);
-      
       // ✅ React Flow 공식 문서: 기본 파라미터 검증 강화
       if (!params.source || !params.target) {
-        console.log('❌ source 또는 target이 없음:', params);
         return;
       }
       
@@ -818,25 +847,15 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
       );
       
       if (existingEdge) {
-        console.log('❌ 이미 존재하는 연결:', existingEdge);
         return;
       }
       
       // Loose 모드에서는 핸들 ID가 선택적이지만, 있으면 사용
       if (!params.sourceHandle || !params.targetHandle) {
-        console.log('⚠️ 핸들 ID 없음 (Loose 모드에서는 허용):', params);
         // 핸들 ID가 없어도 연결은 허용하지만, 로깅은 함
       } else {
-        console.log('✅ 핸들 ID 확인됨:', {
-          sourceHandle: params.sourceHandle,
-          targetHandle: params.targetHandle
-        });
+        // 핸들 ID 확인됨: { sourceHandle: params.sourceHandle, targetHandle: params.targetHandle }
       }
-      
-      console.log('🔧 4방향 연결 핸들 ID:', {
-        sourceHandle: params.sourceHandle,
-        targetHandle: params.targetHandle
-      });
       
       // ✅ React Flow 공식 문서: 임시 Edge 생성으로 사용자 피드백 제공
       tempEdgeId = `temp-${Date.now()}-${Math.random().toString(36).slice(2)}`;
@@ -853,7 +872,6 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
       
       // ✅ 임시 엣지 추가
       setEdges(prev => [...prev, tempEdge]);
-      console.log('🔗 임시 Edge 추가됨:', tempEdgeId);
       
       // ✅ 실제 DB ID/타입은 노드의 data와 type에서 가져온다
       // 일부 환경에서 params.source/target에 핸들 접미사(-left/-right/-top/-bottom)가 붙는 경우가 있어 정규화
@@ -889,18 +907,8 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
       const sourceId = (sourceNode?.data as any)?.id as number | undefined;
       const targetId = (targetNode?.data as any)?.id as number | undefined;
       
-      console.log('🔍 추출된 정보:', {
-        source: sourceNodeId,
-        target: targetNodeId,
-        sourceId,
-        targetId,
-        sourceNodeType,
-        targetNodeType
-      });
-      
       // 🔴 추가: 노드 타입 검증
       if (sourceNodeType === 'unknown' || targetNodeType === 'unknown') {
-        console.warn('❌ 유효하지 않은 노드 타입:', { sourceNodeType, targetNodeType });
         setEdges(prev => prev.filter(edge => edge.id !== tempEdgeId));
         return; // 초기 드래그 타이밍 이슈 시 조용히 무시
       }
@@ -915,14 +923,12 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
       const finalTargetId = ensureDbId(targetNode, targetId);
 
       if (!finalSourceId || !finalTargetId) {
-        console.warn('❌ 유효하지 않은 DB ID:', { sourceId, targetId, source: params.source, target: params.target });
         setEdges(prev => prev.filter(edge => edge.id !== tempEdgeId));
         return; // 조용히 무시하여 첫 연결 알럿 제거
       }
       
       // 🔴 추가: Edge 생성 전 최종 검증
       if (finalSourceId === finalTargetId) {
-        console.error('❌ 자기 자신과는 연결할 수 없습니다.');
         setEdges(prev => prev.filter(edge => edge.id !== tempEdgeId));
         alert('자기 자신과는 연결할 수 없습니다.');
         return;
@@ -937,7 +943,6 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
       } else if (sourceNodeType === 'product' && targetNodeType === 'process') {
         resolvedEdgeKind = 'consume';
       } else {
-        console.error('❌ 지원되지 않는 연결 유형입니다:', { sourceNodeType, targetNodeType });
         setEdges(prev => prev.filter(edge => edge.id !== tempEdgeId));
         alert('지원되지 않는 연결 유형입니다. 제품↔공정 또는 공정↔공정만 연결할 수 있습니다.');
         return;
@@ -968,13 +973,10 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
         edge_kind: resolvedEdgeKind
       };
       
-      console.log('🔗 Edge 생성 요청:', edgeData);
-      
       const response = await axiosClient.post(apiEndpoints.cbam.edge.create, edgeData);
       
       if (response.status === 201) {
         const newEdge = response.data;
-        console.log('✅ Edge 생성 성공:', newEdge);
         
         // ✅ React Flow 공식 문서: 임시 Edge를 실제 Edge로 교체
         setEdges(prev => prev.map(edge => 

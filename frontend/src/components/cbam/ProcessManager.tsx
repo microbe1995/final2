@@ -90,7 +90,7 @@ function ProcessManagerInner() {
         };
       }
     } catch (error) {
-      console.log(`⚠️ 공정 ${processId}의 배출량 정보가 아직 없습니다.`);
+      /* noop */
     }
     return null;
   }, []);
@@ -127,7 +127,6 @@ function ProcessManagerInner() {
         await refreshProductEmission(pid);
       }
     } catch {}
-    console.log('🔄 캔버스 새로고침 완료');
   }, [refreshAllProcessEmissions, nodes, refreshProductEmission]);
 
   // 모달 상태
@@ -179,6 +178,32 @@ function ProcessManagerInner() {
     setShowInputModal(true);
   }, []);
 
+  // 노드 이벤트 브리지: useProcessCanvas 복원 시 주입된 CustomEvent 수신
+  useEffect(() => {
+    const handleOpenProduct = (e: any) => {
+      const { productId, productData } = e.detail || {};
+      if (!productId && !productData) return;
+      // 제품 공정선택 모달 오픈
+      try {
+        if (productData) {
+          setSelectedProduct(productData as any);
+        }
+      } catch {}
+      setShowProcessModal(true);
+    };
+    const handleOpenProcessInput = (e: any) => {
+      const { processData } = e.detail || {};
+      if (!processData) return;
+      openInputModal(processData as any);
+    };
+    window.addEventListener('cbam:node:product:open' as any, handleOpenProduct);
+    window.addEventListener('cbam:node:process:input' as any, handleOpenProcessInput);
+    return () => {
+      window.removeEventListener('cbam:node:product:open' as any, handleOpenProduct);
+      window.removeEventListener('cbam:node:process:input' as any, handleOpenProcessInput);
+    };
+  }, [openInputModal]);
+
   // 공정 선택 처리
   const handleProcessSelect = useCallback(async (process: Process) => {
     await addProcessNode(process, products, openInputModal, openInputModal);
@@ -192,63 +217,31 @@ function ProcessManagerInner() {
   // Edge 연결 처리
   const handleConnect = useCallback(async (params: Connection) => {
     try {
-      console.log('🔗 연결 시도:', params);
-      console.log('📍 연결 정보:', {
-        source: params.source,
-        target: params.target,
-        sourceHandle: params.sourceHandle,
-        targetHandle: params.targetHandle
-      });
-      
-      // 연결 처리
       await handleEdgeCreate(params, () => {});
-      
-      console.log('✅ 연결 처리 완료');
       alert(`연결이 성공적으로 생성되었습니다!\n${params.source} → ${params.target}`);
-      
     } catch (error) {
-      console.error('❌ 연결 처리 실패:', error);
       alert(`연결 처리에 실패했습니다: ${error}`);
     }
   }, [handleEdgeCreate]);
 
   // 🔧 React Flow 공식 문서에 따른 단순화된 연결 검증 로직
   const validateConnection = useCallback((connection: Connection) => {
-    console.log('🔍 연결 검증 시작:', connection);
-    console.log('📍 검증 대상:', {
-      source: connection.source,
-      target: connection.target,
-      sourceHandle: connection.sourceHandle,
-      targetHandle: connection.targetHandle
-    });
-    
-    // ✅ React Flow 공식 문서: 같은 노드 간 연결 방지
     if (connection.source === connection.target) {
-      console.log('❌ 같은 노드 간 연결 시도');
       return { valid: false, reason: '같은 노드 간 연결은 불가능합니다' };
     }
-    
-    // ✅ React Flow 공식 문서: 같은 핸들 간 연결 방지
     if (connection.sourceHandle && connection.targetHandle && 
         connection.sourceHandle === connection.targetHandle) {
-      console.log('❌ 같은 핸들 간 연결 시도');
       return { valid: false, reason: '같은 핸들 간 연결은 불가능합니다' };
     }
-    
-    // ✅ React Flow 공식 문서: 이미 존재하는 연결 확인 (핸들 ID까지 포함하여 정확히 같은 연결만 체크)
     const existingEdge = edges.find(edge => 
       edge.source === connection.source && 
       edge.target === connection.target &&
       edge.sourceHandle === connection.sourceHandle &&
       edge.targetHandle === connection.targetHandle
     );
-    
     if (existingEdge) {
-      console.log('❌ 이미 존재하는 연결 (핸들 ID 포함):', existingEdge);
       return { valid: false, reason: '이미 존재하는 연결입니다' };
     }
-    
-    // ✅ React Flow 공식 문서: 추가 검증 - 임시 엣지와의 중복 방지
     const tempEdgeExists = edges.find(edge => 
       edge.data?.isTemporary &&
       edge.source === connection.source && 
@@ -256,23 +249,19 @@ function ProcessManagerInner() {
       edge.sourceHandle === connection.sourceHandle &&
       edge.targetHandle === connection.targetHandle
     );
-    
     if (tempEdgeExists) {
-      console.log('❌ 임시 엣지와 중복:', tempEdgeExists);
       return { valid: false, reason: '연결 처리 중입니다. 잠시 기다려주세요.' };
     }
-    
-    console.log('✅ React Flow 연결 검증 통과');
     return { valid: true, reason: '연결이 유효합니다' };
   }, [edges]);
 
   // 🔧 단순화된 연결 이벤트 핸들러
   const handleConnectStart = useCallback((event: any, params: any) => {
-    console.log('🔗 연결 시작:', params);
+    /* noop */
   }, []);
 
   const handleConnectEnd = useCallback((event: any) => {
-    console.log('🔗 연결 종료:', event);
+    /* noop */
   }, []);
 
   const nodeTypes: NodeTypes = { 
@@ -362,17 +351,13 @@ function ProcessManagerInner() {
            className="bg-gray-900"
            fitView
            onConnectStart={(event, params) => {
-             console.log('🔗 4방향 연결 시작:', params);
              handleConnectStart(event, params);
            }}
            onConnect={(params) => {
-             console.log('🔗 4방향 연결 완료:', params);
              const validation = validateConnection(params);
              if (validation.valid) {
-               console.log('✅ 연결 검증 통과, 연결 처리 시작');
                handleConnect(params);
              } else {
-               console.log(`❌ 연결 검증 실패: ${validation.reason}`, params);
                alert(`연결이 유효하지 않습니다: ${validation.reason}`);
              }
            }}

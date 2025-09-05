@@ -21,9 +21,14 @@ class ProductRepository:
             logger.warning("DATABASE_URL 환경변수가 설정되지 않았습니다. 데이터베이스 기능이 제한됩니다.")
             return
         
-        # asyncpg 연결 풀 초기화
-        self.pool = None
-        self._initialization_attempted = False
+        # asyncpg 연결 풀 초기화 (요청 간 공유)
+        if not hasattr(ProductRepository, "_shared_pool"):
+            ProductRepository._shared_pool = None  # type: ignore[attr-defined]
+        if not hasattr(ProductRepository, "_shared_init_attempted"):
+            ProductRepository._shared_init_attempted = False  # type: ignore[attr-defined]
+
+        self.pool = ProductRepository._shared_pool  # type: ignore[attr-defined]
+        self._initialization_attempted = ProductRepository._shared_init_attempted  # type: ignore[attr-defined]
     
     async def initialize(self):
         """데이터베이스 연결 풀 초기화"""
@@ -36,9 +41,15 @@ class ProductRepository:
             return
         
         self._initialization_attempted = True
+        ProductRepository._shared_init_attempted = True  # type: ignore[attr-defined]
         
         try:
             # asyncpg 연결 풀 생성
+            if ProductRepository._shared_pool is not None:  # type: ignore[attr-defined]
+                self.pool = ProductRepository._shared_pool  # type: ignore[attr-defined]
+                logger.info("♻️ Product 공유 커넥션 풀 재사용")
+                return
+
             self.pool = await asyncpg.create_pool(
                 self.database_url,
                 min_size=1,
@@ -50,6 +61,7 @@ class ProductRepository:
             )
             
             logger.info("✅ Product 데이터베이스 연결 풀 생성 성공")
+            ProductRepository._shared_pool = self.pool  # type: ignore[attr-defined]
             
             # 테이블 생성은 선택적으로 실행
             try:

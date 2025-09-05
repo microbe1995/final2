@@ -17,8 +17,14 @@ class DummyRepository:
     
     def __init__(self):
         self.database_url = os.getenv('DATABASE_URL')
-        self.pool: Optional[asyncpg.Pool] = None
-        self._initialization_attempted = False
+        # 공유 풀 사용으로 동시 연결 초과 방지
+        if not hasattr(DummyRepository, "_shared_pool"):
+            DummyRepository._shared_pool = None  # type: ignore[attr-defined]
+        if not hasattr(DummyRepository, "_shared_init_attempted"):
+            DummyRepository._shared_init_attempted = False  # type: ignore[attr-defined]
+
+        self.pool: Optional[asyncpg.Pool] = DummyRepository._shared_pool  # type: ignore[attr-defined]
+        self._initialization_attempted = DummyRepository._shared_init_attempted  # type: ignore[attr-defined]
     
     async def initialize(self):
         """데이터베이스 연결 풀 초기화"""
@@ -31,8 +37,14 @@ class DummyRepository:
             return
         
         self._initialization_attempted = True
+        DummyRepository._shared_init_attempted = True  # type: ignore[attr-defined]
         
         try:
+            if DummyRepository._shared_pool is not None:  # type: ignore[attr-defined]
+                self.pool = DummyRepository._shared_pool  # type: ignore[attr-defined]
+                logger.info("♻️ Dummy 공유 커넥션 풀 재사용")
+                return
+
             self.pool = await asyncpg.create_pool(
                 self.database_url,
                 min_size=1,
@@ -43,6 +55,7 @@ class DummyRepository:
                 }
             )
             logger.info("✅ Dummy 데이터베이스 연결 풀 생성 성공")
+            DummyRepository._shared_pool = self.pool  # type: ignore[attr-defined]
             
             # 테이블 생성은 선택적으로 실행
             try:
