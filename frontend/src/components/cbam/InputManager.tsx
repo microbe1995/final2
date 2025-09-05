@@ -294,8 +294,19 @@ export default function InputManager({ selectedProcess, onClose, onDataSaved }: 
   // ============================================================================
 
   const handleFuelDropdownChange = useCallback(async (name: string) => {
+    // 선택된 연료명 반영
     setFueldirForm(prev => ({ ...prev, name }));
     if (!name) return;
+
+    // 더미 연료 옵션에서 동일 이름의 기본 투입량을 자동 설정 (원료 로직과 동일)
+    const matched = fuelOptions.find(opt => opt.name === name);
+    if (matched) {
+      setFueldirForm(prev => ({ ...prev, amount: Number(matched.amount) || 0, oxyfactor: 1.0000 }));
+    } else {
+      setFueldirForm(prev => ({ ...prev, amount: 0, oxyfactor: 1.0000 }));
+    }
+
+    // Fuel Master에서 배출계수 자동 조회
     try {
       const factorResponse = await getFuelFactor(name);
       if (factorResponse && factorResponse.found && factorResponse.fuel_factor !== null) {
@@ -305,7 +316,7 @@ export default function InputManager({ selectedProcess, onClose, onDataSaved }: 
     } catch {
       // no-op: 자동 설정 실패 시 사용자 입력 대기
     }
-  }, [getFuelFactor]);
+  }, [fuelOptions, getFuelFactor]);
 
   const calculateFueldirEmission = useCallback(async () => {
     if (!fueldirForm.name || fueldirForm.factor <= 0 || fueldirForm.amount <= 0) {
@@ -521,8 +532,8 @@ export default function InputManager({ selectedProcess, onClose, onDataSaved }: 
                   <div className="text-xs text-gray-400 mt-1">💡 배출계수는 Master Table의 값만 사용 가능합니다</div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">투입된 연료량</label>
-                  <input type="number" step="0.000001" min="0" value={fueldirForm.amount} onChange={(e) => setFueldirForm(prev => ({ ...prev, amount: parseFloat(e.target.value) || 0 }))} className="w-full px-3 py-2 bg-gray-600 border border-gray-500 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="0.000000" />
+                  <label className="block text-sm font-medium text-gray-300 mb-2">투입된 연료량 <span className="text-xs text-red-400 ml-2">(수정 불가)</span></label>
+                  <input type="number" step="0.000001" min="0" value={fueldirForm.amount} readOnly className="w-full px-3 py-2 bg-gray-500 border border-gray-400 rounded-md text-gray-300 cursor-not-allowed" placeholder="연료 선택 시 자동 설정" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">산화계수</label>
