@@ -100,6 +100,7 @@ export default function GasEmissionReportPage() {
     id: number;
     install_id: number;
     product_name: string;
+    cncode_total?: string | null;
     goods_name?: string | null;
     goods_engname?: string | null;
     aggrgoods_name?: string | null;
@@ -594,6 +595,11 @@ export default function GasEmissionReportPage() {
                         </div>
                       </>
                     )}
+                    {/* CN 코드 표시 */}
+                    <div>
+                      <label className="block text-sm font-medium text-white/70 mb-2">CN Code</label>
+                      <input type="text" readOnly value={p.cncode_total || ''} className={input} />
+                    </div>
                     <div>
                       <label className="block text-sm font-medium text-white/70 mb-2">{t.euSell}</label>
                       <input type="text" readOnly value={String(p.product_eusell ?? '')} className={input} />
