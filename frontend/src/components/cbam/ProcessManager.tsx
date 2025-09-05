@@ -129,6 +129,23 @@ function ProcessManagerInner() {
     } catch {}
   }, [refreshAllProcessEmissions, nodes, refreshProductEmission]);
 
+  // 모든 제품 프리뷰 배출량을 DB attr_em으로 동기화
+  const syncProductEmissionsToDB = useCallback(async () => {
+    try {
+      const productIds = nodes
+        .filter(n => n.type === 'product')
+        .map(n => (n.data as any)?.id)
+        .filter((id): id is number => typeof id === 'number');
+      for (const id of productIds) {
+        try {
+          await axiosClient.post(apiEndpoints.cbam.edgePropagation.productSave(id));
+          await refreshProductEmission(id);
+        } catch {}
+      }
+      alert('제품 배출량이 DB와 동기화되었습니다.');
+    } catch {}
+  }, [nodes, refreshProductEmission]);
+
   // 모달 상태
   const [showProductModal, setShowProductModal] = useState(false);
   const [showProcessModalForProduct, setShowProcessModalForProduct] = useState(false);
@@ -315,6 +332,12 @@ function ProcessManagerInner() {
           className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
         >
           <RefreshCcw className="h-4 w-4" /> 새로고침
+        </Button>
+        <Button
+          onClick={syncProductEmissionsToDB}
+          className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg"
+        >
+          배출량 동기화
         </Button>
         {/* 그룹 노드 버튼, 배출량 정보 새로고침 버튼 제거 */}
 
