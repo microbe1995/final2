@@ -74,7 +74,7 @@ async def create_process(request: ProcessCreateRequest):
         logger.info(f"✅ 프로세스 생성 성공: ID {process.id}")
         return process
     except DuplicateProcessError as e:
-        # 동일 사업장 내 공정명 중복 → 409 Conflict
+        # 동일 사업장·동일 제품에 이미 연결된 공정명 중복 → 409
         logger.warning(f"⚠️ 프로세스 생성 중복: {str(e)}")
         raise HTTPException(status_code=409, detail=str(e))
     except Exception as e:

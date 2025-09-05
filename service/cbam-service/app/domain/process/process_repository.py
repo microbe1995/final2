@@ -177,18 +177,41 @@ class ProcessRepository:
             
         try:
             async with self.pool.acquire() as conn:
-                # 0. 사전 중복 체크 (동일 install 내 동일 이름 방지)
+                # 0. 사전 중복 체크
+                # 정책 변경: 동일 사업장 내 동일 공정명이라도, "다른 제품"에 속한 경우는 허용
+                # → 같은 install_id + process_name 이면서, product_ids에 포함된 제품과 이미 연결된 공정이 있을 때만 중복으로 간주
                 install_id = process_data.get('install_id', 1)
-                existing = await conn.fetchrow(
-                    """
-                    SELECT id FROM process 
-                    WHERE process_name = $1 AND install_id = $2
-                    LIMIT 1
-                    """,
-                    process_data['process_name'], install_id
-                )
+                product_ids = process_data.get('product_ids', []) or []
+                if product_ids:
+                    existing = await conn.fetchrow(
+                        """
+                        SELECT p.id
+                        FROM process p
+                        JOIN product_process pp ON pp.process_id = p.id
+                        WHERE p.process_name = $1
+                          AND p.install_id = $2
+                          AND pp.product_id = ANY($3::int[])
+                        LIMIT 1
+                        """,
+                        process_data['process_name'], install_id, product_ids
+                    )
+                else:
+                    # 제품 연결 정보가 없을 때는 install 내 동일 이름 전체를 금지 (기존 동작 유지)
+                    existing = await conn.fetchrow(
+                        """
+                        SELECT id FROM process 
+                        WHERE process_name = $1 AND install_id = $2
+                        LIMIT 1
+                        """,
+                        process_data['process_name'], install_id
+                    )
                 if existing:
-                    msg = f"동일 사업장(ID: {install_id})에 공정명 '{process_data['process_name']}'이 이미 존재합니다."
+                    msg = (
+                        f"동일 사업장(ID: {install_id})에 공정명 '{process_data['process_name']}'이 "
+                        f"해당 제품에 이미 연결되어 있습니다."
+                        if product_ids else
+                        f"동일 사업장(ID: {install_id})에 공정명 '{process_data['process_name']}'이 이미 존재합니다."
+                    )
                     logger.error(f"❌ 공정 생성 실패(중복): {msg}")
                     raise DuplicateProcessError(msg)
                 # 1. 공정 생성 (install_id 포함)
