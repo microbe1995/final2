@@ -413,7 +413,7 @@ export default function InstallPage() {
         {/* 제품 관리 모달 */}
         {showProductManagerFor !== null && (
           <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center">
-            <div className="max-w-6xl w-full mx-4 bg-gray-900 border border-gray-700 rounded-lg shadow-xl overflow-hidden">
+            <div className="w-full mx-4 bg-gray-900 border border-gray-700 rounded-lg shadow-xl overflow-hidden max-w-4xl">
               <div className="flex items-center justify-between p-4 border-b border-gray-700">
                 <h4 className="text-white font-semibold">제품 관리</h4>
                 <button
@@ -423,7 +423,7 @@ export default function InstallPage() {
                   ✕
                 </button>
               </div>
-              <div className="h-[70vh] overflow-y-auto">
+              <div className="h-[60vh] min-h-[520px] overflow-y-auto">
                 <InstallProductsPage overrideInstallId={showProductManagerFor as number} />
               </div>
             </div>

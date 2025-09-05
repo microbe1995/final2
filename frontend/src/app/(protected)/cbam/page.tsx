@@ -14,13 +14,15 @@ import CbamSidebar from '@/components/cbam/CbamSidebar';
 // 🎯 CBAM 관리 페이지
 // ============================================================================
 
+type DummyRow = DummyData & { 주문처명?: string | null; 오더번호?: number | string | null; 투입물_단위?: string | null };
+
 export default function CBAMPage() {
   const [activeTab, setActiveTab] = useState<
     'overview' | 'install' | 'boundary' | 'reports' | 'settings'
   >('overview');
 
   // 더미 데이터 상태 관리
-  const [dummyData, setDummyData] = useState<DummyData[]>([]);
+  const [dummyData, setDummyData] = useState<DummyRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // 사업장관리 내부 전환 플래그
@@ -31,7 +33,7 @@ export default function CBAMPage() {
   // 기본 탭은 투입물
 
   // 🔴 추가: 데이터 타입 변환 함수
-  const normalizeDummyData = (rawData: any[]): DummyData[] => {
+  const normalizeDummyData = (rawData: any[]): DummyRow[] => {
     return rawData.map(item => ({
       ...item,
       // 숫자 필드들을 안전하게 int로 변환
@@ -46,6 +48,9 @@ export default function CBAMPage() {
       공정: String(item.공정 || ''),
       투입물명: item.투입물명 || null,
       단위: String(item.단위 || ''),
+      주문처명: item.주문처명 ?? null,
+      오더번호: item.오더번호 ?? null,
+      투입물_단위: item.투입물_단위 ?? item.단위 ?? null,
       created_at: String(item.created_at || ''),
       updated_at: String(item.updated_at || '')
     }));
@@ -58,13 +63,16 @@ export default function CBAMPage() {
     
     try {
       // cbam 서비스를 통해 더미 데이터 조회
-      const response = await axiosClient.get('/api/v1/cbam/dummy');
+      const base = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://gateway-production-22ef.up.railway.app';
+      const response = await axiosClient.get(`${base}/api/v1/cbam/dummy`);
       let data: DummyData[] = [];
       
       if (response.data && Array.isArray(response.data)) {
         data = response.data;
       } else if (response.data && response.data.items && Array.isArray(response.data.items)) {
         data = response.data.items;
+      } else if (response.data && response.data.data && Array.isArray(response.data.data)) {
+        data = response.data.data;
       } else {
         data = [];
       }
@@ -139,27 +147,31 @@ export default function CBAMPage() {
               <table className='w-full text-sm'>
                 <thead>
                   <tr className='border-b border-white/20'>
+                    <th className='text-left py-3 px-4 font-medium text-white/80'>주문처명</th>
+                    <th className='text-left py-3 px-4 font-medium text-white/80'>오더번호</th>
                     <th className='text-left py-3 px-4 font-medium text-white/80'>로트번호</th>
-                    <th className='text-left py-3 px-4 font-medium text-white/80'>제품명</th>
+                    <th className='text-left py-3 px-4 font-medium text-white/80'>생산품명</th>
                     <th className='text-left py-3 px-4 font-medium text-white/80'>생산수량</th>
-                    <th className='text-left py-3 px-4 font-medium text-white/80'>입력일</th>
+                    <th className='text-left py-3 px-4 font-medium text-white/80'>투입일</th>
                     <th className='text-left py-3 px-4 font-medium text-white/80'>종료일</th>
                     <th className='text-left py-3 px-4 font-medium text-white/80'>공정명</th>
-                    <th className='text-left py-3 px-4 font-medium text-white/80'>투입물</th>
+                    <th className='text-left py-3 px-4 font-medium text-white/80'>투입물명</th>
                     <th className='text-left py-3 px-4 font-medium text-white/80'>수량</th>
-                    <th className='text-left py-3 px-4 font-medium text-white/80'>단위</th>
+                    <th className='text-left py-3 px-4 font-medium text-white/80'>투입물 단위</th>
                   </tr>
                 </thead>
                 <tbody>
                   {dummyData.length === 0 ? (
                     <tr>
-                      <td colSpan={9} className='text-center py-8 text-white/40'>
+                      <td colSpan={11} className='text-center py-8 text-white/40'>
                         데이터가 없습니다.
                       </td>
                     </tr>
                   ) : (
                     dummyData.map((item) => (
                       <tr key={item.id} className='border-b border-white/10 hover:bg-white/5 transition-colors'>
+                        <td className='py-3 px-4 text-white/90'>{item.주문처명 || '-'}</td>
+                        <td className='py-3 px-4 text-white/90'>{item.오더번호 ?? '-'}</td>
                         <td className='py-3 px-4 text-white/90'>{item.로트번호}</td>
                         <td className='py-3 px-4 text-white/90'>{item.생산품명}</td>
                         <td className='py-3 px-4 text-white/90'>{item.생산수량}</td>
@@ -168,7 +180,7 @@ export default function CBAMPage() {
                         <td className='py-3 px-4 text-white/90'>{item.공정}</td>
                         <td className='py-3 px-4 text-white/90'>{item.투입물명 || '-'}</td>
                         <td className='py-3 px-4 text-white/90'>{item.수량}</td>
-                        <td className='py-3 px-4 text-white/90'>ton</td>
+                        <td className='py-3 px-4 text-white/90'>{item.투입물_단위 || item.단위 || '-'}</td>
                       </tr>
                     ))
                   )}
