@@ -185,7 +185,11 @@ class DummyRepository:
             return None
 
     async def get_all_dummy_data(self, limit: int = 100, offset: int = 0) -> List[Dict[str, Any]]:
-        """모든 Dummy 데이터 조회 (페이징)"""
+        """모든 Dummy 데이터 조회 (페이징)
+
+        주의: PostgreSQL NUMERIC/DATE 타입은 asyncpg에서 Decimal/date 객체로 반환된다.
+        프론트엔드가 일관되게 사용할 수 있도록 여기서 숫자/날짜를 문자열/float로 안전 변환한다.
+        """
         if not self.pool:
             logger.warning("⚠️ 연결 풀이 초기화되지 않았습니다.")
             return []
@@ -194,8 +198,30 @@ class DummyRepository:
             query = "SELECT * FROM dummy ORDER BY id DESC LIMIT $1 OFFSET $2;"
             rows = await self.pool.fetch(query, limit, offset)
             
-            # Record들을 딕셔너리로 변환
-            data_list = [dict(row) for row in rows]
+            # Record들을 딕셔너리로 변환 + 캐스팅
+            data_list: List[Dict[str, Any]] = []
+            for row in rows:
+                item = dict(row)
+                # 숫자 캐스팅: 생산수량, 수량은 float로
+                try:
+                    if '생산수량' in item and item['생산수량'] is not None:
+                        # Decimal -> float
+                        item['생산수량'] = float(item['생산수량'])
+                except Exception:
+                    pass
+                try:
+                    if '수량' in item and item['수량'] is not None:
+                        item['수량'] = float(item['수량'])
+                except Exception:
+                    pass
+                # 날짜 캐스팅: date -> ISO 문자열
+                for date_key in ('투입일', '종료일'):
+                    try:
+                        if date_key in item and item[date_key] is not None:
+                            item[date_key] = item[date_key].isoformat()
+                    except Exception:
+                        pass
+                data_list.append(item)
             
             logger.info(f"✅ Dummy 데이터 목록 조회 성공: {len(data_list)}개")
             return data_list
@@ -320,7 +346,10 @@ class DummyRepository:
             return 0
     
     async def get_all_dummy_data(self) -> List[dict]:
-        """전체 더미 데이터 조회"""
+        """전체 더미 데이터 조회
+
+        주의: 프론트 소비를 위해 숫자/날짜 캐스팅을 동일하게 적용한다.
+        """
         if not self.pool:
             logger.warning("⚠️ 연결 풀이 초기화되지 않았습니다.")
             return []
@@ -337,8 +366,28 @@ class DummyRepository:
             """
             rows = await self.pool.fetch(query)
             
-            # Record들을 딕셔너리로 변환
-            data_list = [dict(row) for row in rows]
+            data_list: List[Dict[str, Any]] = []
+            for row in rows:
+                item = dict(row)
+                # 숫자 캐스팅
+                try:
+                    if '생산수량' in item and item['생산수량'] is not None:
+                        item['생산수량'] = float(item['생산수량'])
+                except Exception:
+                    pass
+                try:
+                    if '수량' in item and item['수량'] is not None:
+                        item['수량'] = float(item['수량'])
+                except Exception:
+                    pass
+                # 날짜 캐스팅
+                for date_key in ('투입일', '종료일'):
+                    try:
+                        if date_key in item and item[date_key] is not None:
+                            item[date_key] = item[date_key].isoformat()
+                    except Exception:
+                        pass
+                data_list.append(item)
             
             logger.info(f"✅ 전체 더미 데이터 조회 성공: {len(data_list)}개")
             return data_list

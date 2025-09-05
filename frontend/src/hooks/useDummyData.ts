@@ -7,12 +7,12 @@ export interface DummyData {
   id: number;
   로트번호: string;
   생산품명: string;
-  생산수량: number; // 🔴 수정: int 타입으로 변경
+  생산수량: number; // 서버에서 float로 올 수 있으므로 최종적으로 number로 사용
   투입일: string | null;
   종료일: string | null;
   공정: string;
   투입물명: string | null;
-  수량: number; // 🔴 수정: int 타입으로 변경
+  수량: number; // 서버에서 float로 올 수 있으므로 number로 사용
   단위: string;
   created_at: string;
   updated_at: string;
@@ -113,17 +113,17 @@ export const useDummyData = () => {
       const dummyData = Array.isArray(payload) ? payload : (payload?.data || []);
       
       // 해당 생산품명의 데이터만 필터링
-      const productData = dummyData.filter((item: DummyData) => 
-        item.생산품명 === productName
-      );
+      const productData = dummyData.filter((item: DummyData) => item.생산품명 === productName);
       
       if (productData.length === 0) {
         return 0;
       }
       
-      // 마지막 행의 생산수량 반환 (id 기준으로 정렬)
+      // 마지막 행의 생산수량 반환 (id 기준으로 정렬) + 안전 캐스팅
       const sortedData = productData.sort((a: DummyData, b: DummyData) => b.id - a.id);
-      return sortedData[0].생산수량 || 0;
+      const qtyRaw = (sortedData[0] as any)?.생산수량;
+      const qty = typeof qtyRaw === 'string' ? parseFloat(qtyRaw) : Number(qtyRaw);
+      return Number.isFinite(qty) ? qty : 0;
       
     } catch (err: any) {
       const errorMessage = err.response?.data?.detail || err.message || '생산수량 조회에 실패했습니다.';
