@@ -202,12 +202,9 @@ export const useDummyData = () => {
         );
 
         const matchedNames = checks.filter((c) => c.isMaterial).map((c) => c.name);
-        const unmatchedNames = checks.filter((c) => !c.isMaterial).map((c) => c.name);
-
         const matched = matchedNames.map((n) => map.get(n)!).filter(Boolean);
-        const unmatched = unmatchedNames.map((n) => map.get(n)!).filter(Boolean);
-
-        return [...matched, ...unmatched];
+        // 원료 드롭다운에는 실제 원료로 판정된 항목만 노출
+        return matched;
       } catch (err: any) {
         const errorMessage = err.response?.data?.detail || err.message || '투입물 조회에 실패했습니다.';
         setError(errorMessage);
@@ -279,13 +276,9 @@ export const useDummyData = () => {
         );
 
         const matchedNames = checks.filter((c) => c.isFuel).map((c) => c.name);
-        const unmatchedNames = checks.filter((c) => !c.isFuel).map((c) => c.name);
-
         const matched = matchedNames.map((n) => map.get(n)!).filter(Boolean);
-        const unmatched = unmatchedNames.map((n) => map.get(n)!).filter(Boolean);
-
-        // 매칭된 연료를 상단에 배치하고, 미매칭(더미 기준)도 후순위로 함께 반환
-        return [...matched, ...unmatched];
+        // 연료 드롭다운에는 실제 연료로 판정된 항목만 노출
+        return matched;
       } catch (err: any) {
         const errorMessage = err.response?.data?.detail || err.message || '연료 목록 조회에 실패했습니다.';
         setError(errorMessage);
