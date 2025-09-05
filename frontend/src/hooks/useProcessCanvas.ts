@@ -303,7 +303,9 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
         product_sell: Number((product as any)?.product_sell ?? 0),
         product_eusell: Number((product as any)?.product_eusell ?? 0),
         install_id: selectedInstall?.id,
-        onClick: () => handleProductNodeClick(product),
+        // 클릭은 아무 동작 없음, 더블클릭 시 공정선택 모달
+        onClick: undefined,
+        onDoubleClick: () => handleProductNodeClick(product),
         // 🔴 추가: ProductNode가 기대하는 추가 데이터
         size: 'md',
         showHandles: true,
@@ -380,6 +382,8 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
           // 배출량 정보 추가
           ...emissionData
         },
+        // 클릭 시 바로 투입량 입력 모달 열기
+        onClick: () => openInputModal(process),
         onMatDirClick: (processData: any) => openInputModal(processData),
         // 🔴 추가: ProcessNode가 기대하는 추가 데이터
         size: 'md',

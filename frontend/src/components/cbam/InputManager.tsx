@@ -174,25 +174,29 @@ export default function InputManager({ selectedProcess, onClose, onDataSaved }: 
       return;
     }
 
-    // 원료: 더미에서 수량 자동 설정 + Material Master에서 배출계수 자동 설정
+    // 원료: 배출계수 매칭 성공 시에만 더미에서 수량 자동 설정
     const matched = materialOptions.find(opt => opt.name === name);
+    // 우선 이름/산화계수만 적용, 수량은 보류
     setMatdirForm(prev => ({
       ...prev,
       name,
-      amount: matched ? Number(matched.amount) || 0 : 0,
+      amount: 0,
       oxyfactor: 1.0000,
     }));
     try {
       const factor = await autoMapMaterialFactor(name);
       if (factor !== null) {
-        setMatdirForm(prev => ({ ...prev, factor }));
+        // 배출계수 매칭 성공 → 이때만 더미 수량을 반영
+        const amountFromDummy = matched ? Number(matched.amount) || 0 : 0;
+        setMatdirForm(prev => ({ ...prev, factor, amount: amountFromDummy }));
         setMaterialAutoFactorStatus(`✅ 자동 설정: ${name} (배출계수: ${factor})`);
       } else {
-        setMatdirForm(prev => ({ ...prev, factor: 0 }));
-        setMaterialAutoFactorStatus(`⚠️ 배출계수를 찾을 수 없음: ${name}`);
+        // 매칭 실패 → 수량 자동 로딩 금지(0 유지)
+        setMatdirForm(prev => ({ ...prev, factor: 0, amount: 0 }));
+        setMaterialAutoFactorStatus(`⚠️ 배출계수를 찾을 수 없음: ${name}. 수량 자동설정이 비활성화됩니다.`);
       }
     } catch {
-      setMatdirForm(prev => ({ ...prev, factor: 0 }));
+      setMatdirForm(prev => ({ ...prev, factor: 0, amount: 0 }));
       setMaterialAutoFactorStatus(`❌ 배출계수 조회 실패: ${name}`);
     }
   }, [materialOptions, autoMapMaterialFactor, searchFuels]);

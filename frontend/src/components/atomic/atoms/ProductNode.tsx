@@ -78,6 +78,11 @@ function ProductNode({
   };
 
   const handleDoubleClick = () => {
+    // data에 onDoubleClick 콜백이 존재하면 우선 실행 (공정 선택 모달 등)
+    if (data.onDoubleClick) {
+      data.onDoubleClick();
+      return;
+    }
     if (onDoubleClick) onDoubleClick({ data, selected });
   };
 

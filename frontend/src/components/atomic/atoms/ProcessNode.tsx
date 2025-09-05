@@ -90,12 +90,7 @@ function ProcessNode({
       data.onClick();
       return;
     }
-    // onClick이 없는 경우 투입량 입력 핸들러를 기본 동작으로 사용
-    if (!data.onClick && data.onMatDirClick && data.processData) {
-      data.onMatDirClick(data.processData);
-      return;
-    }
-    // 그 다음 일반적인 onClick 핸들러 실행
+    // 그 다음 일반적인 onClick 핸들러 실행 (없으면 아무 동작 없음)
     if (onClick) onClick({ data, selected });
   };
 
