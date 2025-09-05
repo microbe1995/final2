@@ -32,6 +32,9 @@ class DummyData(Base):
     투입물명 = Column(Text, nullable=False, index=True)
     수량 = Column(Numeric(10, 2), nullable=False)
     단위 = Column(Text, nullable=False)
+    주문처명 = Column(Text, nullable=True)
+    오더번호 = Column(Integer, nullable=True)
+    투입물_단위 = Column(Text, nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     

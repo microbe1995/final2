@@ -105,6 +105,7 @@ export default function GasEmissionReportPage() {
     aggrgoods_name?: string | null;
     aggrgoods_engname?: string | null;
     product_eusell: number;
+    attr_em?: number | null;
   };
   type InstallRecord = { id: number; install_name: string };
   const [productOptions, setProductOptions] = useState<ProductRecord[]>([]);
@@ -303,7 +304,8 @@ export default function GasEmissionReportPage() {
       goodsEngName: '품목영문명',
       aggrGoodsName: '품목군명',
       aggrGoodsEngName: '품목군영문명',
-      euSell: 'EU 수출량'
+      euSell: 'EU 수출량',
+      productAttrEm: '제품 배출량'
     },
     english: {
       title: 'CBAM Template',
@@ -353,7 +355,8 @@ export default function GasEmissionReportPage() {
       goodsEngName: 'Goods name (EN)',
       aggrGoodsName: 'Aggregated goods (KR)',
       aggrGoodsEngName: 'Aggregated goods (EN)',
-      euSell: 'EU sell quantity'
+      euSell: 'EU sell quantity',
+      productAttrEm: 'Product attr emissions'
     }
   };
 
@@ -594,6 +597,10 @@ export default function GasEmissionReportPage() {
                     <div>
                       <label className="block text-sm font-medium text-white/70 mb-2">{t.euSell}</label>
                       <input type="text" readOnly value={String(p.product_eusell ?? '')} className={input} />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-white/70 mb-2">{t.productAttrEm}</label>
+                      <input type="text" readOnly value={typeof p.attr_em === 'number' ? `${p.attr_em.toFixed(2)} tCO2e` : ''} className={input} />
                     </div>
                   </div>
                 );

@@ -17,6 +17,9 @@ class DummyDataCreateRequest(BaseModel):
     투입물명: str = Field(..., description="투입물명")
     수량: int = Field(..., description="수량")
     단위: str = Field(..., description="단위")
+    주문처명: Optional[str] = Field(None, description="주문처명")
+    오더번호: Optional[int] = Field(None, description="오더번호")
+    투입물_단위: Optional[str] = Field(None, description="투입물 단위")
     
     class Config:
         json_schema_extra = {
@@ -45,6 +48,9 @@ class DummyDataResponse(BaseModel):
     투입물명: str = Field(..., description="투입물명")
     수량: int = Field(..., description="수량")
     단위: str = Field(..., description="단위")
+    주문처명: Optional[str] = Field(None, description="주문처명")
+    오더번호: Optional[int] = Field(None, description="오더번호")
+    투입물_단위: Optional[str] = Field(None, description="투입물 단위")
     created_at: Optional[datetime] = Field(None, description="생성일")
     updated_at: Optional[datetime] = Field(None, description="수정일")
     
@@ -66,6 +72,9 @@ class DummyDataUpdateRequest(BaseModel):
     투입물명: Optional[str] = Field(None, description="투입물명")
     수량: Optional[int] = Field(None, description="수량")
     단위: Optional[str] = Field(None, description="단위")
+    주문처명: Optional[str] = Field(None, description="주문처명")
+    오더번호: Optional[int] = Field(None, description="오더번호")
+    투입물_단위: Optional[str] = Field(None, description="투입물 단위")
 
 class DummyDataListResponse(BaseModel):
     """Dummy 데이터 목록 응답"""

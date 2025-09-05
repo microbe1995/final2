@@ -98,6 +98,9 @@ class DummyRepository:
                         투입물명 VARCHAR(200) NOT NULL,
                         수량 NUMERIC(10,2) NOT NULL,
                         단위 VARCHAR(50) NOT NULL,
+                        주문처명 TEXT,
+                        오더번호 INTEGER,
+                        투입물_단위 TEXT,
                         created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
                         updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
                     );
@@ -327,6 +330,7 @@ class DummyRepository:
                 SELECT 
                     id, 로트번호, 생산품명, 생산수량, 
                     투입일, 종료일, 공정, 투입물명, 수량, 단위,
+                    주문처명, 오더번호, 투입물_단위,
                     created_at, updated_at
                 FROM dummy 
                 ORDER BY id DESC;
