@@ -35,7 +35,6 @@ DDL_STATEMENTS = [
     # 1) 컬럼 추가(IF NOT EXISTS)
     'ALTER TABLE public."dummy" ADD COLUMN IF NOT EXISTS "주문처명" text;',
     'ALTER TABLE public."dummy" ADD COLUMN IF NOT EXISTS "오더번호" integer;',
-    'ALTER TABLE public."dummy" ADD COLUMN IF NOT EXISTS "생산수량_단위" text;',
     'ALTER TABLE public."dummy" ADD COLUMN IF NOT EXISTS "투입물_단위" text;',
 ]
 
@@ -48,7 +47,6 @@ POST_DDL_FIXUPS = [
 DATA_MIGRATIONS = [
     # 3) 데이터 채우기
     'UPDATE public."dummy" SET "투입물_단위" = COALESCE("투입물_단위", "단위") WHERE "투입물_단위" IS NULL;',
-    "UPDATE public.\"dummy\" SET \"생산수량_단위\" = COALESCE(\"생산수량_단위\", 'ton');",
 ]
 
 INDEX_STATEMENTS = [
