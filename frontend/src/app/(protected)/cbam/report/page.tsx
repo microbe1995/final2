@@ -93,6 +93,7 @@ export default function GasEmissionReportPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingProductData, setLoadingProductData] = useState(false);
+  const todayStr = new Date().toISOString().split('T')[0];
   
   // 실데이터: 제품 테이블/설치 테이블에서 가져올 항목 정의
   type ProductRecord = {
@@ -257,6 +258,7 @@ export default function GasEmissionReportPage() {
       title: 'CBAM 템플릿',
       companyName: '발행처: 회사명',
       issueDate: '발행일자: 발행 일자',
+      
       productionPeriod: '생산 기간',
       startPeriod: '시작 기간',
       endPeriod: '종료 기간',
@@ -306,7 +308,7 @@ export default function GasEmissionReportPage() {
     english: {
       title: 'CBAM Template',
       companyName: 'Issuer: Company Name',
-      issueDate: 'Issue Date: Issue Date',
+      issueDate: 'Issue Date',
       productionPeriod: 'Reporting period',
       startPeriod: 'start',
       endPeriod: 'End',
@@ -417,7 +419,7 @@ export default function GasEmissionReportPage() {
                 <span>{t.issueDate}</span>
                 <input
                   type="date"
-                  value="2024-01-15"
+                  value={todayStr}
                   readOnly
                   className={inputSm}
                 />
@@ -437,14 +439,14 @@ export default function GasEmissionReportPage() {
               <div className="flex items-center space-x-4">
                 <input
                   type="date"
-                  value="2024-01-01"
+                  value="2025-01-01"
                   readOnly
                   className={inputInline}
                 />
                 <span>~</span>
                 <input
                   type="date"
-                  value="2024-12-31"
+                  value="2025-12-31"
                   readOnly
                   className={inputInline}
                 />
@@ -538,7 +540,7 @@ export default function GasEmissionReportPage() {
                 <select
                   value={selectedProductId}
                   onChange={(e) => setSelectedProductId(e.target.value ? parseInt(e.target.value) : '')}
-                  className="px-3 py-2 bg-white/10 border border-white/20 rounded text-white"
+                  className="select-dark"
                 >
                   <option value="">{t.selectProduct}</option>
                   {productOptions.map((p) => (
