@@ -142,6 +142,9 @@ class ProductService:
                 update_data["product_sell"] = request.product_sell
             if request.product_eusell is not None:
                 update_data["product_eusell"] = request.product_eusell
+            # 🔁 추가: 제품 배출량(attr_em) 업데이트 허용
+            if request.attr_em is not None:
+                update_data["attr_em"] = request.attr_em
             
             if not update_data:
                 raise Exception("업데이트할 데이터가 없습니다.")
