@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import axiosClient, { apiEndpoints } from '@/lib/axiosClient';
 import { Download, FileText, Globe, Languages } from 'lucide-react';
 import CbamLayout from '@/components/cbam/CbamLayout';
 
@@ -91,6 +92,23 @@ export default function GasEmissionReportPage() {
   const [language, setLanguage] = useState<'korean' | 'english'>('korean');
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingProductData, setLoadingProductData] = useState(false);
+  
+  // 실데이터: 제품 테이블/설치 테이블에서 가져올 항목 정의
+  type ProductRecord = {
+    id: number;
+    install_id: number;
+    product_name: string;
+    goods_name?: string | null;
+    goods_engname?: string | null;
+    aggrgoods_name?: string | null;
+    aggrgoods_engname?: string | null;
+    product_eusell: number;
+  };
+  type InstallRecord = { id: number; install_name: string };
+  const [productOptions, setProductOptions] = useState<ProductRecord[]>([]);
+  const [installMap, setInstallMap] = useState<Record<number, string>>({});
+  const [selectedProductId, setSelectedProductId] = useState<number | ''>('');
   
   // 폼 데이터 상태
   const [formData, setFormData] = useState({
@@ -184,6 +202,29 @@ export default function GasEmissionReportPage() {
     setLanguage(prev => prev === 'korean' ? 'english' : 'korean');
   };
 
+  // 제품/설치 실데이터 로드
+  const handleLoadProductData = async () => {
+    try {
+      setLoadingProductData(true);
+      const [prodRes, instRes] = await Promise.all([
+        axiosClient.get(apiEndpoints.cbam.product.list),
+        axiosClient.get(apiEndpoints.cbam.install.list)
+      ]);
+      const prods: ProductRecord[] = Array.isArray(prodRes.data) ? prodRes.data : [];
+      const installs: InstallRecord[] = Array.isArray(instRes.data) ? instRes.data : [];
+      const map: Record<number, string> = installs.reduce((acc, i) => { acc[i.id] = i.install_name; return acc; }, {} as Record<number, string>);
+      setProductOptions(prods);
+      setInstallMap(map);
+      if (prods.length > 0) {
+        setSelectedProductId(prods[0].id);
+      }
+    } catch (e) {
+      alert('제품/설치 데이터를 불러오는 중 오류가 발생했습니다.');
+    } finally {
+      setLoadingProductData(false);
+    }
+  };
+
   // 보고서 다운로드 함수
   const handleDownloadReport = (type: 'pdf' | 'excel') => {
     console.log(`${type} 보고서 다운로드 시작`);
@@ -250,7 +291,17 @@ export default function GasEmissionReportPage() {
       disclaimer: '* 기업 자세 계산값이 존재할 경우 에너지, 원료별 계수값을 사랑하고 해당 증빙자료 산출',
       companySeal: '회사 직인 (인)',
       downloadPdf: 'PDF 다운로드',
-      downloadExcel: 'Excel 다운로드'
+      downloadExcel: 'Excel 다운로드',
+      productSectionTitle: '제품 정보',
+      loadProductInfo: '제품 정보 불러오기',
+      selectProduct: '제품 선택',
+      installName: '사업장 명',
+      productName: '제품명',
+      goodsName: '품목명',
+      goodsEngName: '품목영문명',
+      aggrGoodsName: '품목군명',
+      aggrGoodsEngName: '품목군영문명',
+      euSell: 'EU 수출량'
     },
     english: {
       title: 'CBAM Template',
@@ -290,7 +341,17 @@ export default function GasEmissionReportPage() {
       disclaimer: '* If detailed calculation values exist for the company, use energy and raw material coefficients and calculate the corresponding supporting data',
       companySeal: 'Official Company Stamp',
       downloadPdf: 'Download PDF',
-      downloadExcel: 'Download Excel'
+      downloadExcel: 'Download Excel',
+      productSectionTitle: 'Product information',
+      loadProductInfo: 'Load product info',
+      selectProduct: 'Select product',
+      installName: 'Installation name',
+      productName: 'Product name',
+      goodsName: 'Goods name (KR)',
+      goodsEngName: 'Goods name (EN)',
+      aggrGoodsName: 'Aggregated goods (KR)',
+      aggrGoodsEngName: 'Aggregated goods (EN)',
+      euSell: 'EU sell quantity'
     }
   };
 
@@ -462,13 +523,86 @@ export default function GasEmissionReportPage() {
             </div>
           </div>
 
-    
+          {/* 2. 제품 정보 */}
+          <div className="mb-8">
+            <h2 className="text-xl font-semibold text-white mb-4">2. {t.productSectionTitle}</h2>
+            <div className="flex items-center gap-2 mb-4">
+              <button
+                onClick={handleLoadProductData}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
+                disabled={loadingProductData}
+              >
+                {loadingProductData ? '불러오는 중...' : t.loadProductInfo}
+              </button>
+              {productOptions.length > 0 && (
+                <select
+                  value={selectedProductId}
+                  onChange={(e) => setSelectedProductId(e.target.value ? parseInt(e.target.value) : '')}
+                  className="px-3 py-2 bg-white/10 border border-white/20 rounded text-white"
+                >
+                  <option value="">{t.selectProduct}</option>
+                  {productOptions.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {installMap[p.install_id] ? `${installMap[p.install_id]} · ` : ''}{p.product_name}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
 
-                         
-          {/* 2. 연락처 */}
+            {selectedProductId !== '' && productOptions.length > 0 && (
+              (() => {
+                const p = productOptions.find(pp => pp.id === selectedProductId);
+                if (!p) return null;
+                const installName = installMap[p.install_id] || '';
+                return (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* 공통 */}
+                    <div>
+                      <label className="block text-sm font-medium text-white/70 mb-2">{t.installName}</label>
+                      <input type="text" readOnly value={installName} className={input} />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-white/70 mb-2">{t.productName}</label>
+                      <input type="text" readOnly value={p.product_name} className={input} />
+                    </div>
+                    {language === 'korean' ? (
+                      <>
+                        <div>
+                          <label className="block text-sm font-medium text-white/70 mb-2">{t.goodsName}</label>
+                          <input type="text" readOnly value={p.goods_name || ''} className={input} />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-white/70 mb-2">{t.aggrGoodsName}</label>
+                          <input type="text" readOnly value={p.aggrgoods_name || ''} className={input} />
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div>
+                          <label className="block text-sm font-medium text-white/70 mb-2">{t.goodsEngName}</label>
+                          <input type="text" readOnly value={p.goods_engname || ''} className={input} />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-white/70 mb-2">{t.aggrGoodsEngName}</label>
+                          <input type="text" readOnly value={p.aggrgoods_engname || ''} className={input} />
+                        </div>
+                      </>
+                    )}
+                    <div>
+                      <label className="block text-sm font-medium text-white/70 mb-2">{t.euSell}</label>
+                      <input type="text" readOnly value={String(p.product_eusell ?? '')} className={input} />
+                    </div>
+                  </div>
+                );
+              })()
+            )}
+          </div>
+
+          {/* 3. 연락처 */}
           <div className="mb-8">
             <h2 className="text-xl font-semibold text-white mb-4">
-              2. {t.contact}
+              3. {t.contact}
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>

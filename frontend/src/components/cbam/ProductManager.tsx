@@ -748,7 +748,11 @@ export default function ProductManager({ installId, embedded = true }: ProductMa
                       : '제품명을 선택하세요'}
                   </option>
                   {productNames
-                    .filter((name) => !selectedProductNames.has(name))
+                    .filter((name) => {
+                      // 수정 모드에서는 현재 수정 중인 제품명은 드롭다운에 포함
+                      if (editingProduct && name === editingProduct.product_name) return true;
+                      return !selectedProductNames.has(name);
+                    })
                     .map((name) => (
                       <option key={name} value={name}>
                         {name}

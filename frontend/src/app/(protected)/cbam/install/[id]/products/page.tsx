@@ -1012,7 +1012,11 @@ export default function InstallProductsPage(props: any) {
                       }
                     </option>
                     {productNames
-                      .filter(name => !selectedProductNames.has(name)) // 🔴 추가: 이미 선택된 제품명 제외
+                      .filter(name => {
+                        // 수정 모드에서는 현재 수정 중인 제품명은 목록에 포함
+                        if (editingProduct && name === editingProduct.product_name) return true;
+                        return !selectedProductNames.has(name);
+                      })
                       .map((name) => (
                         <option key={name} value={name}>{name}</option>
                       ))}
