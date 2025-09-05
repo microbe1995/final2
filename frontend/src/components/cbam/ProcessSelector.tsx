@@ -89,6 +89,7 @@ export const ProductProcessModal: React.FC<{
     product_eusell: selectedProduct?.product_eusell || 0
   });
   const [saving, setSaving] = useState(false);
+  const [previewAttrEm, setPreviewAttrEm] = useState<number | null>(null);
   const [isEditingQty, setIsEditingQty] = useState(true);
 
   // 더미 데이터 기반: 선택된 제품에서 허용되는 공정명 목록 강제 적용
@@ -142,6 +143,26 @@ export const ProductProcessModal: React.FC<{
       }
     })();
   }, [productModalTab, selectedProduct?.product_name, getProductQuantity]);
+
+  // 제품 프리뷰 배출량 조회 (엣지 전파 기반 프리뷰)
+  React.useEffect(() => {
+    (async () => {
+      if (productModalTab !== 'quantity') return;
+      const productId = selectedProduct?.id;
+      if (!productId) return;
+      try {
+        const resp = await axiosClient.get(apiEndpoints.cbam.edgePropagation.productPreview(productId));
+        const value = Number(resp?.data?.preview_attr_em ?? 0) || 0;
+        setPreviewAttrEm(value);
+      } catch {
+        // 폴백: 제품 상세 attr_em
+        try {
+          const getResp = await axiosClient.get(apiEndpoints.cbam.product.get(productId));
+          setPreviewAttrEm(Number(getResp?.data?.attr_em ?? 0) || 0);
+        } catch { setPreviewAttrEm(null); }
+      }
+    })();
+  }, [productModalTab, selectedProduct?.id]);
 
   // useEffect로 selectedProduct 변경 시 폼 값 업데이트
   React.useEffect(() => {
@@ -441,6 +462,14 @@ export const ProductProcessModal: React.FC<{
                             { product_sell: sell, product_eusell: eu }
                           );
                         }
+                        // 1-1) 현재 프리뷰 배출량을 제품 attr_em으로 저장
+                        try {
+                          const attr = typeof previewAttrEm === 'number' ? previewAttrEm : 0;
+                          await axiosClient.put(
+                            apiEndpoints.cbam.product.update(selectedProduct.id),
+                            { attr_em: attr }
+                          );
+                        } catch {}
                         // 저장 후 DB값 재반영
                         try {
                           const getResp = await axiosClient.get(apiEndpoints.cbam.product.get(selectedProduct.id));
