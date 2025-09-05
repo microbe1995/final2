@@ -116,6 +116,17 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
               }
               if (n.type === 'process') {
                 const processData = data?.processData || { id: data?.id, process_name: data?.label, start_period: data?.start_period, end_period: data?.end_period, product_names: data?.product_names };
+                // 🔁 복원 시 현재 선택된 사업장 기준으로 읽기전용 여부 재계산
+                const ownerInstallId = typeof data.install_id === 'number' ? data.install_id : (processData as any)?.install_id;
+                const currentInstallId = selectedInstall?.id;
+                (data as any).current_install_id = currentInstallId;
+                (data as any).is_readonly = (typeof ownerInstallId === 'number' && typeof currentInstallId === 'number')
+                  ? ownerInstallId !== currentInstallId
+                  : false;
+                (processData as any).install_id = ownerInstallId;
+                (processData as any).current_install_id = currentInstallId;
+                (processData as any).is_readonly = (data as any).is_readonly;
+
                 // 클릭은 사용하지 않지만, 호환성 위해 CustomEvent 트리거 유지
                 data.onClick = () => {
                   try {
@@ -228,6 +239,17 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
               }
               if (n.type === 'process') {
                 const processData = data?.processData || { id: data?.id, process_name: data?.label, start_period: data?.start_period, end_period: data?.end_period, product_names: data?.product_names };
+                // 🔁 서버 복원 시에도 현재 사업장 기준으로 읽기전용 여부 재계산
+                const ownerInstallId = typeof data.install_id === 'number' ? data.install_id : (processData as any)?.install_id;
+                const currentInstallId = selectedInstall?.id;
+                (data as any).current_install_id = currentInstallId;
+                (data as any).is_readonly = (typeof ownerInstallId === 'number' && typeof currentInstallId === 'number')
+                  ? ownerInstallId !== currentInstallId
+                  : false;
+                (processData as any).install_id = ownerInstallId;
+                (processData as any).current_install_id = currentInstallId;
+                (processData as any).is_readonly = (data as any).is_readonly;
+
                 data.onClick = () => { try { window.dispatchEvent(new CustomEvent('cbam:node:process:input' as any, { detail: { processData } })); } catch {} };
                 data.onMatDirClick = (_pd?: any) => { try { window.dispatchEvent(new CustomEvent('cbam:node:process:input' as any, { detail: { processData } })); } catch {} };
                 return { ...n, data } as Node;

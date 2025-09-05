@@ -637,7 +637,7 @@ export default function InputManager({ selectedProcess, onClose, onDataSaved }: 
                           <div className="bg-gray-700 rounded p-2"><div className="text-gray-400">배출계수</div><div className="font-semibold">{result.factor}</div></div>
                           <div className="bg-gray-700 rounded p-2"><div className="text-gray-400">투입량</div><div className="font-semibold">{result.amount}</div></div>
                           <div className="bg-gray-700 rounded p-2"><div className="text-gray-400">산화계수</div><div className="font-semibold">{result.oxyfactor}</div></div>
-                          <div className="bg-gray-700 rounded p-2"><div className="text-gray-400">계산결과</div><div className="font-semibold">{typeof result.emission === 'number' ? result.emission.toFixed(6) : result.emission}</div></div>
+                          <div className="bg-gray-700 rounded p-2"><div className="text-gray-400">계산결과</div><div className="font-semibold">{typeof result.emission === 'number' ? result.emission.toFixed(2) : result.emission}</div></div>
                         </div>
                         {result.calculation_formula && (
                           <div className="text-[11px] text-gray-300">{result.calculation_formula}</div>

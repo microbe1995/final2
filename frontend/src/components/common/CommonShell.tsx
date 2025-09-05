@@ -44,9 +44,9 @@ const CommonShell: React.FC<CommonShellProps> = ({ children }) => {
     },
     {
       name: 'LCA',
-      href: '/lca',
+      href: 'https://final2-mu-seven.vercel.app/lca',
       icon: BarChart3,
-      current: pathname.startsWith('/lca'),
+      current: false,
       description: '생명주기 평가 프로젝트 관리',
     },
     {
@@ -64,16 +64,16 @@ const CommonShell: React.FC<CommonShellProps> = ({ children }) => {
     },
     {
       name: '데이터 업로드',
-      href: '/data-upload',
+      href: 'https://www.greensteel.site/data-upload',
       icon: Upload,
-      current: pathname === '/data-upload',
+      current: false,
       description: 'ESG 데이터 업로드 및 관리',
     },
     {
       name: '설정',
-      href: '/settings',
+      href: 'https://www.greensteel.site/settings/company',
       icon: Settings,
-      current: pathname === '/settings',
+      current: false,
       description: '계정 및 환경설정',
     },
   ];
@@ -92,7 +92,11 @@ const CommonShell: React.FC<CommonShellProps> = ({ children }) => {
   };
 
   const handleGoHome = () => {
-    router.push('/');
+    if (typeof window !== 'undefined') {
+      window.location.href = 'https://www.greensteel.site/dashboard';
+      return;
+    }
+    router.push('https://www.greensteel.site/dashboard');
   };
 
   // no-op effect (reserved)

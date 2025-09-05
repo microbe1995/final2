@@ -32,16 +32,16 @@ export default function LcaLayout({ children }: LcaLayoutProps) {
   const navigation = [
     {
       name: '홈',
-      href: '/dashboard',
+      href: 'https://www.greensteel.site/dashboard',
       icon: Home,
-      current: pathname === '/dashboard',
+      current: false,
       description: 'ESG 요약 및 최근 활동',
     },
     {
       name: 'LCA',
-      href: '/lca',
+      href: 'https://final2-mu-seven.vercel.app/lca',
       icon: BarChart3,
-      current: pathname.startsWith('/lca'),
+      current: false,
       description: '생명주기 평가 프로젝트 관리',
     },
     {
@@ -53,16 +53,16 @@ export default function LcaLayout({ children }: LcaLayoutProps) {
     },
     {
       name: '데이터 업로드',
-      href: '/data-upload',
+      href: 'https://www.greensteel.site/data-upload',
       icon: Upload,
-      current: pathname === '/data-upload',
+      current: false,
       description: 'ESG 데이터 업로드 및 관리',
     },
     {
       name: '설정',
-      href: '/settings',
+      href: 'https://www.greensteel.site/settings/company',
       icon: Settings,
-      current: pathname === '/settings',
+      current: false,
       description: '계정 및 환경설정',
     },
   ];
