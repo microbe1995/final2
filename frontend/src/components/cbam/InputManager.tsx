@@ -215,8 +215,11 @@ export default function InputManager({ selectedProcess, onClose, onDataSaved }: 
       if (!selectedProcess) return;
       try {
         const processName = selectedProcess?.process_name || selectedProcess?.processData?.process_name || selectedProcess?.label;
-        const startDate = selectedProcess?.start_period || selectedProcess?.processData?.start_period || selectedProcess?.startDate;
-        const endDate = selectedProcess?.end_period || selectedProcess?.processData?.end_period || selectedProcess?.endDate;
+        const rawStart = selectedProcess?.start_period || selectedProcess?.processData?.start_period || selectedProcess?.startDate;
+        const rawEnd = selectedProcess?.end_period || selectedProcess?.processData?.end_period || selectedProcess?.endDate;
+        const isISO = (v: any) => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v);
+        const startDate = isISO(rawStart) ? rawStart : undefined;
+        const endDate = isISO(rawEnd) ? rawEnd : undefined;
         const productNames: string[] | undefined = selectedProcess?.product_names
           ? String(selectedProcess.product_names).split(',').map((s: string) => s.trim()).filter(Boolean)
           : undefined;
@@ -234,8 +237,11 @@ export default function InputManager({ selectedProcess, onClose, onDataSaved }: 
       if (!selectedProcess) return;
       try {
         const processName = selectedProcess?.process_name || selectedProcess?.processData?.process_name || selectedProcess?.label;
-        const startDate = selectedProcess?.start_period || selectedProcess?.processData?.start_period || selectedProcess?.startDate;
-        const endDate = selectedProcess?.end_period || selectedProcess?.processData?.end_period || selectedProcess?.endDate;
+        const rawStart = selectedProcess?.start_period || selectedProcess?.processData?.start_period || selectedProcess?.startDate;
+        const rawEnd = selectedProcess?.end_period || selectedProcess?.processData?.end_period || selectedProcess?.endDate;
+        const isISO = (v: any) => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v);
+        const startDate = isISO(rawStart) ? rawStart : undefined;
+        const endDate = isISO(rawEnd) ? rawEnd : undefined;
         const productNames: string[] | undefined = selectedProcess?.product_names
           ? String(selectedProcess.product_names).split(',').map((s: string) => s.trim()).filter(Boolean)
           : undefined;
@@ -270,7 +276,7 @@ export default function InputManager({ selectedProcess, onClose, onDataSaved }: 
         factor: matdirForm.factor,
         amount: matdirForm.amount,
         oxyfactor: matdirForm.oxyfactor,
-        emission: calculationResult.matdir_em,
+        emission: Number(calculationResult.matdir_em ?? 0).toFixed ? Number(Number(calculationResult.matdir_em).toFixed(2)) : calculationResult.matdir_em,
         calculation_formula: calculationResult.calculation_formula,
         type: 'matdir'
       };
@@ -344,7 +350,7 @@ export default function InputManager({ selectedProcess, onClose, onDataSaved }: 
         factor: fueldirForm.factor,
         amount: fueldirForm.amount,
         oxyfactor: fueldirForm.oxyfactor,
-        emission: calculationResult.fueldir_em,
+        emission: Number(calculationResult.fueldir_em ?? 0).toFixed ? Number(Number(calculationResult.fueldir_em).toFixed(2)) : calculationResult.fueldir_em,
         calculation_formula: calculationResult.calculation_formula,
         type: 'fueldir'
       };

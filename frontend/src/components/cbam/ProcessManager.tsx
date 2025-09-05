@@ -2,7 +2,7 @@
 
 import React, { useState, useCallback, useEffect } from 'react';
 import Button from '@/components/atomic/atoms/Button';
-import { Plus, RefreshCcw } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import axiosClient, { apiEndpoints } from '@/lib/axiosClient';
 
 import ProductNode from '@/components/atomic/atoms/ProductNode';
@@ -116,35 +116,7 @@ function ProcessManagerInner() {
     }
   }, [nodes, fetchProcessEmissionData, updateNodeData]);
 
-  // 캔버스 새로고침: 모든 공정 노드의 배출량/표시값 재계산
-  const handleCanvasRefresh = useCallback(async () => {
-    // 공정 배출량 최신화
-    await refreshAllProcessEmissions();
-    // 제품 프리뷰도 최신화
-    try {
-      const productNodeIds = nodes.filter(n => n.type === 'product').map(n => (n.data as any)?.id).filter((id): id is number => typeof id === 'number');
-      for (const pid of productNodeIds) {
-        await refreshProductEmission(pid);
-      }
-    } catch {}
-  }, [refreshAllProcessEmissions, nodes, refreshProductEmission]);
-
-  // 모든 제품 프리뷰 배출량을 DB attr_em으로 동기화
-  const syncProductEmissionsToDB = useCallback(async () => {
-    try {
-      const productIds = nodes
-        .filter(n => n.type === 'product')
-        .map(n => (n.data as any)?.id)
-        .filter((id): id is number => typeof id === 'number');
-      for (const id of productIds) {
-        try {
-          await axiosClient.post(apiEndpoints.cbam.edgePropagation.productSave(id));
-          await refreshProductEmission(id);
-        } catch {}
-      }
-      alert('제품 배출량이 DB와 동기화되었습니다.');
-    } catch {}
-  }, [nodes, refreshProductEmission]);
+  // (삭제) 새로고침/동기화 버튼 제거에 따라 관련 함수도 제거되었습니다.
 
   // 모달 상태
   const [showProductModal, setShowProductModal] = useState(false);
@@ -327,18 +299,7 @@ function ProcessManagerInner() {
         >
           <Plus className="h-4 w-4" /> 공정 노드
         </Button>
-        <Button
-          onClick={handleCanvasRefresh}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
-        >
-          <RefreshCcw className="h-4 w-4" /> 새로고침
-        </Button>
-        <Button
-          onClick={syncProductEmissionsToDB}
-          className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg"
-        >
-          배출량 동기화
-        </Button>
+        {/* 새로고침 / 배출량 동기화 버튼 제거 */}
         {/* 그룹 노드 버튼, 배출량 정보 새로고침 버튼 제거 */}
 
       </div>

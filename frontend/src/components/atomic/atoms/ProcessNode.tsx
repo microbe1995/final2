@@ -80,18 +80,8 @@ function ProcessNode({
   `.trim();
 
   const handleClick = () => {
-    // 읽기 전용이거나 외부 사업장 공정이면 클릭 이벤트 무시
-    if (isReadOnly || isExternalProcess) {
-      return;
-    }
-    
-    // data에 onClick 함수가 있으면 먼저 실행
-    if (data.onClick) {
-      data.onClick();
-      return;
-    }
-    // 그 다음 일반적인 onClick 핸들러 실행 (없으면 아무 동작 없음)
-    if (onClick) onClick({ data, selected });
+    // 클릭 자체로는 열리지 않게 변경 (버튼만 사용)
+    return;
   };
 
   const handleDoubleClick = () => {
@@ -152,14 +142,6 @@ function ProcessNode({
                 <span className='font-medium'>이동 가능, 편집 불가</span>
               </div>
             )}
-            <div className='flex justify-between'>
-              <span>시작일:</span>
-              <span className='font-medium'>{data.processData.start_period || 'N/A'}</span>
-            </div>
-            <div className='flex justify-between'>
-              <span>종료일:</span>
-              <span className='font-medium'>{data.processData.end_period || 'N/A'}</span>
-            </div>
             
             {/* 직접귀속배출량 / 누적배출량 표시 */}
             {data.processData.attr_em !== undefined && (

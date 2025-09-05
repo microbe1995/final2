@@ -412,7 +412,8 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
           ...process,
           start_period: process.start_period || 'N/A',
           end_period: process.end_period || 'N/A',
-          product_names: relatedProducts.map(p => p.product_name).join(', ') || 'N/A',
+          // 관련 제품이 없으면 'N/A' 대신 빈 문자열로 유지하여 필터를 막지 않음
+          product_names: relatedProducts.map(p => p.product_name).join(', '),
           is_many_to_many: relatedProducts.length > 1,
           install_id: (process as any).install_id,
           current_install_id: selectedInstall?.id,
