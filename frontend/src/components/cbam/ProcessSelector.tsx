@@ -46,8 +46,7 @@ export const ProcessSelector: React.FC<ProcessSelectorProps> = ({
                 onClick={() => onProcessSelect(process)}
               >
                 <div className="font-medium text-white">{process.process_name}</div>
-                <div className="text-sm text-gray-300">시작일: {process.start_period || 'N/A'}</div>
-                <div className="text-sm text-gray-300">종료일: {process.end_period || 'N/A'}</div>
+                <div className="text-sm text-gray-300">연결 상태: 선택한 제품과 연결 가능</div>
               </div>
             ))
           ) : (
@@ -273,8 +272,7 @@ export const ProductProcessModal: React.FC<{
                             외부 사업장: {processInstall?.install_name || '알 수 없음'} (읽기 전용)
                           </div>
                         )}
-                        <div className="text-sm text-gray-300">시작일: {process.start_period || 'N/A'}</div>
-                        <div className="text-sm text-gray-300">종료일: {process.end_period || 'N/A'}</div>
+                        <div className="text-sm text-gray-300">연결 상태: {productNames ? `${productNames} ↔ 연결 가능` : '연결 정보 없음'}</div>
                       </div>
                     );
                   })
