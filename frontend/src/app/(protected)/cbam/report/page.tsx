@@ -112,6 +112,7 @@ export default function GasEmissionReportPage() {
   const [productOptions, setProductOptions] = useState<ProductRecord[]>([]);
   const [installMap, setInstallMap] = useState<Record<number, string>>({});
   const [selectedProductId, setSelectedProductId] = useState<number | ''>('');
+  const [liveAttrEm, setLiveAttrEm] = useState<Record<number, number>>({});
   
   // 폼 데이터 상태
   const [formData, setFormData] = useState({
@@ -228,9 +229,27 @@ export default function GasEmissionReportPage() {
     }
   };
 
+  // 실시간 프리뷰 연동: 산정경계 화면에서 브로드캐스트되는 제품 프리뷰 이벤트 수신
+  useEffect(() => {
+    const handler = (e: any) => {
+      const { productId, attrEm } = e.detail || {};
+      if (typeof productId !== 'number') return;
+      setLiveAttrEm(prev => ({ ...prev, [productId]: Number(attrEm ?? 0) }));
+      // 옵션 목록에도 즉시 반영(표시 값 일관성)
+      setProductOptions(prev => prev.map(p => p.id === productId ? { ...p, attr_em: Number(attrEm ?? 0) } : p));
+    };
+    if (typeof window !== 'undefined') {
+      window.addEventListener('cbam:product:emission:update' as any, handler);
+    }
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('cbam:product:emission:update' as any, handler);
+      }
+    };
+  }, []);
+
   // 보고서 다운로드 함수
   const handleDownloadReport = (type: 'pdf' | 'excel') => {
-    console.log(`${type} 보고서 다운로드 시작`);
     // 실제 구현에서는 서버에서 보고서를 생성하고 다운로드
     alert(`${type.toUpperCase()} 보고서 다운로드가 시작됩니다.`);
   };
@@ -606,7 +625,12 @@ export default function GasEmissionReportPage() {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-white/70 mb-2">{t.productAttrEm}</label>
-                      <input type="text" readOnly value={typeof p.attr_em === 'number' ? `${p.attr_em.toFixed(2)} tCO2e` : ''} className={input} />
+                      <input
+                        type="text"
+                        readOnly
+                        value={(typeof (liveAttrEm[p.id] ?? p.attr_em) === 'number') ? `${Number(liveAttrEm[p.id] ?? p.attr_em).toFixed(2)} tCO2e` : ''}
+                        className={input}
+                      />
                     </div>
                   </div>
                 );

@@ -96,9 +96,12 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
 
       // 로컬 레이아웃(좌표) 보조 복원
       try {
+        // 로컬 레이아웃 보조 복원은 "메모리 상태가 비어있는 경우"에만 수행한다.
+        // 이미 installCanvases에 최신 데이터가 있다면 이를 우선시하여
+        // 방금 갱신한 프리뷰가 과거 스냅샷으로 덮어씌워지는 것을 방지한다.
         const key = `cbam:layout:${selectedInstall.id}`;
         const raw = localStorage.getItem(key);
-        if (raw) {
+        if (raw && canvasData.nodes.length === 0 && canvasData.edges.length === 0) {
           const parsed = JSON.parse(raw);
           if (parsed?.nodes && parsed?.edges) {
             // 🔁 함수 유실 복구: 노드 콜백 재주입
@@ -291,6 +294,7 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
 
   // 제품 ID로 제품 노드의 수량/프리뷰 값을 업데이트
   const updateProductNodeByProductId = useCallback((productId: number, newFields: any) => {
+    // 1) 활성 캔버스 갱신
     setNodes(prev => prev.map(node => {
       if (node.type === 'product' && (node.data as any)?.id === productId) {
         const prevProductData = (node.data as any).productData || {};
@@ -311,6 +315,42 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
       }
       return node;
     }));
+
+    // 2) 모든 사업장 캔버스 갱신 + 로컬 스냅샷 동기화
+    setInstallCanvases(prev => {
+      const next = { ...prev } as { [key: number]: { nodes: Node[]; edges: Edge[] } };
+      for (const key of Object.keys(next)) {
+        const k = Number(key);
+        const canvas = next[k] || { nodes: [], edges: [] };
+        const updatedNodes = (canvas.nodes || []).map((n: any) => {
+          if (n?.type === 'product' && (n.data as any)?.id === productId) {
+            const prevProductData = (n.data as any)?.productData || {};
+            return {
+              ...n,
+              data: {
+                ...n.data,
+                ...newFields,
+                product_amount: newFields.product_amount ?? (n.data as any).product_amount,
+                productData: {
+                  ...prevProductData,
+                  production_qty: newFields.product_amount ?? prevProductData.production_qty,
+                  product_sell: newFields.product_sell ?? prevProductData.product_sell,
+                  product_eusell: newFields.product_eusell ?? prevProductData.product_eusell
+                }
+              }
+            } as Node;
+          }
+          return n as Node;
+        });
+        next[k] = { ...canvas, nodes: updatedNodes };
+        try {
+          const lsKey = `cbam:layout:${k}`;
+          const payload = { nodes: updatedNodes, edges: canvas.edges };
+          localStorage.setItem(lsKey, JSON.stringify(payload));
+        } catch {}
+      }
+      return next;
+    });
   }, [setNodes]);
 
   // 특정 제품 노드의 produce 연결 여부를 표시 (배출량 프리뷰 표시 제어용)
@@ -612,6 +652,12 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
             return n as Node;
           });
           next[k] = { ...canvas, nodes: updatedNodes };
+          // 로컬 스냅샷도 동기화하여 탭 전환 시 과거 스냅샷으로 덮어씌워지지 않도록 한다.
+          try {
+            const lsKey = `cbam:layout:${k}`;
+            const payload = { nodes: updatedNodes, edges: canvas.edges };
+            localStorage.setItem(lsKey, JSON.stringify(payload));
+          } catch {}
         }
         return next;
       });
@@ -619,6 +665,50 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
       console.error('⚠️ 공정 배출량 새로고침 실패:', e);
     }
   }, [setNodes]);
+
+  // 모든 공정 노드를 일괄 새로고침
+  const refreshAllProcessEmissions = useCallback(async () => {
+    try {
+      const ids = Array.from(
+        new Set(
+          (prevNodesRef.current || [])
+            .filter(n => n.type === 'process')
+            .map(n => (n.data as any)?.id)
+            .filter((id): id is number => typeof id === 'number')
+        )
+      );
+      if (!ids.length) return;
+      await Promise.all(ids.map(pid => refreshProcessEmission(pid)));
+    } catch (e) {
+      console.warn('⚠️ 전체 공정 프리뷰 새로고침 실패:', e);
+    }
+  }, [refreshProcessEmission]);
+
+  // 사업장 전환 직후(복원 이후) 한 번 전체 프리뷰를 재조회하여
+  // 로컬 스냅샷의 오래된 값이 화면을 덮어쓰지 않도록 한다.
+  const lastRefreshedInstallIdRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (!activeInstallId) return;
+    if (lastRefreshedInstallIdRef.current === activeInstallId) return;
+    // 복원 직후 렌더가 끝난 뒤 실행되도록 마이크로 딜레이
+    const t = window.setTimeout(() => {
+      refreshAllProcessEmissions();
+      // 제품 프리뷰도 함께 새로고침
+      try {
+        const productIds = Array.from(
+          new Set(
+            (prevNodesRef.current || [])
+              .filter(n => n.type === 'product')
+              .map(n => (n.data as any)?.id)
+              .filter((id): id is number => typeof id === 'number')
+          )
+        );
+        productIds.forEach(pid => refreshProductEmission(pid));
+      } catch {}
+      lastRefreshedInstallIdRef.current = activeInstallId;
+    }, 0);
+    return () => window.clearTimeout(t);
+  }, [activeInstallId, nodes.length, refreshAllProcessEmissions]);
 
   // 공정 배출량이 없으면 생성까지 보장
   const ensureProcessAttrdirComputed = useCallback(async (processId: number) => {
@@ -645,6 +735,7 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
         const product = response?.data;
         attrEm = product?.attr_em || 0;
       }
+      // 1) 활성 캔버스 갱신
       setNodes(prev => prev.map(node => {
         if (node.type === 'product' && node.data?.id === productId) {
           return {
@@ -662,6 +753,44 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
         }
         return node;
       }));
+
+      // 2) 모든 사업장 캔버스 갱신 + 로컬 스냅샷 동기화
+      setInstallCanvases(prev => {
+        const next = { ...prev } as { [key: number]: { nodes: Node[]; edges: Edge[] } };
+        for (const key of Object.keys(next)) {
+          const k = Number(key);
+          const canvas = next[k] || { nodes: [], edges: [] };
+          const updatedNodes = (canvas.nodes || []).map((n: any) => {
+            if (n?.type === 'product' && (n.data as any)?.id === productId) {
+              return {
+                ...n,
+                data: {
+                  ...n.data,
+                  attr_em: attrEm,
+                  productData: {
+                    ...(n.data as any)?.productData,
+                    attr_em: attrEm,
+                    production_qty: (n.data as any)?.productData?.production_qty ?? (n.data as any)?.product_amount ?? 0
+                  }
+                }
+              } as Node;
+            }
+            return n as Node;
+          });
+          next[k] = { ...canvas, nodes: updatedNodes };
+          try {
+            const lsKey = `cbam:layout:${k}`;
+            const payload = { nodes: updatedNodes, edges: canvas.edges };
+            localStorage.setItem(lsKey, JSON.stringify(payload));
+          } catch {}
+        }
+        return next;
+      });
+
+      // 3) 전역 이벤트 브로드캐스트: 리포트 등 외부 프리뷰 섹션 갱신용
+      try {
+        window.dispatchEvent(new CustomEvent('cbam:product:emission:update' as any, { detail: { productId, attrEm } }));
+      } catch {}
     } catch (e) {
       console.error('⚠️ 제품 배출량 새로고침 실패:', e);
     }
