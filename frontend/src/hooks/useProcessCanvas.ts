@@ -573,6 +573,7 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
         total_fueldir_emission: totalFuel,
         calculation_date: data.calculation_date
       };
+      // 1) 현재 활성 캔버스 노드 갱신
       setNodes(prev => prev.map(node => {
         if (node.type === 'process' && node.data?.id === processId) {
           return {
@@ -588,6 +589,32 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
         }
         return node;
       }));
+
+      // 2) 다른 사업장 캔버스에도 동일 공정(ID 매칭) 프리뷰를 동기 반영
+      setInstallCanvases(prev => {
+        const next = { ...prev } as { [key: number]: { nodes: Node[]; edges: Edge[] } };
+        for (const key of Object.keys(next)) {
+          const k = Number(key);
+          const canvas = next[k] || { nodes: [], edges: [] };
+          const updatedNodes = (canvas.nodes || []).map((n: any) => {
+            if (n?.type === 'process' && (n.data as any)?.id === processId) {
+              return {
+                ...n,
+                data: {
+                  ...n.data,
+                  processData: {
+                    ...(n.data as any)?.processData,
+                    ...emissionData,
+                  }
+                }
+              } as Node;
+            }
+            return n as Node;
+          });
+          next[k] = { ...canvas, nodes: updatedNodes };
+        }
+        return next;
+      });
     } catch (e) {
       console.error('⚠️ 공정 배출량 새로고침 실패:', e);
     }
