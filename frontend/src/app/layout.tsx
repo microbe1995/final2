@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import Script from 'next/script';
 import './globals.css';
-import OfflineIndicator from '@/components/OfflineIndicator';
+// OfflineIndicator removed along with PWA-related components
 
 
 const inter = Inter({ subsets: ['latin'] });
@@ -86,7 +86,6 @@ export default function RootLayout({
 
         {/* 🔴 PWA Components 완전 제거 */}
         {/* <PWAServiceWorker /> */}
-        <OfflineIndicator />
         {/* <PWAInstallBanner /> */}
 
         {children}
