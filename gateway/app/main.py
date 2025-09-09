@@ -99,7 +99,9 @@ if cors_url_env and cors_url_env.strip():
     allowed_origins = [o.strip() for o in cors_url_env.split(",") if o.strip()]
 else:
     allowed_origins = [
-        "https://final2-mu-seven.vercel.app",  # ✅ 현재 Vercel 프로덕션 프론트엔드
+        "http://envioatlas.cloud",             # ✅ 새로운 프로덕션 도메인 (HTTP)
+        "https://envioatlas.cloud",            # ✅ 새로운 프로덕션 도메인 (HTTPS)
+        "https://final2-mu-seven.vercel.app",  # ✅ 기존 Vercel 프로덕션 프론트엔드 (호환성)
         "http://localhost:3000",               # ✅ 로컬 개발 환경
     ]
 
