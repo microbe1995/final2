@@ -103,13 +103,16 @@ function ProcessManagerInner() {
       const processId = node.data.id;
       if (processId && typeof processId === 'number') {
         const emissionData = await fetchProcessEmissionData(processId);
-        if (emissionData && node.data.processData) {
-          // 노드 데이터 업데이트
+        if (emissionData) {
+          const existingProcessData =
+            node?.data?.processData && typeof node.data.processData === 'object'
+              ? (node.data.processData as Record<string, any>)
+              : {};
           updateNodeData(node.id, {
             processData: {
-              ...node.data.processData,
-              ...emissionData
-            }
+              ...existingProcessData,
+              ...(emissionData as Record<string, any>),
+            },
           });
         }
       }
