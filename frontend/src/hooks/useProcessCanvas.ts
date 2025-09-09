@@ -23,6 +23,33 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
   const prevNodesRef = useRef<Node[]>([]);
   const prevEdgesRef = useRef<Edge[]>([]);
 
+  // 공용 유틸과 인플라이트/쿨다운 제어
+  const normalizeNodeId = useCallback((id: string) => id.replace(/-(left|right|top|bottom)$/i, ''), []);
+  const writeSnapshot = useCallback((installId: number | null | undefined, nodesToSave: Node[], edgesToSave: Edge[]) => {
+    if (!installId) return;
+    try {
+      const key = `cbam:layout:${installId}`;
+      const payload = { nodes: nodesToSave, edges: edgesToSave };
+      const prev = localStorage.getItem(key);
+      const prevStr = prev || '';
+      const nextStr = JSON.stringify(payload);
+      if (prevStr !== nextStr) {
+        localStorage.setItem(key, nextStr);
+      }
+    } catch {}
+  }, []);
+  const inFlightProcess = useRef<Set<number>>(new Set());
+  const inFlightProduct = useRef<Set<number>>(new Set());
+  const lastFullPropagateAtRef = useRef<number>(0);
+  const shouldRunFullPropagate = useCallback(() => {
+    const now = Date.now();
+    if (now - lastFullPropagateAtRef.current > 800) {
+      lastFullPropagateAtRef.current = now;
+      return true;
+    }
+    return false;
+  }, []);
+
   // 캔버스 상태 변경 시 해당 사업장의 캔버스 데이터 업데이트(+ 위치 서버 저장 훅)
   useEffect(() => {
     if (activeInstallId) {
@@ -52,26 +79,20 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
         window.clearTimeout(saveTimerRef.current);
       }
       saveTimerRef.current = window.setTimeout(() => {
-        const key = `cbam:layout:${activeInstallId}`;
-        const payload = { nodes, edges };
-        localStorage.setItem(key, JSON.stringify(payload));
+        writeSnapshot(activeInstallId, nodes, edges);
       }, 300);
     } catch {}
-  }, [nodes, edges, activeInstallId]);
+  }, [nodes, edges, activeInstallId, writeSnapshot]);
 
   // 페이지 이탈(새로고침/라우팅) 전에 마지막 스냅샷 저장
   useEffect(() => {
     const handler = () => {
       if (!activeInstallId) return;
-      try {
-        const key = `cbam:layout:${activeInstallId}`;
-        const payload = { nodes: prevNodesRef.current, edges: prevEdgesRef.current };
-        localStorage.setItem(key, JSON.stringify(payload));
-      } catch {}
+      writeSnapshot(activeInstallId, prevNodesRef.current, prevEdgesRef.current);
     };
     window.addEventListener('beforeunload', handler);
     return () => window.removeEventListener('beforeunload', handler);
-  }, [activeInstallId]);
+  }, [activeInstallId, writeSnapshot]);
 
   // selectedInstall 변경 시 캔버스 상태 복원 (안전한 상태 업데이트)
   useEffect(() => {
@@ -545,6 +566,8 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
 
   // 특정 공정 노드만 배출량 정보 새로고침
   const refreshProcessEmission = useCallback(async (processId: number) => {
+    if (inFlightProcess.current.has(processId)) return;
+    inFlightProcess.current.add(processId);
     try {
       // 우선 조회, 404라면 계산 후 다시 반영
       let data: any = null;
@@ -653,16 +676,14 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
           });
           next[k] = { ...canvas, nodes: updatedNodes };
           // 로컬 스냅샷도 동기화하여 탭 전환 시 과거 스냅샷으로 덮어씌워지지 않도록 한다.
-          try {
-            const lsKey = `cbam:layout:${k}`;
-            const payload = { nodes: updatedNodes, edges: canvas.edges };
-            localStorage.setItem(lsKey, JSON.stringify(payload));
-          } catch {}
+          writeSnapshot(k, updatedNodes, canvas.edges);
         }
         return next;
       });
     } catch (e) {
       console.error('⚠️ 공정 배출량 새로고침 실패:', e);
+    } finally {
+      inFlightProcess.current.delete(processId);
     }
   }, [setNodes]);
 
@@ -725,6 +746,8 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
 
   // 특정 제품 노드만 배출량 정보 새로고침 (recalcFromProcess보다 먼저 선언)
   const refreshProductEmission = useCallback(async (productId: number) => {
+    if (inFlightProduct.current.has(productId)) return;
+    inFlightProduct.current.add(productId);
     try {
       let attrEm = 0;
       try {
@@ -778,11 +801,7 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
             return n as Node;
           });
           next[k] = { ...canvas, nodes: updatedNodes };
-          try {
-            const lsKey = `cbam:layout:${k}`;
-            const payload = { nodes: updatedNodes, edges: canvas.edges };
-            localStorage.setItem(lsKey, JSON.stringify(payload));
-          } catch {}
+          writeSnapshot(k, updatedNodes, canvas.edges);
         }
         return next;
       });
@@ -793,6 +812,8 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
       } catch {}
     } catch (e) {
       console.error('⚠️ 제품 배출량 새로고침 실패:', e);
+    } finally {
+      inFlightProduct.current.delete(productId);
     }
   }, [setNodes]);
 
@@ -1235,7 +1256,9 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
               { params: { source_process_id: finalSourceId, target_process_id: finalTargetId } }
             );
             // 1) 전체 전파 → 2) 소스 갱신 → 3) 타겟 갱신 → 4) 타겟이 생산하는 제품 프리뷰 갱신(순차)
-            try { await axiosClient.post(apiEndpoints.cbam.edgePropagation.fullPropagate, {}); } catch (e) { console.warn('⚠️ 전체 전파 실패:', e); }
+            if (shouldRunFullPropagate()) {
+              try { await axiosClient.post(apiEndpoints.cbam.edgePropagation.fullPropagate, {}); } catch (e) { console.warn('⚠️ 전체 전파 실패:', e); }
+            }
             await refreshProcessEmission(finalSourceId);
             await refreshProcessEmission(finalTargetId);
             try {
@@ -1246,7 +1269,9 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
             } catch (_) {}
           } else if (edgeData.edge_kind === 'produce') {
             // 공정→제품: 누적을 확정 후 제품 프리뷰를 직렬로 갱신
-            try { await axiosClient.post(apiEndpoints.cbam.edgePropagation.fullPropagate, {}); } catch (e) { console.warn('⚠️ 전체 전파 실패:', e); }
+            if (shouldRunFullPropagate()) {
+              try { await axiosClient.post(apiEndpoints.cbam.edgePropagation.fullPropagate, {}); } catch (e) { console.warn('⚠️ 전체 전파 실패:', e); }
+            }
             await refreshProcessEmission(finalSourceId);
             await refreshProductEmission(finalTargetId);
             setProductProduceFlag(finalTargetId, true);
@@ -1263,7 +1288,9 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
             } catch (e) {
               console.warn('⚠️ consume 전파 실패, 전체 전파로 폴백:', e);
             }
-            try { await axiosClient.post(apiEndpoints.cbam.edgePropagation.fullPropagate, {}); } catch (e) { console.warn('⚠️ 전체 전파 실패:', e); }
+            if (shouldRunFullPropagate()) {
+              try { await axiosClient.post(apiEndpoints.cbam.edgePropagation.fullPropagate, {}); } catch (e) { console.warn('⚠️ 전체 전파 실패:', e); }
+            }
             await refreshProductEmission(finalSourceId);
             await refreshProcessEmission(finalTargetId);
 
