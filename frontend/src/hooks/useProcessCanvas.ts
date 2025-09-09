@@ -875,6 +875,46 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
             await Promise.all(producedProductIds.map(pid => refreshProductEmission(pid)));
           }
 
+          // 보강 1.5: 이 공정이 소비하는 상류 제품 및 그 제품을 생산한 상류 공정도 동기 새로고침
+          try {
+            const normalize = (id?: string) => (id || '').replace(/-(left|right|top|bottom)$/i, '');
+            // 이 공정으로 들어오는 consume 엣지의 source(제품 노드) 수집
+            const incomingProductIds = (edges || [])
+              .filter((e: any) => (e?.data?.edgeData?.edge_kind === 'consume'))
+              .filter((e: any) => normalize(e.target) === processNode.id)
+              .map((e: any) => {
+                const srcNode = (prevNodesRef.current || []).find(n => normalize(n.id) === normalize(e.source));
+                const pid = (srcNode?.data as any)?.id;
+                return typeof pid === 'number' ? pid : undefined;
+              })
+              .filter((pid: any): pid is number => typeof pid === 'number');
+
+            if (incomingProductIds.length) {
+              // 상류 제품 프리뷰 동기화
+              await Promise.all(incomingProductIds.map(pid => refreshProductEmission(pid)));
+
+              // 해당 제품을 생산한 상류 공정들 동기화 (produce 엣지의 source가 공정)
+              const incomingProductNodeIds = incomingProductIds
+                .map(pid => (prevNodesRef.current || []).find(n => n.type === 'product' && (n.data as any)?.id === pid)?.id)
+                .filter((nid): nid is string => typeof nid === 'string');
+
+              const upstreamProcessIdSet = new Set<number>();
+              for (const e of (edges || [])) {
+                const isProduce = (e as any)?.data?.edgeData?.edge_kind === 'produce';
+                if (!isProduce) continue;
+                const tgtNorm = normalize(e.target);
+                if (!incomingProductNodeIds.includes(tgtNorm)) continue;
+                const srcNode = (prevNodesRef.current || []).find(n => normalize(n.id) === normalize(e.source));
+                const upPid = (srcNode?.data as any)?.id;
+                if (typeof upPid === 'number') upstreamProcessIdSet.add(upPid);
+              }
+              const upstreamProcessIds = Array.from(upstreamProcessIdSet);
+              if (upstreamProcessIds.length) {
+                await Promise.all(upstreamProcessIds.map(pid => refreshProcessEmission(pid)));
+              }
+            }
+          } catch (_) {}
+
           // 보강 2: 위에서 갱신된 제품을 소비(consume)하는 공정들까지 동기화하고
           // 그 공정이 생산하는 제품(예: 형강)까지 연쇄로 동기화
           // produced products를 소비하는 공정들 추출
