@@ -1025,7 +1025,11 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
       );
     };
 
-    // 백엔드 삭제 + 관련 노드 갱신
+    // 삭제된 엣지의 영향받는 노드들 수집
+    const affectedProcessIds = new Set<number>();
+    const affectedProductIds = new Set<number>();
+
+    // 백엔드 삭제 + 영향 노드 수집
     for (const edge of removedEdges) {
       try {
         const m = /^e-(\d+)/.exec(edge.id);
@@ -1037,7 +1041,7 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
         console.warn('⚠️ 서버 엣지 삭제 실패(무시 가능):', err);
       }
 
-      // 영향 노드 새로고침
+      // 영향 노드 수집
       const sourceNode = getNodeByAnyId(edge.source);
       const targetNode = getNodeByAnyId(edge.target);
       const sourceType = sourceNode?.type;
@@ -1045,43 +1049,53 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
       const sourceId = (sourceNode?.data as any)?.id as number | undefined;
       const targetId = (targetNode?.data as any)?.id as number | undefined;
 
-      try {
-        if (sourceType === 'process' && targetType === 'process') {
-          if (sourceId) await refreshProcessEmission(sourceId);
-          if (targetId) await refreshProcessEmission(targetId);
-        } else if (sourceType === 'process' && targetType === 'product') {
-          if (targetId) {
-            setProductProduceFlag(targetId, false);
-            // 연결 잔여 여부 확인 후 프리뷰 리셋 또는 재조회
-            try {
-              const byNode = await axiosClient.get(apiEndpoints.cbam.edge.byNode(targetId));
-              const hasProduce = Array.isArray(byNode?.data) && byNode.data.some((e: any) => e.edge_kind === 'produce' && e.target_id === targetId);
-              if (!hasProduce) {
-                updateProductNodeByProductId(targetId, { attr_em: 0, productData: { ...(targetNode?.data as any)?.productData, attr_em: 0 } });
-              } else {
-                await refreshProductEmission(targetId);
-              }
-            } catch {
-              await refreshProductEmission(targetId);
-            }
-          }
-        } else if (sourceType === 'product' && targetType === 'process') {
-          if (sourceId) await refreshProductEmission(sourceId);
-          if (targetId) await refreshProcessEmission(targetId);
-        }
-      } catch (e) {
-        console.warn('⚠️ 엣지 삭제 후 새로고침 실패:', e);
-      }
+      if (sourceType === 'process' && sourceId) affectedProcessIds.add(sourceId);
+      if (targetType === 'process' && targetId) affectedProcessIds.add(targetId);
+      if (sourceType === 'product' && sourceId) affectedProductIds.add(sourceId);
+      if (targetType === 'product' && targetId) affectedProductIds.add(targetId);
     }
 
-    // 엣지 삭제 후 누적값을 원상 복구시키기 위해 서버에 전체 재계산을 요청
+    // 🔧 수정: 엣지 삭제 후 누적값을 원상 복구시키기 위해 서버에 전체 재계산을 먼저 요청
     // (모든 공정의 cumulative_emission을 0으로 리셋 후 현재 그래프 기준으로 재전파)
     try {
       await axiosClient.post(apiEndpoints.cbam.edgePropagation.recalcFromEdges, {});
     } catch (e) {
       console.warn('⚠️ 엣지 삭제 후 재계산 트리거 실패(무시 가능):', e);
     }
-  }, [edges, baseOnEdgesChange, refreshProcessEmission, refreshProductEmission]);
+
+    // 🔧 수정: 재계산 완료 후 영향받는 노드들 새로고침
+    try {
+      // 공정 노드들 새로고침
+      for (const processId of affectedProcessIds) {
+        await refreshProcessEmission(processId);
+      }
+      
+      // 제품 노드들 새로고침
+      for (const productId of affectedProductIds) {
+        // 제품의 경우 연결 잔여 여부 확인 후 프리뷰 리셋 또는 재조회
+        try {
+          const byNode = await axiosClient.get(apiEndpoints.cbam.edge.byNode(productId));
+          const hasProduce = Array.isArray(byNode?.data) && byNode.data.some((e: any) => e.edge_kind === 'produce' && e.target_id === productId);
+          if (!hasProduce) {
+            setProductProduceFlag(productId, false);
+            updateProductNodeByProductId(productId, { 
+              attr_em: 0, 
+              productData: { 
+                ...(prevNodesRef.current.find(n => n.type === 'product' && (n.data as any)?.id === productId)?.data as any)?.productData, 
+                attr_em: 0 
+              } 
+            });
+          } else {
+            await refreshProductEmission(productId);
+          }
+        } catch {
+          await refreshProductEmission(productId);
+        }
+      }
+    } catch (e) {
+      console.warn('⚠️ 엣지 삭제 후 새로고침 실패:', e);
+    }
+  }, [edges, baseOnEdgesChange, refreshProcessEmission, refreshProductEmission, setProductProduceFlag, updateProductNodeByProductId]);
 
   // 🔧 4방향 연결을 지원하는 Edge 생성 처리
   const handleEdgeCreate = useCallback(async (params: Connection, updateCallback: () => void = () => {}) => {
