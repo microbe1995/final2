@@ -873,6 +873,13 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
       const updatedProcessIds: number[] = resp?.data?.updated_process_ids || [];
       const updatedProductIds: number[] = resp?.data?.updated_product_ids || [];
 
+      // 입력 변경 후에는 누적 전파를 항상 한 번 수행하여 상/하류 누적치를 일관화
+      try {
+        await axiosClient.post(apiEndpoints.cbam.edgePropagation.fullPropagate, {});
+      } catch (e) {
+        console.warn('⚠️ fullPropagate 실패(무시 가능):', e);
+      }
+
       await Promise.all([
         ...updatedProcessIds.map(id => refreshProcessEmission(id)),
         ...updatedProductIds.map(id => refreshProductEmission(id))
