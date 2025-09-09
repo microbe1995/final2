@@ -2,10 +2,8 @@ import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import Script from 'next/script';
 import './globals.css';
-import OfflineIndicator from '@/components/common/OfflineIndicator';
-// 🔴 PWA 컴포넌트 import 제거
-// import PWAInstallBanner from '@/components/pwa/PWAInstallBanner';
-// import PWAServiceWorker from '@/components/pwa/PWAServiceWorker';
+import OfflineIndicator from '@/components/OfflineIndicator';
+
 
 const inter = Inter({ subsets: ['latin'] });
 

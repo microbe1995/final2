@@ -2,8 +2,8 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Button from '@/components/atomic/atoms/Button';
-import Input from '@/components/atomic/atoms/Input';
+import Button from '@/components/atoms/Button';
+import Input from '@/components/atoms/Input';
 
 interface UserRegisterData {
   fullName: string;

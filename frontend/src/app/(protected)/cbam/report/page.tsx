@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import axiosClient, { apiEndpoints } from '@/lib/axiosClient';
 import { Download, FileText, Globe, Languages } from 'lucide-react';
-import CbamLayout from '@/components/cbam/CbamLayout';
+import CbamLayout from '@/components/templates/CbamLayout';
 
 // ============================================================================
 // 🎯 Gas Emission Report 페이지 - 독립적인 완전한 구현

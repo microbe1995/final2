@@ -24,11 +24,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . /app/
 
 # 포트 노출
-EXPOSE 8001
+EXPOSE 8000
 
 # 헬스체크 설정
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8001/health || exit 1
+    CMD curl -f http://localhost:8000/health || exit 1
 
-# 애플리케이션 실행 (main:app)
-CMD ["python", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8001", "--proxy-headers"]
+# 애플리케이션 실행 (app.main:app)
+CMD ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--proxy-headers"]

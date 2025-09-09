@@ -1,8 +1,8 @@
 'use client';
 
 import React from 'react';
-import CbamLayout from '@/components/cbam/CbamLayout';
-import ProcessManager from '@/components/cbam/ProcessManager';
+import CbamLayout from '@/components/templates/CbamLayout';
+import ProcessManager from '@/components/templates/ProcessManager';
 
 // ============================================================================
 // 🎯 CBAM 산정경계 설정 페이지

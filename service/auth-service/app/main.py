@@ -4,8 +4,9 @@ import uvicorn
 
 from app.common.db import create_tables, test_database_connection
 from app.common.logger import auth_logger
-from app.router.auth import router as auth_router
-from app.router.country import router as country_router
+from app.domain.auth.auth_controller import router as auth_router
+from app.domain.sitemap import router as sitemap_router
+from app.domain.country import router as country_router
 
 def log_routes(app: FastAPI) -> None:
     """등록된 라우트 테이블 로깅"""
@@ -87,6 +88,7 @@ app = FastAPI(
 # 라우터 등록
 app.include_router(auth_router, prefix="/api/v1")
 app.include_router(country_router, prefix="/api/v1/countries")
+app.include_router(sitemap_router, prefix="/api")
 
 @app.get("/test")
 async def test_endpoint():

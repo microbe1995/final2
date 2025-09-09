@@ -1,11 +1,11 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import Button from '@/components/atomic/atoms/Button';
-import Input from '@/components/atomic/atoms/Input';
+import Button from '@/components/atoms/Button';
+import Input from '@/components/atoms/Input';
 import axiosClient, { apiEndpoints } from '@/lib/axiosClient';
 import { useRouter } from 'next/navigation';
-import CbamLayout from '@/components/cbam/CbamLayout';
+import CbamLayout from '@/components/templates/CbamLayout';
 import InstallProductsPage from '@/app/(protected)/cbam/install/[id]/products/page';
 
 // ============================================================================
