@@ -9,7 +9,7 @@ const nextConfig = {
   poweredByHeader: false,
   compress: true,
   images: {
-    domains: ['greensteel.site'],
+    domains: ['envioatlas.cloud', 'greensteel.site'],
     formats: ['image/webp', 'image/avif'],
     dangerouslyAllowSVG: true,
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
@@ -21,7 +21,7 @@ const nextConfig = {
         headers: [
           {
             key: 'Content-Security-Policy',
-            value: `default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com https://dapi.kakao.com https://t1.daumcdn.net https://greensteel.site; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: https://www.google-analytics.com https://greensteel.site; connect-src 'self' https://gateway-production-22ef.up.railway.app https://lcafinal-production.up.railway.app https://*.up.railway.app https://www.google-analytics.com https://analytics.google.com https://dapi.kakao.com https://greensteel.site; font-src 'self' data:; frame-src 'self' https://greensteel.site https://postcode.map.daum.net;`,
+            value: `default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com https://dapi.kakao.com https://t1.daumcdn.net http://envioatlas.cloud https://envioatlas.cloud https://greensteel.site; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: http: https://www.google-analytics.com http://envioatlas.cloud https://envioatlas.cloud https://greensteel.site; connect-src 'self' https://gateway-production-22ef.up.railway.app https://lcafinal-production.up.railway.app https://*.up.railway.app https://www.google-analytics.com https://analytics.google.com https://dapi.kakao.com http://envioatlas.cloud https://envioatlas.cloud https://greensteel.site; font-src 'self' data:; frame-src 'self' http://envioatlas.cloud https://envioatlas.cloud https://greensteel.site https://postcode.map.daum.net;`,
           },
           {
             key: 'X-Frame-Options',
