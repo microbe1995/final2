@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import axiosClient, { apiEndpoints } from '@/lib/axiosClient';
-import { Process, Product, Install } from '@/hooks/useProcessManager';
+import { Process, Product, Install } from '@/lib/types';
 import { useDummyData } from '@/hooks/useDummyData';
 
 interface ProcessSelectorProps {
