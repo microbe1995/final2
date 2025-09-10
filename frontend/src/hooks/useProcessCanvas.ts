@@ -522,6 +522,12 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
     }
   }, [setEdges, edges, nodeManager, edgeManager, emissionManager]);
 
+  // 사업장 선택 처리 함수
+  const handleInstallSelect = useCallback((install: Install) => {
+    // 사업장 변경 시 캔버스 상태는 useEffect에서 자동으로 처리됨
+    // 이 함수는 ProcessManager에서 호출되지만 실제 로직은 useEffect에 있음
+  }, []);
+
   return {
     // 상태
     nodes,
@@ -533,6 +539,7 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
     onNodesChange,
     onEdgesChange,
     handleEdgeCreate,
+    handleInstallSelect,
 
     // 액션
     addProductNode,

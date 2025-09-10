@@ -67,7 +67,7 @@ function ProcessManagerInner() {
     onNodesChange,
     onEdgesChange,
     handleEdgeCreate,
-    handleInstallSelect: handleCanvasInstallSelect,
+    handleInstallSelect,
     addProductNode,
     addProcessNode,
     addGroupNode,
@@ -131,11 +131,7 @@ function ProcessManagerInner() {
 
 
 
-  // 사업장 선택 처리
-  const handleInstallSelect = useCallback((install: Install) => {
-    setSelectedInstall(install);
-    // 캔버스 상태는 useProcessCanvas에서 자동으로 처리됨
-  }, [setSelectedInstall]);
+  // 사업장 선택 처리는 useProcessCanvas에서 제공됨
 
   // 제품 노드 추가
   const handleAddProductNode = useCallback(async () => {
