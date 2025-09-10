@@ -1067,20 +1067,6 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
       }
       console.log('✅ 모든 공정 노드 새로고침 완료');
       
-      // 5. 추가 검증: 특정 제품(형강)이 있는지 확인하고 강제 새로고침
-      const hyeonggangNode = nodes.find(n => 
-        n.type === 'product' && 
-        (n.data as any)?.productData?.product_name === '형강'
-      );
-      if (hyeonggangNode) {
-        const hyeonggangId = (hyeonggangNode.data as any)?.id;
-        if (hyeonggangId) {
-          console.log(`🔄 형강 노드 강제 새로고침: ${hyeonggangId}`);
-          await refreshProductEmission(hyeonggangId);
-          console.log(`✅ 형강 노드 강제 새로고침 완료`);
-        }
-      }
-      
       console.log('✅ 제품 수량 변경으로 인한 전체 그래프 배출량 재계산 완료');
     } catch (error) {
       console.error('❌ 제품 수량 변경으로 인한 전체 그래프 배출량 재계산 실패:', error);
@@ -1390,10 +1376,8 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
               null,
               { params: { source_process_id: finalSourceId, target_process_id: finalTargetId } }
             );
-            // 1) 전체 전파 → 2) 소스 갱신 → 3) 타겟 갱신 → 4) 타겟이 생산하는 제품 프리뷰 갱신(순차)
-            if (shouldRunFullPropagate()) {
-              try { await axiosClient.post(apiEndpoints.cbam.edgePropagation.fullPropagate, {}); } catch (e) { console.warn('⚠️ 전체 전파 실패:', e); }
-            }
+            // 1) 소스 갱신 → 2) 타겟 갱신 → 3) 타겟이 생산하는 제품 프리뷰 갱신(순차)
+            // (전체 전파는 별도로 실행하지 않음 - 중복 방지)
             await refreshProcessEmission(finalSourceId);
             await refreshProcessEmission(finalTargetId);
             try {
@@ -1404,9 +1388,7 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
             } catch (_) {}
           } else if (edgeData.edge_kind === 'produce') {
             // 공정→제품: 제품 생산 시 배출량이 제품에 누적됨
-            if (shouldRunFullPropagate()) {
-              try { await axiosClient.post(apiEndpoints.cbam.edgePropagation.fullPropagate, {}); } catch (e) { console.warn('⚠️ 전체 전파 실패:', e); }
-            }
+            // (전체 전파는 별도로 실행하지 않음 - 중복 방지)
             await refreshProcessEmission(finalSourceId);
             await refreshProductEmission(finalTargetId);
             setProductProduceFlag(finalTargetId, true);
@@ -1437,9 +1419,7 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
             } catch (e) {
               console.warn('⚠️ consume 전파 실패, 전체 전파로 폴백:', e);
             }
-            if (shouldRunFullPropagate()) {
-              try { await axiosClient.post(apiEndpoints.cbam.edgePropagation.fullPropagate, {}); } catch (e) { console.warn('⚠️ 전체 전파 실패:', e); }
-            }
+            // (전체 전파는 별도로 실행하지 않음 - 중복 방지)
             // 제품이 다른 공정들과 연결되었으므로 배출량 새로고침
             await refreshProductEmission(finalSourceId);
             await refreshProcessEmission(finalTargetId);

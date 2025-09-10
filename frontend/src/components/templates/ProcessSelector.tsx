@@ -482,9 +482,7 @@ export const ProductProcessModal: React.FC<{
                             }));
                           }
                         } catch {}
-                        // 2) 누적 전파(제품→공정 분배 반영)
-                        try { await axiosClient.post(apiEndpoints.cbam.edgePropagation.fullPropagate, {}); } catch {}
-                        // 3) 캔버스에 갱신 이벤트 브로드캐스트
+                        // 2) 캔버스에 갱신 이벤트 브로드캐스트 (fullPropagate는 useProcessCanvas에서 실행)
                         window.dispatchEvent(new CustomEvent('cbam:refreshProduct', { 
                           detail: { 
                             productId: selectedProduct.id,

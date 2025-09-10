@@ -230,18 +230,8 @@ export const useProcessManager = () => {
         try {
           console.log('🔄 제품 수량 변경으로 인한 캔버스 노드 새로고침 시작');
           
-          // 1. 전체 그래프 배출량 재계산 (제품 수량 변경으로 인한 영향 반영)
-          try {
-            await axiosClient.post(apiEndpoints.cbam.edgePropagation.fullPropagate, {});
-            console.log('✅ 전체 그래프 배출량 재계산 완료');
-          } catch (e) {
-            console.warn('⚠️ 전체 그래프 배출량 재계산 실패:', e);
-          }
-          
-          // 2. 잠시 대기 후 캔버스 노드들 새로고침 (백엔드 계산 완료 대기)
-          await new Promise(resolve => setTimeout(resolve, 300));
-          
-          // 3. 캔버스 노드들 새로고침을 위한 이벤트 발생
+          // 캔버스 노드들 새로고침을 위한 이벤트 발생
+          // (useProcessCanvas에서 fullPropagate 실행)
           window.dispatchEvent(new CustomEvent('cbam:refreshAllNodesAfterProductUpdate', {
             detail: { productId: selectedProduct.id }
           }));
