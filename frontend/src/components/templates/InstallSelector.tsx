@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Install } from '@/hooks/useProcessManager';
+import { Install } from '@/lib/types';
 import { Node, Edge } from '@xyflow/react';
 
 interface InstallSelectorProps {

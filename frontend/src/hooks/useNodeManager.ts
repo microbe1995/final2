@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { Node } from '@xyflow/react';
 import axiosClient, { apiEndpoints } from '@/lib/axiosClient';
-import { Install, Product, Process } from './types';
+import { Install, Product, Process } from '@/lib/types';
 
 /**
  * 노드 관리 전용 훅
