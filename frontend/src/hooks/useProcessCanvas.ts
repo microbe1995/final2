@@ -750,14 +750,35 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
     inFlightProduct.current.add(productId);
     try {
       let attrEm = 0;
+      let hasProduceEdge = false;
       try {
         const preview = await axiosClient.get(apiEndpoints.cbam.edgePropagation.productPreview(productId));
         attrEm = preview?.data?.preview_attr_em ?? 0;
+        hasProduceEdge = true; // 프리뷰 API가 성공하면 produce 엣지가 있다는 의미
       } catch {
         const response = await axiosClient.get(apiEndpoints.cbam.product.get(productId));
         const product = response?.data;
         attrEm = product?.attr_em || 0;
+        // 제품에 직접 배출량이 있으면 produce 엣지가 있다고 간주
+        hasProduceEdge = attrEm > 0;
       }
+      
+      // 현재 엣지 상태에서 consume 엣지 확인 (제품이 다른 공정들과 연결되어야만 배출량 표시)
+      const currentEdges = prevEdgesRef.current || [];
+      const hasConsumeEdgeFromEdges = currentEdges.some(edge => {
+        const edgeData = (edge.data as any)?.edgeData;
+        return edgeData?.edge_kind === 'consume' && 
+               edge.source && 
+               (prevNodesRef.current || []).some(n => 
+                 n.id === edge.source && 
+                 n.type === 'product' && 
+                 (n.data as any)?.id === productId
+               );
+      });
+      
+      // 최종 has_produce_edge 결정: 제품이 다른 공정들과 연결되어야만 배출량 표시
+      const finalHasProduceEdge = hasConsumeEdgeFromEdges;
+      
       // 1) 활성 캔버스 갱신
       setNodes(prev => prev.map(node => {
         if (node.type === 'product' && node.data?.id === productId) {
@@ -766,6 +787,7 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
             data: {
               ...node.data,
               attr_em: attrEm,
+              has_produce_edge: finalHasProduceEdge,
               productData: {
                 ...(node.data as any).productData,
                 attr_em: attrEm,
@@ -790,6 +812,7 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
                 data: {
                   ...n.data,
                   attr_em: attrEm,
+                  has_produce_edge: finalHasProduceEdge,
                   productData: {
                     ...(n.data as any)?.productData,
                     attr_em: attrEm,
@@ -1321,13 +1344,12 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
               for (const id of productIds) { await refreshProductEmission(id); }
             } catch (_) {}
           } else if (edgeData.edge_kind === 'produce') {
-            // 공정→제품: 누적을 확정 후 제품 프리뷰를 직렬로 갱신
-            if (shouldRunFullPropagate()) {
-              try { await axiosClient.post(apiEndpoints.cbam.edgePropagation.fullPropagate, {}); } catch (e) { console.warn('⚠️ 전체 전파 실패:', e); }
-            }
+            // 공정→제품: produce 엣지는 배출량 전파하지 않음 (제품이 다른 공정들과 연결되어야만 배출량 표시)
+            // 단순히 연결만 생성하고 배출량 전파는 하지 않음
             await refreshProcessEmission(finalSourceId);
-            await refreshProductEmission(finalTargetId);
             setProductProduceFlag(finalTargetId, true);
+            
+            // 제품 노드는 consume 엣지가 있을 때만 배출량 표시하므로 여기서는 새로고침하지 않음
           } else if (edgeData.edge_kind === 'consume') {
             // 제품→공정: 전용 전파 API로 즉시 누적 반영 후, 전체 전파로 일관성 확보
             try {
@@ -1344,10 +1366,12 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
             if (shouldRunFullPropagate()) {
               try { await axiosClient.post(apiEndpoints.cbam.edgePropagation.fullPropagate, {}); } catch (e) { console.warn('⚠️ 전체 전파 실패:', e); }
             }
+            // 제품이 다른 공정들과 연결되었으므로 배출량 새로고침
             await refreshProductEmission(finalSourceId);
             await refreshProcessEmission(finalTargetId);
 
             // 타겟 공정(예: 압연)이 생산하는 제품들(예: 형강)도 프리뷰 갱신(순차)
+            // 단, 이 제품들이 다른 공정들과 연결되어 있을 때만
             try {
               const normalize = (id?: string) => (id || '').replace(/-(left|right|top|bottom)$/i, '');
               const processNode = (prevNodesRef.current || []).find(n => n.type === 'process' && (n.data as any)?.id === finalTargetId);
@@ -1360,7 +1384,23 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
                     return typeof pid === 'number' ? pid : undefined;
                   })
                   .filter((pid): pid is number => typeof pid === 'number');
-                for (const pid of producedProductIds) { await refreshProductEmission(pid); }
+                
+                // 각 제품이 consume 엣지를 가지고 있는지 확인 후 새로고침
+                for (const pid of producedProductIds) { 
+                  const hasConsumeEdge = (edges || []).some(edge => {
+                    const edgeData = (edge.data as any)?.edgeData;
+                    return edgeData?.edge_kind === 'consume' && 
+                           edge.source && 
+                           (prevNodesRef.current || []).some(n => 
+                             n.id === edge.source && 
+                             n.type === 'product' && 
+                             (n.data as any)?.id === pid
+                           );
+                  });
+                  if (hasConsumeEdge) {
+                    await refreshProductEmission(pid);
+                  }
+                }
               }
             } catch (_) {}
           }
