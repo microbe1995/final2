@@ -1167,26 +1167,28 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
     try {
       console.log('🔄 엣지 삭제 후 배출량 역전파 시작');
       
-      // 1. 전체 그래프 배출량 재계산 (누적값 리셋 후 재전파)
-      await axiosClient.post(apiEndpoints.cbam.edgePropagation.fullPropagate, {});
-      console.log('✅ 전체 그래프 배출량 재계산 완료');
+      // 1. 백엔드에서 엣지 삭제 시 자동으로 배출량 역전파 실행됨
+      // 2. 잠시 대기 후 노드 새로고침 (백엔드 역전파 완료 대기)
+      await new Promise(resolve => setTimeout(resolve, 500));
       
-      // 2. 모든 제품 노드 새로고침 (삭제된 연결로 인한 배출량 변경 반영)
+      // 3. 모든 제품 노드 새로고침 (삭제된 연결로 인한 배출량 변경 반영)
       const allProductNodes = prevNodesRef.current.filter(n => n.type === 'product');
       for (const node of allProductNodes) {
         const productId = (node.data as any)?.id;
         if (productId) {
           await refreshProductEmission(productId);
+          console.log(`✅ 제품 ${productId} 노드 새로고침 완료`);
         }
       }
       console.log('✅ 모든 제품 노드 새로고침 완료');
       
-      // 3. 모든 공정 노드 새로고침 (삭제된 연결로 인한 배출량 변경 반영)
+      // 4. 모든 공정 노드 새로고침 (삭제된 연결로 인한 배출량 변경 반영)
       const allProcessNodes = prevNodesRef.current.filter(n => n.type === 'process');
       for (const node of allProcessNodes) {
         const processId = (node.data as any)?.id;
         if (processId) {
           await refreshProcessEmission(processId);
+          console.log(`✅ 공정 ${processId} 노드 새로고침 완료`);
         }
       }
       console.log('✅ 모든 공정 노드 새로고침 완료');
@@ -1407,25 +1409,23 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
               return node;
             }));
           } else if (edgeData.edge_kind === 'consume') {
-            // 제품→공정: 전용 전파 API로 즉시 누적 반영 후, 전체 전파로 일관성 확보
+            // 제품→공정: 전용 전파 API로 즉시 누적 반영
             try {
               await axiosClient.post(
                 apiEndpoints.cbam.edgePropagation.consume,
                 null,
                 { params: { source_product_id: finalSourceId, target_process_id: finalTargetId } }
               );
-              // 전용 전파 직후 1차 반영 확인
-              await refreshProcessEmission(finalTargetId);
+              console.log(`✅ consume 전파 완료: 제품 ${finalSourceId} → 공정 ${finalTargetId}`);
             } catch (e) {
-              console.warn('⚠️ consume 전파 실패, 전체 전파로 폴백:', e);
+              console.warn('⚠️ consume 전파 실패:', e);
             }
-            // (전체 전파는 별도로 실행하지 않음 - 중복 방지)
-            // 제품이 다른 공정들과 연결되었으므로 배출량 새로고침
+            
+            // 관련 노드들만 새로고침 (단일 책임)
             await refreshProductEmission(finalSourceId);
             await refreshProcessEmission(finalTargetId);
 
-            // 타겟 공정(예: 압연)이 생산하는 제품들(예: 형강)도 프리뷰 갱신(순차)
-            // 연결이 새로 생성되었으므로 모든 생산 제품들을 새로고침
+            // 타겟 공정이 생산하는 제품들도 새로고침 (단일 책임)
             try {
               const normalize = (id?: string) => (id || '').replace(/-(left|right|top|bottom)$/i, '');
               const processNode = (prevNodesRef.current || []).find(n => n.type === 'process' && (n.data as any)?.id === finalTargetId);
@@ -1439,43 +1439,14 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
                   })
                   .filter((pid): pid is number => typeof pid === 'number');
                 
-                // 연결이 새로 생성되었으므로 모든 생산 제품들을 새로고침
+                // 생산 제품들 새로고침
                 for (const pid of producedProductIds) { 
                   await refreshProductEmission(pid);
-                  console.log(`✅ 제품 ${pid} 배출량 새로고침 완료 (consume 엣지 생성으로 인한 영향)`);
+                  console.log(`✅ 제품 ${pid} 배출량 새로고침 완료`);
                 }
               }
             } catch (e) {
               console.warn('⚠️ 생산 제품 배출량 새로고침 실패:', e);
-            }
-            
-            // consume 엣지 생성 후 전체 그래프 일관성 확보를 위한 추가 새로고침
-            try {
-              console.log('🔄 consume 엣지 생성으로 인한 전체 그래프 일관성 확보 시작');
-              
-              // 모든 제품 노드 새로고침 (연결 변경으로 인한 배출량 변경 반영)
-              const allProductNodes = prevNodesRef.current.filter(n => n.type === 'product');
-              for (const node of allProductNodes) {
-                const productId = (node.data as any)?.id;
-                if (productId) {
-                  await refreshProductEmission(productId);
-                }
-              }
-              console.log('✅ 모든 제품 노드 새로고침 완료');
-              
-              // 모든 공정 노드 새로고침 (연결 변경으로 인한 배출량 변경 반영)
-              const allProcessNodes = prevNodesRef.current.filter(n => n.type === 'process');
-              for (const node of allProcessNodes) {
-                const processId = (node.data as any)?.id;
-                if (processId) {
-                  await refreshProcessEmission(processId);
-                }
-              }
-              console.log('✅ 모든 공정 노드 새로고침 완료');
-              
-              console.log('✅ consume 엣지 생성으로 인한 전체 그래프 일관성 확보 완료');
-            } catch (e) {
-              console.warn('⚠️ 전체 그래프 일관성 확보 실패:', e);
             }
           }
         } catch (e) {
