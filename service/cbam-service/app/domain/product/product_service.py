@@ -149,6 +149,26 @@ class ProductService:
             if not update_data:
                 raise Exception("업데이트할 데이터가 없습니다.")
             
+            # 🔄 추가: 제품 수량 관련 필드가 변경된 경우 배출량 자동 계산 및 저장
+            quantity_fields_changed = any(field in update_data for field in ['product_amount', 'product_sell', 'product_eusell'])
+            if quantity_fields_changed:
+                try:
+                    # Edge 서비스를 통해 제품 배출량 계산
+                    from app.domain.edge.edge_service import EdgeService
+                    edge_service = EdgeService()
+                    await edge_service.initialize()
+                    
+                    # 제품 배출량 계산
+                    calculated_emission = await edge_service.compute_product_emission(product_id)
+                    if calculated_emission is not None and calculated_emission > 0:
+                        update_data["attr_em"] = calculated_emission
+                        logger.info(f"🔄 제품 {product_id} 배출량 자동 계산 및 저장: {calculated_emission}")
+                    else:
+                        logger.info(f"ℹ️ 제품 {product_id} 배출량 계산 결과: {calculated_emission} (저장하지 않음)")
+                except Exception as e:
+                    logger.warning(f"⚠️ 제품 {product_id} 배출량 자동 계산 실패: {e}")
+                    # 배출량 계산 실패는 제품 업데이트를 실패시키지 않음
+            
             updated_product = await self.product_repository.update_product(product_id, update_data)
             if updated_product:
                 return ProductResponse(**updated_product)

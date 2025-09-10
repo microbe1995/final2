@@ -206,42 +206,19 @@ export const useProcessManager = () => {
       // 제품 목록 내 해당 아이템도 동기화
       setProducts(prev => prev.map(p => p.id === selectedProduct.id ? { ...p, ...productQuantityForm } : p));
       
-      // 🔄 추가: 제품 수량 변경 후 전체 그래프 배출량 재계산
+      // 🔄 제품 수량 저장 시 백엔드에서 자동으로 배출량 계산 및 저장됨
+      // 프론트엔드에서는 캔버스 노드들만 새로고침
       try {
-        console.log('🔄 제품 수량 변경으로 인한 전체 그래프 배출량 재계산 시작');
+        console.log('🔄 제품 수량 변경으로 인한 캔버스 노드 새로고침 시작');
         
-        // 1. 전체 그래프 배출량 전파 실행
-        await axiosClient.post(apiEndpoints.cbam.edgePropagation.fullPropagate);
-        console.log('✅ 전체 그래프 배출량 전파 완료');
-        
-        // 2. 제품 배출량 새로고침
-        await axiosClient.post(apiEndpoints.cbam.edgePropagation.productSave(selectedProduct.id));
-        console.log('✅ 제품 배출량 새로고침 완료');
-        
-        // 3. 연결된 공정들의 배출량도 새로고침
-        const connectedProcesses = processes.filter(process => 
-          process.products && process.products.some(p => p.id === selectedProduct.id)
-        );
-        
-        for (const process of connectedProcesses) {
-          try {
-            await axiosClient.post(apiEndpoints.cbam.edgePropagation.processEmission(process.id));
-            console.log(`✅ 공정 ${process.process_name} 배출량 새로고침 완료`);
-          } catch (error) {
-            console.warn(`⚠️ 공정 ${process.process_name} 배출량 새로고침 실패:`, error);
-          }
-        }
-        
-        console.log('✅ 제품 수량 변경으로 인한 배출량 재계산 완료');
-        
-        // 4. 캔버스 노드들 새로고침을 위한 이벤트 발생
+        // 캔버스 노드들 새로고침을 위한 이벤트 발생
         window.dispatchEvent(new CustomEvent('cbam:refreshAllNodesAfterProductUpdate', {
           detail: { productId: selectedProduct.id }
         }));
         console.log('✅ 캔버스 노드 새로고침 이벤트 발생');
-      } catch (propagationError) {
-        console.error('❌ 배출량 재계산 실패:', propagationError);
-        // 배출량 재계산 실패는 제품 수량 업데이트를 실패시키지 않음
+      } catch (refreshError) {
+        console.error('❌ 캔버스 노드 새로고침 실패:', refreshError);
+        // 새로고침 실패는 제품 수량 업데이트를 실패시키지 않음
       }
       
       return true;

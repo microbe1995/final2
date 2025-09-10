@@ -763,8 +763,19 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
         hasProduceEdge = attrEm > 0;
       }
       
-      // 현재 엣지 상태에서 consume 엣지 확인 (제품이 다른 공정들과 연결되어야만 배출량 표시)
+      // 현재 엣지 상태에서 produce 엣지와 consume 엣지 확인
       const currentEdges = prevEdgesRef.current || [];
+      const hasProduceEdgeFromEdges = currentEdges.some(edge => {
+        const edgeData = (edge.data as any)?.edgeData;
+        return edgeData?.edge_kind === 'produce' && 
+               edge.target && 
+               (prevNodesRef.current || []).some(n => 
+                 n.id === edge.target && 
+                 n.type === 'product' && 
+                 (n.data as any)?.id === productId
+               );
+      });
+      
       const hasConsumeEdgeFromEdges = currentEdges.some(edge => {
         const edgeData = (edge.data as any)?.edgeData;
         return edgeData?.edge_kind === 'consume' && 
@@ -776,8 +787,8 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
                );
       });
       
-      // 최종 has_produce_edge 결정: 제품이 다른 공정들과 연결되어야만 배출량 표시
-      const finalHasProduceEdge = hasConsumeEdgeFromEdges;
+      // 최종 has_produce_edge 결정: produce 엣지가 있거나 consume 엣지가 있을 때 배출량 표시
+      const finalHasProduceEdge = hasProduceEdgeFromEdges || hasConsumeEdgeFromEdges;
       
       // 1) 활성 캔버스 갱신
       setNodes(prev => prev.map(node => {
@@ -1018,40 +1029,30 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
     }
   }, [refreshProcessEmission, refreshProductEmission]);
 
-  // 🔄 제품 수량 변경 시 전체 그래프 새로고침
+  // 🔄 제품 수량 변경 시 캔버스 노드 새로고침 (백엔드에서 배출량 자동 계산됨)
   const refreshAllNodesAfterProductUpdate = useCallback(async (productId: number) => {
     try {
-      console.log(`🔄 제품 ${productId} 수량 변경으로 인한 전체 노드 새로고침 시작`);
+      console.log(`🔄 제품 ${productId} 수량 변경으로 인한 캔버스 노드 새로고침 시작`);
       
-      // 1. 전체 그래프 배출량 전파 실행
-      await axiosClient.post(apiEndpoints.cbam.edgePropagation.fullPropagate);
-      console.log('✅ 전체 그래프 배출량 전파 완료');
+      // 제품 노드 새로고침 (백엔드에서 계산된 배출량 반영)
+      await refreshProductEmission(productId);
+      console.log(`✅ 제품 ${productId} 노드 새로고침 완료`);
       
-      // 2. 모든 제품 노드 새로고침
-      const productNodes = nodes.filter(n => n.type === 'product');
-      for (const node of productNodes) {
-        const productId = (node.data as any)?.id;
-        if (productId) {
-          await refreshProductEmission(productId);
-        }
-      }
-      console.log('✅ 모든 제품 노드 새로고침 완료');
-      
-      // 3. 모든 공정 노드 새로고침
-      const processNodes = nodes.filter(n => n.type === 'process');
-      for (const node of processNodes) {
+      // 연결된 공정 노드들도 새로고침
+      const connectedProcesses = nodes.filter(n => n.type === 'process');
+      for (const node of connectedProcesses) {
         const processId = (node.data as any)?.id;
         if (processId) {
           await refreshProcessEmission(processId);
         }
       }
-      console.log('✅ 모든 공정 노드 새로고침 완료');
+      console.log('✅ 연결된 공정 노드들 새로고침 완료');
       
-      console.log('✅ 제품 수량 변경으로 인한 전체 노드 새로고침 완료');
+      console.log('✅ 제품 수량 변경으로 인한 캔버스 노드 새로고침 완료');
     } catch (error) {
       console.error('❌ 제품 수량 변경으로 인한 노드 새로고침 실패:', error);
     }
-  }, [nodes, refreshProductEmission, refreshProcessEmission]);
+  }, [nodes, refreshProcessEmission, refreshProductEmission]);
 
   // 제품 수량 변경 시 캔버스 노드들 새로고침 이벤트 리스너
   useEffect(() => {
@@ -1344,12 +1345,27 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
               for (const id of productIds) { await refreshProductEmission(id); }
             } catch (_) {}
           } else if (edgeData.edge_kind === 'produce') {
-            // 공정→제품: produce 엣지는 배출량 전파하지 않음 (제품이 다른 공정들과 연결되어야만 배출량 표시)
-            // 단순히 연결만 생성하고 배출량 전파는 하지 않음
+            // 공정→제품: 제품 생산 시 배출량이 제품에 누적됨
+            if (shouldRunFullPropagate()) {
+              try { await axiosClient.post(apiEndpoints.cbam.edgePropagation.fullPropagate, {}); } catch (e) { console.warn('⚠️ 전체 전파 실패:', e); }
+            }
             await refreshProcessEmission(finalSourceId);
+            await refreshProductEmission(finalTargetId);
             setProductProduceFlag(finalTargetId, true);
             
-            // 제품 노드는 consume 엣지가 있을 때만 배출량 표시하므로 여기서는 새로고침하지 않음
+            // 제품 노드에 has_produce_edge 플래그 설정 (제품이 생산되었음을 표시)
+            setNodes(prev => prev.map(node => {
+              if (node.type === 'product' && (node.data as any)?.id === finalTargetId) {
+                return {
+                  ...node,
+                  data: {
+                    ...node.data,
+                    has_produce_edge: true
+                  }
+                } as Node;
+              }
+              return node;
+            }));
           } else if (edgeData.edge_kind === 'consume') {
             // 제품→공정: 전용 전파 API로 즉시 누적 반영 후, 전체 전파로 일관성 확보
             try {
