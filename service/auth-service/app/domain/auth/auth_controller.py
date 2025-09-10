@@ -5,13 +5,83 @@ import json
 
 from app.common.db import get_db
 from app.common.security import get_current_user, create_access_token, verify_password, get_password_hash
-from app.domain.entities.country import Country
-from app.domain.schemas.auth import (
-    CompanyRegisterIn, CompanyRegisterOut, CompanyOut,
-    UserRegisterIn, UserRegisterOut, UserOut,
-    LoginIn, LoginOut, TokenOut,
-    CountrySearchIn, CountryOut, CountrySearchOut
-)
+# Country 관련 import 제거 - entities/schemas 모듈이 존재하지 않음
+# from app.domain.entities.country import Country
+# from app.domain.schemas.auth import (
+#     CompanyRegisterIn, CompanyRegisterOut, CompanyOut,
+#     UserRegisterIn, UserRegisterOut, UserOut,
+#     LoginIn, LoginOut, TokenOut,
+#     CountrySearchIn, CountryOut, CountrySearchOut
+# )
+
+# 임시 스키마 정의 (실제 구현에서는 별도 파일로 분리)
+from pydantic import BaseModel
+from typing import Optional, List
+
+class CompanyRegisterIn(BaseModel):
+    company_name: str
+    business_number: str
+    country: Optional[str] = None
+    country_en: Optional[str] = None
+    email: str
+    password: str
+
+class CompanyRegisterOut(BaseModel):
+    id: str
+    company_name: str
+    business_number: str
+    country: Optional[str] = None
+    country_en: Optional[str] = None
+    email: str
+    created_at: str
+    message: str
+
+class CompanyOut(BaseModel):
+    id: str
+    company_name: str
+    business_number: str
+    country: Optional[str] = None
+    country_en: Optional[str] = None
+    email: str
+    created_at: str
+
+class UserRegisterIn(BaseModel):
+    username: str
+    email: str
+    password: str
+    full_name: str
+    company_id: str
+
+class UserRegisterOut(BaseModel):
+    id: str
+    username: str
+    email: str
+    full_name: str
+    company_id: str
+    created_at: str
+    message: str
+
+class UserOut(BaseModel):
+    id: str
+    username: str
+    email: str
+    full_name: str
+    company_id: str
+    created_at: str
+
+class LoginIn(BaseModel):
+    email: str
+    password: str
+
+class LoginOut(BaseModel):
+    access_token: str
+    token_type: str
+    user: UserOut
+    message: str
+
+class TokenOut(BaseModel):
+    access_token: str
+    token_type: str
 from app.common.logger import auth_logger
 
 router = APIRouter(prefix="/auth", tags=["인증"])
@@ -144,21 +214,22 @@ async def login(login_data: LoginIn, db: Session = Depends(get_db)):
 async def get_current_user_info(current_user = Depends(get_current_user)):
     return current_user
 
-@router.post("/countries/search", response_model=CountrySearchOut)
-async def search_countries(search_data: CountrySearchIn, db: Session = Depends(get_db)):
-    try:
-        search_term = f"%{search_data.search_term}%"
-        countries = db.query(Country).filter(Country.korean_name.ilike(search_term)).limit(20).all()
-        return CountrySearchOut(countries=countries, total_count=len(countries))
-    except Exception as e:
-        raise HTTPException(status_code=500, detail="국가 검색 중 오류가 발생했습니다.")
+# Country 관련 엔드포인트 제거 - entities 모듈이 존재하지 않음
+# @router.post("/countries/search", response_model=CountrySearchOut)
+# async def search_countries(search_data: CountrySearchIn, db: Session = Depends(get_db)):
+#     try:
+#         search_term = f"%{search_data.search_term}%"
+#         countries = db.query(Country).filter(Country.korean_name.ilike(search_term)).limit(20).all()
+#         return CountrySearchOut(countries=countries, total_count=len(countries))
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail="국가 검색 중 오류가 발생했습니다.")
 
-@router.get("/countries", response_model=list[CountryOut])
-async def get_all_countries(db: Session = Depends(get_db)):
-    try:
-        countries = db.query(Country).order_by(Country.korean_name).all()
-        return countries
-    except Exception as e:
-        raise HTTPException(status_code=500, detail="국가 목록 조회 중 오류가 발생했습니다.")
+# @router.get("/countries", response_model=list[CountryOut])
+# async def get_all_countries(db: Session = Depends(get_db)):
+#     try:
+#         countries = db.query(Country).order_by(Country.korean_name).all()
+#         return countries
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail="국가 목록 조회 중 오류가 발생했습니다.")
 
 
