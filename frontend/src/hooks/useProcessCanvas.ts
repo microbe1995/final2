@@ -285,6 +285,62 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
     }
   }, [selectedInstall?.id, installCanvases, setNodes, setEdges]);
 
+  // 노드 새로고침 감지 및 처리
+  useEffect(() => {
+    const refreshNodes = async () => {
+      const nodesToRefresh = nodes.filter(node => 
+        (node.data as any)?.needsRefresh === true
+      );
+      
+      if (nodesToRefresh.length === 0) return;
+      
+      console.log(`🔄 ${nodesToRefresh.length}개 노드 새로고침 시작`);
+      
+      for (const node of nodesToRefresh) {
+        try {
+          if (node.type === 'product') {
+            const productId = (node.data as any)?.id;
+            if (productId) {
+              const emissionData = await emissionManager.refreshProductEmission(productId);
+              if (emissionData) {
+                setNodes(prev => nodeManager.updateProductNodeByProductId(prev, productId, emissionData));
+              }
+            }
+          } else if (node.type === 'process') {
+            const processId = (node.data as any)?.id;
+            if (processId) {
+              const emissionData = await emissionManager.refreshProcessEmission(processId);
+              if (emissionData) {
+                setNodes(prev => prev.map(n => {
+                  if (n.type === 'process' && n.data?.id === processId) {
+                    return {
+                      ...n,
+                      data: {
+                        ...n.data,
+                        processData: {
+                          ...(n.data as any).processData,
+                          ...emissionData
+                        },
+                        needsRefresh: false // 새로고침 완료 플래그 제거
+                      }
+                    } as Node;
+                  }
+                  return n;
+                }));
+              }
+            }
+          }
+        } catch (error) {
+          console.warn(`⚠️ 노드 ${node.id} 새로고침 실패:`, error);
+        }
+      }
+      
+      console.log('✅ 모든 노드 새로고침 완료');
+    };
+    
+    refreshNodes();
+  }, [nodes, emissionManager, nodeManager]);
+
   // 노드 추가 함수들
   const addProductNode = useCallback((product: Product, handleProductNodeClick: (product: Product) => void) => {
     const newNode = nodeManager.createProductNode(product, selectedInstall, handleProductNodeClick);
@@ -343,48 +399,48 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
     try {
       const success = await emissionManager.recalculateEntireGraph();
       if (success) {
-        // 모든 노드 새로고침
-      const allProductNodes = prevNodesRef.current.filter(n => n.type === 'product');
-      for (const node of allProductNodes) {
-        const productId = (node.data as any)?.id;
-        if (productId) {
-            const emissionData = await emissionManager.refreshProductEmission(productId);
-            if (emissionData) {
-              setNodes(prev => nodeManager.updateProductNodeByProductId(prev, productId, emissionData));
-        }
-      }
-        }
-      
-      const allProcessNodes = prevNodesRef.current.filter(n => n.type === 'process');
-      for (const node of allProcessNodes) {
-        const processId = (node.data as any)?.id;
-        if (processId) {
-            const emissionData = await emissionManager.refreshProcessEmission(processId);
-            if (emissionData) {
-              setNodes(prev => prev.map(n => {
-                if (n.type === 'process' && n.data?.id === processId) {
-                  return {
-                    ...n,
-                    data: {
-                      ...n.data,
-                      processData: {
-                        ...(n.data as any).processData,
-                        ...emissionData
-                      }
-                    }
-                  } as Node;
-                }
-                return n;
-              }));
+        console.log('🔄 엣지 삭제 후 모든 노드 새로고침 시작');
+        
+        // 현재 노드들을 기준으로 새로고침
+        setNodes(prevNodes => {
+          return prevNodes.map(node => {
+            if (node.type === 'product') {
+              const productId = (node.data as any)?.id;
+              if (productId) {
+                // 제품 노드 새로고침을 위한 플래그 설정
+                return {
+                  ...node,
+                  data: {
+                    ...node.data,
+                    needsRefresh: true,
+                    refreshTimestamp: Date.now()
+                  }
+                };
+              }
+            } else if (node.type === 'process') {
+              const processId = (node.data as any)?.id;
+              if (processId) {
+                // 공정 노드 새로고침을 위한 플래그 설정
+                return {
+                  ...node,
+                  data: {
+                    ...node.data,
+                    needsRefresh: true,
+                    refreshTimestamp: Date.now()
+                  }
+                };
+              }
             }
-          }
-        }
-        console.log('✅ 모든 노드 새로고침 완료');
+            return node;
+          });
+        });
+        
+        console.log('✅ 엣지 삭제 후 노드 새로고침 플래그 설정 완료');
       }
     } catch (error) {
       console.warn('⚠️ 엣지 삭제 후 처리 실패:', error);
     }
-  }, [edges, baseOnEdgesChange, edgeManager, emissionManager, nodeManager]);
+  }, [edges, baseOnEdgesChange, edgeManager, emissionManager]);
 
   // 엣지 생성 처리
   const handleEdgeCreate = useCallback(async (params: Connection, updateCallback: () => void = () => {}) => {
