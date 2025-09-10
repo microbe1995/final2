@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Product } from '@/hooks/useProcessManager';
+import { Product } from '@/lib/types';
 
 interface ProductSelectorProps {
   products: Product[];
