@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useFuelMasterAPI } from '@/hooks/useFuelMasterAPI';
 import { useMaterialMasterAPI } from '@/hooks/useMaterialMasterAPI';
-import axiosClient from '@/lib/axiosClient';
+import axiosClient, { apiEndpoints } from '@/lib/axiosClient';
 
 export interface DummyData {
   id: number;
@@ -21,6 +21,8 @@ export interface DummyData {
 export const useDummyData = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [productNames, setProductNames] = useState<string[]>([]);
+  const [processNames, setProcessNames] = useState<string[]>([]);
   const { searchFuels } = useFuelMasterAPI();
   const { lookupMaterialByName } = useMaterialMasterAPI();
 
@@ -291,14 +293,76 @@ export const useDummyData = () => {
     [searchFuels]
   );
 
+  // 제품명 목록 조회
+  const fetchProductNames = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await axiosClient.get(apiEndpoints.cbam.dummy.productNames);
+      
+      if (Array.isArray(response.data)) {
+        const names = response.data.map((item: any) => {
+          return typeof item === 'string' ? item : item.생산품명 || item.product_name || item;
+        }).filter(Boolean);
+        
+        setProductNames(names);
+        console.log('✅ 제품명 목록 조회 성공:', names.length, '개');
+      } else {
+        console.warn('⚠️ API 응답이 배열이 아닙니다:', response.data);
+        setProductNames([]);
+        setError('제품명 목록을 가져오는데 실패했습니다.');
+      }
+    } catch (err: any) {
+      console.error('❌ 제품명 목록 조회 실패:', err);
+      setError(err.response?.data?.detail || err.message || '제품명 목록을 가져오는데 실패했습니다.');
+      setProductNames([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // 공정명 목록 조회
+  const fetchProcessNames = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await axiosClient.get(apiEndpoints.cbam.dummy.processNames);
+      
+      if (Array.isArray(response.data)) {
+        const names = response.data.map((item: any) => {
+          return typeof item === 'string' ? item : item.공정 || item.process_name || item;
+        }).filter(Boolean);
+        
+        setProcessNames(names);
+        console.log('✅ 공정명 목록 조회 성공:', names.length, '개');
+      } else {
+        console.warn('⚠️ API 응답이 배열이 아닙니다:', response.data);
+        setProcessNames([]);
+        setError('공정명 목록을 가져오는데 실패했습니다.');
+      }
+    } catch (err: any) {
+      console.error('❌ 공정명 목록 조회 실패:', err);
+      setError(err.response?.data?.detail || err.message || '공정명 목록을 가져오는데 실패했습니다.');
+      setProcessNames([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   return {
     loading,
     error,
+    productNames,
+    processNames,
     getProcessesByProduct,
     getProductPeriods,
     getProductPeriod,
     getProductQuantity,
     getMaterialsFor,
-    getFuelsFor
+    getFuelsFor,
+    fetchProductNames,
+    fetchProcessNames
   };
 };

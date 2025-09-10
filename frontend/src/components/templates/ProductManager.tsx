@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import axiosClient, { apiEndpoints } from '@/lib/axiosClient';
 import InstallProductsPage from '@/app/(protected)/cbam/install/[id]/products/page';
 import { useMappingAPI, HSCNMappingResponse } from '@/hooks/useMappingAPI';
-import { useProductNames } from '@/hooks/useProductNames';
+// useProductNames는 useDummyData로 통합됨
 import { useDummyData } from '@/hooks/useDummyData';
 
 interface Install {
@@ -112,7 +112,7 @@ export default function ProductManager({ installId, embedded = true }: ProductMa
   const [cnCodeResults, setCnCodeResults] = useState<HSCNMappingResponse[]>([]);
   const [showCnCodeResults, setShowCnCodeResults] = useState(false);
 
-  const { productNames, loading: productNamesLoading, error: productNamesError, fetchProductNamesByPeriod } = useProductNames();
+  const { productNames, loading: productNamesLoading, error: productNamesError, fetchProductNames } = useDummyData();
   const [selectedProductNames, setSelectedProductNames] = useState<Set<string>>(new Set());
 
   const [showHSCodeModal, setShowHSCodeModal] = useState(false);
@@ -285,11 +285,11 @@ export default function ProductManager({ installId, embedded = true }: ProductMa
     (field: 'prostart_period' | 'proend_period', value: string) => {
       const newForm = { ...productForm, [field]: value };
       if (newForm.prostart_period && newForm.proend_period) {
-        fetchProductNamesByPeriod(newForm.prostart_period, newForm.proend_period);
+        fetchProductNames(newForm.prostart_period, newForm.proend_period);
       }
       setProductForm(newForm);
     },
-    [productForm, fetchProductNamesByPeriod]
+    [productForm, fetchProductNames]
   );
 
   const handleProductInputChange = (field: keyof ProductForm, value: string | number) => {
@@ -731,7 +731,7 @@ export default function ProductManager({ installId, embedded = true }: ProductMa
                   onChange={(e) => handleProductInputChange('product_name', e.target.value)}
                   onFocus={() => {
                     if (productForm.prostart_period && productForm.proend_period && productNames.length === 0) {
-                      fetchProductNamesByPeriod(productForm.prostart_period, productForm.proend_period);
+                      fetchProductNames(productForm.prostart_period, productForm.proend_period);
                     }
                   }}
                   className={`w-full px-3 py-2 border rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500 ${

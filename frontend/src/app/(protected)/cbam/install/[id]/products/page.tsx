@@ -5,7 +5,7 @@ import { useRouter, useParams } from 'next/navigation';
 import axiosClient from '@/lib/axiosClient';
 import { apiEndpoints } from '@/lib/axiosClient';
 import { useMappingAPI, HSCNMappingResponse } from '@/hooks/useMappingAPI';
-import { useProductNames } from '@/hooks/useProductNames';
+// useProductNames는 useDummyData로 통합됨
 import { useDummyData } from '@/hooks/useDummyData';
 
 interface Install {
@@ -120,8 +120,8 @@ export default function InstallProductsPage(props: any) {
   const [cnCodeResults, setCnCodeResults] = useState<HSCNMappingResponse[]>([]);
   const [showCnCodeResults, setShowCnCodeResults] = useState(false);
 
-  // 제품명 목록 훅 사용 (Railway DB의 dummy 테이블에서 가져옴)
-  const { productNames, loading: productNamesLoading, error: productNamesError, fetchProductNamesByPeriod } = useProductNames();
+  // 제품명 목록 훅 사용 (useDummyData로 통합됨)
+  const { productNames, loading: productNamesLoading, error: productNamesError, fetchProductNames } = useDummyData();
   
   // 🔴 추가: 이미 선택된 제품명들을 추적하는 상태
   const [selectedProductNames, setSelectedProductNames] = useState<Set<string>>(new Set());
@@ -345,9 +345,9 @@ export default function InstallProductsPage(props: any) {
   // useEffect(() => {
   //   if (productForm.prostart_period && productForm.proend_period) {
   //     console.log('🔄 기간 설정 완료, 제품명 목록 업데이트 시작');
-  //     fetchProductNamesByPeriod(productForm.prostart_period, productForm.proend_period);
+  //     fetchProductNames(productForm.prostart_period, productForm.proend_period);
   //   }
-  // }, [productForm.prostart_period, productForm.proend_period, fetchProductNamesByPeriod]);
+  // }, [productForm.prostart_period, productForm.proend_period, fetchProductNames]);
 
   // 기간 설정 완료 시 수동으로 제품명 목록 업데이트
   const handlePeriodChange = useCallback((field: 'prostart_period' | 'proend_period', value: string) => {
@@ -365,7 +365,7 @@ export default function InstallProductsPage(props: any) {
       console.log('🔍 API 호출 전 productNames 상태:', productNames);
       console.log('🔍 API 호출 전 loading 상태:', productNamesLoading);
       
-      fetchProductNamesByPeriod(newForm.prostart_period, newForm.proend_period);
+      fetchProductNames(newForm.prostart_period, newForm.proend_period);
     } else {
       console.log('⚠️ 기간이 아직 완전히 설정되지 않음:', {
         start: newForm.prostart_period,
@@ -374,7 +374,7 @@ export default function InstallProductsPage(props: any) {
     }
     
     setProductForm(newForm);
-  }, [productForm, fetchProductNamesByPeriod, productNames, productNamesLoading]);
+  }, [productForm, fetchProductNames, productNames, productNamesLoading]);
 
   const handleProductInputChange = (field: keyof ProductForm, value: string | number) => {
     setProductForm(prev => ({
@@ -1020,7 +1020,7 @@ export default function InstallProductsPage(props: any) {
                       // 드롭다운 클릭 시에만 데이터 로드
                       if (productForm.prostart_period && productForm.proend_period && productNames.length === 0) {
                         console.log('🔄 드롭다운 클릭, 제품명 목록 로드 시작');
-                        fetchProductNamesByPeriod(productForm.prostart_period, productForm.proend_period);
+                        fetchProductNames(productForm.prostart_period, productForm.proend_period);
                       }
                     }}
                     className={`w-full px-3 py-2 border rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500 ${
