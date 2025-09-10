@@ -749,11 +749,24 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
     if (inFlightProduct.current.has(productId)) return;
     inFlightProduct.current.add(productId);
     try {
-      // 🔧 단일책임원칙: 제품 노드는 DB에 저장된 데이터만 표시
-      // productPreview는 별도 기능으로 분리하여 혼동 방지
-      const response = await axiosClient.get(apiEndpoints.cbam.product.get(productId));
-      const product = response?.data;
-      const attrEm = product?.attr_em || 0;
+      // 🔧 실시간 계산값 방식: 현재 연결된 공정들의 배출량을 실시간으로 계산
+      let attrEm = 0;
+      let hasProduceEdge = false;
+      
+      try {
+        // productPreview API를 사용하여 실시간 계산된 배출량 가져오기
+        const previewResponse = await axiosClient.get(apiEndpoints.cbam.edgePropagation.productPreview(productId));
+        attrEm = previewResponse?.data?.preview_attr_em ?? 0;
+        hasProduceEdge = true; // 프리뷰 API가 성공하면 produce 엣지가 있다는 의미
+        console.log(`🔍 제품 ${productId} 실시간 배출량 계산: ${attrEm} tCO2e`);
+      } catch (previewError) {
+        // 프리뷰 API 실패 시 DB 저장값으로 폴백
+        const response = await axiosClient.get(apiEndpoints.cbam.product.get(productId));
+        const product = response?.data;
+        attrEm = product?.attr_em || 0;
+        hasProduceEdge = attrEm > 0; // DB에 배출량이 있으면 produce 엣지가 있다고 간주
+        console.log(`🔍 제품 ${productId} DB 저장값 사용: ${attrEm} tCO2e`);
+      }
       
       // 현재 엣지 상태에서 produce 엣지와 consume 엣지 확인
       const currentEdges = prevEdgesRef.current || [];
@@ -782,25 +795,34 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
       // 최종 has_produce_edge 결정: produce 엣지가 있거나 consume 엣지가 있을 때 배출량 표시
       const finalHasProduceEdge = hasProduceEdgeFromEdges || hasConsumeEdgeFromEdges;
       
-      // 1) 활성 캔버스 갱신 - DB 저장된 데이터로 동기화
+      // 제품 수량 정보는 DB에서 가져오기 (배출량은 실시간 계산값 사용)
+      let productData = null;
+      try {
+        const productResponse = await axiosClient.get(apiEndpoints.cbam.product.get(productId));
+        productData = productResponse?.data;
+      } catch (productError) {
+        console.warn(`⚠️ 제품 ${productId} 수량 정보 조회 실패:`, productError);
+      }
+
+      // 1) 활성 캔버스 갱신 - 실시간 계산된 배출량과 DB 수량 정보로 동기화
       setNodes(prev => prev.map(node => {
         if (node.type === 'product' && node.data?.id === productId) {
           return {
             ...node,
             data: {
               ...node.data,
-              attr_em: attrEm,
+              attr_em: attrEm, // 🔧 실시간 계산된 배출량 사용
               has_produce_edge: finalHasProduceEdge,
-              // 🔧 단일책임원칙: DB 저장된 제품 수량 정보로 동기화
-              product_amount: Number(product?.product_amount || 0),
-              product_sell: Number(product?.product_sell || 0),
-              product_eusell: Number(product?.product_eusell || 0),
+              // 🔧 DB 저장된 제품 수량 정보로 동기화
+              product_amount: Number(productData?.product_amount || 0),
+              product_sell: Number(productData?.product_sell || 0),
+              product_eusell: Number(productData?.product_eusell || 0),
               productData: {
                 ...(node.data as any).productData,
-                attr_em: attrEm,
-                production_qty: Number(product?.product_amount || 0),
-                product_sell: Number(product?.product_sell || 0),
-                product_eusell: Number(product?.product_eusell || 0),
+                attr_em: attrEm, // 🔧 실시간 계산된 배출량 사용
+                production_qty: Number(productData?.product_amount || 0),
+                product_sell: Number(productData?.product_sell || 0),
+                product_eusell: Number(productData?.product_eusell || 0),
               }
             }
           } as Node;
