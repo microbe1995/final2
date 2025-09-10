@@ -5,8 +5,6 @@ import uvicorn
 from app.common.db import create_tables, test_database_connection
 from app.common.logger import auth_logger
 from app.domain.auth.auth_controller import router as auth_router
-from app.domain.sitemap import router as sitemap_router
-from app.domain.country import router as country_router
 
 def log_routes(app: FastAPI) -> None:
     """등록된 라우트 테이블 로깅"""
@@ -87,47 +85,12 @@ app = FastAPI(
 
 # 라우터 등록
 app.include_router(auth_router, prefix="/api/v1")
-app.include_router(country_router, prefix="/api/v1/countries")
-app.include_router(sitemap_router, prefix="/api")
 
 @app.get("/test")
 async def test_endpoint():
     """테스트 엔드포인트"""
     return {"message": "Test endpoint working", "status": "ok"}
 
-@app.get("/test/countries")
-async def test_countries():
-    """Countries 테스트 엔드포인트"""
-    return {"message": "Countries test endpoint", "status": "ok"}
-
-@app.get("/debug/countries")
-async def debug_countries():
-    """Countries 라우터 상태를 확인합니다."""
-    try:
-        # countries 라우터의 모든 엔드포인트 확인
-        country_routes = []
-        for route in country_router.routes:
-            if hasattr(route, 'path'):
-                route_info = {
-                    "path": route.path,
-                    "name": route.name,
-                    "methods": list(route.methods) if hasattr(route, 'methods') else [],
-                    "endpoint": str(route.endpoint) if hasattr(route, 'endpoint') else None
-                }
-                country_routes.append(route_info)
-        
-        return {
-            "country_router_status": "loaded",
-            "total_country_routes": len(country_routes),
-            "country_routes": country_routes,
-            "router_prefix": "/api/v1/countries",
-            "full_paths": [f"/api/v1/countries{route['path']}" for route in country_routes]
-        }
-    except Exception as e:
-        return {
-            "error": str(e),
-            "country_router_status": "error"
-        }
 
 @app.get("/debug/routes")
 async def debug_routes():
