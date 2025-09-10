@@ -192,6 +192,26 @@ class EdgeRepository:
             logger.error(f"❌ 엣지 목록 조회 실패: {str(e)}")
             return []
     
+    async def get_all_edges(self) -> List[Dict[str, Any]]:
+        """모든 엣지 조회 (페이지네이션 제한 없음) - 배출량 전파용"""
+        try:
+            await self._ensure_pool_initialized()
+            
+            async with self.pool.acquire() as conn:
+                query = """
+                    SELECT id, source_node_type, source_id, target_node_type, target_id, edge_kind, created_at, updated_at
+                    FROM edge
+                    ORDER BY id
+                """
+                
+                rows = await conn.fetch(query)
+                logger.info(f"🔍 전체 엣지 조회: {len(rows)}개")
+                return [dict(row) for row in rows]
+                
+        except Exception as e:
+            logger.error(f"❌ 전체 엣지 조회 실패: {str(e)}")
+            return []
+    
     async def get_edge(self, edge_id: int) -> Optional[Dict[str, Any]]:
         """특정 엣지 조회"""
         try:

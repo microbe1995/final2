@@ -281,8 +281,8 @@ class EdgeService:
             except Exception as e:
                 logger.warning(f"⚠️ 누적 초기화 경고(무시 가능): {e}")
             
-            # 모든 엣지를 조회
-            all_edges = await self.repository.get_edges()
+            # 모든 엣지를 조회 (페이지네이션 제한 없이)
+            all_edges = await self.repository.get_all_edges()
             
             if not all_edges:
                 logger.info("전체 그래프에 엣지가 없습니다.")
@@ -294,6 +294,10 @@ class EdgeService:
             consume_edges = [edge for edge in all_edges if edge['edge_kind'] == 'consume']
             
             logger.info(f"전체 그래프 엣지 분류: continue={len(continue_edges)}, produce={len(produce_edges)}, consume={len(consume_edges)}")
+            
+            # 🔍 디버깅: 각 엣지 상세 정보 로깅
+            for edge in all_edges:
+                logger.debug(f"  엣지 ID: {edge['id']}, 소스: {edge['source_id']}({edge['source_node_type']}), 타겟: {edge['target_id']}({edge['target_node_type']}), 종류: {edge['edge_kind']}")
             
             # 1. continue 엣지들 처리 (공정→공정)
             for edge in continue_edges:
