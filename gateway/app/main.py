@@ -80,12 +80,22 @@ app.add_middleware(
 @app.options("/{full_path:path}")
 async def handle_options(full_path: str, request: Request):
     origin = request.headers.get('origin')
+    logger.info(f"🌐 OPTIONS {full_path} origin={origin}")
+    logger.info(f"   allowed_origins: {allowed_origins}")
+    logger.info(f"   origin in allowed_origins: {origin in allowed_origins if origin else False}")
+    
+    # CORS 헤더 설정
+    cors_origin = "*"
+    if origin and origin in allowed_origins:
+        cors_origin = origin
+    elif allowed_origins:
+        cors_origin = allowed_origins[0]
     
     response = Response(
         status_code=200,
         content="",
         headers={
-            "Access-Control-Allow-Origin": origin if origin and origin in allowed_origins else allowed_origins[0] if allowed_origins else "*",
+            "Access-Control-Allow-Origin": cors_origin,
             "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS, PATCH",
             "Access-Control-Allow-Headers": "*",
             "Access-Control-Max-Age": "86400",
@@ -94,6 +104,7 @@ async def handle_options(full_path: str, request: Request):
         }
     )
     
+    logger.info(f"🌐 OPTIONS 응답: 200 origin={cors_origin}")
     return response
 
 # 프록시 유틸리티
