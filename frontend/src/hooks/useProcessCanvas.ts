@@ -344,21 +344,21 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
       const success = await emissionManager.recalculateEntireGraph();
       if (success) {
         // 모든 노드 새로고침
-        const allProductNodes = prevNodesRef.current.filter(n => n.type === 'product');
-        for (const node of allProductNodes) {
-          const productId = (node.data as any)?.id;
-          if (productId) {
+      const allProductNodes = prevNodesRef.current.filter(n => n.type === 'product');
+      for (const node of allProductNodes) {
+        const productId = (node.data as any)?.id;
+        if (productId) {
             const emissionData = await emissionManager.refreshProductEmission(productId);
             if (emissionData) {
               setNodes(prev => nodeManager.updateProductNodeByProductId(prev, productId, emissionData));
-            }
-          }
         }
-        
-        const allProcessNodes = prevNodesRef.current.filter(n => n.type === 'process');
-        for (const node of allProcessNodes) {
-          const processId = (node.data as any)?.id;
-          if (processId) {
+      }
+        }
+      
+      const allProcessNodes = prevNodesRef.current.filter(n => n.type === 'process');
+      for (const node of allProcessNodes) {
+        const processId = (node.data as any)?.id;
+        if (processId) {
             const emissionData = await emissionManager.refreshProcessEmission(processId);
             if (emissionData) {
               setNodes(prev => prev.map(n => {
@@ -435,7 +435,7 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
         setEdges(prev => prev.filter(edge => edge.id !== tempEdgeId));
         return;
       }
-
+      
       // 엣지 종류 판정
       const edgeKind = edgeManager.determineEdgeKind(sourceType, targetType);
       
@@ -462,24 +462,24 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
       const newEdge = await edgeManager.createEdge(edgeData);
       
       // 임시 엣지를 실제 엣지로 교체
-      setEdges(prev => prev.map(edge => 
-        edge.id === tempEdgeId 
-          ? {
-              id: `e-${newEdge.id}`,
-              source: params.source,
-              target: params.target,
-              sourceHandle: params.sourceHandle,
-              targetHandle: params.targetHandle,
-              type: 'custom',
-              data: { edgeData: newEdge, isTemporary: false },
-              style: { stroke: '#3b82f6' }
-            }
-          : edge
-      ));
-      
-      if (updateCallback) {
-        updateCallback();
-      }
+        setEdges(prev => prev.map(edge => 
+          edge.id === tempEdgeId 
+            ? {
+                id: `e-${newEdge.id}`,
+                source: params.source,
+                target: params.target,
+                sourceHandle: params.sourceHandle,
+                targetHandle: params.targetHandle,
+                type: 'custom',
+                data: { edgeData: newEdge, isTemporary: false },
+                style: { stroke: '#3b82f6' }
+              }
+            : edge
+        ));
+        
+        if (updateCallback) {
+          updateCallback();
+        }
 
       // 배출량 전파
       await edgeManager.propagateEmission(edgeKind, sourceId, targetId);
@@ -522,12 +522,6 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
     }
   }, [setEdges, edges, nodeManager, edgeManager, emissionManager]);
 
-  // 사업장 선택 처리 함수
-  const handleInstallSelect = useCallback((install: Install) => {
-    // 사업장 변경 시 캔버스 상태는 useEffect에서 자동으로 처리됨
-    // 이 함수는 ProcessManager에서 호출되지만 실제 로직은 useEffect에 있음
-  }, []);
-
   return {
     // 상태
     nodes,
@@ -539,7 +533,6 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
     onNodesChange,
     onEdgesChange,
     handleEdgeCreate,
-    handleInstallSelect,
 
     // 액션
     addProductNode,

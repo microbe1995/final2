@@ -67,7 +67,7 @@ function ProcessManagerInner() {
     onNodesChange,
     onEdgesChange,
     handleEdgeCreate,
-    handleInstallSelect,
+    // handleInstallSelect 제거됨 - useProcessManager의 setSelectedInstall 직접 사용
     addProductNode,
     addProcessNode,
     addGroupNode,
@@ -272,7 +272,7 @@ function ProcessManagerInner() {
         selectedInstall={selectedInstall}
         installCanvases={installCanvases}
         activeInstallId={activeInstallId}
-        onInstallSelect={handleInstallSelect}
+        onInstallSelect={setSelectedInstall}
         onAddInstall={() => {}} // 사업장 추가 기능은 별도로 구현 필요
       />
 
