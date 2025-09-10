@@ -795,11 +795,17 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
       // 최종 has_produce_edge 결정: produce 엣지가 있거나 consume 엣지가 있을 때 배출량 표시
       const finalHasProduceEdge = hasProduceEdgeFromEdges || hasConsumeEdgeFromEdges;
       
-      // 제품 수량 정보는 DB에서 가져오기 (배출량은 실시간 계산값 사용)
+      // 제품 수량 정보는 최신 DB 상태에서 가져오기 (배출량은 실시간 계산값 사용)
       let productData = null;
       try {
+        // 🔧 실시간 동기화: 제품 수량 정보를 최신 상태로 가져오기
         const productResponse = await axiosClient.get(apiEndpoints.cbam.product.get(productId));
         productData = productResponse?.data;
+        console.log(`🔍 제품 ${productId} 최신 수량 정보:`, {
+          product_amount: productData?.product_amount,
+          product_sell: productData?.product_sell,
+          product_eusell: productData?.product_eusell
+        });
       } catch (productError) {
         console.warn(`⚠️ 제품 ${productId} 수량 정보 조회 실패:`, productError);
       }

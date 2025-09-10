@@ -230,6 +230,9 @@ export const useProcessManager = () => {
         try {
           console.log('🔄 제품 수량 변경으로 인한 캔버스 노드 새로고침 시작');
           
+          // 🔧 백엔드 DB 업데이트 완료 대기 후 이벤트 발생
+          await new Promise(resolve => setTimeout(resolve, 300));
+          
           // 캔버스 노드들 새로고침을 위한 이벤트 발생
           // (useProcessCanvas에서 fullPropagate 실행)
           window.dispatchEvent(new CustomEvent('cbam:refreshAllNodesAfterProductUpdate', {
