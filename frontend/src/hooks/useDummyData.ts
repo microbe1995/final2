@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
-import { useFuelMasterAPI } from '@/hooks/useFuelMasterAPI';
-import { useMaterialMasterAPI } from '@/hooks/useMaterialMasterAPI';
+import { useFuelMasterAPI } from './useFuelMasterAPI';
+import { useMaterialMasterAPI } from './useMaterialMasterAPI';
 import axiosClient, { apiEndpoints } from '@/lib/axiosClient';
 
 export interface DummyData {

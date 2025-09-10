@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useNodesState, useEdgesState, Node, Edge, Connection, EdgeChange } from '@xyflow/react';
 import axiosClient, { apiEndpoints } from '@/lib/axiosClient';
-import { Install, Product, Process } from './useProcessManager';
+import { Install, Product, Process } from './types';
 import { useEmissionManager } from './useEmissionManager';
 import { useEdgeManager } from './useEdgeManager';
 import { useNodeManager } from './useNodeManager';
