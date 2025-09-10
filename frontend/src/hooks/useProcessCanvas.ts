@@ -995,7 +995,53 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
     }
   }, [refreshProcessEmission, refreshProductEmission]);
 
+  // 🔄 제품 수량 변경 시 전체 그래프 새로고침
+  const refreshAllNodesAfterProductUpdate = useCallback(async (productId: number) => {
+    try {
+      console.log(`🔄 제품 ${productId} 수량 변경으로 인한 전체 노드 새로고침 시작`);
+      
+      // 1. 전체 그래프 배출량 전파 실행
+      await axiosClient.post(apiEndpoints.cbam.edgePropagation.fullPropagate);
+      console.log('✅ 전체 그래프 배출량 전파 완료');
+      
+      // 2. 모든 제품 노드 새로고침
+      const productNodes = nodes.filter(n => n.type === 'product');
+      for (const node of productNodes) {
+        const productId = (node.data as any)?.id;
+        if (productId) {
+          await refreshProductEmission(productId);
+        }
+      }
+      console.log('✅ 모든 제품 노드 새로고침 완료');
+      
+      // 3. 모든 공정 노드 새로고침
+      const processNodes = nodes.filter(n => n.type === 'process');
+      for (const node of processNodes) {
+        const processId = (node.data as any)?.id;
+        if (processId) {
+          await refreshProcessEmission(processId);
+        }
+      }
+      console.log('✅ 모든 공정 노드 새로고침 완료');
+      
+      console.log('✅ 제품 수량 변경으로 인한 전체 노드 새로고침 완료');
+    } catch (error) {
+      console.error('❌ 제품 수량 변경으로 인한 노드 새로고침 실패:', error);
+    }
+  }, [nodes, refreshProductEmission, refreshProcessEmission]);
 
+  // 제품 수량 변경 시 캔버스 노드들 새로고침 이벤트 리스너
+  useEffect(() => {
+    const handler = async (event: CustomEvent) => {
+      const { productId } = event.detail;
+      if (productId) {
+        await refreshAllNodesAfterProductUpdate(productId);
+      }
+    };
+    
+    window.addEventListener('cbam:refreshAllNodesAfterProductUpdate' as any, handler);
+    return () => window.removeEventListener('cbam:refreshAllNodesAfterProductUpdate' as any, handler);
+  }, [refreshAllNodesAfterProductUpdate]);
 
   // 엣지 삭제 동기화: UI에서 삭제되면 서버 edge도 삭제하고 관련 노드 새로고침
   const onEdgesChange = useCallback(async (changes: EdgeChange[]) => {
@@ -1381,6 +1427,7 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
     refreshProcessEmission,
     refreshProductEmission,
     recalcFromProcess,
+    refreshAllNodesAfterProductUpdate,
   };
 };
 
