@@ -1032,25 +1032,39 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
   // 🔄 제품 수량 변경 시 캔버스 노드 새로고침 (백엔드에서 배출량 자동 계산됨)
   const refreshAllNodesAfterProductUpdate = useCallback(async (productId: number) => {
     try {
-      console.log(`🔄 제품 ${productId} 수량 변경으로 인한 캔버스 노드 새로고침 시작`);
+      console.log(`🔄 제품 ${productId} 수량 변경으로 인한 전체 그래프 배출량 재계산 시작`);
       
-      // 제품 노드 새로고침 (백엔드에서 계산된 배출량 반영)
-      await refreshProductEmission(productId);
-      console.log(`✅ 제품 ${productId} 노드 새로고침 완료`);
+      // 1. 전체 그래프 배출량 재계산 (제품 수량 변경으로 인한 영향 반영)
+      try {
+        await axiosClient.post(apiEndpoints.cbam.edgePropagation.fullPropagate, {});
+        console.log('✅ 전체 그래프 배출량 재계산 완료');
+      } catch (e) {
+        console.warn('⚠️ 전체 그래프 배출량 재계산 실패:', e);
+      }
       
-      // 연결된 공정 노드들도 새로고침
-      const connectedProcesses = nodes.filter(n => n.type === 'process');
-      for (const node of connectedProcesses) {
-        const processId = (node.data as any)?.id;
-        if (processId) {
-          await refreshProcessEmission(processId);
+      // 2. 모든 제품 노드 새로고침 (재계산된 배출량 반영)
+      const allProductNodes = nodes.filter(n => n.type === 'product');
+      for (const node of allProductNodes) {
+        const id = (node.data as any)?.id;
+        if (id) {
+          await refreshProductEmission(id);
         }
       }
-      console.log('✅ 연결된 공정 노드들 새로고침 완료');
+      console.log('✅ 모든 제품 노드 새로고침 완료');
       
-      console.log('✅ 제품 수량 변경으로 인한 캔버스 노드 새로고침 완료');
+      // 3. 모든 공정 노드 새로고침 (재계산된 배출량 반영)
+      const allProcessNodes = nodes.filter(n => n.type === 'process');
+      for (const node of allProcessNodes) {
+        const id = (node.data as any)?.id;
+        if (id) {
+          await refreshProcessEmission(id);
+        }
+      }
+      console.log('✅ 모든 공정 노드 새로고침 완료');
+      
+      console.log('✅ 제품 수량 변경으로 인한 전체 그래프 배출량 재계산 완료');
     } catch (error) {
-      console.error('❌ 제품 수량 변경으로 인한 노드 새로고침 실패:', error);
+      console.error('❌ 제품 수량 변경으로 인한 전체 그래프 배출량 재계산 실패:', error);
     }
   }, [nodes, refreshProcessEmission, refreshProductEmission]);
 
