@@ -405,24 +405,52 @@ export default function InstallProductsPage(props: any) {
   };
 
   // 제품 수정 모드 시작
-  const handleEditProduct = (product: Product) => {
-    setEditingProduct(product);
-    setProductForm({
-      product_name: product.product_name,
-      product_category: product.product_category,
-      prostart_period: product.prostart_period,
-      proend_period: product.proend_period,
-      product_amount: product.product_amount,
-      product_hscode: '', // HS 코드는 내부적으로만 사용
-      cncode_total: product.cncode_total || '',
-      goods_name: product.goods_name || '',
-      goods_engname: product.goods_engname || '',
-      aggrgoods_name: product.aggrgoods_name || '',
-      aggrgoods_engname: product.aggrgoods_engname || '',
-      product_sell: product.product_sell,
-      product_eusell: product.product_eusell
-    });
-    setShowProductForm(true);
+  const handleEditProduct = async (product: Product) => {
+    try {
+      // 최신 제품 데이터를 서버에서 다시 가져오기
+      const response = await axiosClient.get(apiEndpoints.cbam.product.get(product.id));
+      const latestProduct = response.data;
+      
+      setEditingProduct(latestProduct);
+      setProductForm({
+        product_name: latestProduct.product_name,
+        product_category: latestProduct.product_category,
+        prostart_period: latestProduct.prostart_period,
+        proend_period: latestProduct.proend_period,
+        product_amount: latestProduct.product_amount,
+        product_hscode: '', // HS 코드는 내부적으로만 사용
+        cncode_total: latestProduct.cncode_total || '',
+        goods_name: latestProduct.goods_name || '',
+        goods_engname: latestProduct.goods_engname || '',
+        aggrgoods_name: latestProduct.aggrgoods_name || '',
+        aggrgoods_engname: latestProduct.aggrgoods_engname || '',
+        product_sell: latestProduct.product_sell,
+        product_eusell: latestProduct.product_eusell
+      });
+      setShowProductForm(true);
+      
+      console.log('✅ 최신 제품 데이터로 폼 업데이트:', latestProduct);
+    } catch (error) {
+      console.error('❌ 최신 제품 데이터 조회 실패:', error);
+      // 실패 시 기존 데이터 사용
+      setEditingProduct(product);
+      setProductForm({
+        product_name: product.product_name,
+        product_category: product.product_category,
+        prostart_period: product.prostart_period,
+        proend_period: product.proend_period,
+        product_amount: product.product_amount,
+        product_hscode: '', // HS 코드는 내부적으로만 사용
+        cncode_total: product.cncode_total || '',
+        goods_name: product.goods_name || '',
+        goods_engname: product.goods_engname || '',
+        aggrgoods_name: product.aggrgoods_name || '',
+        aggrgoods_engname: product.aggrgoods_engname || '',
+        product_sell: product.product_sell,
+        product_eusell: product.product_eusell
+      });
+      setShowProductForm(true);
+    }
   };
 
   // 제품 수정 취소
