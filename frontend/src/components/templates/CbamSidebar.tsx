@@ -90,7 +90,7 @@ export default function CbamSidebar({ embedded = false }: Props) {
         </div>
         {Nav}
         <div className="p-4 border-t border-ecotrace-border">
-          <div className="text-xs text-ecotrace-textSecondary text-center">GreenSteel CBAM v1.0.0</div>
+          <div className="text-xs text-ecotrace-textSecondary text-center">EnvioAtlas CBAM v1.0.0</div>
         </div>
       </div>
     </div>

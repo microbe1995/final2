@@ -37,7 +37,7 @@ const CommonShell: React.FC<CommonShellProps> = ({ children }) => {
   const navigation = [
     {
       name: '홈',
-      href: 'https://www.greensteel.site/dashboard',
+      href: 'https://www.envioatlas.cloud/dashboard',
       icon: Home,
       current: pathname === '/dashboard',
       description: 'ESG 요약 및 최근 활동',
@@ -58,14 +58,14 @@ const CommonShell: React.FC<CommonShellProps> = ({ children }) => {
     },
     {
       name: '데이터 업로드',
-      href: 'https://www.greensteel.site/data-upload',
+      href: 'https://www.envioatlas.cloud/data-upload',
       icon: Upload,
       current: false,
       description: 'ESG 데이터 업로드 및 관리',
     },
     {
       name: '설정',
-      href: 'https://www.greensteel.site/settings/company',
+      href: 'https://www.envioatlas.cloud/settings/company',
       icon: Settings,
       current: false,
       description: '계정 및 환경설정',
@@ -87,10 +87,10 @@ const CommonShell: React.FC<CommonShellProps> = ({ children }) => {
 
   const handleGoHome = () => {
     if (typeof window !== 'undefined') {
-      window.location.href = 'https://www.greensteel.site/dashboard';
+      window.location.href = 'https://www.envioatlas.cloud/dashboard';
       return;
     }
-    router.push('https://www.greensteel.site/dashboard');
+    router.push('https://www.envioatlas.cloud/dashboard');
   };
 
   // no-op effect (reserved)
@@ -147,7 +147,7 @@ const CommonShell: React.FC<CommonShellProps> = ({ children }) => {
               </div>
               <div className='flex flex-col'>
                 <span className='text-xl font-bold text-white'>
-                  {process.env.NEXT_PUBLIC_APP_NAME || 'GreenSteel'}
+                  {process.env.NEXT_PUBLIC_APP_NAME || 'EnvioAtlas'}
                 </span>
                 <span className='text-xs text-ecotrace-textSecondary'>
                   ESG Platform
@@ -283,7 +283,7 @@ const CommonShell: React.FC<CommonShellProps> = ({ children }) => {
             {/* 사이드바 푸터 */}
             <div className='p-4 border-t border-ecotrace-border'>
               <div className='text-xs text-ecotrace-textSecondary text-center'>
-                GreenSteel v1.0.0
+                EnvioAtlas v1.0.0
               </div>
             </div>
           </div>

@@ -8,27 +8,27 @@ import './globals.css';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'GreenSteel - ESG Management Platform',
+  title: 'EnvioAtlas - ESG Management Platform',
   description:
     'Comprehensive ESG management platform for LCA, CBAM, and sustainability reporting. Track your environmental impact and compliance.',
   keywords:
     'ESG, LCA, CBAM, sustainability, carbon footprint, green steel, PWA, progressive web app',
-  authors: [{ name: 'GreenSteel Team' }],
-  creator: 'GreenSteel',
-  publisher: 'GreenSteel',
+  authors: [{ name: 'EnvioAtlas Team' }],
+  creator: 'EnvioAtlas',
+  publisher: 'EnvioAtlas',
   robots: 'index, follow',
   openGraph: {
-    title: 'GreenSteel - ESG Management Platform',
+    title: 'EnvioAtlas - ESG Management Platform',
     description:
       'Comprehensive ESG management platform for LCA, CBAM, and sustainability reporting. Track your environmental impact and compliance.',
-    url: 'https://greensteel.site',
-    siteName: 'GreenSteel',
+    url: 'https://envioatlas.cloud',
+    siteName: 'EnvioAtlas',
     locale: 'ko_KR',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'GreenSteel - ESG Management Platform',
+    title: 'EnvioAtlas - ESG Management Platform',
     description:
       'Comprehensive ESG management platform for LCA, CBAM, and sustainability reporting. Track your environmental impact and compliance.',
   },
@@ -37,10 +37,10 @@ export const metadata: Metadata = {
     'mobile-web-app-capable': 'yes',
     'apple-mobile-web-app-capable': 'yes',
     'apple-mobile-web-app-status-bar-style': 'default',
-    'apple-mobile-web-app-title': 'GreenSteel',
+    'apple-mobile-web-app-title': 'EnvioAtlas',
     'msapplication-TileColor': '#3b82f6',
     'theme-color': '#3b82f6',
-    'application-name': 'GreenSteel',
+    'application-name': 'EnvioAtlas',
     'msapplication-TileImage': '/icon-192x192.svg',
   },
 };

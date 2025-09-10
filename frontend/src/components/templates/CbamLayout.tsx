@@ -32,7 +32,7 @@ export default function CbamLayout({ children }: Props) {
   const navigation = [
     {
       name: '홈',
-      href: 'https://www.greensteel.site/dashboard',
+      href: 'https://www.envioatlas.cloud/dashboard',
       icon: Home,
       current: false,
       description: 'ESG 요약 및 최근 활동',
@@ -53,14 +53,14 @@ export default function CbamLayout({ children }: Props) {
     },
     {
       name: '데이터 업로드',
-      href: 'https://www.greensteel.site/data-upload',
+      href: 'https://www.envioatlas.cloud/data-upload',
       icon: Upload,
       current: false,
       description: 'ESG 데이터 업로드 및 관리',
     },
     {
       name: '설정',
-      href: 'https://www.greensteel.site/settings/company',
+      href: 'https://www.envioatlas.cloud/settings/company',
       icon: Settings,
       current: false,
       description: '계정 및 환경설정',
@@ -126,7 +126,7 @@ export default function CbamLayout({ children }: Props) {
               </div>
               <div className="flex flex-col">
                 <span className="text-xl font-bold text-white">
-                  {process.env.NEXT_PUBLIC_APP_NAME || 'GreenSteel'}
+                  {process.env.NEXT_PUBLIC_APP_NAME || 'EnvioAtlas'}
                 </span>
                 <span className="text-xs text-ecotrace-textSecondary">ESG Platform</span>
               </div>

@@ -60,6 +60,8 @@ else:
     allowed_origins = [
         "http://envioatlas.cloud",
         "https://envioatlas.cloud",
+        "http://www.envioatlas.cloud",
+        "https://www.envioatlas.cloud",
         "https://final2-mu-seven.vercel.app",
         "http://localhost:3000",
     ]

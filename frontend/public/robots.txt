@@ -2,7 +2,7 @@ User-agent: *
 Allow: /
 
 # Sitemap
-Sitemap: https://greensteel.site/sitemap.xml
+Sitemap: https://envioatlas.cloud/sitemap.xml
 
 # Disallow admin and API routes
 Disallow: /api/
