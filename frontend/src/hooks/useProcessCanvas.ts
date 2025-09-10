@@ -1412,7 +1412,7 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
             await refreshProcessEmission(finalTargetId);
 
             // 타겟 공정(예: 압연)이 생산하는 제품들(예: 형강)도 프리뷰 갱신(순차)
-            // 단, 이 제품들이 다른 공정들과 연결되어 있을 때만
+            // 연결이 새로 생성되었으므로 모든 생산 제품들을 새로고침
             try {
               const normalize = (id?: string) => (id || '').replace(/-(left|right|top|bottom)$/i, '');
               const processNode = (prevNodesRef.current || []).find(n => n.type === 'process' && (n.data as any)?.id === finalTargetId);
@@ -1426,24 +1426,44 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
                   })
                   .filter((pid): pid is number => typeof pid === 'number');
                 
-                // 각 제품이 consume 엣지를 가지고 있는지 확인 후 새로고침
+                // 연결이 새로 생성되었으므로 모든 생산 제품들을 새로고침
                 for (const pid of producedProductIds) { 
-                  const hasConsumeEdge = (edges || []).some(edge => {
-                    const edgeData = (edge.data as any)?.edgeData;
-                    return edgeData?.edge_kind === 'consume' && 
-                           edge.source && 
-                           (prevNodesRef.current || []).some(n => 
-                             n.id === edge.source && 
-                             n.type === 'product' && 
-                             (n.data as any)?.id === pid
-                           );
-                  });
-                  if (hasConsumeEdge) {
-                    await refreshProductEmission(pid);
-                  }
+                  await refreshProductEmission(pid);
+                  console.log(`✅ 제품 ${pid} 배출량 새로고침 완료 (consume 엣지 생성으로 인한 영향)`);
                 }
               }
-            } catch (_) {}
+            } catch (e) {
+              console.warn('⚠️ 생산 제품 배출량 새로고침 실패:', e);
+            }
+            
+            // consume 엣지 생성 후 전체 그래프 일관성 확보를 위한 추가 새로고침
+            try {
+              console.log('🔄 consume 엣지 생성으로 인한 전체 그래프 일관성 확보 시작');
+              
+              // 모든 제품 노드 새로고침 (연결 변경으로 인한 배출량 변경 반영)
+              const allProductNodes = prevNodesRef.current.filter(n => n.type === 'product');
+              for (const node of allProductNodes) {
+                const productId = (node.data as any)?.id;
+                if (productId) {
+                  await refreshProductEmission(productId);
+                }
+              }
+              console.log('✅ 모든 제품 노드 새로고침 완료');
+              
+              // 모든 공정 노드 새로고침 (연결 변경으로 인한 배출량 변경 반영)
+              const allProcessNodes = prevNodesRef.current.filter(n => n.type === 'process');
+              for (const node of allProcessNodes) {
+                const processId = (node.data as any)?.id;
+                if (processId) {
+                  await refreshProcessEmission(processId);
+                }
+              }
+              console.log('✅ 모든 공정 노드 새로고침 완료');
+              
+              console.log('✅ consume 엣지 생성으로 인한 전체 그래프 일관성 확보 완료');
+            } catch (e) {
+              console.warn('⚠️ 전체 그래프 일관성 확보 실패:', e);
+            }
           }
         } catch (e) {
           console.error('⚠️ 배출량 전파/갱신 실패:', e);
