@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useDummyData } from './useDummyData';
 import axiosClient, { apiEndpoints } from '@/lib/axiosClient';
-import { Install, Product, Process } from './types';
+import { Install, Product, Process } from '@/lib/types';
 
 
 

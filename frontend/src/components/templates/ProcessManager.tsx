@@ -13,7 +13,8 @@ import { ProductSelector } from '@/components/templates/ProductSelector';
 import { ProcessSelector, ProductProcessModal } from '@/components/templates/ProcessSelector';
 
 
-import { useProcessManager, Process, Install, Product } from '@/hooks/useProcessManager';
+import { useProcessManager } from '@/hooks/useProcessManager';
+import { Process, Install, Product } from '@/lib/types';
 import { useProcessCanvas } from '@/hooks/useProcessCanvas';
 
 import {

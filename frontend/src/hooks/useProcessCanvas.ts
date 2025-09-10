@@ -538,7 +538,9 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
     addProductNode,
     addProcessNode,
     addGroupNode,
-    updateNodeData: nodeManager.updateNodeData,
+    updateNodeData: (nodeId: string, newData: any) => {
+      setNodes(prevNodes => nodeManager.updateNodeData(prevNodes, nodeId, newData));
+    },
     refreshProcessEmission: emissionManager.refreshProcessEmission,
     refreshProductEmission: emissionManager.refreshProductEmission,
     recalcFromProcess: emissionManager.recalculateFromProcess,
