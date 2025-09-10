@@ -193,6 +193,21 @@ export const useProcessManager = () => {
   }) => {
     if (!selectedProduct) return false;
     
+    // 🔧 추가: 프론트엔드 검증 로직
+    const totalSales = productQuantityForm.product_sell + productQuantityForm.product_eusell;
+    const nextProcessAmount = productQuantityForm.product_amount - totalSales;
+    
+    if (totalSales > productQuantityForm.product_amount) {
+      console.error('❌ 검증 실패: 판매량 합계가 생산량을 초과합니다');
+      return false;
+    }
+    
+    console.log('✅ 제품 수량 검증 통과:');
+    console.log(`  생산량: ${productQuantityForm.product_amount} ton`);
+    console.log(`  판매량: ${productQuantityForm.product_sell} ton`);
+    console.log(`  EU판매량: ${productQuantityForm.product_eusell} ton`);
+    console.log(`  다음공정전달량: ${nextProcessAmount} ton`);
+    
     setIsUpdatingProduct(true);
     try {
       console.log('🔄 제품 수량 업데이트 시작:', productQuantityForm);

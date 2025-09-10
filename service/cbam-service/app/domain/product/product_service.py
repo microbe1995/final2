@@ -114,6 +114,25 @@ class ProductService:
     async def update_product(self, product_id: int, request: ProductUpdateRequest) -> Optional[ProductResponse]:
         """제품 수정"""
         try:
+            # 🔧 추가: 제품 수량 검증 로직
+            if (request.product_amount is not None and 
+                request.product_sell is not None and 
+                request.product_eusell is not None):
+                
+                # CBAM 규칙: 생산량 = 판매량 + EU판매량 + 다음공정전달량
+                total_sales = request.product_sell + request.product_eusell
+                if total_sales > request.product_amount:
+                    raise ValueError(
+                        f"판매량 합계({total_sales} ton)가 생산량({request.product_amount} ton)을 초과할 수 없습니다. "
+                        f"다음 공정으로 전달되는 양: {request.product_amount - total_sales} ton"
+                    )
+                
+                logger.info(f"✅ 제품 {product_id} 수량 검증 통과:")
+                logger.info(f"  생산량: {request.product_amount} ton")
+                logger.info(f"  판매량: {request.product_sell} ton")
+                logger.info(f"  EU판매량: {request.product_eusell} ton")
+                logger.info(f"  다음공정전달량: {request.product_amount - total_sales} ton")
+            
             # None이 아닌 필드만 업데이트 데이터에 포함
             update_data = {}
             if request.install_id is not None:
