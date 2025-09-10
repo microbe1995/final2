@@ -137,14 +137,16 @@ class EdgeService:
 
     async def compute_product_emission(self, product_id: int) -> float:
         """현재 연결 상태 기준 제품 배출량(표시용)을 합산해 반환.
-        - 제품은 연결된 공정의 직접귀속배출량(attrdir_em)만 받음
-        - 누적 배출량(cumulative_emission)은 사용하지 않음
+        - 제품은 생산하는 공정의 누적 배출량(cumulative_emission)을 받음
+        - 단, 순환 참조를 방지하기 위해 직접적인 produce 관계만 고려
         - 잔여(to_next) 비율은 consume 전파에서 적용한다.
         """
         try:
+            # 🔧 수정: produce 관계만 고려하여 순환 참조 방지
             connected_processes = await self.repository.get_processes_connected_to_product(product_id)
             seen = set()
             total_emission = 0.0
+            
             for proc_data in connected_processes:
                 pid = proc_data['process_id']
                 if pid in seen:
@@ -152,16 +154,42 @@ class EdgeService:
                 seen.add(pid)
                 proc_emission = await self.repository.get_process_emission_data(pid)
                 if proc_emission:
-                    # 🔧 수정: 제품은 직접귀속배출량만 받음 (누적 배출량 사용 안함)
-                    attrdir_em = proc_emission.get('attrdir_em') or 0.0
-                    total_emission += attrdir_em
-                    logger.info(f"  공정 {pid} 직접귀속배출량: {attrdir_em} tCO2e")
+                    # 🔧 수정: 제품은 생산 공정의 누적 배출량을 받음
+                    cumulative_em = proc_emission.get('cumulative_emission') or 0.0
+                    if cumulative_em == 0.0:
+                        cumulative_em = proc_emission.get('attrdir_em') or 0.0
+                    total_emission += cumulative_em
+                    logger.info(f"  공정 {pid} 누적 배출량: {cumulative_em} tCO2e")
 
             logger.info(f"제품 {product_id} 총 배출량 계산: {total_emission} tCO2e")
             return float(total_emission)
         except Exception as e:
             logger.error(f"제품 {product_id} 표시용 배출량 합산 실패: {e}")
             return 0.0
+    
+    async def update_product_emission_from_processes(self, product_id: int) -> bool:
+        """제품의 배출량을 연결된 공정들의 누적 배출량으로 업데이트합니다.
+        단일 책임 원칙: 제품 배출량 업데이트만 담당
+        """
+        try:
+            logger.info(f"🔄 제품 {product_id} 배출량 업데이트 시작")
+            
+            # 1. 제품의 현재 배출량 계산
+            new_emission = await self.compute_product_emission(product_id)
+            
+            # 2. 제품 배출량 업데이트
+            success = await self.repository.update_product_emission(product_id, new_emission)
+            
+            if success:
+                logger.info(f"✅ 제품 {product_id} 배출량 업데이트 완료: {new_emission} tCO2e")
+                return True
+            else:
+                logger.error(f"❌ 제품 {product_id} 배출량 업데이트 실패")
+                return False
+                
+        except Exception as e:
+            logger.error(f"제품 {product_id} 배출량 업데이트 실패: {e}")
+            return False
     
     async def propagate_emissions_consume(self, source_product_id: int, target_process_id: int) -> bool:
         """
@@ -217,13 +245,9 @@ class EdgeService:
             allocated_amount = to_next_process * consumption_ratio
             
             # 6. 배출량 계산 (제품 배출량 * 소비 비율)
-            # 저장된 attr_em 대신 현재 그래프 상태 기준 프리뷰 합계를 우선 사용
-            product_emission_preview = await self.compute_product_emission(source_product_id)
-            # 프리뷰가 0.0(연결된 공정 없음)일 수 있으므로, 저장된 attr_em으로 폴백
-            if product_emission_preview is not None and product_emission_preview > 0:
-                product_emission = product_emission_preview
-            else:
-                product_emission = product_data['attr_em'] or 0.0
+            # 🔧 수정: 순환 참조 방지를 위해 저장된 attr_em 사용
+            product_emission = product_data['attr_em'] or 0.0
+            logger.info(f"  제품 {source_product_id} 배출량 (저장값): {product_emission} tCO2e")
 
             # 최종 가중치 = (실투입비율 to_next/product_amount) × (소비자 분배 비율)
             to_next_share = (to_next_process / product_amount) if product_amount > 0 else 0.0
@@ -321,6 +345,21 @@ class EdgeService:
                 if not success:
                     logger.warning(f"consume 엣지 {edge['id']} 처리 실패")
             
+            # 4. 🔧 추가: produce 엣지에 연결된 제품들의 배출량을 업데이트
+            logger.info("🔄 제품 배출량 업데이트 시작")
+            updated_products = 0
+            product_ids = set()
+            
+            # produce 엣지에서 제품 ID 추출
+            for edge in produce_edges:
+                product_ids.add(edge['target_id'])
+            
+            for product_id in product_ids:
+                success = await self.update_product_emission_from_processes(product_id)
+                if success:
+                    updated_products += 1
+            
+            logger.info(f"✅ 제품 배출량 업데이트 완료: {updated_products}/{len(product_ids)}개 제품")
             logger.info("✅ 전체 그래프 배출량 전파 완료")
             return {
                 'success': True,
