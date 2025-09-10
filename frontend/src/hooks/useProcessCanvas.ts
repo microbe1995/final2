@@ -1042,25 +1042,44 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
         console.warn('⚠️ 전체 그래프 배출량 재계산 실패:', e);
       }
       
-      // 2. 모든 제품 노드 새로고침 (재계산된 배출량 반영)
+      // 2. 잠시 대기 후 노드 새로고침 (백엔드 계산 완료 대기)
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // 3. 모든 제품 노드 새로고침 (재계산된 배출량 반영)
       const allProductNodes = nodes.filter(n => n.type === 'product');
       for (const node of allProductNodes) {
         const id = (node.data as any)?.id;
         if (id) {
           await refreshProductEmission(id);
+          console.log(`✅ 제품 ${id} 노드 새로고침 완료`);
         }
       }
       console.log('✅ 모든 제품 노드 새로고침 완료');
       
-      // 3. 모든 공정 노드 새로고침 (재계산된 배출량 반영)
+      // 4. 모든 공정 노드 새로고침 (재계산된 배출량 반영)
       const allProcessNodes = nodes.filter(n => n.type === 'process');
       for (const node of allProcessNodes) {
         const id = (node.data as any)?.id;
         if (id) {
           await refreshProcessEmission(id);
+          console.log(`✅ 공정 ${id} 노드 새로고침 완료`);
         }
       }
       console.log('✅ 모든 공정 노드 새로고침 완료');
+      
+      // 5. 추가 검증: 특정 제품(형강)이 있는지 확인하고 강제 새로고침
+      const hyeonggangNode = nodes.find(n => 
+        n.type === 'product' && 
+        (n.data as any)?.productData?.product_name === '형강'
+      );
+      if (hyeonggangNode) {
+        const hyeonggangId = (hyeonggangNode.data as any)?.id;
+        if (hyeonggangId) {
+          console.log(`🔄 형강 노드 강제 새로고침: ${hyeonggangId}`);
+          await refreshProductEmission(hyeonggangId);
+          console.log(`✅ 형강 노드 강제 새로고침 완료`);
+        }
+      }
       
       console.log('✅ 제품 수량 변경으로 인한 전체 그래프 배출량 재계산 완료');
     } catch (error) {
