@@ -657,15 +657,9 @@ class EdgeService:
             if success:
                 logger.info(f"✅ 엣지 {edge_id} 삭제 완료")
                 
-                # 🔧 단일책임원칙: 엣지 삭제는 삭제만 담당, 배출량 전파는 별도 함수에서 처리
-                # propagate_emissions_full_graph에서 자체적으로 초기화 및 전파 수행
-                logger.info("🔄 엣지 삭제로 인한 전체 그래프 배출량 전파 시작")
-                propagation_result = await self.propagate_emissions_full_graph()
-                
-                if propagation_result['success']:
-                    logger.info("✅ 전체 그래프 배출량 전파 완료")
-                else:
-                    logger.warning(f"⚠️ 전체 그래프 배출량 전파 실패: {propagation_result.get('error', 'Unknown error')}")
+                # 🔧 단일책임원칙: 엣지 삭제는 삭제만 담당
+                # 배출량 전파는 프론트엔드에서 별도 API 호출로 처리
+                logger.info("✅ 엣지 삭제 완료 - 배출량 전파는 프론트엔드에서 처리")
                 
                 return True
             else:

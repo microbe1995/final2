@@ -1197,27 +1197,54 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
       // 2. 잠시 대기 후 노드 새로고침 (백엔드 역전파 완료 대기)
       await new Promise(resolve => setTimeout(resolve, 500));
       
-      // 3. 모든 제품 노드 새로고침 (삭제된 연결로 인한 배출량 변경 반영)
-      const allProductNodes = prevNodesRef.current.filter(n => n.type === 'product');
-      for (const node of allProductNodes) {
-        const productId = (node.data as any)?.id;
-        if (productId) {
-          await refreshProductEmission(productId);
-          console.log(`✅ 제품 ${productId} 노드 새로고침 완료`);
+      // 🔧 수정: 백엔드 전체 그래프 재계산 완료 후 노드 새로고침
+      // 단일 책임 원칙: 엣지 삭제는 백엔드에서 처리하고, 프론트엔드는 결과만 반영
+      try {
+        // 백엔드 전체 그래프 재계산 API 호출
+        await axiosClient.post(apiEndpoints.cbam.calculation.graph.recalc, {
+          trigger_edge_id: null,
+          include_validation: false
+        });
+        console.log('✅ 백엔드 전체 그래프 재계산 완료');
+        
+        // 재계산 완료 후 모든 노드 새로고침
+        const allProductNodes = prevNodesRef.current.filter(n => n.type === 'product');
+        for (const node of allProductNodes) {
+          const productId = (node.data as any)?.id;
+          if (productId) {
+            await refreshProductEmission(productId);
+            console.log(`✅ 제품 ${productId} 노드 새로고침 완료`);
+          }
+        }
+        
+        const allProcessNodes = prevNodesRef.current.filter(n => n.type === 'process');
+        for (const node of allProcessNodes) {
+          const processId = (node.data as any)?.id;
+          if (processId) {
+            await refreshProcessEmission(processId);
+            console.log(`✅ 공정 ${processId} 노드 새로고침 완료`);
+          }
+        }
+        console.log('✅ 모든 노드 새로고침 완료');
+      } catch (error) {
+        console.warn('⚠️ 백엔드 재계산 실패, 개별 노드 새로고침으로 폴백:', error);
+        // 폴백: 개별 노드 새로고침
+        const allProductNodes = prevNodesRef.current.filter(n => n.type === 'product');
+        for (const node of allProductNodes) {
+          const productId = (node.data as any)?.id;
+          if (productId) {
+            await refreshProductEmission(productId);
+          }
+        }
+        
+        const allProcessNodes = prevNodesRef.current.filter(n => n.type === 'process');
+        for (const node of allProcessNodes) {
+          const processId = (node.data as any)?.id;
+          if (processId) {
+            await refreshProcessEmission(processId);
+          }
         }
       }
-      console.log('✅ 모든 제품 노드 새로고침 완료');
-      
-      // 4. 모든 공정 노드 새로고침 (삭제된 연결로 인한 배출량 변경 반영)
-      const allProcessNodes = prevNodesRef.current.filter(n => n.type === 'process');
-      for (const node of allProcessNodes) {
-        const processId = (node.data as any)?.id;
-        if (processId) {
-          await refreshProcessEmission(processId);
-          console.log(`✅ 공정 ${processId} 노드 새로고침 완료`);
-        }
-      }
-      console.log('✅ 모든 공정 노드 새로고침 완료');
       
       console.log('✅ 엣지 삭제 후 배출량 역전파 완료');
     } catch (e) {
