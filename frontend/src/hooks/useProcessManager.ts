@@ -195,36 +195,61 @@ export const useProcessManager = () => {
     
     setIsUpdatingProduct(true);
     try {
+      console.log('🔄 제품 수량 업데이트 시작:', productQuantityForm);
+      
       const response = await axiosClient.put(apiEndpoints.cbam.product.update(selectedProduct.id), productQuantityForm);
       
-      // 선택된 제품 정보 업데이트
-      setSelectedProduct({
-        ...selectedProduct,
-        ...productQuantityForm
-      });
-
-      // 제품 목록 내 해당 아이템도 동기화
-      setProducts(prev => prev.map(p => p.id === selectedProduct.id ? { ...p, ...productQuantityForm } : p));
-      
-      // 🔄 제품 수량 저장 시 백엔드에서 자동으로 배출량 계산 및 저장됨
-      // 프론트엔드에서는 캔버스 노드들만 새로고침
-      try {
-        console.log('🔄 제품 수량 변경으로 인한 캔버스 노드 새로고침 시작');
+      if (response.status === 200) {
+        console.log('✅ 제품 수량 업데이트 성공');
         
-        // 캔버스 노드들 새로고침을 위한 이벤트 발생
-        window.dispatchEvent(new CustomEvent('cbam:refreshAllNodesAfterProductUpdate', {
-          detail: { productId: selectedProduct.id }
-        }));
-        console.log('✅ 캔버스 노드 새로고침 이벤트 발생');
-      } catch (refreshError) {
-        console.error('❌ 캔버스 노드 새로고침 실패:', refreshError);
-        // 새로고침 실패는 제품 수량 업데이트를 실패시키지 않음
+        // 서버에서 최신 제품 데이터를 다시 불러와서 상태 동기화
+        try {
+          const updatedProductResponse = await axiosClient.get(apiEndpoints.cbam.product.get(selectedProduct.id));
+          const updatedProduct = updatedProductResponse.data;
+          
+          // 선택된 제품 정보를 서버 데이터로 업데이트
+          setSelectedProduct(updatedProduct);
+          console.log('✅ 선택된 제품 정보 동기화 완료:', updatedProduct);
+
+          // 제품 목록 내 해당 아이템도 서버 데이터로 동기화
+          setProducts(prev => prev.map(p => p.id === selectedProduct.id ? updatedProduct : p));
+          console.log('✅ 제품 목록 동기화 완료');
+          
+        } catch (syncError) {
+          console.warn('⚠️ 제품 데이터 동기화 실패, 로컬 상태로 폴백:', syncError);
+          // 동기화 실패 시 로컬 상태로 폴백
+          setSelectedProduct({
+            ...selectedProduct,
+            ...productQuantityForm
+          });
+          setProducts(prev => prev.map(p => p.id === selectedProduct.id ? { ...p, ...productQuantityForm } : p));
+        }
+        
+        // 🔄 제품 수량 저장 시 백엔드에서 자동으로 배출량 계산 및 저장됨
+        // 프론트엔드에서는 캔버스 노드들만 새로고침
+        try {
+          console.log('🔄 제품 수량 변경으로 인한 캔버스 노드 새로고침 시작');
+          
+          // 캔버스 노드들 새로고침을 위한 이벤트 발생
+          window.dispatchEvent(new CustomEvent('cbam:refreshAllNodesAfterProductUpdate', {
+            detail: { productId: selectedProduct.id }
+          }));
+          console.log('✅ 캔버스 노드 새로고침 이벤트 발생');
+        } catch (refreshError) {
+          console.error('❌ 캔버스 노드 새로고침 실패:', refreshError);
+          // 새로고침 실패는 제품 수량 업데이트를 실패시키지 않음
+        }
+        
+        return true;
+      } else {
+        console.error('❌ 제품 수량 업데이트 실패: 응답 상태 코드', response.status);
+        return false;
       }
-      
-      return true;
     } catch (error: any) {
-      if (process.env.NODE_ENV === 'development') {
-        console.error('❌ 제품 수량 업데이트 실패:', error);
+      console.error('❌ 제품 수량 업데이트 실패:', error);
+      if (error.response) {
+        console.error('응답 데이터:', error.response.data);
+        console.error('응답 상태:', error.response.status);
       }
       return false;
     } finally {
