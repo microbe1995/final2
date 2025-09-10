@@ -749,19 +749,11 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
     if (inFlightProduct.current.has(productId)) return;
     inFlightProduct.current.add(productId);
     try {
-      let attrEm = 0;
-      let hasProduceEdge = false;
-      try {
-        const preview = await axiosClient.get(apiEndpoints.cbam.edgePropagation.productPreview(productId));
-        attrEm = preview?.data?.preview_attr_em ?? 0;
-        hasProduceEdge = true; // 프리뷰 API가 성공하면 produce 엣지가 있다는 의미
-      } catch {
-        const response = await axiosClient.get(apiEndpoints.cbam.product.get(productId));
-        const product = response?.data;
-        attrEm = product?.attr_em || 0;
-        // 제품에 직접 배출량이 있으면 produce 엣지가 있다고 간주
-        hasProduceEdge = attrEm > 0;
-      }
+      // 🔧 단일책임원칙: 제품 노드는 DB에 저장된 데이터만 표시
+      // productPreview는 별도 기능으로 분리하여 혼동 방지
+      const response = await axiosClient.get(apiEndpoints.cbam.product.get(productId));
+      const product = response?.data;
+      const attrEm = product?.attr_em || 0;
       
       // 현재 엣지 상태에서 produce 엣지와 consume 엣지 확인
       const currentEdges = prevEdgesRef.current || [];
@@ -790,7 +782,7 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
       // 최종 has_produce_edge 결정: produce 엣지가 있거나 consume 엣지가 있을 때 배출량 표시
       const finalHasProduceEdge = hasProduceEdgeFromEdges || hasConsumeEdgeFromEdges;
       
-      // 1) 활성 캔버스 갱신
+      // 1) 활성 캔버스 갱신 - DB 저장된 데이터로 동기화
       setNodes(prev => prev.map(node => {
         if (node.type === 'product' && node.data?.id === productId) {
           return {
@@ -799,10 +791,16 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
               ...node.data,
               attr_em: attrEm,
               has_produce_edge: finalHasProduceEdge,
+              // 🔧 단일책임원칙: DB 저장된 제품 수량 정보로 동기화
+              product_amount: Number(product?.product_amount || 0),
+              product_sell: Number(product?.product_sell || 0),
+              product_eusell: Number(product?.product_eusell || 0),
               productData: {
                 ...(node.data as any).productData,
                 attr_em: attrEm,
-                production_qty: (node.data as any).productData?.production_qty ?? (node.data as any).product_amount ?? 0
+                production_qty: Number(product?.product_amount || 0),
+                product_sell: Number(product?.product_sell || 0),
+                product_eusell: Number(product?.product_eusell || 0),
               }
             }
           } as Node;

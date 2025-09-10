@@ -414,6 +414,22 @@ class EdgeRepository:
             logger.error(f"❌ 누적 배출량 초기화 실패: {str(e)}")
             return False
     
+    async def reset_cumulative_to_direct_emission(self) -> bool:
+        """모든 공정의 누적 배출량을 직접귀속배출량으로 초기화합니다(전파 시작 전 직접 배출량 복원)."""
+        try:
+            await self._ensure_pool_initialized()
+            async with self.pool.acquire() as conn:
+                query = """
+                    UPDATE process_attrdir_emission
+                    SET cumulative_emission = attrdir_em, calculation_date = NOW(), updated_at = NOW()
+                """
+                await conn.execute(query)
+                logger.info("✅ 모든 공정의 누적 배출량을 직접귀속배출량으로 초기화")
+                return True
+        except Exception as e:
+            logger.error(f"❌ 누적 배출량을 직접귀속배출량으로 초기화 실패: {str(e)}")
+            return False
+    
     async def get_products_by_process(self, process_id: int) -> List[int]:
         """공정에 귀속된 제품 ID 목록 조회"""
         try:

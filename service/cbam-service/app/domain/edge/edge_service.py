@@ -274,10 +274,10 @@ class EdgeService:
         try:
             logger.info("🔄 전체 그래프 배출량 전파 시작")
             # 중요: 전파를 여러 번 호출해도 결과가 누적되지 않도록
-            # 모든 공정의 누적값을 먼저 0으로 초기화한다(아이들포턴시 확보)
+            # 모든 공정의 누적값을 먼저 직접귀속배출량으로 초기화한다(직접 배출량 복원)
             try:
-                await self.repository.reset_all_cumulative_emission()
-                logger.info("🧹 누적 배출량 초기화 완료 (전파 시작 전)")
+                await self.repository.reset_cumulative_to_direct_emission()
+                logger.info("🧹 누적 배출량을 직접귀속배출량으로 초기화 완료 (전파 시작 전)")
             except Exception as e:
                 logger.warning(f"⚠️ 누적 초기화 경고(무시 가능): {e}")
             
