@@ -414,6 +414,25 @@ class EdgeRepository:
             logger.error(f"❌ 누적 배출량 초기화 실패: {str(e)}")
             return False
     
+    async def get_products_by_process(self, process_id: int) -> List[int]:
+        """공정에 귀속된 제품 ID 목록 조회"""
+        try:
+            await self._ensure_pool_initialized()
+            
+            async with self.pool.acquire() as conn:
+                query = """
+                    SELECT DISTINCT product_id
+                    FROM product_process
+                    WHERE process_id = $1
+                """
+                
+                rows = await conn.fetch(query, process_id)
+                return [row['product_id'] for row in rows]
+                
+        except Exception as e:
+            logger.error(f"❌ 공정 {process_id}의 제품 목록 조회 실패: {str(e)}")
+            return []
+
     async def get_processes_connected_to_product(self, product_id: int) -> List[Dict[str, Any]]:
         """제품에 연결된 모든 공정들을 조회합니다."""
         try:

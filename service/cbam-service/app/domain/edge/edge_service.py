@@ -375,10 +375,115 @@ class EdgeService:
             logger.error(f"순환 참조 감지 실패: {e}")
             return False
     
+    async def _validate_edge(self, edge_data) -> Dict[str, Any]:
+        """엣지 유효성 검증"""
+        try:
+            source_type = edge_data.source_node_type
+            target_type = edge_data.target_node_type
+            edge_kind = edge_data.edge_kind
+            
+            # 1. 기본 유효성 검증
+            if not source_type or not target_type or not edge_kind:
+                return {'valid': False, 'error': '필수 필드가 누락되었습니다.'}
+            
+            # 2. 노드 타입 유효성 검증
+            valid_node_types = ['process', 'product']
+            if source_type not in valid_node_types or target_type not in valid_node_types:
+                return {'valid': False, 'error': f'유효하지 않은 노드 타입입니다. 허용된 타입: {valid_node_types}'}
+            
+            # 3. 엣지 종류 유효성 검증
+            valid_edge_kinds = ['consume', 'produce', 'continue']
+            if edge_kind not in valid_edge_kinds:
+                return {'valid': False, 'error': f'유효하지 않은 엣지 종류입니다. 허용된 종류: {valid_edge_kinds}'}
+            
+            # 4. 엣지 종류별 연결 규칙 검증
+            validation_rules = {
+                'consume': {
+                    'valid_combinations': [
+                        ('product', 'process'),  # 제품 → 공정 (소비)
+                    ],
+                    'description': '제품이 공정에서 소비됨'
+                },
+                'produce': {
+                    'valid_combinations': [
+                        ('process', 'product'),  # 공정 → 제품 (생산)
+                    ],
+                    'description': '공정이 제품을 생산함'
+                },
+                'continue': {
+                    'valid_combinations': [
+                        ('process', 'process'),  # 공정 → 공정 (연속)
+                    ],
+                    'description': '공정이 공정으로 연결됨'
+                }
+            }
+            
+            rule = validation_rules.get(edge_kind)
+            if not rule:
+                return {'valid': False, 'error': f'알 수 없는 엣지 종류: {edge_kind}'}
+            
+            valid_combination = (source_type, target_type)
+            if valid_combination not in rule['valid_combinations']:
+                return {
+                    'valid': False, 
+                    'error': f'{edge_kind} 엣지는 {rule["description"]}만 허용됩니다. 현재: {source_type} → {target_type}'
+                }
+            
+            # 5. 동일 노드 간 연결 방지
+            if source_type == target_type and edge_data.source_id == edge_data.target_id:
+                return {'valid': False, 'error': '동일한 노드 간 연결은 허용되지 않습니다.'}
+            
+            # 6. 제품-제품 연결 방지 (continue 엣지)
+            if source_type == 'product' and target_type == 'product':
+                return {'valid': False, 'error': '제품 간 직접 연결은 허용되지 않습니다.'}
+            
+            # 7. 공정-공정 연결 시 같은 제품에 귀속된 공정들끼리만 연결 가능
+            if edge_kind == 'continue' and source_type == 'process' and target_type == 'process':
+                same_product_check = await self._check_same_product_processes(
+                    edge_data.source_id, edge_data.target_id
+                )
+                if not same_product_check['valid']:
+                    return same_product_check
+            
+            logger.info(f"✅ 엣지 유효성 검증 통과: {source_type}({edge_data.source_id}) → {target_type}({edge_data.target_id}) ({edge_kind})")
+            return {'valid': True, 'error': None}
+            
+        except Exception as e:
+            logger.error(f"❌ 엣지 유효성 검증 중 오류: {str(e)}")
+            return {'valid': False, 'error': f'유효성 검증 중 오류가 발생했습니다: {str(e)}'}
+    
+    async def _check_same_product_processes(self, source_process_id: int, target_process_id: int) -> Dict[str, Any]:
+        """두 공정이 같은 제품에 귀속되어 있는지 확인"""
+        try:
+            # 두 공정이 모두 같은 제품에 귀속되어 있는지 확인
+            source_products = await self.repository.get_products_by_process(source_process_id)
+            target_products = await self.repository.get_products_by_process(target_process_id)
+            
+            # 공통 제품이 있는지 확인
+            common_products = set(source_products) & set(target_products)
+            
+            if not common_products:
+                return {
+                    'valid': False, 
+                    'error': f'공정 {source_process_id}와 {target_process_id}가 서로 다른 제품에 귀속되어 있습니다. 공정 간 연결은 같은 제품에 귀속된 공정들끼리만 가능합니다.'
+                }
+            
+            return {'valid': True, 'error': None}
+            
+        except Exception as e:
+            logger.error(f"❌ 공정 제품 귀속 확인 중 오류: {str(e)}")
+            return {'valid': False, 'error': f'공정 제품 귀속 확인 중 오류가 발생했습니다: {str(e)}'}
+
     async def create_edge(self, edge_data) -> Optional[EdgeResponse]:
         """엣지 생성 (Repository 패턴) - 엣지 생성 후 전체 그래프 재계산"""
         try:
             logger.info(f"엣지 생성 시작: {edge_data}")
+            
+            # 1. 엣지 유효성 검증
+            validation_result = await self._validate_edge(edge_data)
+            if not validation_result['valid']:
+                logger.error(f"❌ 엣지 유효성 검증 실패: {validation_result['error']}")
+                raise ValueError(f"엣지 유효성 검증 실패: {validation_result['error']}")
             
             # Pydantic 모델을 딕셔너리로 변환
             edge_dict = {

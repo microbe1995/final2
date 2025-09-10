@@ -98,7 +98,7 @@ class ProductProcessRepository:
             async with self.pool.acquire() as conn:
                 result = await conn.execute("""
                     DELETE FROM product_process WHERE product_id = $1 AND process_id = $2
-                """, (product_id, process_id))
+                """, product_id, process_id)
                 
                 success = result != "DELETE 0"
                 if success:
