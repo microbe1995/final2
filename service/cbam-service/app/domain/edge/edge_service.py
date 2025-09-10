@@ -122,6 +122,7 @@ class EdgeService:
             total_emission = await self.compute_product_emission(target_product_id)
             
             logger.info(f"🧮 공정→제품 배출량 계산:")
+            logger.info(f"  공정 {source_process_id} 직접귀속배출량: {process_data['attrdir_em']}")
             logger.info(f"  공정 {source_process_id} 누적 배출량: {process_data['cumulative_emission']}")
             logger.info(f"  제품 {target_product_id} 기존 배출량: {product_data['attr_em']}")
             logger.info(f"  제품 {target_product_id} 최종 배출량: {total_emission}")
@@ -136,7 +137,8 @@ class EdgeService:
 
     async def compute_product_emission(self, product_id: int) -> float:
         """현재 연결 상태 기준 제품 배출량(표시용)을 합산해 반환.
-        - 프리뷰: 연결된 공정의 누적 합계를 그대로 노출(잔여 비율 미적용)
+        - 제품은 연결된 공정의 직접귀속배출량(attrdir_em)만 받음
+        - 누적 배출량(cumulative_emission)은 사용하지 않음
         - 잔여(to_next) 비율은 consume 전파에서 적용한다.
         """
         try:
@@ -150,11 +152,12 @@ class EdgeService:
                 seen.add(pid)
                 proc_emission = await self.repository.get_process_emission_data(pid)
                 if proc_emission:
-                    cumulative = proc_emission.get('cumulative_emission') or 0.0
-                    if cumulative == 0.0:
-                        cumulative = proc_emission.get('attrdir_em') or 0.0
-                    total_emission += cumulative
+                    # 🔧 수정: 제품은 직접귀속배출량만 받음 (누적 배출량 사용 안함)
+                    attrdir_em = proc_emission.get('attrdir_em') or 0.0
+                    total_emission += attrdir_em
+                    logger.info(f"  공정 {pid} 직접귀속배출량: {attrdir_em} tCO2e")
 
+            logger.info(f"제품 {product_id} 총 배출량 계산: {total_emission} tCO2e")
             return float(total_emission)
         except Exception as e:
             logger.error(f"제품 {product_id} 표시용 배출량 합산 실패: {e}")
@@ -227,9 +230,10 @@ class EdgeService:
             process_ratio = to_next_share * consumption_ratio
             process_emission = product_emission * process_ratio
 
-            # 7. 공정 누적 배출량은 덮어쓰기 대신 가산한다
-            current_cumulative = process_data.get('cumulative_emission') or process_data['attrdir_em']
-            total_process_emission = current_cumulative + process_emission
+            # 7. 공정 누적 배출량 계산 (직접 배출량 + 전파된 배출량)
+            # 🔧 단일책임원칙: consume 전파는 직접 배출량에 전파 배출량을 더함
+            direct_emission = process_data['attrdir_em']
+            total_process_emission = direct_emission + process_emission
 
             logger.info(f"🧮 제품→공정 배출량 계산 (dataallocation.mdc 규칙 3번):")
             logger.info(f"  제품 {source_product_id} 총량: {product_amount}")
@@ -243,8 +247,8 @@ class EdgeService:
             logger.info(f"  최종 분배비율(process_ratio): {process_ratio}")
             logger.info(f"  할당량: {allocated_amount}")
             logger.info(f"  제품 {source_product_id} 배출량: {product_emission}")
-            logger.info(f"  공정 {target_process_id} 기존 누적/자체: {current_cumulative}")
-            logger.info(f"  공정 {target_process_id} 추가 배출량: {process_emission} (분배비율 {process_ratio})")
+            logger.info(f"  공정 {target_process_id} 직접 배출량: {direct_emission}")
+            logger.info(f"  공정 {target_process_id} 전파 배출량: {process_emission} (분배비율 {process_ratio})")
             logger.info(f"  공정 {target_process_id} 최종 누적 배출량: {total_process_emission}")
             
             # 8. 공정의 배출량 업데이트
