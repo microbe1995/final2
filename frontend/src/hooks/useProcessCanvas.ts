@@ -538,6 +538,10 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
     addProductNode,
     addProcessNode,
     addGroupNode,
+    updateNodeData: nodeManager.updateNodeData,
+    refreshProcessEmission: emissionManager.refreshProcessEmission,
+    refreshProductEmission: emissionManager.refreshProductEmission,
+    recalcFromProcess: emissionManager.recalculateFromProcess,
   };
 };
 
