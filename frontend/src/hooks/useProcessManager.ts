@@ -211,11 +211,11 @@ export const useProcessManager = () => {
         console.log('🔄 제품 수량 변경으로 인한 전체 그래프 배출량 재계산 시작');
         
         // 1. 전체 그래프 배출량 전파 실행
-        await axiosClient.post(apiEndpoints.cbam.edge.propagateFull);
+        await axiosClient.post(apiEndpoints.cbam.edgePropagation.fullPropagate);
         console.log('✅ 전체 그래프 배출량 전파 완료');
         
         // 2. 제품 배출량 새로고침
-        await axiosClient.post(apiEndpoints.cbam.edge.saveProductEmission(selectedProduct.id));
+        await axiosClient.post(apiEndpoints.cbam.edgePropagation.productSave(selectedProduct.id));
         console.log('✅ 제품 배출량 새로고침 완료');
         
         // 3. 연결된 공정들의 배출량도 새로고침
@@ -225,7 +225,7 @@ export const useProcessManager = () => {
         
         for (const process of connectedProcesses) {
           try {
-            await axiosClient.post(apiEndpoints.cbam.edge.saveProcessEmission(process.id));
+            await axiosClient.post(apiEndpoints.cbam.edgePropagation.processEmission(process.id));
             console.log(`✅ 공정 ${process.process_name} 배출량 새로고침 완료`);
           } catch (error) {
             console.warn(`⚠️ 공정 ${process.process_name} 배출량 새로고침 실패:`, error);
