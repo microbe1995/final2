@@ -1144,12 +1144,37 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
       }
     }
 
-    // 엣지 삭제 후 누적값을 원상 복구시키기 위해 서버에 전체 재계산을 요청
-    // (모든 공정의 cumulative_emission을 0으로 리셋 후 현재 그래프 기준으로 재전파)
+    // 엣지 삭제 후 배출량 역전파 및 재계산
     try {
-      await axiosClient.post(apiEndpoints.cbam.edgePropagation.recalcFromEdges, {});
+      console.log('🔄 엣지 삭제 후 배출량 역전파 시작');
+      
+      // 1. 전체 그래프 배출량 재계산 (누적값 리셋 후 재전파)
+      await axiosClient.post(apiEndpoints.cbam.edgePropagation.fullPropagate, {});
+      console.log('✅ 전체 그래프 배출량 재계산 완료');
+      
+      // 2. 모든 제품 노드 새로고침 (삭제된 연결로 인한 배출량 변경 반영)
+      const allProductNodes = prevNodesRef.current.filter(n => n.type === 'product');
+      for (const node of allProductNodes) {
+        const productId = (node.data as any)?.id;
+        if (productId) {
+          await refreshProductEmission(productId);
+        }
+      }
+      console.log('✅ 모든 제품 노드 새로고침 완료');
+      
+      // 3. 모든 공정 노드 새로고침 (삭제된 연결로 인한 배출량 변경 반영)
+      const allProcessNodes = prevNodesRef.current.filter(n => n.type === 'process');
+      for (const node of allProcessNodes) {
+        const processId = (node.data as any)?.id;
+        if (processId) {
+          await refreshProcessEmission(processId);
+        }
+      }
+      console.log('✅ 모든 공정 노드 새로고침 완료');
+      
+      console.log('✅ 엣지 삭제 후 배출량 역전파 완료');
     } catch (e) {
-      console.warn('⚠️ 엣지 삭제 후 재계산 트리거 실패(무시 가능):', e);
+      console.warn('⚠️ 엣지 삭제 후 배출량 역전파 실패:', e);
     }
   }, [edges, baseOnEdgesChange, refreshProcessEmission, refreshProductEmission]);
 
