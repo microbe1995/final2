@@ -167,12 +167,33 @@ export const ProductProcessModal: React.FC<{
   // useEffect로 selectedProduct 변경 시 폼 값 업데이트
   React.useEffect(() => {
     if (selectedProduct) {
-      // 수량(product_amount)은 더미에서 가장 최신값을 가져오므로 여기서 덮어쓰지 않는다
-      setProductQuantityForm(prev => ({
-        ...prev,
-        product_sell: selectedProduct.product_sell || 0,
-        product_eusell: selectedProduct.product_eusell || 0
-      }));
+      // 🔧 수정: 실시간으로 최신 제품 데이터를 가져와서 동기화
+      (async () => {
+        try {
+          const productResponse = await axiosClient.get(apiEndpoints.cbam.product.get(selectedProduct.id));
+          const latestProduct = productResponse?.data;
+          
+          if (latestProduct) {
+            setProductQuantityForm(prev => ({
+              ...prev,
+              product_sell: latestProduct.product_sell || 0,
+              product_eusell: latestProduct.product_eusell || 0
+            }));
+            console.log(`✅ 제품 ${selectedProduct.id} 최신 판매량 동기화:`, {
+              product_sell: latestProduct.product_sell,
+              product_eusell: latestProduct.product_eusell
+            });
+          }
+        } catch (error) {
+          console.warn(`⚠️ 제품 ${selectedProduct.id} 최신 데이터 조회 실패, 캐시 데이터 사용:`, error);
+          // 폴백: 캐시된 데이터 사용
+          setProductQuantityForm(prev => ({
+            ...prev,
+            product_sell: selectedProduct.product_sell || 0,
+            product_eusell: selectedProduct.product_eusell || 0
+          }));
+        }
+      })();
     }
   }, [selectedProduct]);
 
