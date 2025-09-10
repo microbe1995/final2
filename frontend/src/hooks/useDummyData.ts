@@ -293,13 +293,18 @@ export const useDummyData = () => {
     [searchFuels]
   );
 
-  // 제품명 목록 조회
-  const fetchProductNames = useCallback(async () => {
+  // 제품명 목록 조회 (기간별)
+  const fetchProductNames = useCallback(async (startPeriod?: string, endPeriod?: string) => {
     try {
       setLoading(true);
       setError(null);
       
-      const response = await axiosClient.get(apiEndpoints.cbam.dummy.productNames);
+      // 기간이 제공된 경우 기간별 조회, 그렇지 않으면 전체 조회
+      const url = startPeriod && endPeriod 
+        ? `${apiEndpoints.cbam.dummy.productNames}?start_period=${startPeriod}&end_period=${endPeriod}`
+        : apiEndpoints.cbam.dummy.productNames;
+      
+      const response = await axiosClient.get(url);
       
       if (Array.isArray(response.data)) {
         const names = response.data.map((item: any) => {
@@ -307,7 +312,8 @@ export const useDummyData = () => {
         }).filter(Boolean);
         
         setProductNames(names);
-        console.log('✅ 제품명 목록 조회 성공:', names.length, '개');
+        console.log('✅ 제품명 목록 조회 성공:', names.length, '개', 
+          startPeriod && endPeriod ? `(${startPeriod} ~ ${endPeriod})` : '(전체)');
       } else {
         console.warn('⚠️ API 응답이 배열이 아닙니다:', response.data);
         setProductNames([]);
