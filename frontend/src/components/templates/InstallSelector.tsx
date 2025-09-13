@@ -13,7 +13,7 @@ interface InstallSelectorProps {
   onAddInstall: () => void;
 }
 
-export const InstallSelector: React.FC<InstallSelectorProps> = ({
+const InstallSelector: React.FC<InstallSelectorProps> = ({
   installs,
   selectedInstall,
   installCanvases,
@@ -108,3 +108,5 @@ export const InstallSelector: React.FC<InstallSelectorProps> = ({
     </>
   );
 };
+
+export default InstallSelector;

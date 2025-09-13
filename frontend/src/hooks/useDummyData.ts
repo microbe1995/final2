@@ -82,15 +82,13 @@ export const useDummyData = () => {
 
   // 🔴 추가: 특정 생산품명의 생산수량 조회 (마지막 행 기준)
   const getProductQuantity = useCallback(async (productName: string) => {
-    setLoading(true);
-    setError(null);
-    
     try {
       // 전체 더미 데이터 조회
-      const response = await axiosClient.get('/api/v1/cbam/dummy');
-      // 배열 또는 {data: [...]} 형태 모두 지원
-      const payload = response.data;
-      const dummyData = Array.isArray(payload) ? payload : (payload?.data || []);
+      const dummyData = await getRequest<DummyData[]>('/api/v1/cbam/dummy');
+      
+      if (!dummyData) {
+        return 0;
+      }
       
       // 해당 생산품명의 데이터만 필터링
       const productData = dummyData.filter((item: DummyData) => item.생산품명 === productName);
@@ -107,13 +105,10 @@ export const useDummyData = () => {
       
     } catch (err: any) {
       const errorMessage = err.response?.data?.detail || err.message || '생산수량 조회에 실패했습니다.';
-      setError(errorMessage);
       console.error('❌ 생산품명별 생산수량 조회 실패:', err);
       return 0;
-    } finally {
-      setLoading(false);
     }
-  }, []);
+  }, [getRequest]);
 
   // 🔴 추가: 기간/공정/제품명 기준으로 더미 투입물(원료 중심) 목록 조회
   const getMaterialsFor = useCallback(
@@ -125,12 +120,12 @@ export const useDummyData = () => {
         productNames?: string[];
       }
     ) => {
-      setLoading(true);
-      setError(null);
       try {
-        const response = await axiosClient.get('/api/v1/cbam/dummy');
-        const payload = response.data;
-        const dummyData: DummyData[] = Array.isArray(payload) ? payload : (payload?.data || []);
+        const dummyData = await getRequest<DummyData[]>('/api/v1/cbam/dummy');
+        
+        if (!dummyData) {
+          return [] as { name: string; amount: number; unit: string }[];
+        }
 
         const { processName, startDate, endDate, productNames } = params || {};
         const start = startDate ? new Date(startDate) : null;
@@ -187,14 +182,11 @@ export const useDummyData = () => {
         return matched;
       } catch (err: any) {
         const errorMessage = err.response?.data?.detail || err.message || '투입물 조회에 실패했습니다.';
-        setError(errorMessage);
         console.error('❌ 투입물(원료) 조회 실패:', err);
         return [] as { name: string; amount: number; unit: string }[];
-      } finally {
-        setLoading(false);
       }
     },
-    [materialMasterHook.lookupMaterialByName]
+    [getRequest, materialMasterHook.lookupMaterialByName]
   );
 
   // 🔴 추가: 기간/공정/제품명 기준으로 더미 투입물 중 "연료" 후보만 추출
@@ -207,12 +199,12 @@ export const useDummyData = () => {
         productNames?: string[];
       }
     ) => {
-      setLoading(true);
-      setError(null);
       try {
-        const response = await axiosClient.get('/api/v1/cbam/dummy');
-        const payload = response.data;
-        const dummyData: DummyData[] = Array.isArray(payload) ? payload : (payload?.data || []);
+        const dummyData = await getRequest<DummyData[]>('/api/v1/cbam/dummy');
+        
+        if (!dummyData) {
+          return [] as { name: string; amount: number; unit: string }[];
+        }
 
         const { processName, startDate, endDate, productNames } = params || {};
         const start = startDate ? new Date(startDate) : null;
@@ -261,31 +253,25 @@ export const useDummyData = () => {
         return matched;
       } catch (err: any) {
         const errorMessage = err.response?.data?.detail || err.message || '연료 목록 조회에 실패했습니다.';
-        setError(errorMessage);
         console.error('❌ 연료(더미) 조회 실패:', err);
         return [] as { name: string; amount: number; unit: string }[];
-      } finally {
-        setLoading(false);
       }
     },
-    [fuelMasterHook.searchFuels]
+    [getRequest, fuelMasterHook.searchFuels]
   );
 
   // 제품명 목록 조회 (기간별)
   const fetchProductNames = useCallback(async (startPeriod?: string, endPeriod?: string) => {
     try {
-      setLoading(true);
-      setError(null);
-      
       // 기간이 제공된 경우 기간별 조회, 그렇지 않으면 전체 조회
       const url = startPeriod && endPeriod 
         ? `${apiEndpoints.cbam.dummy.productNames}?start_period=${startPeriod}&end_period=${endPeriod}`
         : apiEndpoints.cbam.dummy.productNames;
       
-      const response = await axiosClient.get(url);
+      const response = await getRequest<any[]>(url);
       
-      if (Array.isArray(response.data)) {
-        const names = response.data.map((item: any) => {
+      if (Array.isArray(response)) {
+        const names = response.map((item: any) => {
           return typeof item === 'string' ? item : item.생산품명 || item.product_name || item;
         }).filter(Boolean);
         
@@ -293,47 +279,36 @@ export const useDummyData = () => {
         console.log('✅ 제품명 목록 조회 성공:', names.length, '개', 
           startPeriod && endPeriod ? `(${startPeriod} ~ ${endPeriod})` : '(전체)');
       } else {
-        console.warn('⚠️ API 응답이 배열이 아닙니다:', response.data);
+        console.warn('⚠️ API 응답이 배열이 아닙니다:', response);
         setProductNames([]);
-        setError('제품명 목록을 가져오는데 실패했습니다.');
       }
     } catch (err: any) {
       console.error('❌ 제품명 목록 조회 실패:', err);
-      setError(err.response?.data?.detail || err.message || '제품명 목록을 가져오는데 실패했습니다.');
       setProductNames([]);
-    } finally {
-      setLoading(false);
     }
-  }, []);
+  }, [getRequest]);
 
   // 공정명 목록 조회
   const fetchProcessNames = useCallback(async () => {
     try {
-      setLoading(true);
-      setError(null);
+      const response = await getRequest<any[]>(apiEndpoints.cbam.dummy.processNames);
       
-      const response = await axiosClient.get(apiEndpoints.cbam.dummy.processNames);
-      
-      if (Array.isArray(response.data)) {
-        const names = response.data.map((item: any) => {
+      if (Array.isArray(response)) {
+        const names = response.map((item: any) => {
           return typeof item === 'string' ? item : item.공정 || item.process_name || item;
         }).filter(Boolean);
         
         setProcessNames(names);
         console.log('✅ 공정명 목록 조회 성공:', names.length, '개');
       } else {
-        console.warn('⚠️ API 응답이 배열이 아닙니다:', response.data);
+        console.warn('⚠️ API 응답이 배열이 아닙니다:', response);
         setProcessNames([]);
-        setError('공정명 목록을 가져오는데 실패했습니다.');
       }
     } catch (err: any) {
       console.error('❌ 공정명 목록 조회 실패:', err);
-      setError(err.response?.data?.detail || err.message || '공정명 목록을 가져오는데 실패했습니다.');
       setProcessNames([]);
-    } finally {
-      setLoading(false);
     }
-  }, []);
+  }, [getRequest]);
 
   return {
     loading,

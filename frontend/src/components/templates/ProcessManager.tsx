@@ -8,9 +8,9 @@ import axiosClient, { apiEndpoints } from '@/lib/axiosClient';
 import ProductNode from '@/components/atoms/ProductNode';
 import ProcessNode from '@/components/atoms/ProcessNode';
 import InputManager from '@/components/templates/InputManager';
-import { InstallSelector } from '@/components/templates/InstallSelector';
-import { ProductSelector } from '@/components/templates/ProductSelector';
-import { ProcessSelector, ProductProcessModal } from '@/components/templates/ProcessSelector';
+import InstallSelector from '@/components/templates/InstallSelector';
+import ProductSelector from '@/components/templates/ProductSelector';
+import ProcessSelector, { ProductProcessModal } from '@/components/templates/ProcessSelector';
 
 
 import { useProcessManager } from '@/hooks/useProcessManager';

@@ -9,7 +9,7 @@ interface ProductSelectorProps {
   onClose: () => void;
 }
 
-export const ProductSelector: React.FC<ProductSelectorProps> = ({
+const ProductSelector: React.FC<ProductSelectorProps> = ({
   products,
   onProductSelect,
   onClose,
@@ -44,3 +44,5 @@ export const ProductSelector: React.FC<ProductSelectorProps> = ({
     </div>
   );
 };
+
+export default ProductSelector;

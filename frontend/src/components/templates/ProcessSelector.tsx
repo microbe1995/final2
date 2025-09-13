@@ -16,7 +16,7 @@ interface ProcessSelectorProps {
   onClose: () => void;
 }
 
-export const ProcessSelector: React.FC<ProcessSelectorProps> = ({
+const ProcessSelector: React.FC<ProcessSelectorProps> = ({
   processes,
   allProcesses,
   products,
@@ -539,3 +539,5 @@ export const ProductProcessModal: React.FC<{
     </div>
   );
 };
+
+export default ProcessSelector;
