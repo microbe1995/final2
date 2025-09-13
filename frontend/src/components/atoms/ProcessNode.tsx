@@ -162,7 +162,12 @@ function ProcessNode({
                 {(() => {
                   const cumulative = data.processData.cumulative_emission;
                   const direct = data.processData.attr_em;
-                  const displayValue = cumulative !== undefined && cumulative !== null ? cumulative : direct;
+                  
+                  // 누적 배출량이 있으면 사용, 없으면 직접귀속배출량 사용
+                  let displayValue = cumulative;
+                  if (displayValue === undefined || displayValue === null || displayValue === 0) {
+                    displayValue = direct;
+                  }
                   
                   // 디버깅 로그 (개발 환경에서만)
                   if (process.env.NODE_ENV === 'development') {
@@ -175,7 +180,7 @@ function ProcessNode({
                     });
                   }
                   
-                  if (typeof displayValue === 'number') {
+                  if (typeof displayValue === 'number' && displayValue > 0) {
                     return `${displayValue.toFixed(2)} tCO2e`;
                   }
                   return '0.00 tCO2e';

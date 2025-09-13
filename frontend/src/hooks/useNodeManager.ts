@@ -61,6 +61,7 @@ export const useNodeManager = () => {
       if (response.data) {
         emissionData = {
           attr_em: response.data.attrdir_em || 0,
+          cumulative_emission: response.data.cumulative_emission || response.data.attrdir_em || 0,
           total_matdir_emission: response.data.total_matdir_emission || 0,
           total_fueldir_emission: response.data.total_fueldir_emission || 0,
           calculation_date: response.data.calculation_date
@@ -187,6 +188,33 @@ export const useNodeManager = () => {
     });
   }, []);
 
+  // 공정 노드 업데이트 (ID 기준)
+  const updateProcessNodeByProcessId = useCallback((
+    nodes: Node[],
+    processId: number,
+    newFields: any
+  ): Node[] => {
+    return nodes.map(node => {
+      if (node.type === 'process' && (node.data as any)?.id === processId) {
+        const prevProcessData = (node.data as any).processData || {};
+        return {
+          ...node,
+          data: {
+            ...node.data,
+            ...newFields,
+            processData: {
+              ...prevProcessData,
+              ...newFields,
+              // 누적 배출량이 없으면 직접귀속배출량 사용
+              cumulative_emission: newFields.cumulative_emission ?? prevProcessData.cumulative_emission ?? newFields.attr_em ?? prevProcessData.attr_em
+            }
+          }
+        } as Node;
+      }
+      return node;
+    });
+  }, []);
+
   // 노드 ID 정규화
   const normalizeNodeId = useCallback((id: string) => 
     id.replace(/-(left|right|top|bottom)$/i, ''), []
@@ -214,6 +242,7 @@ export const useNodeManager = () => {
     createGroupNode,
     updateNodeData,
     updateProductNodeByProductId,
+    updateProcessNodeByProcessId,
     setProductProduceFlag,
     normalizeNodeId,
     findNodeByAnyId,

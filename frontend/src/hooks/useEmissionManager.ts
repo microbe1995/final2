@@ -21,12 +21,14 @@ export const useEmissionManager = () => {
       try {
         const resp = await axiosClient.get(apiEndpoints.cbam.edgePropagation.processEmission(processId));
         data = resp?.data?.data || null;
+        console.log(`🔍 공정 ${processId} 배출량 데이터 조회:`, data);
       } catch (err: any) {
         if (err?.response?.status === 404) {
           try {
             const created = await axiosClient.post(apiEndpoints.cbam.calculation.process.attrdir(processId));
             const resp2 = await axiosClient.get(apiEndpoints.cbam.edgePropagation.processEmission(processId));
             data = resp2?.data?.data || created?.data;
+            console.log(`🔍 공정 ${processId} 배출량 계산 후 데이터:`, data);
           } catch (calcErr) {
             console.warn('⚠️ 공정 배출량 계산 실패:', calcErr);
             return null;
@@ -76,9 +78,22 @@ export const useEmissionManager = () => {
         axiosClient.post(apiEndpoints.cbam.calculation.process.attrdir(processId)).catch(() => {});
       }
 
+      // 누적 배출량 계산 - 더 정확한 로직
+      let cumulativeEmission = data.cumulative_emission;
+      if (cumulativeEmission === undefined || cumulativeEmission === null || cumulativeEmission === 0) {
+        cumulativeEmission = directFixed;
+      }
+      
+      console.log(`🔍 공정 ${processId} 최종 배출량 계산:`, {
+        attr_em: directFixed,
+        cumulative_emission: cumulativeEmission,
+        total_matdir_emission: totalMat,
+        total_fueldir_emission: totalFuel
+      });
+
       return {
         attr_em: directFixed,
-        cumulative_emission: data.cumulative_emission ?? directFixed, // 누적 배출량이 없으면 직접귀속배출량 사용
+        cumulative_emission: cumulativeEmission,
         total_matdir_emission: totalMat,
         total_fueldir_emission: totalFuel,
         calculation_date: data.calculation_date

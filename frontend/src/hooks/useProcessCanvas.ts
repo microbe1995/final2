@@ -311,21 +311,9 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
             if (processId) {
               const emissionData = await emissionManager.refreshProcessEmission(processId);
               if (emissionData) {
-                setNodes(prev => prev.map(n => {
-                  if (n.type === 'process' && n.data?.id === processId) {
-                    return {
-                      ...n,
-                      data: {
-                        ...n.data,
-                        processData: {
-                          ...(n.data as any).processData,
-                          ...emissionData
-                        },
-                        needsRefresh: false // 새로고침 완료 플래그 제거
-                      }
-                    } as Node;
-                  }
-                  return n;
+                setNodes(prev => nodeManager.updateProcessNodeByProcessId(prev, processId, {
+                  ...emissionData,
+                  needsRefresh: false // 새로고침 완료 플래그 제거
                 }));
               }
             }
@@ -619,6 +607,9 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
       // 배출량 전파
       await edgeManager.propagateEmission(edgeKind, sourceId, targetId);
 
+      // 잠시 대기 후 노드 새로고침 (백엔드 처리 완료 대기)
+      await new Promise(resolve => setTimeout(resolve, 500));
+
       // 관련 노드 새로고침
       if (edgeKind === 'continue') {
         console.log('🔄 continue 엣지 연결 후 노드 새로고침 시작');
@@ -627,40 +618,14 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
         
         // 소스 노드 업데이트
         if (sourceEmission) {
-          setNodes(prev => prev.map(n => {
-            if (n.type === 'process' && n.data?.id === sourceId) {
-              return {
-                ...n,
-                data: {
-                  ...n.data,
-                  processData: {
-                    ...(n.data as any).processData,
-                    ...sourceEmission
-                  }
-                }
-              } as Node;
-            }
-            return n;
-          }));
+          setNodes(prev => nodeManager.updateProcessNodeByProcessId(prev, sourceId, sourceEmission));
+          console.log(`✅ 소스 공정 ${sourceId} 노드 업데이트 완료:`, sourceEmission);
         }
         
         // 타겟 노드 업데이트
         if (targetEmission) {
-          setNodes(prev => prev.map(n => {
-            if (n.type === 'process' && n.data?.id === targetId) {
-              return {
-                ...n,
-                data: {
-                  ...n.data,
-                  processData: {
-                    ...(n.data as any).processData,
-                    ...targetEmission
-                  }
-                }
-              } as Node;
-            }
-            return n;
-          }));
+          setNodes(prev => nodeManager.updateProcessNodeByProcessId(prev, targetId, targetEmission));
+          console.log(`✅ 타겟 공정 ${targetId} 노드 업데이트 완료:`, targetEmission);
         }
         console.log('✅ continue 엣지 연결 후 노드 새로고침 완료');
       } else if (edgeKind === 'produce') {
@@ -670,21 +635,8 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
         
         // 소스 공정 노드 업데이트
         if (sourceEmission) {
-          setNodes(prev => prev.map(n => {
-            if (n.type === 'process' && n.data?.id === sourceId) {
-              return {
-                ...n,
-                data: {
-                  ...n.data,
-                  processData: {
-                    ...(n.data as any).processData,
-                    ...sourceEmission
-                  }
-                }
-              } as Node;
-            }
-            return n;
-          }));
+          setNodes(prev => nodeManager.updateProcessNodeByProcessId(prev, sourceId, sourceEmission));
+          console.log(`✅ 소스 공정 ${sourceId} 노드 업데이트 완료:`, sourceEmission);
         }
         
         // 타겟 제품 노드 업데이트
@@ -705,21 +657,8 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
         
         // 타겟 공정 노드 업데이트
         if (targetEmission) {
-          setNodes(prev => prev.map(n => {
-            if (n.type === 'process' && n.data?.id === targetId) {
-              return {
-                ...n,
-                data: {
-                  ...n.data,
-                  processData: {
-                    ...(n.data as any).processData,
-                    ...targetEmission
-                  }
-                }
-              } as Node;
-            }
-            return n;
-          }));
+          setNodes(prev => nodeManager.updateProcessNodeByProcessId(prev, targetId, targetEmission));
+          console.log(`✅ 타겟 공정 ${targetId} 노드 업데이트 완료:`, targetEmission);
         }
         console.log('✅ consume 엣지 연결 후 노드 새로고침 완료');
       }
