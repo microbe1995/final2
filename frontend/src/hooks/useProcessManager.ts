@@ -212,20 +212,29 @@ export const useProcessManager = () => {
           setProducts(prev => prev.map(p => p.id === selectedProduct.id ? { ...p, ...productQuantityForm } : p));
         }
         
-        // 🔄 제품 수량 저장 시 백엔드에서 자동으로 배출량 계산 및 저장됨
-        // 프론트엔드에서는 캔버스 노드들만 새로고침
+        // 🔄 제품 수량 저장 후 즉시 업데이트 + 백그라운드 동기화
         try {
-          console.log('🔄 제품 수량 변경으로 인한 캔버스 노드 새로고침 시작');
+          console.log('🔄 제품 수량 변경으로 인한 즉시 노드 새로고침 시작');
           
-          // 🔧 백엔드 DB 업데이트 완료 대기 후 이벤트 발생
-          await new Promise(resolve => setTimeout(resolve, 300));
-          
-          // 캔버스 노드들 새로고침을 위한 이벤트 발생
-          // (useProcessCanvas에서 fullPropagate 실행)
+          // 즉시 캔버스 노드들 새로고침을 위한 이벤트 발생
           window.dispatchEvent(new CustomEvent('cbam:refreshAllNodesAfterProductUpdate', {
             detail: { productId: selectedProduct.id }
           }));
-          console.log('✅ 캔버스 노드 새로고침 이벤트 발생');
+          console.log('✅ 즉시 캔버스 노드 새로고침 이벤트 발생');
+          
+          // 백그라운드에서 추가 동기화 (백엔드 DB 업데이트 완료 대기)
+          setTimeout(() => {
+            try {
+              console.log('🔄 제품 수량 변경으로 인한 백그라운드 동기화 시작');
+              window.dispatchEvent(new CustomEvent('cbam:refreshAllNodesAfterProductUpdate', {
+                detail: { productId: selectedProduct.id }
+              }));
+              console.log('✅ 백그라운드 캔버스 노드 새로고침 이벤트 발생');
+            } catch (bgError) {
+              console.error('❌ 백그라운드 캔버스 노드 새로고침 실패:', bgError);
+            }
+          }, 300);
+          
         } catch (refreshError) {
           console.error('❌ 캔버스 노드 새로고침 실패:', refreshError);
           // 새로고침 실패는 제품 수량 업데이트를 실패시키지 않음

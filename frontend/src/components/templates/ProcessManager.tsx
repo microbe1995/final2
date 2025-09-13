@@ -386,28 +386,39 @@ function ProcessManagerInner() {
           selectedProcess={selectedProcessForInput}
           onClose={() => setShowInputModal(false)}
           onDataSaved={async () => {
-            // 입력 저장 후 해당 공정을 기준으로 재계산 → 영향 노드 부분 갱신
+            // 입력 저장 후 즉시 업데이트 + 백그라운드 동기화
             if (selectedProcessForInput?.id) {
-              console.log(`🔄 투입량 입력 완료, 공정 ${selectedProcessForInput.id} 재계산 시작`);
+              console.log(`🔄 투입량 입력 완료, 공정 ${selectedProcessForInput.id} 즉시 업데이트 시작`);
               
-              // 1. 백엔드 재계산 수행
-              const success = await recalcFromProcess(selectedProcessForInput.id);
+              // 1. 즉시 이벤트 발생으로 노드 업데이트 트리거
+              const immediateEvent = new CustomEvent('cbam:processRecalculated', {
+                detail: { processId: selectedProcessForInput.id }
+              });
+              window.dispatchEvent(immediateEvent);
+              console.log(`✅ 공정 ${selectedProcessForInput.id} 즉시 업데이트 이벤트 발생`);
               
-              if (success) {
-                console.log(`✅ 공정 ${selectedProcessForInput.id} 재계산 완료`);
-                
-                // 2. 추가로 해당 공정 노드 강제 새로고침
+              // 2. 백그라운드에서 백엔드 재계산 및 최종 동기화
+              setTimeout(async () => {
                 try {
-                  const emissionData = await refreshProcessEmission(selectedProcessForInput.id);
-                  if (emissionData) {
-                    console.log(`✅ 공정 ${selectedProcessForInput.id} 노드 강제 새로고침 완료:`, emissionData);
+                  console.log(`🔄 공정 ${selectedProcessForInput.id} 백그라운드 재계산 시작`);
+                  const success = await recalcFromProcess(selectedProcessForInput.id);
+                  
+                  if (success) {
+                    console.log(`✅ 공정 ${selectedProcessForInput.id} 백그라운드 재계산 완료`);
+                    
+                    // 재계산 완료 후 최종 동기화 이벤트 발생
+                    const finalEvent = new CustomEvent('cbam:processRecalculated', {
+                      detail: { processId: selectedProcessForInput.id }
+                    });
+                    window.dispatchEvent(finalEvent);
+                    console.log(`✅ 공정 ${selectedProcessForInput.id} 최종 동기화 이벤트 발생`);
+                  } else {
+                    console.error(`❌ 공정 ${selectedProcessForInput.id} 백그라운드 재계산 실패`);
                   }
                 } catch (error) {
-                  console.warn(`⚠️ 공정 ${selectedProcessForInput.id} 노드 강제 새로고침 실패:`, error);
+                  console.error(`❌ 공정 ${selectedProcessForInput.id} 백그라운드 처리 실패:`, error);
                 }
-              } else {
-                console.error(`❌ 공정 ${selectedProcessForInput.id} 재계산 실패`);
-              }
+              }, 100);
             } else {
               console.log('선택된 공정이 없습니다.');
             }

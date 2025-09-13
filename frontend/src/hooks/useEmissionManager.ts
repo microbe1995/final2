@@ -235,8 +235,8 @@ export const useEmissionManager = () => {
         console.warn('⚠️ fullPropagate 실패(무시 가능):', e);
       }
 
-      // 3. 잠시 대기 후 프론트엔드 노드 새로고침
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // 3. 잠시 대기 후 프론트엔드 노드 새로고침 (대기 시간 단축)
+      await new Promise(resolve => setTimeout(resolve, 100));
       
       // 4. 이벤트 발생으로 노드 새로고침 트리거
       const refreshEvent = new CustomEvent('cbam:processRecalculated', {

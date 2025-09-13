@@ -143,8 +143,8 @@ export const useEdgeManager = () => {
         }
       }
 
-      // 잠시 대기 후 전체 그래프 재계산
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // 즉시 전체 그래프 재계산 (대기 시간 단축)
+      await new Promise(resolve => setTimeout(resolve, 100));
       
       console.log('✅ 엣지 삭제 후 처리 완료');
     } catch (e) {
