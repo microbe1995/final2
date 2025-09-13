@@ -341,6 +341,85 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
     refreshNodes();
   }, [nodes, emissionManager, nodeManager]);
 
+  // 🔧 추가: 누락된 이벤트 리스너들 추가
+  useEffect(() => {
+    // 제품 수량 업데이트 후 전체 노드 새로고침
+    const handleRefreshAllNodes = async (e: any) => {
+      const { productId } = e.detail || {};
+      console.log('🔄 제품 수량 업데이트 후 전체 노드 새로고침 시작:', productId);
+      
+      try {
+        // 전체 그래프 재계산
+        const success = await emissionManager.recalculateEntireGraph();
+        if (success) {
+          console.log('✅ 백엔드 전체 그래프 재계산 완료');
+          
+          // 모든 노드에 새로고침 플래그 설정
+          setNodes(prev => prev.map(node => ({
+            ...node,
+            data: {
+              ...node.data,
+              needsRefresh: true,
+              refreshTimestamp: Date.now()
+            }
+          })));
+          
+          console.log('✅ 모든 노드 새로고침 플래그 설정 완료');
+        }
+      } catch (error) {
+        console.error('❌ 전체 노드 새로고침 실패:', error);
+      }
+    };
+
+    // 제품 개별 새로고침
+    const handleRefreshProduct = async (e: any) => {
+      const { productId, product_amount, product_sell, product_eusell } = e.detail || {};
+      console.log('🔄 제품 개별 새로고침:', { productId, product_amount, product_sell, product_eusell });
+      
+      if (productId) {
+        try {
+          const emissionData = await emissionManager.refreshProductEmission(productId);
+          if (emissionData) {
+            setNodes(prev => nodeManager.updateProductNodeByProductId(prev, productId, emissionData));
+            console.log('✅ 제품 노드 새로고침 완료');
+          }
+        } catch (error) {
+          console.error('❌ 제품 노드 새로고침 실패:', error);
+        }
+      }
+    };
+
+    // 제품 수량 업데이트
+    const handleUpdateProductAmount = async (e: any) => {
+      const { productId, product_amount } = e.detail || {};
+      console.log('🔄 제품 수량 업데이트:', { productId, product_amount });
+      
+      if (productId) {
+        try {
+          const emissionData = await emissionManager.refreshProductEmission(productId);
+          if (emissionData) {
+            setNodes(prev => nodeManager.updateProductNodeByProductId(prev, productId, emissionData));
+            console.log('✅ 제품 수량 업데이트 완료');
+          }
+        } catch (error) {
+          console.error('❌ 제품 수량 업데이트 실패:', error);
+        }
+      }
+    };
+
+    // 이벤트 리스너 등록
+    window.addEventListener('cbam:refreshAllNodesAfterProductUpdate' as any, handleRefreshAllNodes);
+    window.addEventListener('cbam:refreshProduct' as any, handleRefreshProduct);
+    window.addEventListener('cbam:updateProductAmount' as any, handleUpdateProductAmount);
+
+    // 정리 함수
+    return () => {
+      window.removeEventListener('cbam:refreshAllNodesAfterProductUpdate' as any, handleRefreshAllNodes);
+      window.removeEventListener('cbam:refreshProduct' as any, handleRefreshProduct);
+      window.removeEventListener('cbam:updateProductAmount' as any, handleUpdateProductAmount);
+    };
+  }, [emissionManager, nodeManager]);
+
   // 노드 추가 함수들
   const addProductNode = useCallback((product: Product, handleProductNodeClick: (product: Product) => void) => {
     const newNode = nodeManager.createProductNode(product, selectedInstall, handleProductNodeClick);
@@ -542,20 +621,107 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
 
       // 관련 노드 새로고침
       if (edgeKind === 'continue') {
+        console.log('🔄 continue 엣지 연결 후 노드 새로고침 시작');
         const sourceEmission = await emissionManager.refreshProcessEmission(sourceId);
         const targetEmission = await emissionManager.refreshProcessEmission(targetId);
-        // 노드 업데이트 로직...
+        
+        // 소스 노드 업데이트
+        if (sourceEmission) {
+          setNodes(prev => prev.map(n => {
+            if (n.type === 'process' && n.data?.id === sourceId) {
+              return {
+                ...n,
+                data: {
+                  ...n.data,
+                  processData: {
+                    ...(n.data as any).processData,
+                    ...sourceEmission
+                  }
+                }
+              } as Node;
+            }
+            return n;
+          }));
+        }
+        
+        // 타겟 노드 업데이트
+        if (targetEmission) {
+          setNodes(prev => prev.map(n => {
+            if (n.type === 'process' && n.data?.id === targetId) {
+              return {
+                ...n,
+                data: {
+                  ...n.data,
+                  processData: {
+                    ...(n.data as any).processData,
+                    ...targetEmission
+                  }
+                }
+              } as Node;
+            }
+            return n;
+          }));
+        }
+        console.log('✅ continue 엣지 연결 후 노드 새로고침 완료');
       } else if (edgeKind === 'produce') {
+        console.log('🔄 produce 엣지 연결 후 노드 새로고침 시작');
         const sourceEmission = await emissionManager.refreshProcessEmission(sourceId);
         const targetEmission = await emissionManager.refreshProductEmission(targetId);
+        
+        // 소스 공정 노드 업데이트
+        if (sourceEmission) {
+          setNodes(prev => prev.map(n => {
+            if (n.type === 'process' && n.data?.id === sourceId) {
+              return {
+                ...n,
+                data: {
+                  ...n.data,
+                  processData: {
+                    ...(n.data as any).processData,
+                    ...sourceEmission
+                  }
+                }
+              } as Node;
+            }
+            return n;
+          }));
+        }
+        
+        // 타겟 제품 노드 업데이트
         if (targetEmission) {
           setNodes(prev => nodeManager.updateProductNodeByProductId(prev, targetId, targetEmission));
           setNodes(prev => nodeManager.setProductProduceFlag(prev, targetId, true));
         }
+        console.log('✅ produce 엣지 연결 후 노드 새로고침 완료');
       } else if (edgeKind === 'consume') {
+        console.log('🔄 consume 엣지 연결 후 노드 새로고침 시작');
         const sourceEmission = await emissionManager.refreshProductEmission(sourceId);
         const targetEmission = await emissionManager.refreshProcessEmission(targetId);
-        // 노드 업데이트 로직...
+        
+        // 소스 제품 노드 업데이트
+        if (sourceEmission) {
+          setNodes(prev => nodeManager.updateProductNodeByProductId(prev, sourceId, sourceEmission));
+        }
+        
+        // 타겟 공정 노드 업데이트
+        if (targetEmission) {
+          setNodes(prev => prev.map(n => {
+            if (n.type === 'process' && n.data?.id === targetId) {
+              return {
+                ...n,
+                data: {
+                  ...n.data,
+                  processData: {
+                    ...(n.data as any).processData,
+                    ...targetEmission
+                  }
+                }
+              } as Node;
+            }
+            return n;
+          }));
+        }
+        console.log('✅ consume 엣지 연결 후 노드 새로고침 완료');
       }
 
     } catch (error: any) {

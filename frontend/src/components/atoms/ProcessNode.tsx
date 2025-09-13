@@ -155,16 +155,33 @@ function ProcessNode({
                 </span>
               </div>
             )}
-            {data.processData.cumulative_emission !== undefined && (
-              <div className='flex justify-between'>
-                <span className='text-indigo-600 font-medium'>누적 직접귀속배출량:</span>
-                <span className='text-indigo-600 font-bold'>
-                  {typeof data.processData.cumulative_emission === 'number'
-                    ? `${data.processData.cumulative_emission.toFixed(2)} tCO2e`
-                    : data.processData.cumulative_emission || '0.00 tCO2e'}
-                </span>
-              </div>
-            )}
+            {/* 누적직접귀속배출량 표시 - 항상 표시하되 값이 없으면 직접귀속배출량 사용 */}
+            <div className='flex justify-between'>
+              <span className='text-indigo-600 font-medium'>누적 직접귀속배출량:</span>
+              <span className='text-indigo-600 font-bold'>
+                {(() => {
+                  const cumulative = data.processData.cumulative_emission;
+                  const direct = data.processData.attr_em;
+                  const displayValue = cumulative !== undefined && cumulative !== null ? cumulative : direct;
+                  
+                  // 디버깅 로그 (개발 환경에서만)
+                  if (process.env.NODE_ENV === 'development') {
+                    console.log(`🔍 ProcessNode ${data.id} 누적 배출량 계산:`, {
+                      processId: data.id,
+                      cumulative_emission: cumulative,
+                      attr_em: direct,
+                      displayValue: displayValue,
+                      processData: data.processData
+                    });
+                  }
+                  
+                  if (typeof displayValue === 'number') {
+                    return `${displayValue.toFixed(2)} tCO2e`;
+                  }
+                  return '0.00 tCO2e';
+                })()}
+              </span>
+            </div>
             
             {/* 원료/연료별 배출량 상세 정보 */}
             {data.processData.total_matdir_emission !== undefined && (

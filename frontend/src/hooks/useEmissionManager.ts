@@ -78,7 +78,7 @@ export const useEmissionManager = () => {
 
       return {
         attr_em: directFixed,
-        cumulative_emission: data.cumulative_emission || 0,
+        cumulative_emission: data.cumulative_emission ?? directFixed, // 누적 배출량이 없으면 직접귀속배출량 사용
         total_matdir_emission: totalMat,
         total_fueldir_emission: totalFuel,
         calculation_date: data.calculation_date
@@ -107,11 +107,18 @@ export const useEmissionManager = () => {
         hasProduceEdge = true;
         console.log(`🔍 제품 ${productId} 실시간 배출량 계산: ${attrEm} tCO2e`);
       } catch (previewError) {
-        const response = await axiosClient.get(apiEndpoints.cbam.product.get(productId));
-        const product = response?.data;
-        attrEm = product?.attr_em || 0;
-        hasProduceEdge = attrEm > 0;
-        console.log(`🔍 제품 ${productId} DB 저장값 사용: ${attrEm} tCO2e`);
+        console.warn(`⚠️ 제품 ${productId} 실시간 계산 실패, DB 저장값 사용:`, previewError);
+        try {
+          const response = await axiosClient.get(apiEndpoints.cbam.product.get(productId));
+          const product = response?.data;
+          attrEm = product?.attr_em || 0;
+          hasProduceEdge = attrEm > 0;
+          console.log(`🔍 제품 ${productId} DB 저장값 사용: ${attrEm} tCO2e`);
+        } catch (dbError) {
+          console.error(`❌ 제품 ${productId} DB 조회도 실패:`, dbError);
+          attrEm = 0;
+          hasProduceEdge = false;
+        }
       }
 
       // 제품 수량 정보 가져오기
