@@ -285,9 +285,10 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
     }
   }, [selectedInstall?.id, installCanvases, setNodes, setEdges]);
 
-  // 노드 새로고침 감지 및 처리
+  // 이벤트 기반 노드 새로고침 처리
   useEffect(() => {
-    const refreshNodes = async () => {
+    const handleRefreshAllNodes = async () => {
+      console.log('🔄 전체 노드 새로고침 이벤트 수신');
       const nodesToRefresh = nodes.filter(node => 
         (node.data as any)?.needsRefresh === true
       );
@@ -325,8 +326,59 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
       
       console.log('✅ 모든 노드 새로고침 완료');
     };
+
+    const handleEdgePropagationComplete = async (event: CustomEvent) => {
+      const { edgeKind, sourceId, targetId } = event.detail;
+      console.log(`🔄 엣지 전파 완료 이벤트 수신: ${edgeKind} ${sourceId} → ${targetId}`);
+      
+      try {
+        if (edgeKind === 'continue') {
+          const sourceEmission = await emissionManager.refreshProcessEmission(sourceId);
+          const targetEmission = await emissionManager.refreshProcessEmission(targetId);
+          
+          if (sourceEmission) {
+            setNodes(prev => nodeManager.updateProcessNodeByProcessId(prev, sourceId, sourceEmission));
+          }
+          if (targetEmission) {
+            setNodes(prev => nodeManager.updateProcessNodeByProcessId(prev, targetId, targetEmission));
+          }
+        } else if (edgeKind === 'produce') {
+          const sourceEmission = await emissionManager.refreshProcessEmission(sourceId);
+          const targetEmission = await emissionManager.refreshProductEmission(targetId);
+          
+          if (sourceEmission) {
+            setNodes(prev => nodeManager.updateProcessNodeByProcessId(prev, sourceId, sourceEmission));
+          }
+          if (targetEmission) {
+            setNodes(prev => nodeManager.updateProductNodeByProductId(prev, targetId, targetEmission));
+            setNodes(prev => nodeManager.setProductProduceFlag(prev, targetId, true));
+          }
+        } else if (edgeKind === 'consume') {
+          const sourceEmission = await emissionManager.refreshProductEmission(sourceId);
+          const targetEmission = await emissionManager.refreshProcessEmission(targetId);
+          
+          if (sourceEmission) {
+            setNodes(prev => nodeManager.updateProductNodeByProductId(prev, sourceId, sourceEmission));
+          }
+          if (targetEmission) {
+            setNodes(prev => nodeManager.updateProcessNodeByProcessId(prev, targetId, targetEmission));
+          }
+        }
+        
+        console.log(`✅ 엣지 전파 완료 후 노드 새로고침 완료: ${edgeKind}`);
+      } catch (error) {
+        console.error(`❌ 엣지 전파 완료 후 노드 새로고침 실패:`, error);
+      }
+    };
+
+    // 이벤트 리스너 등록
+    window.addEventListener('cbam:refreshAllNodesAfterProductUpdate', handleRefreshAllNodes);
+    window.addEventListener('cbam:edgePropagationComplete', handleEdgePropagationComplete as EventListener);
     
-    refreshNodes();
+    return () => {
+      window.removeEventListener('cbam:refreshAllNodesAfterProductUpdate', handleRefreshAllNodes);
+      window.removeEventListener('cbam:edgePropagationComplete', handleEdgePropagationComplete as EventListener);
+    };
   }, [nodes, emissionManager, nodeManager]);
 
   // 🔧 추가: 누락된 이벤트 리스너들 추가
@@ -610,58 +662,11 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
       // 잠시 대기 후 노드 새로고침 (백엔드 처리 완료 대기)
       await new Promise(resolve => setTimeout(resolve, 500));
 
-      // 관련 노드 새로고침
-      if (edgeKind === 'continue') {
-        console.log('🔄 continue 엣지 연결 후 노드 새로고침 시작');
-        const sourceEmission = await emissionManager.refreshProcessEmission(sourceId);
-        const targetEmission = await emissionManager.refreshProcessEmission(targetId);
-        
-        // 소스 노드 업데이트
-        if (sourceEmission) {
-          setNodes(prev => nodeManager.updateProcessNodeByProcessId(prev, sourceId, sourceEmission));
-          console.log(`✅ 소스 공정 ${sourceId} 노드 업데이트 완료:`, sourceEmission);
-        }
-        
-        // 타겟 노드 업데이트
-        if (targetEmission) {
-          setNodes(prev => nodeManager.updateProcessNodeByProcessId(prev, targetId, targetEmission));
-          console.log(`✅ 타겟 공정 ${targetId} 노드 업데이트 완료:`, targetEmission);
-        }
-        console.log('✅ continue 엣지 연결 후 노드 새로고침 완료');
-      } else if (edgeKind === 'produce') {
-        console.log('🔄 produce 엣지 연결 후 노드 새로고침 시작');
-        const sourceEmission = await emissionManager.refreshProcessEmission(sourceId);
-        const targetEmission = await emissionManager.refreshProductEmission(targetId);
-        
-        // 소스 공정 노드 업데이트
-        if (sourceEmission) {
-          setNodes(prev => nodeManager.updateProcessNodeByProcessId(prev, sourceId, sourceEmission));
-          console.log(`✅ 소스 공정 ${sourceId} 노드 업데이트 완료:`, sourceEmission);
-        }
-        
-        // 타겟 제품 노드 업데이트
-        if (targetEmission) {
-          setNodes(prev => nodeManager.updateProductNodeByProductId(prev, targetId, targetEmission));
-          setNodes(prev => nodeManager.setProductProduceFlag(prev, targetId, true));
-        }
-        console.log('✅ produce 엣지 연결 후 노드 새로고침 완료');
-      } else if (edgeKind === 'consume') {
-        console.log('🔄 consume 엣지 연결 후 노드 새로고침 시작');
-        const sourceEmission = await emissionManager.refreshProductEmission(sourceId);
-        const targetEmission = await emissionManager.refreshProcessEmission(targetId);
-        
-        // 소스 제품 노드 업데이트
-        if (sourceEmission) {
-          setNodes(prev => nodeManager.updateProductNodeByProductId(prev, sourceId, sourceEmission));
-        }
-        
-        // 타겟 공정 노드 업데이트
-        if (targetEmission) {
-          setNodes(prev => nodeManager.updateProcessNodeByProcessId(prev, targetId, targetEmission));
-          console.log(`✅ 타겟 공정 ${targetId} 노드 업데이트 완료:`, targetEmission);
-        }
-        console.log('✅ consume 엣지 연결 후 노드 새로고침 완료');
-      }
+      // 이벤트 기반 노드 새로고침 - 배출량 전파 완료 후 이벤트 발생
+      const refreshEvent = new CustomEvent('cbam:edgePropagationComplete', {
+        detail: { edgeKind, sourceId, targetId }
+      });
+      window.dispatchEvent(refreshEvent);
 
     } catch (error: any) {
       console.error('❌ Edge 생성 실패:', error);

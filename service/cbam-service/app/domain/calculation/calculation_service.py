@@ -194,192 +194,73 @@ class CalculationService:
     # ============================================================================
     
     async def propagate_emissions(self, request: EmissionPropagationRequest) -> EmissionPropagationResponse:
-        """공정 간 배출량 전파 계산 (핵심 메서드)"""
+        """공정 간 배출량 전파 계산 - EdgeService로 위임"""
         try:
             logger.info(f"🔄 배출량 전파 시작: {request.source_process_id} → {request.target_process_id} ({request.edge_kind})")
             
-            # 1. 순환 참조 검증
-            if request.edge_kind == "continue":
-                is_circular = await self._check_circular_reference(
-                    request.source_process_id, request.target_process_id
-                )
-                if is_circular:
-                    raise CircularReferenceError(
-                        error_type="CIRCULAR_REFERENCE",
-                        error_message="순환 참조가 감지되었습니다",
-                        affected_processes=[request.source_process_id, request.target_process_id],
-                        cycle_path=[request.source_process_id, request.target_process_id]
-                    )
+            # EdgeService로 위임
+            from app.domain.edge.edge_service import EdgeService
+            edge_service = EdgeService(None)
+            await edge_service.initialize()
             
-            # 2. 소스 공정 배출량 조회
-            source_emission = await self.calc_repository.get_process_attrdir_emission(request.source_process_id)
-            if not source_emission:
-                raise Exception(f"소스 공정 {request.source_process_id}의 배출량을 찾을 수 없습니다.")
-            
-            source_em = float(source_emission['attrdir_em'])
-            
-            # 3. 타겟 공정 배출량 조회
-            target_emission = await self.calc_repository.get_process_attrdir_emission(request.target_process_id)
-            if not target_emission:
-                raise Exception(f"타겟 공정 {request.target_process_id}의 배출량을 찾을 수 없습니다.")
-            
-            target_em = float(target_emission['attrdir_em'])
-            
-            # 4. 엣지 종류별 전파 계산
-            propagated_amount, target_new_emission, propagation_formula = await self._calculate_propagation(
-                request.edge_kind, source_em, target_em, request.propagation_amount
-            )
-            
-            # 5. 타겟 공정 배출량 업데이트
-            await self.calc_repository.update_process_attrdir_emission(
+            result = await edge_service.propagate_emissions(
+                request.source_process_id, 
                 request.target_process_id, 
-                {"attrdir_em": target_new_emission}
+                request.edge_kind
             )
             
-            # 6. 응답 생성
-            response = EmissionPropagationResponse(
-                source_process_id=request.source_process_id,
-                target_process_id=request.target_process_id,
-                edge_kind=request.edge_kind,
-                source_original_emission=source_em,
-                target_original_emission=target_em,
-                propagated_amount=propagated_amount,
-                target_new_emission=target_new_emission,
-                propagation_formula=propagation_formula,
-                calculation_date=datetime.utcnow()
-            )
-            
-            logger.info(f"✅ 배출량 전파 완료: {propagated_amount} tCO2e 전파됨")
-            return response
-            
+            if result:
+                logger.info(f"✅ 배출량 전파 완료: {result['propagated_amount']} tCO2e")
+                return EmissionPropagationResponse(**result)
+            else:
+                raise Exception("배출량 전파 계산에 실패했습니다.")
+                
         except Exception as e:
             logger.error(f"❌ 배출량 전파 실패: {str(e)}")
             raise e
     
     async def recalculate_entire_graph(self, request: GraphRecalculationRequest) -> GraphRecalculationResponse:
-        """전체 그래프 재계산 (엣지 변경 시 호출)"""
+        """전체 그래프 재계산 - EdgeService로 위임"""
         try:
             logger.info(f"🚀 전체 그래프 재계산 시작: trigger_edge_id={request.trigger_edge_id}")
             
-            # 1. 순환 참조 검증 (옵션)
-            validation_errors = []
-            if request.include_validation:
-                validation_errors = await self._validate_graph_structure()
+            # EdgeService로 위임
+            from app.domain.edge.edge_service import EdgeService
+            edge_service = EdgeService(None)
+            await edge_service.initialize()
             
-            # 2. 모든 continue 엣지 찾기
-            continue_edges = await self.calc_repository.get_continue_edges()
+            result = await edge_service.propagate_emissions_full_graph()
             
-            # 3. 각 continue 엣지에 대해 배출량 전파 실행
-            propagation_chains = []
-            total_emission_propagated = 0.0
-            total_processes_calculated = 0
-            
-            for edge in continue_edges:
-                try:
-                    propagation_request = EmissionPropagationRequest(
-                        source_process_id=edge['source_id'],
-                        target_process_id=edge['target_id'],
-                        edge_kind="continue"
-                    )
-                    
-                    propagation_result = await self.propagate_emissions(propagation_request)
-                    propagation_chains.append(propagation_result)
-                    total_emission_propagated += propagation_result.propagated_amount
-                    total_processes_calculated += 1
-                    
-                except Exception as e:
-                    logger.warning(f"⚠️ 엣지 {edge['id']} 전파 실패: {str(e)}")
-                    validation_errors.append(f"엣지 {edge['id']}: {str(e)}")
-            
-            # 4. 응답 생성
-            response = GraphRecalculationResponse(
-                total_processes_calculated=total_processes_calculated,
-                total_emission_propagated=total_emission_propagated,
-                propagation_chains=propagation_chains,
-                validation_errors=validation_errors,
-                calculation_date=datetime.utcnow(),
-                status="success" if not validation_errors else "partial_success"
-            )
-            
-            logger.info(f"✅ 전체 그래프 재계산 완료: {total_processes_calculated}개 공정, {total_emission_propagated} tCO2e 전파")
-            return response
-            
+            if result:
+                logger.info(f"✅ 전체 그래프 재계산 완료: {result['total_processes_calculated']}개 공정 처리")
+                return GraphRecalculationResponse(**result)
+            else:
+                raise Exception("전체 그래프 재계산에 실패했습니다.")
+                
         except Exception as e:
             logger.error(f"❌ 전체 그래프 재계산 실패: {str(e)}")
             raise e
 
     async def recalculate_from_process(self, process_id: int) -> Dict[str, Any]:
-        """특정 공정에서 시작해 배출량을 재계산하고 하류 공정/제품까지 반영
-
-        순서
-        1) 해당 공정의 원료/연료 합산으로 attrdir_em 재계산 및 저장
-        2) continue 엣지를 따라 하류 공정으로 누적 전파 (간단 합산)
-        3) 해당 공정이 연결된 제품들의 총 배출량을 재집계해 product.attr_em 갱신
-        반환: {'updated_process_ids': [...], 'updated_product_ids': [...], 'date': utc}
-        """
+        """특정 공정에서 시작해 배출량을 재계산하고 하류 공정/제품까지 반영 - EdgeService로 위임"""
         try:
-            updated_process_ids: List[int] = []
-            updated_product_ids: List[int] = []
-
-            # 1) 현재 공정 직접귀속 재계산
-            await self.calc_repository.calculate_process_attrdir_emission(process_id)
-            updated_process_ids.append(process_id)
-
-            # 2) continue 엣지를 따라 간단 전파(소스 배출량을 타겟에 누적)
-            #    BFS로 진행 (깊이 제한 없이, 순환은 Repository 유틸 사용)
-            queue = [process_id]
-            visited = set([process_id])
-
-            while queue:
-                current = queue.pop(0)
-                current_emission = await self.calc_repository.get_process_attrdir_emission(current)
-                if not current_emission:
-                    continue
-                current_attr = float(current_emission['attrdir_em'])
-
-                outgoing = await self.calc_repository.get_outgoing_continue_edges(current)
-                for edge in outgoing:
-                    target_id = edge['target_id']
-                    if target_id in visited:
-                        continue
-
-                    # 타겟 현재 값 조회 후 누적
-                    target_emission = await self.calc_repository.get_process_attrdir_emission(target_id)
-                    if target_emission:
-                        target_attr = float(target_emission['attrdir_em'])
-                        await self.calc_repository.update_process_attrdir_emission(
-                            target_id, {"attrdir_em": target_attr + current_attr}
-                        )
-                        updated_process_ids.append(target_id)
-                    visited.add(target_id)
-                    queue.append(target_id)
-
-            # 3) 해당 공정이 소속된 제품들의 총 배출량을 다시 계산하여 product.attr_em에 저장
-            product_ids = await self.calc_repository.get_products_by_process(process_id)
-            for pid in product_ids:
-                pdata = await self.calc_repository.calculate_product_total_emission(pid)
-                await self.calc_repository.update_product_attr_emission(pid, float(pdata['total_emission']))
-                updated_product_ids.append(pid)
-
-            # 권장 수정: 누적값 일관 반영을 위해 Edge 도메인의 전체 전파를 호출한다.
-            # 이유: 프런트는 제품 프리뷰 계산 시 누적(cumulative_emission)을 우선 사용하며,
-            # 계산 서비스의 재계산은 attrdir_em(직접값)만 갱신하므로
-            # 연결 그래프를 따라 누적을 다시 써 주어야 한다.
-            try:
-                from app.domain.edge.edge_service import EdgeService  # 지연 임포트로 순환 참조 방지
-                edge_service = EdgeService(None)
-                await edge_service.initialize()
-                await edge_service.propagate_emissions_full_graph()
-            except Exception as e:
-                logger.warning(f"⚠️ Edge 전파 호출 실패(재계산 후 누적 반영): {e}")
-
-            return {
-                "updated_process_ids": list(dict.fromkeys(updated_process_ids)),
-                "updated_product_ids": list(dict.fromkeys(updated_product_ids)),
-                "date": datetime.utcnow(),
-            }
+            logger.info(f"🔄 공정 {process_id} 재계산 시작")
+            
+            # EdgeService로 위임
+            from app.domain.edge.edge_service import EdgeService
+            edge_service = EdgeService(None)
+            await edge_service.initialize()
+            
+            result = await edge_service.recalculate_from_process(process_id)
+            
+            if result:
+                logger.info(f"✅ 공정 {process_id} 재계산 완료: {len(result.get('updated_process_ids', []))}개 공정 업데이트")
+                return result
+            else:
+                raise Exception(f"공정 {process_id} 재계산에 실패했습니다.")
+                
         except Exception as e:
-            logger.error(f"❌ 공정 {process_id} 기준 재계산 실패: {str(e)}")
+            logger.error(f"❌ 공정 {process_id} 재계산 실패: {str(e)}")
             raise e
     
     # ============================================================================

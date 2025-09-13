@@ -3,20 +3,46 @@ import { Node } from '@xyflow/react';
 import axiosClient, { apiEndpoints } from '@/lib/axiosClient';
 
 /**
- * 배출량 관리 전용 훅
- * 단일 책임: 공정/제품 배출량 계산, 새로고침, 동기화만 담당
+ * 중앙 집중식 배출량 관리 훅
+ * 단일 책임: 모든 배출량 계산, 새로고침, 동기화를 중앙에서 관리
+ * 이벤트 기반 아키텍처 지원
  */
 export const useEmissionManager = () => {
   const inFlightProcess = useRef<Set<number>>(new Set());
   const inFlightProduct = useRef<Set<number>>(new Set());
+  
+  // 배출량 계산 결과 캐시
+  const emissionCache = useRef<Map<number, { data: any; timestamp: number }>>(new Map());
+  const CACHE_DURATION = 30000; // 30초
 
-  // 공정 배출량 새로고침
+  // 캐시에서 배출량 데이터 조회
+  const getCachedEmission = useCallback((id: number) => {
+    const cached = emissionCache.current.get(id);
+    if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+      return cached.data;
+    }
+    return null;
+  }, []);
+
+  // 배출량 데이터 캐시에 저장
+  const setCachedEmission = useCallback((id: number, data: any) => {
+    emissionCache.current.set(id, { data, timestamp: Date.now() });
+  }, []);
+
+  // 공정 배출량 새로고침 - 중앙 집중식 관리
   const refreshProcessEmission = useCallback(async (processId: number): Promise<any> => {
     if (inFlightProcess.current.has(processId)) return null;
     inFlightProcess.current.add(processId);
     
     try {
-      // 배출량 데이터 조회
+      // 1. 캐시에서 먼저 확인
+      const cachedData = getCachedEmission(processId);
+      if (cachedData) {
+        console.log(`🔍 공정 ${processId} 캐시된 배출량 데이터 사용:`, cachedData);
+        return cachedData;
+      }
+
+      // 2. EdgeService를 통한 중앙 집중 배출량 조회
       let data: any = null;
       try {
         const resp = await axiosClient.get(apiEndpoints.cbam.edgePropagation.processEmission(processId));
@@ -91,13 +117,18 @@ export const useEmissionManager = () => {
         total_fueldir_emission: totalFuel
       });
 
-      return {
+      const result = {
         attr_em: directFixed,
         cumulative_emission: cumulativeEmission,
         total_matdir_emission: totalMat,
         total_fueldir_emission: totalFuel,
         calculation_date: data.calculation_date
       };
+
+      // 3. 결과를 캐시에 저장
+      setCachedEmission(processId, result);
+      
+      return result;
     } catch (e) {
       console.error('⚠️ 공정 배출량 새로고침 실패:', e);
       return null;

@@ -78,47 +78,7 @@ function ProcessManagerInner() {
     recalcFromProcess,
   } = useProcessCanvas(selectedInstall);
 
-  // 공정별 직접귀속배출량 정보 가져오기
-  const fetchProcessEmissionData = useCallback(async (processId: number) => {
-    try {
-      const response = await axiosClient.get(apiEndpoints.cbam.calculation.process.attrdir(processId));
-      if (response.data) {
-        return {
-          attr_em: response.data.attrdir_em || 0,
-          total_matdir_emission: response.data.total_matdir_emission || 0,
-          total_fueldir_emission: response.data.total_fueldir_emission || 0,
-          calculation_date: response.data.calculation_date
-        };
-      }
-    } catch (error) {
-      /* noop */
-    }
-    return null;
-  }, []);
-
-  // 모든 공정 노드의 배출량 정보 새로고침
-  const refreshAllProcessEmissions = useCallback(async () => {
-    const processNodes = nodes.filter(node => node.type === 'process');
-    
-    for (const node of processNodes) {
-      const processId = node.data.id;
-      if (processId && typeof processId === 'number') {
-        const emissionData = await fetchProcessEmissionData(processId);
-        if (emissionData) {
-          const existingProcessData =
-            node?.data?.processData && typeof node.data.processData === 'object'
-              ? (node.data.processData as Record<string, any>)
-              : {};
-          updateNodeData(node.id, {
-            processData: {
-              ...existingProcessData,
-              ...(emissionData as Record<string, any>),
-            },
-          });
-        }
-      }
-    }
-  }, [nodes, fetchProcessEmissionData, updateNodeData]);
+  // 배출량 계산은 useEmissionManager에서 중앙 집중 관리
 
   // (삭제) 새로고침/동기화 버튼 제거에 따라 관련 함수도 제거되었습니다.
 
@@ -430,7 +390,8 @@ function ProcessManagerInner() {
             if (selectedProcessForInput?.id) {
               await recalcFromProcess(selectedProcessForInput.id);
             } else {
-              await refreshAllProcessEmissions();
+              // 배출량 계산은 useEmissionManager에서 중앙 집중 관리
+              console.log('배출량 계산은 중앙 집중 관리됩니다.');
             }
           }}
         />
