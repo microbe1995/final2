@@ -57,20 +57,12 @@ export const useMappingAPI = () => {
   }, [getRequest]);
 
   const getMappingById = useCallback(async (id: number): Promise<HSCNMappingFullResponse> => {
-    setLoading(true);
-    setError(null);
-    
-    try {
-      const response = await axiosClient.get(apiEndpoints.cbam.mapping.get(id));
-      return response.data;
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.detail || err.message || '매핑 조회 중 오류가 발생했습니다.';
-      setError(errorMessage);
-      throw new Error(errorMessage);
-    } finally {
-      setLoading(false);
+    const result = await getRequest<HSCNMappingFullResponse>(apiEndpoints.cbam.mapping.get(id));
+    if (!result) {
+      throw new Error('매핑 조회 중 오류가 발생했습니다.');
     }
-  }, []);
+    return result;
+  }, [getRequest]);
 
   const createMapping = useCallback(async (mappingData: {
     hscode: string;
@@ -80,20 +72,12 @@ export const useMappingAPI = () => {
     goods_name?: string;
     goods_engname?: string;
   }): Promise<HSCNMappingFullResponse> => {
-    setLoading(true);
-    setError(null);
-    
-    try {
-      const response = await axiosClient.post(apiEndpoints.cbam.mapping.create, mappingData);
-      return response.data;
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.detail || err.message || '매핑 생성 중 오류가 발생했습니다.';
-      setError(errorMessage);
-      throw new Error(errorMessage);
-    } finally {
-      setLoading(false);
+    const result = await postRequest<HSCNMappingFullResponse>(apiEndpoints.cbam.mapping.create, mappingData);
+    if (!result) {
+      throw new Error('매핑 생성 중 오류가 발생했습니다.');
     }
-  }, []);
+    return result;
+  }, [postRequest]);
 
   const updateMapping = useCallback(async (id: number, mappingData: Partial<{
     hscode: string;
@@ -103,107 +87,50 @@ export const useMappingAPI = () => {
     goods_name: string;
     goods_engname: string;
   }>): Promise<HSCNMappingFullResponse> => {
-    setLoading(true);
-    setError(null);
-    
-    try {
-      const response = await axiosClient.put(apiEndpoints.cbam.mapping.update(id), mappingData);
-      return response.data;
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.detail || err.message || '매핑 수정 중 오류가 발생했습니다.';
-      setError(errorMessage);
-      throw new Error(errorMessage);
-    } finally {
-      setLoading(false);
+    const result = await putRequest<HSCNMappingFullResponse>(apiEndpoints.cbam.mapping.update(id), mappingData);
+    if (!result) {
+      throw new Error('매핑 수정 중 오류가 발생했습니다.');
     }
-  }, []);
+    return result;
+  }, [putRequest]);
 
   const deleteMapping = useCallback(async (id: number): Promise<void> => {
-    setLoading(true);
-    setError(null);
-    
-    try {
-      await axiosClient.delete(apiEndpoints.cbam.mapping.delete(id));
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.detail || err.message || '매핑 삭제 중 오류가 발생했습니다.';
-      setError(errorMessage);
-      throw new Error(errorMessage);
-    } finally {
-      setLoading(false);
+    const result = await deleteRequest(apiEndpoints.cbam.mapping.delete(id));
+    if (!result) {
+      throw new Error('매핑 삭제 중 오류가 발생했습니다.');
     }
-  }, []);
+  }, [deleteRequest]);
 
   // ============================================================================
   // 🔍 검색 기능
   // ============================================================================
 
   const searchByHSCode = useCallback(async (hs_code: string): Promise<HSCNMappingFullResponse[]> => {
-    setLoading(true);
-    setError(null);
-    
-    try {
-      const response = await axiosClient.get(apiEndpoints.cbam.mapping.search.hs(hs_code));
-      return response.data;
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.detail || err.message || 'HS 코드 검색 중 오류가 발생했습니다.';
-      setError(errorMessage);
-      throw new Error(errorMessage);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+    const result = await getRequest<HSCNMappingFullResponse[]>(apiEndpoints.cbam.mapping.search.hs(hs_code));
+    return result || [];
+  }, [getRequest]);
 
   const searchByCNCode = useCallback(async (cn_code: string): Promise<HSCNMappingFullResponse[]> => {
-    setLoading(true);
-    setError(null);
-    
-    try {
-      const response = await axiosClient.get(apiEndpoints.cbam.mapping.search.cn(cn_code));
-      return response.data;
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.detail || err.message || 'CN 코드 검색 중 오류가 발생했습니다.';
-      setError(errorMessage);
-      throw new Error(errorMessage);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+    const result = await getRequest<HSCNMappingFullResponse[]>(apiEndpoints.cbam.mapping.search.cn(cn_code));
+    return result || [];
+  }, [getRequest]);
 
   const searchByGoodsName = useCallback(async (goods_name: string): Promise<HSCNMappingFullResponse[]> => {
-    setLoading(true);
-    setError(null);
-    
-    try {
-      const response = await axiosClient.get(apiEndpoints.cbam.mapping.search.goods(goods_name));
-      return response.data;
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.detail || err.message || '품목명 검색 중 오류가 발생했습니다.';
-      setError(errorMessage);
-      throw new Error(errorMessage);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+    const result = await getRequest<HSCNMappingFullResponse[]>(apiEndpoints.cbam.mapping.search.goods(goods_name));
+    return result || [];
+  }, [getRequest]);
 
   // ============================================================================
   // 📊 통계
   // ============================================================================
 
   const getMappingStats = useCallback(async (): Promise<MappingStatsResponse> => {
-    setLoading(true);
-    setError(null);
-    
-    try {
-      const response = await axiosClient.get(apiEndpoints.cbam.mapping.stats);
-      return response.data;
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.detail || err.message || '매핑 통계 조회 중 오류가 발생했습니다.';
-      setError(errorMessage);
-      throw new Error(errorMessage);
-    } finally {
-      setLoading(false);
+    const result = await getRequest<MappingStatsResponse>(apiEndpoints.cbam.mapping.stats);
+    if (!result) {
+      throw new Error('매핑 통계 조회 중 오류가 발생했습니다.');
     }
-  }, []);
+    return result;
+  }, [getRequest]);
 
   // ============================================================================
   // 📦 일괄 처리
@@ -222,30 +149,21 @@ export const useMappingAPI = () => {
     failed_count: number;
     errors: string[];
   }> => {
-    setLoading(true);
-    setError(null);
-    
-    try {
-      const response = await axiosClient.post(apiEndpoints.cbam.mapping.batch, {
-        mappings
-      });
-      return response.data;
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.detail || err.message || '매핑 일괄 생성 중 오류가 발생했습니다.';
-      setError(errorMessage);
-      throw new Error(errorMessage);
-    } finally {
-      setLoading(false);
+    const result = await postRequest<{
+      success: boolean;
+      created_count: number;
+      failed_count: number;
+      errors: string[];
+    }>(apiEndpoints.cbam.mapping.batch, { mappings });
+    if (!result) {
+      throw new Error('매핑 일괄 생성 중 오류가 발생했습니다.');
     }
-  }, []);
+    return result;
+  }, [postRequest]);
 
   // ============================================================================
-  // 🔧 유틸리티
+  // 🔧 유틸리티 (useCommonAPI에서 제공됨)
   // ============================================================================
-
-  const clearError = useCallback(() => {
-    setError(null);
-  }, []);
 
   return {
     // 상태
@@ -271,6 +189,9 @@ export const useMappingAPI = () => {
     getMappingStats,
     
     // 일괄 처리
-    createMappingsBatch
+    createMappingsBatch,
+    
+    // 유틸리티
+    clearError
   };
 };
