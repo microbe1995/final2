@@ -388,10 +388,28 @@ function ProcessManagerInner() {
           onDataSaved={async () => {
             // 입력 저장 후 해당 공정을 기준으로 재계산 → 영향 노드 부분 갱신
             if (selectedProcessForInput?.id) {
-              await recalcFromProcess(selectedProcessForInput.id);
+              console.log(`🔄 투입량 입력 완료, 공정 ${selectedProcessForInput.id} 재계산 시작`);
+              
+              // 1. 백엔드 재계산 수행
+              const success = await recalcFromProcess(selectedProcessForInput.id);
+              
+              if (success) {
+                console.log(`✅ 공정 ${selectedProcessForInput.id} 재계산 완료`);
+                
+                // 2. 추가로 해당 공정 노드 강제 새로고침
+                try {
+                  const emissionData = await refreshProcessEmission(selectedProcessForInput.id);
+                  if (emissionData) {
+                    console.log(`✅ 공정 ${selectedProcessForInput.id} 노드 강제 새로고침 완료:`, emissionData);
+                  }
+                } catch (error) {
+                  console.warn(`⚠️ 공정 ${selectedProcessForInput.id} 노드 강제 새로고침 실패:`, error);
+                }
+              } else {
+                console.error(`❌ 공정 ${selectedProcessForInput.id} 재계산 실패`);
+              }
             } else {
-              // 배출량 계산은 useEmissionManager에서 중앙 집중 관리
-              console.log('배출량 계산은 중앙 집중 관리됩니다.');
+              console.log('선택된 공정이 없습니다.');
             }
           }}
         />

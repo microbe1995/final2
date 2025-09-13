@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import axiosClient, { apiEndpoints } from '@/lib/axiosClient';
+import { useCommonAPI } from './useCommonAPI';
 
 // ============================================================================
 // 📋 HS-CN 매핑 API 훅
@@ -35,50 +36,25 @@ export interface HSCodeLookupResponse {
 }
 
 export const useMappingAPI = () => {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { loading, error, getRequest, postRequest, putRequest, deleteRequest, clearError } = useCommonAPI();
 
   // ============================================================================
   // 🔍 HS 코드 조회 (메인 기능)
   // ============================================================================
 
   const lookupByHSCode = useCallback(async (hs_code_10: string): Promise<HSCNMappingResponse[]> => {
-    setLoading(true);
-    setError(null);
-    
-    try {
-      const response = await axiosClient.get(apiEndpoints.cbam.mapping.lookup(hs_code_10));
-      return response.data;
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.detail || err.message || 'HS 코드 조회 중 오류가 발생했습니다.';
-      setError(errorMessage);
-      throw new Error(errorMessage);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+    const result = await getRequest<HSCNMappingResponse[]>(apiEndpoints.cbam.mapping.lookup(hs_code_10));
+    return result || [];
+  }, [getRequest]);
 
   // ============================================================================
   // 📋 기본 CRUD 작업
   // ============================================================================
 
   const getAllMappings = useCallback(async (skip = 0, limit = 100): Promise<HSCNMappingFullResponse[]> => {
-    setLoading(true);
-    setError(null);
-    
-    try {
-      const response = await axiosClient.get(apiEndpoints.cbam.mapping.list, {
-        params: { skip, limit }
-      });
-      return response.data;
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.detail || err.message || '매핑 목록 조회 중 오류가 발생했습니다.';
-      setError(errorMessage);
-      throw new Error(errorMessage);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+    const result = await getRequest<HSCNMappingFullResponse[]>(apiEndpoints.cbam.mapping.list, { skip, limit });
+    return result || [];
+  }, [getRequest]);
 
   const getMappingById = useCallback(async (id: number): Promise<HSCNMappingFullResponse> => {
     setLoading(true);
@@ -295,9 +271,6 @@ export const useMappingAPI = () => {
     getMappingStats,
     
     // 일괄 처리
-    createMappingsBatch,
-    
-    // 유틸리티
-    clearError
+    createMappingsBatch
   };
 };

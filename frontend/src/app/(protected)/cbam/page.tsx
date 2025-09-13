@@ -6,7 +6,7 @@ import axiosClient from '@/lib/axiosClient';
 import { RefreshCw, ArrowRight } from 'lucide-react';
 import { DummyData } from '@/hooks/useDummyData';
 // 시설군 관리 페이지(클라이언트 컴포넌트)를 내부 뷰로 임베드
-import InstallPage from './install/page';
+import InstallPage from '@/app/(protected)/cbam/install/page';
 import ProcessManager from '@/components/templates/ProcessManager';
 import CbamSidebar from '@/components/organisms/CbamSidebar';
 

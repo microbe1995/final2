@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { useFuelMasterAPI } from './useFuelMasterAPI';
 import { useMaterialMasterAPI } from './useMaterialMasterAPI';
 import axiosClient, { apiEndpoints } from '@/lib/axiosClient';
+import { useCommonAPI } from './useCommonAPI';
 
 export interface DummyData {
   id: number;
@@ -19,44 +20,25 @@ export interface DummyData {
 }
 
 export const useDummyData = () => {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { loading, error, getRequest, postRequest, putRequest, deleteRequest, clearError } = useCommonAPI();
   const [productNames, setProductNames] = useState<string[]>([]);
   const [processNames, setProcessNames] = useState<string[]>([]);
-  const { searchFuels } = useFuelMasterAPI();
-  const { lookupMaterialByName } = useMaterialMasterAPI();
+  const fuelMasterHook = useFuelMasterAPI();
+  const materialMasterHook = useMaterialMasterAPI();
 
   // 제품별 공정 목록 조회
   const getProcessesByProduct = useCallback(async (productName: string) => {
-    setLoading(true);
-    setError(null);
-    
-    try {
-      // 🔴 수정: 올바른 API 경로 사용 (/api/v1/cbam/dummy/...)
-      const response = await axiosClient.get(`/api/v1/cbam/dummy/products/${encodeURIComponent(productName)}/processes`);
-      return response.data.data.processes || [];
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.detail || err.message || '공정 목록 조회에 실패했습니다.';
-      setError(errorMessage);
-      console.error('❌ 제품별 공정 목록 조회 실패:', err);
-      return [];
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+    const result = await getRequest<any>(`/api/v1/cbam/dummy/products/${encodeURIComponent(productName)}/processes`);
+    return result?.data?.processes || [];
+  }, [getRequest]);
 
   // 🔴 추가: 생산품명별 기간 계산 함수
   const getProductPeriods = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    
     try {
-      // 전체 더미 데이터 조회
-      const response = await axiosClient.get('/api/v1/cbam/dummy');
+      const result = await getRequest<any>('/api/v1/cbam/dummy');
       // 백엔드가 배열 그대로를 반환하므로, data 또는 data.data 모두 대응
-      const payload = response.data;
-      const dummyData = Array.isArray(payload) ? payload : (payload?.data || []);
-      
+      const dummyData = Array.isArray(result) ? result : (result?.data || []);
+        
       // 생산품명별로 그룹화하여 기간 계산
       const productPeriods = new Map<string, { startDate: string; endDate: string }>();
       
@@ -87,14 +69,10 @@ export const useDummyData = () => {
       
       return productPeriods;
     } catch (err: any) {
-      const errorMessage = err.response?.data?.detail || err.message || '기간 계산에 실패했습니다.';
-      setError(errorMessage);
       console.error('❌ 생산품명별 기간 계산 실패:', err);
       return new Map();
-    } finally {
-      setLoading(false);
     }
-  }, []);
+  }, [getRequest]);
 
   // 🔴 추가: 특정 생산품명의 기간 조회
   const getProductPeriod = useCallback(async (productName: string) => {
@@ -194,7 +172,7 @@ export const useDummyData = () => {
         const checks = await Promise.all(
           names.map(async (n) => {
             try {
-              const res = await lookupMaterialByName(n);
+              const res = await materialMasterHook.lookupMaterialByName(n);
               const ok = !!res && res.success && Array.isArray(res.data) && res.data.length > 0;
               return { name: n, isMaterial: ok };
             } catch {
@@ -216,7 +194,7 @@ export const useDummyData = () => {
         setLoading(false);
       }
     },
-    [lookupMaterialByName]
+    [materialMasterHook.lookupMaterialByName]
   );
 
   // 🔴 추가: 기간/공정/제품명 기준으로 더미 투입물 중 "연료" 후보만 추출
@@ -269,7 +247,7 @@ export const useDummyData = () => {
         const checks = await Promise.all(
           names.map(async (n) => {
             try {
-              const suggestions = await searchFuels(n);
+              const suggestions = await fuelMasterHook.searchFuels(n);
               return { name: n, isFuel: Array.isArray(suggestions) && suggestions.length > 0 };
             } catch {
               return { name: n, isFuel: false };
@@ -290,7 +268,7 @@ export const useDummyData = () => {
         setLoading(false);
       }
     },
-    [searchFuels]
+    [fuelMasterHook.searchFuels]
   );
 
   // 제품명 목록 조회 (기간별)
@@ -360,6 +338,7 @@ export const useDummyData = () => {
   return {
     loading,
     error,
+    clearError,
     productNames,
     processNames,
     getProcessesByProduct,

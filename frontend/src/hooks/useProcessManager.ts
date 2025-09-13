@@ -2,11 +2,14 @@ import { useState, useCallback, useEffect } from 'react';
 import { useDummyData } from './useDummyData';
 import axiosClient, { apiEndpoints } from '@/lib/axiosClient';
 import { Install, Product, Process } from '@/lib/types';
+import { useCommonAPI } from './useCommonAPI';
 
 
 
 export const useProcessManager = () => {
-  const { getProductQuantity } = useDummyData();
+  const dummyDataHook = useDummyData();
+  const { getRequest, postRequest, putRequest, deleteRequest } = useCommonAPI();
+  
   // 사업장 관련 상태
   const [installs, setInstalls] = useState<Install[]>([]);
   const [selectedInstall, setSelectedInstall] = useState<Install | null>(null);
@@ -30,15 +33,15 @@ export const useProcessManager = () => {
   // 사업장 목록 불러오기
   const fetchInstalls = useCallback(async () => {
     try {
-      const response = await axiosClient.get(apiEndpoints.cbam.install.list);
-      setInstalls(response.data);
+      const data = await getRequest<Install[]>(apiEndpoints.cbam.install.list);
+      setInstalls(data || []);
     } catch (error) {
       if (process.env.NODE_ENV === 'development') {
         console.error('사업장 목록 조회 실패:', error);
       }
       setInstalls([]);
     }
-  }, []);
+  }, [getRequest]);
 
   // 선택된 사업장의 제품 목록 불러오기
   const fetchProductsByInstall = useCallback(async (installId: number) => {
@@ -61,7 +64,7 @@ export const useProcessManager = () => {
             })(),
             (async () => {
               try {
-                return await getProductQuantity(p.product_name);
+                return await dummyDataHook.getProductQuantity(p.product_name);
               } catch {
                 return undefined as unknown as number;
               }
@@ -85,7 +88,7 @@ export const useProcessManager = () => {
       }
       setProducts([]);
     }
-  }, [getProductQuantity]);
+  }, [dummyDataHook.getProductQuantity]);
 
   // 선택된 사업장의 공정 목록 불러오기
   const fetchProcessesByInstall = useCallback(async (installId: number) => {
@@ -182,15 +185,14 @@ export const useProcessManager = () => {
     try {
       console.log('🔄 제품 수량 업데이트 시작:', productQuantityForm);
       
-      const response = await axiosClient.put(apiEndpoints.cbam.product.update(selectedProduct.id), productQuantityForm);
+      const response = await putRequest<Product>(apiEndpoints.cbam.product.update(selectedProduct.id), productQuantityForm);
       
-      if (response.status === 200) {
+      if (response) {
         console.log('✅ 제품 수량 업데이트 성공');
         
         // 서버에서 최신 제품 데이터를 다시 불러와서 상태 동기화
         try {
-          const updatedProductResponse = await axiosClient.get(apiEndpoints.cbam.product.get(selectedProduct.id));
-          const updatedProduct = updatedProductResponse.data;
+          const updatedProduct = await getRequest<Product>(apiEndpoints.cbam.product.get(selectedProduct.id));
           
           // 선택된 제품 정보를 서버 데이터로 업데이트
           setSelectedProduct(updatedProduct);
@@ -231,7 +233,7 @@ export const useProcessManager = () => {
         
         return true;
       } else {
-        console.error('❌ 제품 수량 업데이트 실패: 응답 상태 코드', response.status);
+        console.error('❌ 제품 수량 업데이트 실패: 응답 없음');
         return false;
       }
     } catch (error: any) {

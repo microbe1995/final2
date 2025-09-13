@@ -217,20 +217,34 @@ export const useEmissionManager = () => {
     }
   }, []);
 
-  // 공정 기준 재계산
+  // 공정 기준 재계산 - 프론트엔드 노드 업데이트 포함
   const recalculateFromProcess = useCallback(async (processId: number): Promise<boolean> => {
     try {
+      console.log(`🔄 공정 ${processId} 재계산 시작`);
+      
+      // 1. 백엔드에서 재계산 수행
       const resp = await axiosClient.post(
         apiEndpoints.cbam.calculation.process.recalculate(processId)
       );
       
-      // 전체 전파 수행
+      // 2. 전체 전파 수행
       try {
         await axiosClient.post(apiEndpoints.cbam.edgePropagation.fullPropagate, {});
+        console.log('✅ 전체 전파 완료');
       } catch (e) {
         console.warn('⚠️ fullPropagate 실패(무시 가능):', e);
       }
 
+      // 3. 잠시 대기 후 프론트엔드 노드 새로고침
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // 4. 이벤트 발생으로 노드 새로고침 트리거
+      const refreshEvent = new CustomEvent('cbam:processRecalculated', {
+        detail: { processId }
+      });
+      window.dispatchEvent(refreshEvent);
+      
+      console.log(`✅ 공정 ${processId} 재계산 및 노드 새로고침 완료`);
       return true;
     } catch (e) {
       console.error('⚠️ 재계산 트리거 실패:', e);

@@ -371,13 +371,31 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
       }
     };
 
+    const handleProcessRecalculated = async (event: CustomEvent) => {
+      const { processId } = event.detail;
+      console.log(`🔄 공정 ${processId} 재계산 완료 이벤트 수신`);
+      
+      try {
+        // 해당 공정 노드 새로고침
+        const emissionData = await emissionManager.refreshProcessEmission(processId);
+        if (emissionData) {
+          setNodes(prev => nodeManager.updateProcessNodeByProcessId(prev, processId, emissionData));
+          console.log(`✅ 공정 ${processId} 노드 업데이트 완료:`, emissionData);
+        }
+      } catch (error) {
+        console.error(`❌ 공정 ${processId} 노드 업데이트 실패:`, error);
+      }
+    };
+
     // 이벤트 리스너 등록
     window.addEventListener('cbam:refreshAllNodesAfterProductUpdate', handleRefreshAllNodes);
     window.addEventListener('cbam:edgePropagationComplete', handleEdgePropagationComplete as EventListener);
+    window.addEventListener('cbam:processRecalculated', handleProcessRecalculated as EventListener);
     
     return () => {
       window.removeEventListener('cbam:refreshAllNodesAfterProductUpdate', handleRefreshAllNodes);
       window.removeEventListener('cbam:edgePropagationComplete', handleEdgePropagationComplete as EventListener);
+      window.removeEventListener('cbam:processRecalculated', handleProcessRecalculated as EventListener);
     };
   }, [nodes, emissionManager, nodeManager]);
 

@@ -17,7 +17,7 @@ import {
   Bell,
   Search,
 } from 'lucide-react';
-import CbamSidebar from './CbamSidebar';
+import CbamSidebar from '@/components/organisms/CbamSidebar';
 
 interface Props {
   children: ReactNode;

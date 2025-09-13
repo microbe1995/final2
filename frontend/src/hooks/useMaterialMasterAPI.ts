@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import axiosClient, { apiEndpoints } from '@/lib/axiosClient';
+import { useCommonAPI } from './useCommonAPI';
 
 // ============================================================================
 // 📝 MatDir 스키마 기반 타입 정의
@@ -32,67 +33,47 @@ export interface MaterialNameLookupResponse {
 // ============================================================================
 
 export const useMaterialMasterAPI = () => {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { loading, error, getRequest, postRequest, putRequest, deleteRequest, clearError } = useCommonAPI();
 
   // ============================================================================
   // 🔍 원료명 조회 (메인 기능 - @mapping/의 lookupByHSCode와 동일 패턴)
   // ============================================================================
 
   const lookupMaterialByName = useCallback(async (mat_name: string): Promise<MaterialNameLookupResponse> => {
-    setLoading(true);
-    setError(null);
-    
-    try {
-      const response = await axiosClient.get(apiEndpoints.materialMaster.search(mat_name));
-      // API가 배열을 직접 반환하므로 래핑해서 일관된 형식으로 변환
-      const materials = Array.isArray(response.data) ? response.data : [];
+    const result = await getRequest<any>(apiEndpoints.materialMaster.search(mat_name));
+    if (result) {
+      const materials = Array.isArray(result) ? result : [];
       return {
         success: true,
         data: materials,
         count: materials.length,
         message: `${materials.length}개의 원료를 찾았습니다.`
       };
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.detail || err.message || '원료명 조회 중 오류가 발생했습니다.';
-      setError(errorMessage);
-      return {
-        success: false,
-        data: [],
-        count: 0,
-        message: errorMessage
-      };
-    } finally {
-      setLoading(false);
     }
-  }, []);
+    return {
+      success: false,
+      data: [],
+      count: 0,
+      message: '원료명 조회 실패'
+    };
+  }, [getRequest]);
 
   // ============================================================================
   // 📋 기본 CRUD 작업
   // ============================================================================
 
   const getMaterialMasterList = useCallback(async (skip = 0, limit = 100): Promise<MaterialMappingFull[]> => {
-    setLoading(true);
-    setError(null);
-    
-    try {
-      const response = await axiosClient.get(apiEndpoints.materialMaster.list, {
-        params: { skip, limit }
-      });
+    const result = await getRequest<any>(apiEndpoints.materialMaster.list, { skip, limit });
+    if (result) {
       // API 응답이 { materials: [], total_count: number } 형식인지 확인
-      if (response.data && response.data.materials) {
-        return response.data.materials;
+      if (result.materials) {
+        return result.materials;
       }
       // 배열을 직접 반환하는 경우
-      return Array.isArray(response.data) ? response.data : [];
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.detail || err.message || '원료 마스터 목록 조회 중 오류가 발생했습니다.';
-      setError(errorMessage);
-      throw new Error(errorMessage);
-    } finally {
-      setLoading(false);
+      return Array.isArray(result) ? result : [];
     }
-  }, []);
+    return [];
+  }, [getRequest]);
 
   const searchMaterialByName = useCallback(async (matName: string): Promise<MaterialNameLookupResponse> => {
     // lookupMaterialByName과 동일한 로직 사용
@@ -139,6 +120,7 @@ export const useMaterialMasterAPI = () => {
   return {
     loading,
     error,
+    clearError,
     // 메인 기능
     lookupMaterialByName,
     // 기본 CRUD
