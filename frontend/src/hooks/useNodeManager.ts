@@ -149,14 +149,24 @@ export const useNodeManager = () => {
     return nodes.map(node => {
       if (node.type === 'product' && (node.data as any)?.id === productId) {
         const prevProductData = (node.data as any).productData || {};
+        const prevData = node.data as any;
+        
         return {
           ...node,
           data: {
             ...node.data,
             ...newFields,
-            product_amount: newFields.product_amount ?? (node.data as any).product_amount,
+            // 배출량 정보 업데이트
+            attr_em: newFields.attr_em ?? prevData.attr_em,
+            has_produce_edge: newFields.has_produce_edge ?? prevData.has_produce_edge,
+            // 수량 정보 업데이트
+            product_amount: newFields.product_amount ?? prevData.product_amount,
+            product_sell: newFields.product_sell ?? prevData.product_sell,
+            product_eusell: newFields.product_eusell ?? prevData.product_eusell,
+            // productData 내부 정보도 업데이트
             productData: {
               ...prevProductData,
+              attr_em: newFields.attr_em ?? prevProductData.attr_em,
               production_qty: newFields.product_amount ?? prevProductData.production_qty,
               product_sell: newFields.product_sell ?? prevProductData.product_sell,
               product_eusell: newFields.product_eusell ?? prevProductData.product_eusell

@@ -376,12 +376,46 @@ export const useProcessCanvas = (selectedInstall: Install | null) => {
       console.log(`🔄 공정 ${processId} 재계산 완료 이벤트 수신`);
       
       try {
-        // 해당 공정 노드 새로고침
+        // 1. 해당 공정 노드 새로고침
         const emissionData = await emissionManager.refreshProcessEmission(processId);
         if (emissionData) {
           setNodes(prev => nodeManager.updateProcessNodeByProcessId(prev, processId, emissionData));
           console.log(`✅ 공정 ${processId} 노드 업데이트 완료:`, emissionData);
         }
+        
+        // 2. 연결된 제품 노드들도 새로고침 (produce 엣지가 있는 경우)
+        const connectedProducts = nodes.filter(node => {
+          if (node.type !== 'product') return false;
+          // 해당 공정과 연결된 제품인지 확인
+          return edges.some(edge => {
+            const edgeData = edge.data as any;
+            return edgeData?.sourceProcessId === processId && 
+                   edgeData?.targetProductId === (node.data as any)?.id &&
+                   edgeData?.edgeKind === 'produce';
+          });
+        });
+        
+        if (connectedProducts.length > 0) {
+          console.log(`🔄 공정 ${processId}와 연결된 ${connectedProducts.length}개 제품 노드 새로고침 시작`);
+          
+          for (const productNode of connectedProducts) {
+            const productId = (productNode.data as any)?.id;
+            if (productId) {
+              try {
+                const productEmissionData = await emissionManager.refreshProductEmission(productId);
+                if (productEmissionData) {
+                  setNodes(prev => nodeManager.updateProductNodeByProductId(prev, productId, productEmissionData));
+                  console.log(`✅ 제품 ${productId} 노드 업데이트 완료:`, productEmissionData);
+                }
+              } catch (productError) {
+                console.warn(`⚠️ 제품 ${productId} 노드 업데이트 실패:`, productError);
+              }
+            }
+          }
+          
+          console.log(`✅ 공정 ${processId}와 연결된 모든 제품 노드 새로고침 완료`);
+        }
+        
       } catch (error) {
         console.error(`❌ 공정 ${processId} 노드 업데이트 실패:`, error);
       }

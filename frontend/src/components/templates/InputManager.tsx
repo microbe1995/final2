@@ -292,12 +292,26 @@ export default function InputManager({ selectedProcess, onClose, onDataSaved }: 
       });
       setMaterialAutoFactorStatus('');
 
+      // 🔥 계산 후 즉시 공정 배출량 재계산 트리거
+      try {
+        await axiosClient.post(apiEndpoints.cbam.calculation.process.attrdir(selectedProcess.id));
+        console.log(`✅ 원료직접배출량 계산 후 공정 ${selectedProcess.id} 재계산 완료`);
+        
+        // onDataSaved 콜백 호출로 노드 업데이트 트리거
+        if (onDataSaved) {
+          onDataSaved();
+          console.log(`✅ 원료직접배출량 계산 후 노드 업데이트 트리거 완료`);
+        }
+      } catch (updateError) {
+        console.error('❌ 공정 업데이트 실패:', updateError);
+      }
+
     } catch (error: any) {
       alert(`원료직접배출량 계산에 실패했습니다: ${error.response?.data?.detail || error.message}`);
     } finally {
       setIsCalculating(false);
     }
-  }, [matdirForm]);
+  }, [matdirForm, selectedProcess, onDataSaved]);
 
   // ============================================================================
   // ⛽ 연료직접배출량: 더미 기반 드롭다운 + Master에서 배출계수 자동 설정
@@ -359,12 +373,26 @@ export default function InputManager({ selectedProcess, onClose, onDataSaved }: 
 
       setFueldirForm({ name: '', factor: 0, amount: 0, oxyfactor: 1.0000 });
 
+      // 🔥 계산 후 즉시 공정 배출량 재계산 트리거
+      try {
+        await axiosClient.post(apiEndpoints.cbam.calculation.process.attrdir(selectedProcess.id));
+        console.log(`✅ 연료직접배출량 계산 후 공정 ${selectedProcess.id} 재계산 완료`);
+        
+        // onDataSaved 콜백 호출로 노드 업데이트 트리거
+        if (onDataSaved) {
+          onDataSaved();
+          console.log(`✅ 연료직접배출량 계산 후 노드 업데이트 트리거 완료`);
+        }
+      } catch (updateError) {
+        console.error('❌ 공정 업데이트 실패:', updateError);
+      }
+
     } catch (error: any) {
       alert(`연료직접배출량 계산에 실패했습니다: ${error.response?.data?.detail || error.message}`);
     } finally {
       setIsCalculating(false);
     }
-  }, [fueldirForm]);
+  }, [fueldirForm, selectedProcess, onDataSaved]);
 
   // =========================================================================
   // ✏️ 수정/삭제/저장 함수들 (이하 동일)
